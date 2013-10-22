@@ -1,4 +1,5 @@
-divconq
-=======
+DivConq Framework
+=================
 
 Server Application Framework
+
