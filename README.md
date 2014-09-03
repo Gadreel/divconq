@@ -33,6 +33,14 @@ Links
 * Downloads
 * Documentation
 
+Services
+--------
+
+We would love to help you build your customized file transfer solution whether based on
+DivConq or on another platform.  We are leading file transfer experts with
+a background in the MFT industry.  Visit [File Transfer Consulting] (http://www.filetransferconsulting.com/)
+for details on who we are and our sevice offerings.
+
 Building
 --------
 
