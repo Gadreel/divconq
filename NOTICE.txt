@@ -1,0 +1,86 @@
+/* ************************************************************************
+#
+#  DivConq Framework
+#
+#  http://divconq.com/
+#
+#  Copyright:
+#    Copyright 2014 eTimeline, LLC. All rights reserved.
+#
+#  License:
+#    See the license.txt file in the project's top-level directory for details.
+#
+#  Authors:
+#    * Andy White
+#
+************************************************************************ */
+
+---------------------------------------------------------------------------
+Requirements
+---------------------------------------------------------------------------
+  * Java 8
+  * Third Party libraries in lib folder, see NOTICE.txt
+  
+---------------------------------------------------------------------------
+Getting started
+---------------------------------------------------------------------------
+
+To run the demo you'll need at least one Java capable machine (e.g. Windows 
+or Linux).  To get the full experience of the demo try three machines.
+
+For information on how to setup the DivConq demo see the Getting Started page:
+
+http://divconq.com/home/getting-started/
+  
+---------------------------------------------------------------------------
+Dependencies
+---------------------------------------------------------------------------
+
+Only a partial list at present, to be updated...
+
+DivConq Framework (http://www.divconq.com/).
+
+Misc support provided by Apache Commons (http://commons.apache.org/)
+Copyright (c) 2005-2011 The Apache Software Foundation
+
+Http client support provided by Apache Http Componnets (http://hc.apache.org/)
+Copyright (c) 2002-2011 The Apache Software Foundation
+
+JSON support provided by jackson (http://jackson.codehaus.org/).
+Copyright (c) 2010 Tatu Saloranta and others.
+
+YAML support provided by snakeyaml (http://code.google.com/p/snakeyaml/).
+Copyright (c) 2008-2010 Andrey Somov
+
+DateTime support provided by Joda Time (http://joda-time.sourceforge.net/)
+Copyright (c) 2002-2011 Joda.org
+
+SSH support provided by JSch (http://www.jcraft.com/jsch/)
+Copyright (c) 2002-2011 JCraft, Inc
+
+Web server and network IO provided by Netty (http://netty.io/)
+Copyright 2011 The Netty Project
+
+File change notificate provided by JNotify (http://jnotify.sourceforge.net/)
+Copyright (c) 2005-2010 Omry Yadan
+
+XML support based off of QDParser (http://twicom.com/)
+by Kevin Twidle 
+
+Base64 support provided by MiGBase64 (http://migbase64.sourceforge.net/)
+Copyright (c) 2004, Mikael Grev, MiG InfoCom AB.
+
+PigLatin support is based on the online "English to Pig Latin Translator" (http://users.snowcrest.net/donnelly/piglatin.html)
+by William H. Donnelly
+
+Desktop Utilities support by David Croft (http://www.davidc.net/)
+Copyright (c) 2009 David C A Croft.
+
+Box.net support partially inspired by Box Java SDK (https://github.com/box/box-java-sdk)
+Copyright (c) 2012 Jimmy Jia
+
+JavaScript (web) cryptography by crypto-js (http://code.google.com/p/crypto-js/)
+Copyright (c) 2009-2012 by Jeff Mott. 
+
+XML and Code Highlighting by RSyntaxTextArea (http://fifesoft.com/rsyntaxtextarea/)
+Copyright (c) 2012, Robert Futrell

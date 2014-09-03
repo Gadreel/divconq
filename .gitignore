@@ -1,6 +1,7 @@
 *.class
 
-# Package Files #
-*.jar
-*.war
-*.ear
+divconq.core\bin
+divconq.interchange\bin
+divconq.web\bin
+
+/.dcsettings.xml
