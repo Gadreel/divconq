@@ -1,0 +1,13 @@
+<Pui Title="Test 1">
+	<Layout>
+		<h1>Test 1 Page</h1>
+		<jqmLink Icon="mail" Click="OnTest" Label="Test Button" />
+	</Layout>
+	<Function Name="Load" Params="entry">
+			console.log('load called super: ' + JSON.stringify(entry));
+	</Function>
+	<Function Name="OnTest" Params="entry">
+			console.log('test clicked!');
+			dc.pui.Loader.loadPage('/dct/pages/ForgotPassword', { PTag: 'rope man' });
+	</Function>
+</Pui>

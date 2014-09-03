@@ -1,0 +1,12 @@
+<Package 
+	ClassRoot="divconq" 
+	Abbrv="dct" 
+	Version="0.4.1"
+	MessageCodes="40000-49999"
+>
+	<DependsOn>
+		<Package Name="dcCore" MinVersion="0.9" />
+	</DependsOn>
+	
+	<!-- may also list CompatibleWith for tested co-existance -->
+</Package>

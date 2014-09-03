@@ -1,0 +1,324 @@
+﻿<Dictionary>
+	<Locale Id="en">
+		<Entry Token="_cldr_name" Value="English" />
+		<Entry Token="_cldr_orientation" Value="LTR" />
+		<!-- calendar -->
+		<Entry Token="_cldr_cal_greg_mon_1_wide" Value="January" />
+		<Entry Token="_cldr_cal_greg_mon_2_wide" Value="February" />
+		<Entry Token="_cldr_cal_greg_mon_3_wide" Value="March" />
+		<Entry Token="_cldr_cal_greg_mon_4_wide" Value="April" />
+		<Entry Token="_cldr_cal_greg_mon_5_wide" Value="May" />
+		<Entry Token="_cldr_cal_greg_mon_6_wide" Value="June" />
+		<Entry Token="_cldr_cal_greg_mon_7_wide" Value="July" />
+		<Entry Token="_cldr_cal_greg_mon_8_wide" Value="August" />
+		<Entry Token="_cldr_cal_greg_mon_9_wide" Value="September" />
+		<Entry Token="_cldr_cal_greg_mon_10_wide" Value="October" />
+		<Entry Token="_cldr_cal_greg_mon_11_wide" Value="November" />
+		<Entry Token="_cldr_cal_greg_mon_12_wide" Value="December" />
+		<Entry Token="_cldr_cal_greg_mon_1_abbr" Value="Jan" />
+		<Entry Token="_cldr_cal_greg_mon_2_abbr" Value="Feb" />
+		<Entry Token="_cldr_cal_greg_mon_3_abbr" Value="Mar" />
+		<Entry Token="_cldr_cal_greg_mon_4_abbr" Value="Apr" />
+		<Entry Token="_cldr_cal_greg_mon_5_abbr" Value="May" />
+		<Entry Token="_cldr_cal_greg_mon_6_abbr" Value="Jun" />
+		<Entry Token="_cldr_cal_greg_mon_7_abbr" Value="Jul" />
+		<Entry Token="_cldr_cal_greg_mon_8_abbr" Value="Aug" />
+		<Entry Token="_cldr_cal_greg_mon_9_abbr" Value="Sep" />
+		<Entry Token="_cldr_cal_greg_mon_10_abbr" Value="Oct" />
+		<Entry Token="_cldr_cal_greg_mon_11_abbr" Value="Nov" />
+		<Entry Token="_cldr_cal_greg_mon_12_abbr" Value="Dec" />
+		<Entry Token="_cldr_cal_greg_mon_1_narr" Value="J" />
+		<Entry Token="_cldr_cal_greg_mon_2_narr" Value="F" />
+		<Entry Token="_cldr_cal_greg_mon_3_narr" Value="M" />
+		<Entry Token="_cldr_cal_greg_mon_4_narr" Value="A" />
+		<Entry Token="_cldr_cal_greg_mon_5_narr" Value="M" />
+		<Entry Token="_cldr_cal_greg_mon_6_narr" Value="J" />
+		<Entry Token="_cldr_cal_greg_mon_7_narr" Value="J" />
+		<Entry Token="_cldr_cal_greg_mon_8_narr" Value="A" />
+		<Entry Token="_cldr_cal_greg_mon_9_narr" Value="S" />
+		<Entry Token="_cldr_cal_greg_mon_10_narr" Value="O" />
+		<Entry Token="_cldr_cal_greg_mon_11_narr" Value="N" />
+		<Entry Token="_cldr_cal_greg_mon_12_narr" Value="D" />
+		<Entry Token="_cldr_cal_greg_day_0_wide" Value="Sunday" />
+		<Entry Token="_cldr_cal_greg_day_1_wide" Value="Monday" />
+		<Entry Token="_cldr_cal_greg_day_2_wide" Value="Tuesday" />
+		<Entry Token="_cldr_cal_greg_day_3_wide" Value="Wednesday" />
+		<Entry Token="_cldr_cal_greg_day_4_wide" Value="Thursday" />
+		<Entry Token="_cldr_cal_greg_day_5_wide" Value="Friday" />
+		<Entry Token="_cldr_cal_greg_day_6_wide" Value="Saturday" />
+		<Entry Token="_cldr_cal_greg_day_0_abbr" Value="Sun" />
+		<Entry Token="_cldr_cal_greg_day_1_abbr" Value="Mon" />
+		<Entry Token="_cldr_cal_greg_day_2_abbr" Value="Tue" />
+		<Entry Token="_cldr_cal_greg_day_3_abbr" Value="Wed" />
+		<Entry Token="_cldr_cal_greg_day_4_abbr" Value="Thu" />
+		<Entry Token="_cldr_cal_greg_day_5_abbr" Value="Fri" />
+		<Entry Token="_cldr_cal_greg_day_6_abbr" Value="Sat" />
+		<Entry Token="_cldr_cal_greg_day_0_narr" Value="S" />
+		<Entry Token="_cldr_cal_greg_day_1_narr" Value="M" />
+		<Entry Token="_cldr_cal_greg_day_2_narr" Value="T" />
+		<Entry Token="_cldr_cal_greg_day_3_narr" Value="W" />
+		<Entry Token="_cldr_cal_greg_day_4_narr" Value="H" />
+		<Entry Token="_cldr_cal_greg_day_5_narr" Value="F" />
+		<Entry Token="_cldr_cal_greg_day_6_narr" Value="S" />
+		<Entry Token="_cldr_cal_greg_era_ce" Value="AD" />
+		<Entry Token="_cldr_cal_greg_era_bce" Value="BC" />
+		<Entry Token="_cldr_cal_greg_per_am" Value="AM" />
+		<Entry Token="_cldr_cal_greg_per_pm" Value="PM" />
+		<!-- year only, big date time -->
+		<Entry Token="_cldr_cal_greg_yfmt_full" Value="yyyy g" />
+		<Entry Token="_cldr_cal_greg_yfmt_long" Value="yyyy g" />
+		<Entry Token="_cldr_cal_greg_yfmt_medium" Value="yyy" />
+		<Entry Token="_cldr_cal_greg_yfmt_short" Value="yy" />
+		<!-- month year only, big date time -->
+		<Entry Token="_cldr_cal_greg_myfmt_full" Value="mmmmm yyyy g" />
+		<Entry Token="_cldr_cal_greg_myfmt_long" Value="mmmm yyyy g" />
+		<Entry Token="_cldr_cal_greg_myfmt_medium" Value="m yyy" />
+		<Entry Token="_cldr_cal_greg_myfmt_short" Value="m yy" />
+		<!-- whole date -->
+		<Entry Token="_cldr_cal_greg_dfmt_full" Value="ddddd',' mmmmm d',' yyyy g" />
+		<Entry Token="_cldr_cal_greg_dfmt_long" Value="mmmm d',' yyyy g" />
+		<Entry Token="_cldr_cal_greg_dfmt_medium" Value="m d',' yyy" />
+		<Entry Token="_cldr_cal_greg_dfmt_short" Value="m'/'d'/'yy" />
+		<!-- hour only, big date time -->
+		<Entry Token="_cldr_cal_greg_hfmt_full" Value="H K ZZ" />
+		<Entry Token="_cldr_cal_greg_hfmt_long" Value="H K Z" />
+		<Entry Token="_cldr_cal_greg_hfmt_medium" Value="H K" />
+		<Entry Token="_cldr_cal_greg_hfmt_short" Value="H K" />
+		<!-- hour minute only, big date time -->
+		<Entry Token="_cldr_cal_greg_hmfmt_full" Value="H':'MM K ZZ" />
+		<Entry Token="_cldr_cal_greg_hmfmt_long" Value="H':'MM K Z" />
+		<Entry Token="_cldr_cal_greg_hmfmt_medium" Value="H':'MM K" />
+		<Entry Token="_cldr_cal_greg_hmfmt_short" Value="H':'MM K" />
+		<!-- whole time -->
+		<Entry Token="_cldr_cal_greg_tfmt_full" Value="H':'MM':'SS K ZZ" />
+		<Entry Token="_cldr_cal_greg_tfmt_long" Value="H':'MM':'SS K Z" />
+		<Entry Token="_cldr_cal_greg_tfmt_medium" Value="H':'MM':'SS K" />
+		<Entry Token="_cldr_cal_greg_tfmt_short" Value="H':'MM K" />
+		<!-- numbers -->
+		<Entry Token="_cldr_num_sym_decimal" Value="." />
+		<Entry Token="_cldr_num_sym_group" Value="," />
+		<Entry Token="_cldr_num_sym_percent" Value="%" />
+		<Entry Token="_cldr_num_sym_plus" Value="+" />
+		<Entry Token="_cldr_num_sym_minus" Value="-" />
+		<Entry Token="_cldr_num_sym_exponential" Value="E" />
+		<Entry Token="_cldr_num_sym_infinity" Value="∞" />
+		<Entry Token="_cldr_num_sym_nan" Value="NaN" />
+		<Entry Token="_cldr_num_fmt_decimal" Value="#,##0.###" />
+		<Entry Token="_cldr_num_fmt_percent" Value="#,##0%" />
+		<Entry Token="_cldr_num_fmt_currency" Value="¤#,##0.00;(¤#,##0.00)" />
+	</Locale>
+	<Locale Id="x-pig-latin">
+		<Entry Token="_cldr_name" Value="Pig Latin" />
+		<Entry Token="_cldr_orientation" Value="RTL" />
+		<Entry Token="_cldr_cal_greg_mon_1_abbr" Value="Jan" />
+		<Entry Token="_cldr_cal_greg_mon_2_abbr" Value="Feb" />
+		<Entry Token="_cldr_cal_greg_mon_3_abbr" Value="Mar" />
+		<Entry Token="_cldr_cal_greg_mon_4_abbr" Value="Apr" />
+		<Entry Token="_cldr_cal_greg_mon_5_abbr" Value="May" />
+		<Entry Token="_cldr_cal_greg_mon_6_abbr" Value="Jun" />
+		<Entry Token="_cldr_cal_greg_mon_7_abbr" Value="Jul" />
+		<Entry Token="_cldr_cal_greg_mon_8_abbr" Value="Aug" />
+		<Entry Token="_cldr_cal_greg_mon_9_abbr" Value="Sep" />
+		<Entry Token="_cldr_cal_greg_mon_10_abbr" Value="Oct" />
+		<Entry Token="_cldr_cal_greg_mon_11_abbr" Value="Nov" />
+		<Entry Token="_cldr_cal_greg_mon_12_abbr" Value="Dec" />
+		<Entry Token="_cldr_cal_greg_mon_1_wide" Value="Anuaryjay" />
+		<Entry Token="_cldr_cal_greg_mon_2_wide" Value="Ebruaryfay" />
+		<Entry Token="_cldr_cal_greg_mon_3_wide" Value="Archmay" />
+		<Entry Token="_cldr_cal_greg_mon_4_wide" Value="Aprilway" />
+		<Entry Token="_cldr_cal_greg_mon_5_wide" Value="Aymay" />
+		<Entry Token="_cldr_cal_greg_mon_6_wide" Value="Unejay" />
+		<Entry Token="_cldr_cal_greg_mon_7_wide" Value="Ulyjay" />
+		<Entry Token="_cldr_cal_greg_mon_8_wide" Value="Augustway" />
+		<Entry Token="_cldr_cal_greg_mon_9_wide" Value="Eptembersay" />
+		<Entry Token="_cldr_cal_greg_mon_10_wide" Value="Octoberway" />
+		<Entry Token="_cldr_cal_greg_mon_11_wide" Value="Ovembernay" />
+		<Entry Token="_cldr_cal_greg_mon_12_wide" Value="Ecemberday" />
+		<Entry Token="_cldr_cal_greg_mon_1_narr" Value="J" />
+		<Entry Token="_cldr_cal_greg_mon_2_narr" Value="F" />
+		<Entry Token="_cldr_cal_greg_mon_3_narr" Value="M" />
+		<Entry Token="_cldr_cal_greg_mon_4_narr" Value="A" />
+		<Entry Token="_cldr_cal_greg_mon_5_narr" Value="M" />
+		<Entry Token="_cldr_cal_greg_mon_6_narr" Value="J" />
+		<Entry Token="_cldr_cal_greg_mon_7_narr" Value="J" />
+		<Entry Token="_cldr_cal_greg_mon_8_narr" Value="A" />
+		<Entry Token="_cldr_cal_greg_mon_9_narr" Value="S" />
+		<Entry Token="_cldr_cal_greg_mon_10_narr" Value="O" />
+		<Entry Token="_cldr_cal_greg_mon_11_narr" Value="N" />
+		<Entry Token="_cldr_cal_greg_mon_12_narr" Value="D" />
+		<Entry Token="_cldr_cal_greg_day_0_abbr" Value="Sun" />
+		<Entry Token="_cldr_cal_greg_day_1_abbr" Value="Mon" />
+		<Entry Token="_cldr_cal_greg_day_2_abbr" Value="Tue" />
+		<Entry Token="_cldr_cal_greg_day_3_abbr" Value="Wed" />
+		<Entry Token="_cldr_cal_greg_day_4_abbr" Value="Thu" />
+		<Entry Token="_cldr_cal_greg_day_5_abbr" Value="Fri" />
+		<Entry Token="_cldr_cal_greg_day_6_abbr" Value="Sat" />
+		<Entry Token="_cldr_cal_greg_day_0_wide" Value="Undaysay" />
+		<Entry Token="_cldr_cal_greg_day_1_wide" Value="Ondaymay" />
+		<Entry Token="_cldr_cal_greg_day_2_wide" Value="Uesdaytay" />
+		<Entry Token="_cldr_cal_greg_day_3_wide" Value="Ednesdayway" />
+		<Entry Token="_cldr_cal_greg_day_4_wide" Value="Ursdaythay" />
+		<Entry Token="_cldr_cal_greg_day_5_wide" Value="Idayfray" />
+		<Entry Token="_cldr_cal_greg_day_6_wide" Value="Aturdaysay" />
+		<Entry Token="_cldr_cal_greg_day_0_narr" Value="S" />
+		<Entry Token="_cldr_cal_greg_day_1_narr" Value="M" />
+		<Entry Token="_cldr_cal_greg_day_2_narr" Value="T" />
+		<Entry Token="_cldr_cal_greg_day_3_narr" Value="W" />
+		<Entry Token="_cldr_cal_greg_day_4_narr" Value="H" />
+		<Entry Token="_cldr_cal_greg_day_5_narr" Value="F" />
+		<Entry Token="_cldr_cal_greg_day_6_narr" Value="S" />
+		<Entry Token="_cldr_cal_greg_era_ce" Value="CE" />
+		<Entry Token="_cldr_cal_greg_era_bce" Value="BCE" />
+		<Entry Token="_cldr_cal_greg_per_am" Value="AM" />
+		<Entry Token="_cldr_cal_greg_per_pm" Value="PM" />
+		<!-- year only, big date time -->
+		<Entry Token="_cldr_cal_greg_yfmt_full" Value="yyy g" />
+		<Entry Token="_cldr_cal_greg_yfmt_long" Value="yyy g" />
+		<Entry Token="_cldr_cal_greg_yfmt_medium" Value="yyy" />
+		<Entry Token="_cldr_cal_greg_yfmt_short" Value="yy" />
+		<!-- month year only, big date time -->
+		<Entry Token="_cldr_cal_greg_myfmt_full" Value="mmmmm yyy g" />
+		<Entry Token="_cldr_cal_greg_myfmt_long" Value="mmmm yyy g" />
+		<Entry Token="_cldr_cal_greg_myfmt_medium" Value="m yyy" />
+		<Entry Token="_cldr_cal_greg_myfmt_short" Value="m yy" />
+		<!-- whole date -->
+		<Entry Token="_cldr_cal_greg_dfmt_full" Value="ddddd d mmmmm yyy g" />
+		<Entry Token="_cldr_cal_greg_dfmt_long" Value="dd mmmm yyy g" />
+		<Entry Token="_cldr_cal_greg_dfmt_medium" Value="dd'/'mmmm'/'yyy" />
+		<Entry Token="_cldr_cal_greg_dfmt_short" Value="dd'/'mm'/'yyy" />
+		<!-- hour only, big date time -->
+		<Entry Token="_cldr_cal_greg_hfmt_full" Value="FF ZZ" />
+		<Entry Token="_cldr_cal_greg_hfmt_long" Value="FF Z" />
+		<Entry Token="_cldr_cal_greg_hfmt_medium" Value="FF" />
+		<Entry Token="_cldr_cal_greg_hfmt_short" Value="FF" />
+		<!-- hour minute only, big date time -->
+		<Entry Token="_cldr_cal_greg_hmfmt_full" Value="FF':'MM ZZ" />
+		<Entry Token="_cldr_cal_greg_hmfmt_long" Value="FF':'MM Z" />
+		<Entry Token="_cldr_cal_greg_hmfmt_medium" Value="FF':'MM" />
+		<Entry Token="_cldr_cal_greg_hmfmt_short" Value="FF':'MM" />
+		<!-- whole time -->
+		<Entry Token="_cldr_cal_greg_tfmt_full" Value="FF':'MM':'SS ZZ" />
+		<Entry Token="_cldr_cal_greg_tfmt_long" Value="FF':'MM':'SS Z" />
+		<Entry Token="_cldr_cal_greg_tfmt_medium" Value="FF':'MM':'SS" />
+		<Entry Token="_cldr_cal_greg_tfmt_short" Value="FF':'MM" />
+		<!-- numbers -->
+		<Entry Token="_cldr_num_sym_decimal" Value="," />
+		<Entry Token="_cldr_num_sym_group" Value="." />
+		<Entry Token="_cldr_num_sym_percent" Value="%" />
+		<Entry Token="_cldr_num_sym_plus" Value="+" />
+		<Entry Token="_cldr_num_sym_minus" Value="-" />
+		<Entry Token="_cldr_num_sym_exponential" Value="E" />
+		<Entry Token="_cldr_num_sym_infinity" Value="∞" />
+		<Entry Token="_cldr_num_sym_nan" Value="NaN" />
+		<Entry Token="_cldr_num_fmt_decimal" Value="#,##0.###" />
+		<Entry Token="_cldr_num_fmt_percent" Value="#,##0%" />
+		<Entry Token="_cldr_num_fmt_currency" Value="¤ #,##0.00" />
+	</Locale>
+	<Locale Id="x-rtl-en">
+		<Entry Token="_cldr_name" Value="Right to Left English" />
+		<Entry Token="_cldr_orientation" Value="RTL" />
+		<Entry Token="_cldr_cal_greg_mon_1_abbr" Value="Jan" />
+		<Entry Token="_cldr_cal_greg_mon_2_abbr" Value="Feb" />
+		<Entry Token="_cldr_cal_greg_mon_3_abbr" Value="Mar" />
+		<Entry Token="_cldr_cal_greg_mon_4_abbr" Value="Apr" />
+		<Entry Token="_cldr_cal_greg_mon_5_abbr" Value="May" />
+		<Entry Token="_cldr_cal_greg_mon_6_abbr" Value="Jun" />
+		<Entry Token="_cldr_cal_greg_mon_7_abbr" Value="Jul" />
+		<Entry Token="_cldr_cal_greg_mon_8_abbr" Value="Aug" />
+		<Entry Token="_cldr_cal_greg_mon_9_abbr" Value="Sep" />
+		<Entry Token="_cldr_cal_greg_mon_10_abbr" Value="Oct" />
+		<Entry Token="_cldr_cal_greg_mon_11_abbr" Value="Nov" />
+		<Entry Token="_cldr_cal_greg_mon_12_abbr" Value="Dec" />
+		<Entry Token="_cldr_cal_greg_mon_1_wide" Value="January" />
+		<Entry Token="_cldr_cal_greg_mon_2_wide" Value="February" />
+		<Entry Token="_cldr_cal_greg_mon_3_wide" Value="March" />
+		<Entry Token="_cldr_cal_greg_mon_4_wide" Value="April" />
+		<Entry Token="_cldr_cal_greg_mon_5_wide" Value="May" />
+		<Entry Token="_cldr_cal_greg_mon_6_wide" Value="June" />
+		<Entry Token="_cldr_cal_greg_mon_7_wide" Value="July" />
+		<Entry Token="_cldr_cal_greg_mon_8_wide" Value="August" />
+		<Entry Token="_cldr_cal_greg_mon_9_wide" Value="September" />
+		<Entry Token="_cldr_cal_greg_mon_10_wide" Value="October" />
+		<Entry Token="_cldr_cal_greg_mon_11_wide" Value="November" />
+		<Entry Token="_cldr_cal_greg_mon_12_wide" Value="December" />
+		<Entry Token="_cldr_cal_greg_mon_1_narr" Value="J" />
+		<Entry Token="_cldr_cal_greg_mon_2_narr" Value="F" />
+		<Entry Token="_cldr_cal_greg_mon_3_narr" Value="M" />
+		<Entry Token="_cldr_cal_greg_mon_4_narr" Value="A" />
+		<Entry Token="_cldr_cal_greg_mon_5_narr" Value="M" />
+		<Entry Token="_cldr_cal_greg_mon_6_narr" Value="J" />
+		<Entry Token="_cldr_cal_greg_mon_7_narr" Value="J" />
+		<Entry Token="_cldr_cal_greg_mon_8_narr" Value="A" />
+		<Entry Token="_cldr_cal_greg_mon_9_narr" Value="S" />
+		<Entry Token="_cldr_cal_greg_mon_10_narr" Value="O" />
+		<Entry Token="_cldr_cal_greg_mon_11_narr" Value="N" />
+		<Entry Token="_cldr_cal_greg_mon_12_narr" Value="D" />
+		<Entry Token="_cldr_cal_greg_day_0_abbr" Value="Sun" />
+		<Entry Token="_cldr_cal_greg_day_1_abbr" Value="Mon" />
+		<Entry Token="_cldr_cal_greg_day_2_abbr" Value="Tue" />
+		<Entry Token="_cldr_cal_greg_day_3_abbr" Value="Wed" />
+		<Entry Token="_cldr_cal_greg_day_4_abbr" Value="Thu" />
+		<Entry Token="_cldr_cal_greg_day_5_abbr" Value="Fri" />
+		<Entry Token="_cldr_cal_greg_day_6_abbr" Value="Sat" />
+		<Entry Token="_cldr_cal_greg_day_0_wide" Value="Sunday" />
+		<Entry Token="_cldr_cal_greg_day_1_wide" Value="Monday" />
+		<Entry Token="_cldr_cal_greg_day_2_wide" Value="Tuesday" />
+		<Entry Token="_cldr_cal_greg_day_3_wide" Value="Wednesday" />
+		<Entry Token="_cldr_cal_greg_day_4_wide" Value="Thursday" />
+		<Entry Token="_cldr_cal_greg_day_5_wide" Value="Friday" />
+		<Entry Token="_cldr_cal_greg_day_6_wide" Value="Saturday" />
+		<Entry Token="_cldr_cal_greg_day_0_narr" Value="S" />
+		<Entry Token="_cldr_cal_greg_day_1_narr" Value="M" />
+		<Entry Token="_cldr_cal_greg_day_2_narr" Value="T" />
+		<Entry Token="_cldr_cal_greg_day_3_narr" Value="W" />
+		<Entry Token="_cldr_cal_greg_day_4_narr" Value="H" />
+		<Entry Token="_cldr_cal_greg_day_5_narr" Value="F" />
+		<Entry Token="_cldr_cal_greg_day_6_narr" Value="S" />
+		<Entry Token="_cldr_cal_greg_era_ce" Value="CE" />
+		<Entry Token="_cldr_cal_greg_era_bce" Value="BCE" />
+		<Entry Token="_cldr_cal_greg_per_am" Value="AM" />
+		<Entry Token="_cldr_cal_greg_per_pm" Value="PM" />
+		<!-- year only, big date time -->
+		<Entry Token="_cldr_cal_greg_yfmt_full" Value="yyyy g" />
+		<Entry Token="_cldr_cal_greg_yfmt_long" Value="yyyy g" />
+		<Entry Token="_cldr_cal_greg_yfmt_medium" Value="yyy" />
+		<Entry Token="_cldr_cal_greg_yfmt_short" Value="yy" />
+		<!-- month year only, big date time -->
+		<Entry Token="_cldr_cal_greg_myfmt_full" Value="mmmmm yyyy g" />
+		<Entry Token="_cldr_cal_greg_myfmt_long" Value="mmmm yyyy g" />
+		<Entry Token="_cldr_cal_greg_myfmt_medium" Value="m yyy" />
+		<Entry Token="_cldr_cal_greg_myfmt_short" Value="m yy" />
+		<!-- whole date -->
+		<Entry Token="_cldr_cal_greg_dfmt_full" Value="ddddd',' mmmmm d',' yyyy g" />
+		<Entry Token="_cldr_cal_greg_dfmt_long" Value="mmmm d',' yyyy g" />
+		<Entry Token="_cldr_cal_greg_dfmt_medium" Value="m d',' yyy" />
+		<Entry Token="_cldr_cal_greg_dfmt_short" Value="m'/'d'/'yy" />
+		<!-- hour only, big date time -->
+		<Entry Token="_cldr_cal_greg_hfmt_full" Value="H K ZZ" />
+		<Entry Token="_cldr_cal_greg_hfmt_long" Value="H K Z" />
+		<Entry Token="_cldr_cal_greg_hfmt_medium" Value="H K" />
+		<Entry Token="_cldr_cal_greg_hfmt_short" Value="H K" />
+		<!-- hour minute only, big date time -->
+		<Entry Token="_cldr_cal_greg_hmfmt_full" Value="H':'MM K ZZ" />
+		<Entry Token="_cldr_cal_greg_hmfmt_long" Value="H':'MM K Z" />
+		<Entry Token="_cldr_cal_greg_hmfmt_medium" Value="H':'MM K" />
+		<Entry Token="_cldr_cal_greg_hmfmt_short" Value="H':'MM K" />
+		<!-- whole time -->
+		<Entry Token="_cldr_cal_greg_tfmt_full" Value="H':'MM':'SS K ZZ" />
+		<Entry Token="_cldr_cal_greg_tfmt_long" Value="H':'MM':'SS K Z" />
+		<Entry Token="_cldr_cal_greg_tfmt_medium" Value="H':'MM':'SS K" />
+		<Entry Token="_cldr_cal_greg_tfmt_short" Value="H':'MM K" />
+		<!-- numbers -->
+		<Entry Token="_cldr_num_sym_decimal" Value="." />
+		<Entry Token="_cldr_num_sym_group" Value="," />
+		<Entry Token="_cldr_num_sym_percent" Value="%" />
+		<Entry Token="_cldr_num_sym_plus" Value="+" />
+		<Entry Token="_cldr_num_sym_minus" Value="-" />
+		<Entry Token="_cldr_num_sym_exponential" Value="E" />
+		<Entry Token="_cldr_num_sym_infinity" Value="∞" />
+		<Entry Token="_cldr_num_sym_nan" Value="NaN" />
+		<Entry Token="_cldr_num_fmt_decimal" Value="#,##0.###" />
+		<Entry Token="_cldr_num_fmt_percent" Value="#,##0%" />
+		<Entry Token="_cldr_num_fmt_currency" Value="¤#,##0.00;(¤#,##0.00)" />
+	</Locale>
+</Dictionary>

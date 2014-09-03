@@ -1,0 +1,8 @@
+<Dictionary>
+<Locale Id="x-pig-latin">
+	<Entry Token="_code_90000" Value="Issingmay oytay istlay" />
+	<Entry Token="_code_90001" Value="Oytay otnay allowedway: {$1}" />
+	<Entry Token="_code_90002" Value="Oytay aymay otnay ebay afesay: {$1}" />
+	<Entry Token="_code_90010" Value="Issingmay equiredray ieldsfay" />
+</Locale>
+</Dictionary>

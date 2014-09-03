@@ -1,0 +1,8 @@
+<Dictionary>
+<Locale Id="x-rtl-en">
+	<Entry Token="_code_90000" Value="list toy Missing" />
+	<Entry Token="_code_90001" Value=": {$1}allowed not Toy" />
+	<Entry Token="_code_90002" Value=": {$1}safe be not may Toy" />
+	<Entry Token="_code_90010" Value="fields required Missing" />
+</Locale>
+</Dictionary>

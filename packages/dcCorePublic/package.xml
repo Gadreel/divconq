@@ -1,0 +1,12 @@
+<Package 
+	ClassRoot="divconq" 
+	Abbrv="dc" 
+	Version="0.9.3"
+	MessageCodes="1-99999"
+>
+	<!-- MessageCodes="90000-99999" for zCustom -->
+	<DependsOn>
+		<Package Name="dcCore" MinVersion="0.9" />
+	</DependsOn>
+
+</Package>

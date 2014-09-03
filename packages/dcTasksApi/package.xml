@@ -1,0 +1,12 @@
+<Package 
+	ClassRoot="dct" 
+	Abbrv="dct" 
+	Version="0.5.1"
+	MessageCodes="280000-299999"
+>
+	<DependsOn>
+		<Package Name="dcCorePublic" MinVersion="0.9" />
+	</DependsOn>
+	
+	<!-- may also list CompatibleWith for tested co-existance -->
+</Package>

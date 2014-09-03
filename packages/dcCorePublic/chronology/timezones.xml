@@ -1,0 +1,104 @@
+<Timezones>
+	<!-- http://home.tiscali.nl/~t876506/TZworld.html -->
+	<!--
+		When can be "[mon] last[dow]" or "[mon] [dow]>=[dom]" or "[mon] [dom]"
+		
+		MUMPS
+		
+		^dcTime("Rule","Iso/US",0,"To")=2006
+		^dcTime("Rule","Iso/US",0,"OnWhen")="Apr Sun>=1"
+		^dcTime("Rule","Iso/US",0,"OnTime")="2:00"
+		^dcTime("Rule","Iso/US",0,"OnOffset")="1:00"
+		^dcTime("Rule","Iso/US",0,"OffWhen")="Oct lastSun"
+		^dcTime("Rule","Iso/US",0,"OffTime")="2:00"
+		^dcTime("Rule","Iso/US",0,"OffOffset")="0"
+		^dcTime("Rule","Iso/US",1,"From")=2007
+		^dcTime("Rule","Iso/US",1,"OnWhen")="Mar Sun>=8"
+		^dcTime("Rule","Iso/US",1,"OnTime")="2:00"
+		^dcTime("Rule","Iso/US",1,"OnOffset")="1:00"
+		^dcTime("Rule","Iso/US",1,"OffWhen")="Nov Sun>=1"
+		^dcTime("Rule","Iso/US",1,"OffTime")="2:00"
+		^dcTime("Rule","Iso/US",1,"OffOffset")="0"
+		
+		^dcTime("Zone","Iso/America/New_York","ZoneTime")="-5:00"
+		^dcTime("Zone","Iso/America/New_York","Name")="EST"
+		^dcTime("Zone","Iso/America/New_York","DstRule")="US"
+		^dcTime("Zone","Iso/America/New_York","DstName")="EDT"
+		
+	-->
+	<Rule Id="Iso/US">
+		<Period To="2006">
+			<DstOn When="Apr Sun>=1" Time="2:00" Offset="1:00" />
+			<DstOff When="Oct lastSun" Time="2:00" Offset="0" />
+		</Peroid>
+		<Period From="2007">
+			<DstOn When="Mar Sun>=8" Time="2:00" Offset="1:00" />
+			<DstOff When="Nov Sun>=1" Time="2:00" Offset="0" />
+		</Peroid>
+	<Rule>
+	
+	<Zone Id="Iso/America/New_York" ZoneTime="-5:00" Name="EST" DstRule="Iso/US" DstName="EDT" />
+	<Zone Id="Iso/America/Chicago" ZoneTime="-6:00" Name="CST" DstRule="Iso/US" DstName="CDT" />
+	<Zone Id="Iso/America/Denver" ZoneTime="-7:00" Name="MST" DstRule="Iso/US" DstName="MDT" />
+	<Zone Id="Iso/America/Los_Angeles" ZoneTime="-8:00" Name="PST" DstRule="Iso/US" DstName="PDT" />
+	<Zone Id="Iso/America/Phoenix" ZoneTime="-7:00" Name="MST" />
+	<Zone Id="Iso/America/Indiana/Indianapolis" ZoneTime="-5:00" Name="EST" DstRule="Iso/US" DstName="EDT" />
+	<Zone Id="Iso/America/Kentucky/Louisville" ZoneTime="-5:00" Name="EST" DstRule="Iso/US" DstName="EDT" />
+	<Zone Id="Iso/America/Detroit" ZoneTime="-5:00" Name="EST" DstRule="Iso/US" DstName="EDT" />
+	<Zone Id="Iso/America/Menominee" ZoneTime="-6:00" Name="CST" DstRule="Iso/US" DstName="CDT" />
+	<Zone Id="Iso/America/Anchorage" ZoneTime="-9:00" Name="AKST" DstRule="Iso/US" DstName="AKDT" />
+	<Zone Id="Iso/America/Honolulu" ZoneTime="-10:00" Name="HST" />
+	
+	<Rule Id="Canada">
+		<Period To="2006">
+			<DstOn When="Apr Sun>=1" Time="2:00" Offset="1:00" />
+			<DstOff When="Oct lastSun" Time="2:00" Offset="0" />
+		</Peroid>
+		<Period From="2007">
+			<DstOn When="Mar Sun>=8" Time="2:00" Offset="1:00" />
+			<DstOff When="Nov Sun>=1" Time="2:00" Offset="0" />
+		</Peroid>
+	<Rule>
+	
+	<Rule Id="EU">
+		<Period>
+			<DstOn When="Mar lastSun" Time="1:00u" Offset="1:00" />
+			<DstOff When="Oct lastSun" Time="1:00u" Offset="0" />
+		</Peroid>
+	<Rule>
+	
+	<Rule Id="EUAsia">
+		<Period>
+			<DstOn When="Mar lastSun" Time="1:00u" Offset="1:00" />
+			<DstOff When="Oct lastSun" Time="1:00u" Offset="0" />
+		</Peroid>
+	<Rule>
+	
+	<Rule Id="Russia">
+		<Period>
+			<DstOn When="Mar lastSun" Time="2:00s" Offset="1:00" />
+			<DstOff When="Oct lastSun" Time="2:00s" Offset="0" />
+		</Peroid>
+	<Rule>
+	
+	<Rule Id="RussiaAsia">
+		<Period>
+			<DstOn When="Mar lastSun" Time="2:00s" Offset="1:00" />
+			<DstOff When="Oct lastSun" Time="2:00s" Offset="0" />
+		</Peroid>
+	<Rule>
+	
+	<Rule Id="Mexico">
+		<Period>
+			<DstOn When="Apr Sun>=1" Time="2:00" Offset="1:00" />
+			<DstOff When="Oct lastSun" Time="2:00" Offset="0" />
+		</Peroid>
+	<Rule>
+	
+	<Rule Id="Brazil">
+		<Period>
+			<DstOn When="Oct Sun>=15" Time="0:00" Offset="1:00" />
+			<DstOff When="Feb Sun>=15" Time="0:00" Offset="0" />
+		</Peroid>
+	<Rule>
+</Timezones>

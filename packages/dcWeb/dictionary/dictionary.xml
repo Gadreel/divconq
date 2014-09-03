@@ -1,0 +1,15 @@
+<Dictionary>
+	<Locale Id="en">
+		<Entry Token="_code_150000" Value="[empty]" />
+		<Entry Token="_code_150001" Value="Unable to resolve URL" />
+		<Entry Token="_code_150002" Value="Error processing page" />
+		<Entry Token="_code_150003" Value="Unable to find domain" />
+		<Entry Token="_code_150004" Value="IO Error processing asset: {0}" />
+		<Entry Token="_code_150005" Value="Asset not found" />
+		<Entry Token="_code_150006" Value="Error executing view: {0}" />
+		<Entry Token="_code_150007" Value="File not found" />
+		<Entry Token="_code_150008" Value="View not found or broken" />
+		<Entry Token="_code_150009" Value="Error compiling JAR sourced view: {0}" />
+	</Locale>
+</Dictionary>
+

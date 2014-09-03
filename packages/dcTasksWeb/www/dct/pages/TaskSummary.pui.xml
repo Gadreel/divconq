@@ -1,0 +1,68 @@
+<!-- ************************************************************************
+#
+#  DivConq
+#
+#  http://divconq.com/
+#
+#  Copyright:
+#    Copyright 2014 eTimeline, LLC. All rights reserved.
+#
+#  License:
+#    See the license.txt file in the project's top-level directory for details.
+#
+#  Authors:
+#    * Andy White
+#
+************************************************************************ -->
+<Pui Title="Task Summary">
+	<Layout>
+		<div class="formbuttons">
+			<Link Click="DoRefresh" Label="Refresh" Icon="refresh" />
+		</div> 
+		
+		<div id="sectSummary">
+		</div>
+	</Layout>
+	<Function Name="Load"><![CDATA[
+			var sect = $('#sectSummary');
+			
+			sect.empty(); 
+		
+			var item = dc.tasks.Tracker.getStatusFor(this.Params.TaskId);
+			
+			if (item == null)
+				return;
+		
+			var running = (item.Status == 'Running');
+			var more = '';
+			
+			more += '<p>Try ' + item.Try + ' of ' + item.MaxTry + ' (#' + item.WorkId + ')</p>';
+			more += '<p>Added To Queue: ' + dc.util.Date.formatZLocal(item.Added) + '</p>';
+			
+			if (item.Start) 
+				more += '<p>Run Started: ' + dc.util.Date.formatZLocal(item.Start) + ' on hub: ' + item.Hub + '</p>';
+			
+			if (item.End) 
+				more += '<p>Run Ended: ' + dc.util.Date.formatZLocal(item.End) + '</p>';
+			
+			if (item.Message) 
+				more += '<p>Result Code: ' + item.Code + ' - ' + item.Message.escapeHtml() + '</p>';
+			else
+				more += '<p>Result Code: ' + item.Code + '</p>';
+
+			if (running && item.StepName) 
+				more += '<p>Step ' + item.Step + ' of ' + item.Steps + ' - ' + item.StepName.escapeHtml() + '</p>';
+				
+			if (running && item.Progress) 
+				more += '<p>Completed ' + item.Completed + '% ' + item.Progress.escapeHtml() + '</p>';
+				
+			if (item.Log) 
+				more += '<pre>' + item.Log.escapeHtml() + '</pre>';
+					
+			sect.append('<h2>' + item.Title.escapeHtml() + ' (' + item.TaskId.escapeHtml() + ')</h2>' 
+				+ '<p>Status: ' + item.Status.escapeHtml() + '</p>' + more);
+	]]></Function>
+	<Function Name="DoRefresh"><![CDATA[
+			this.call('Load');
+	]]></Function>
+</Pui>

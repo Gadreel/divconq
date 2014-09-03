@@ -1,0 +1,7 @@
+<dcScript Title="Slow Greeting">
+<Main Parameter="Args">
+	<Info>Slow greetings started.</Info>
+	<Sleep Seconds="12" />
+	<Info>Greetings {$Args.Greet}.</Info>
+</Main>
+</dcScript>

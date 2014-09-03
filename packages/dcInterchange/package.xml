@@ -1,0 +1,13 @@
+<Package 
+	ClassRoot="divconq" 
+	Abbrv="dci" 
+	Version="0.9.3"
+	MessageCodes="300000-349999"
+>
+	<!-- may also list CompatibleWith for tested co-existance -->
+	<DependsOn>
+		<Package Name="dcCorePublic" MinVersion="0.9" />
+	
+		<Library File="javax.mail-1.5.jar" />
+	</DependsOn>
+</Package>

@@ -1,0 +1,104 @@
+k ^dcTextRecord
+k ^dcTextIndex
+
+s Pid="z"
+
+k ^dcParams(Pid)
+
+s ^dcParams(Pid,"Table")="ttab"
+s ^dcParams(Pid,"Id")="01_001"
+s ^dcParams(Pid,"Fields","Lotto",321,"Original",0)="Some Sort of Story"
+s ^dcParams(Pid,"Fields","Lotto",321,"Original",1)="Read the story for free - click link in left column."
+s ^dcParams(Pid,"Fields","Lotto",321,"Analyized",0)="|read:1:1|seek:1:3|free:1:5|enlighten:1:7|link:1:8|left:1:10|column:1:11|"
+
+d updateTxt^dcDbUpdate
+
+zwr ^dcTextRecord
+zwr ^dcTextIndex
+
+k ^dcParams(Pid)
+
+s ^dcParams(Pid,"Table")="ttab"
+s ^dcParams(Pid,"Id")="01_001"
+s ^dcParams(Pid,"Fields","Lotto",321,"Original",0)="Philosophical Sort of Story"
+s ^dcParams(Pid,"Fields","Lotto",321,"Original",1)="What is the nature of enlightenment? What value does it bring to a person? Why do some of us seek it? ""Why is it challenging to to reach enlightenment?"""
+s ^dcParams(Pid,"Fields","Lotto",321,"Original",2)="The quick brown fox jumped over the fallen tree!"
+s ^dcParams(Pid,"Fields","Lotto",321,"Analyized",0)="|quick:1:31|brown:1:32|fox:1:33|jump:1:34|fallen:1:37|tree:1:38|natur:1:"
+s ^dcParams(Pid,"Fields","Lotto",321,"Analyized",1)="4|valu:1:8|bring:1:11|person:1:14|seek:1:20|ch"
+s ^dcParams(Pid,"Fields","Lotto",321,"Analyized",2)="alleng:1:25|reach:1:28|enlighten:2:6,29|"
+
+s ^dcParams(Pid,"Fields","Lotto",321,"Original",0)="Fox Sort of Story"
+s ^dcParams(Pid,"Fields","Fern",331,"Original",1)="The quick brown fox jumped over the fallen tree!"
+s ^dcParams(Pid,"Fields","Fern",331,"Analyized",0)="|quick:1:31|brown:1:32|fox:1:33|jump:1:34|fallen:1:37|tree:1:38|"
+
+d updateTxt^dcDbUpdate
+
+k ^dcParams(Pid)
+
+s ^dcParams(Pid,"Table")="ttab"
+s ^dcParams(Pid,"Id")="01_004"
+s ^dcParams(Pid,"Fields","Lotto",321,"Original",0)="Another Sort of Story"
+s ^dcParams(Pid,"Fields","Lotto",441,"Original",1)="Read the story for free - click link in left column."
+s ^dcParams(Pid,"Fields","Lotto",441,"Analyized",0)="|read:1:1|seek:1:3|free:2:5|enlighten:3:7|link:1:8|left:1:10|column:1:11|"
+
+d updateTxt^dcDbUpdate
+
+k ^dcParams(Pid)
+
+s ^dcParams(Pid,"Table")="ttab"
+s ^dcParams(Pid,"Id")="01_005"
+s ^dcParams(Pid,"Fields","Lotto",321,"Original",0)="A Sort of Story"
+s ^dcParams(Pid,"Fields","Lotto",661,"Original",1)="Read the story for free - click link in left column."
+s ^dcParams(Pid,"Fields","Lotto",661,"Analyized",0)="|read:1:1|seek:2:3|free:5:5|enlighten:2.2:7|link:1:8|left:1:10|column:1:11|"
+
+d updateTxt^dcDbUpdate
+
+zwr ^dcTextRecord
+zwr ^dcTextIndex
+
+
+
+
+
+
+k
+
+s Params("Sources","dcmPage","dcmTitle")=1
+s Params("Sources","dcmPage","dcmKeywords")=1
+s Params("Sources","dcmPage","dcmContent")=1
+s Params("AllowedWords","left","Term")=1
+s Params("AllowedWords","natur","Term")=1
+;s Params("AllowedWords","lef","Term")=1
+;s Params("AllowedWords","nat","Term")=1
+s Params("AllowedWords","person","Term")=1
+s Params("AllowedWords","enlighten","Term")=1
+s Params("AllowedWords","enlighten","Exact")="enlightenment"
+s Params("RequiredWords","seek","Term")=1
+
+d srchTxt2^dcDbUpdate(.Params,.ret)
+
+zwr ret
+
+
+
+Params("RequiredWords",[word])=1
+Params("AllowedWords",[word])=1
+Params("ProhibitedWords",[word])=1
+
+
+
+k
+
+s Params("Sources","dcmPage","Title")="dcmTitle"
+s Params("Sources","dcmPage","Body")="dcmContent"
+s Params("Sources","dcmPage","Extras","dcmKeywords")=1  
+s Params("AllowedWords","lef","Term")=1
+s Params("AllowedWords","nat","Term")=1
+s Params("AllowedWords","person","Term")=1
+s Params("AllowedWords","enlighten","Term")=1
+s Params("AllowedWords","enlighten","Exact")="enlightenment"
+s Params("RequiredWords","seek","Term")=1
+s Params("RequiredWords","seek","Exact")="seek"
+
+d local^dcConn("QUERY dcSearchText","00100_000000000000007")
+

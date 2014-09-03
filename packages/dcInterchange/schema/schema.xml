@@ -1,0 +1,88 @@
+<Schema>
+	<Shared>
+		<Record Id="dciGitConnector" Class="divconq.interchange.git.Connector" />
+		
+		<Record Id="dciSftpFile" Inherits="fisFile" Class="divconq.interchange.ssh.SftpFile" />
+		
+		<Record Id="dciSftpTextReader" Inherits="dciFileTextReader" Class="divconq.interchange.ssh.SftpTextReader" />
+		
+		<Record Id="dciSftpScanner" Inherits="dciFileStoreScanner" Class="divconq.interchange.ssh.SftpScanner" />
+		
+		<Record Id="dciSftpDriver" Inherits="dciFileStoreDriver" Class="divconq.interchange.ssh.SftpDriver">
+			<Field Name="Scanner" Type="dciSftpScanner" />
+		</Record>
+		
+		<Record Id="dciS3File" Inherits="fisFile" Class="divconq.interchange.s3.S3File" />
+		
+		<Record Id="dciS3TextReader" Inherits="dciFileTextReader" Class="divconq.interchange.s3.S3TextReader" />
+		
+		<Record Id="dciS3Scanner" Inherits="dciFileStoreScanner" Class="divconq.interchange.s3.S3Scanner" />
+		
+		<Record Id="dciS3Driver" Inherits="dciFileStoreDriver" Class="divconq.interchange.s3.S3Driver">
+			<Field Name="Scanner" Type="dciS3Scanner" />
+		</Record>
+	
+		<Record Id="dciSendMailStatus">
+			<Field Name="TotalSent" Type="Integer" />
+			<Field Name="LastErrors">
+				<List>
+					<Record>
+						<Field Name="At" Type="dcSmallString" />
+						<Field Name="Message" Type="String" />
+					</Record>
+				</List>
+			</Field>
+		</Record>
+		
+		<!-- foundations of messages for File Store services -->
+		
+	</Shared>
+	
+	<Services>
+		<Service Name="dciEmail">
+			<Secure Tags="Admin">		
+				<Feature Name="Message">
+					<Op Name="Send">
+						<Description>
+							Send emails.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="To" Type="dcSmallString" Required="True" />
+									<Field Name="From" Type="dcSmallString" />
+									<Field Name="ReplyTo" Type="dcSmallString" />
+									<Field Name="Subject" Type="String" Required="True" />
+									<Field Name="Body" Type="String" Required="True" />
+									<Field Name="Attachments">
+										<List>
+											<Record>
+												<Field Name="Name" Type="dcSmallString" Required="True" />
+												<Field Name="Mime" Type="dcSmallString" Required="True" />
+												<Field Name="Content" Type="Binary" Required="True" />
+											</Record>
+										</List>
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="TaskResponseMessage" />
+					</Op>
+				</Feature>
+				<Feature Name="Status">
+					<Op Name="Check">
+						<Description>
+							Status of service.
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record Inherits="dciSendMailStatus" />
+							</Field>
+						</Response>
+					</Op>
+				</Feature>
+			</Secure>
+		</Service>
+	</Services>
+</Schema>

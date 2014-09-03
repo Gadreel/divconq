@@ -1,0 +1,159 @@
+<Dictionary>
+<Locale Id="x-rtl-en">
+	<Entry Token="_code_1" Value="error execution General" />
+	<Entry Token="_code_2" Value="warning execution General" />
+	<Entry Token="_code_100" Value=": {$1}expected, file xml.packages load to Unable" />
+	<Entry Token="_code_101" Value=": {$1}expected, file xml.config find to Unable" />
+	<Entry Token="_code_102" Value=": {$1}expected, file xml.config load to Unable" />
+	<Entry Token="_code_103" Value=")s(file schema load to Unable" />
+	<Entry Token="_code_104" Value=")s(file dictionary load to Unable" />
+	<Entry Token="_code_105" Value="xml missing, file dictionary apply to Unable" />
+	<Entry Token="_code_106" Value="null file, file dictionary apply to Unable" />
+	<Entry Token="_code_107" Value=": {$1}expected, file dictionary Missing" />
+	<Entry Token="_code_108" Value="null file, file schema apply to Unable" />
+	<Entry Token="_code_109" Value=": {$1}expected, file schema Missing" />
+	<Entry Token="_code_110" Value="xml missing, file schema apply to Unable" />
+	<Entry Token="_code_111" Value="initialized properly not rescources hub, continue to Unable" />
+	<Entry Token="_code_112" Value="errors contained but, loaded already resources Hub" />
+	<Entry Token="_code_113" Value="initialized properly not rescources hub, continue to Unable" />
+	<Entry Token="_code_114" Value="globals temporary up cleaning Problem" />
+	<Entry Token="_code_115" Value="parameters expiration Missing" />
+	<Entry Token="_code_116" Value=": {$1}database for seed dcDb load to Unable" />
+	<Entry Token="_code_117" Value="signoff in parameter token Missing" />
+	<Entry Token="_code_118" Value="lookup username in username Missing" />
+	<Entry Token="_code_119" Value="lookup username in username Invalid" />
+	<Entry Token="_code_120" Value="verify in parameter id user or token Missing" />
+	<Entry Token="_code_121" Value="expired or invalid is Token" />
+	<Entry Token="_code_122" Value="use in Account" />
+	<Entry Token="_code_123" Value="password or username Invalid" />
+	<Entry Token="_code_124" Value="confirmed not User" />
+	<Entry Token="_code_125" Value="blank be not may Password" />
+	<Entry Token="_code_126" Value="policy meet not does, used be cannot Password" />
+	<Entry Token="_code_127" Value="blank be not may UserName" />
+	<Entry Token="_code_128" Value="blank be not may UserName" />
+	<Entry Token="_code_129" Value="found not User" />
+	<Entry Token="_code_130" Value="blank be not may UserId and UserName" />
+	<Entry Token="_code_131" Value="valid not UserName" />
+	<Entry Token="_code_200" Value=": {$1}expected, file resource package Missing" />
+	<Entry Token="_code_201" Value=": {$1}expected, file resource project Missing" />
+	<Entry Token="_code_202" Value="key settings invalid an encountered decrypt Settings" />
+	<Entry Token="_code_203" Value="failed decrypt Settings" />
+	<Entry Token="_code_204" Value="key settings invalid an encountered encrypt Settings" />
+	<Entry Token="_code_205" Value="failed encrypt Settings" />
+	<Entry Token="_code_206" Value="failed hash Settings" />
+	<Entry Token="_code_207" Value="class Clock Settings custom load to Unable" />
+	<Entry Token="_code_208" Value=": {$1}class Clock Database custom load to Unable" />
+	<Entry Token="_code_209" Value="configuration database Missing" />
+	<Entry Token="_code_210" Value="configuration connection database Missing" />
+	<Entry Token="_code_230" Value="BigDateTime for value Missing" />
+	<Entry Token="_code_231" Value=": {$1}found, BigDateTime for format Invalid" />
+	<Entry Token="_code_232" Value="BigDateTime for schema Missing" />
+	<Entry Token="_code_300" Value=": {$2}error: {$1} - file key database use to Unable" />
+	<Entry Token="_code_301" Value="configuration missing, pool database start Cannot" />
+	<Entry Token="_code_302" Value=": {$2}error: {$1} - database to connecting while Error" />
+	<Entry Token="_code_303" Value="offline is database because aborted Request" />
+	<Entry Token="_code_304" Value=": {$2}error: {$1} - database to connecting while Error" />
+	<Entry Token="_code_305" Value=": {$2}slot: {$1} - for failed Connection" />
+	<Entry Token="_code_306" Value="missing was callback because rejected Request" />
+	<Entry Token="_code_307" Value=".rejected request Null" />
+	<Entry Token="_code_308" Value="offline is database because rejected Request" />
+	<Entry Token="_code_309" Value="content invalid of because rejected Request" />
+	<Entry Token="_code_310" Value="missing is context task because rejected Request" />
+	<Entry Token="_code_311" Value="parameters invalid of because rejected Request" />
+	<Entry Token="_code_312" Value="invalid is context task because rejected Request" />
+	<Entry Token="_code_313" Value="name parameter missing of because rejected Request" />
+	<Entry Token="_code_314" Value="max char, 250 long too is '{$1}' named parameter because rejected Request" />
+	<Entry Token="_code_315" Value="characters restricted contains '{$1}' named parameter because rejected Request" />
+	<Entry Token="_code_316" Value="characters {$1} found max char, 250 long too is value because rejected Request" />
+	<Entry Token="_code_317" Value="characters restricted contains value because rejected Request" />
+	<Entry Token="_code_318" Value="HELLO expected receive not did, failed Connection" />
+	<Entry Token="_code_319" Value=": {$1}error, database to channel create to Unable" />
+	<Entry Token="_code_320" Value="Exception unexpected to due failed Request" />
+	<Entry Token="_code_321" Value=": {$1}result database parsing Error" />
+	<Entry Token="_code_322" Value=": {$1}messages database parsing Error" />
+	<Entry Token="_code_323" Value=": {$1}execption builder, database for converted be not could Value" />
+	<Entry Token="_code_324" Value=" {$2}.size '{$1}', Procedure.  large too was it because rejected Request" />
+	<Entry Token="_code_325" Value="procs stored upload cannot, connected not Database" />
+	<Entry Token="_code_326" Value=": {$1}procs stored uploading Error" />
+	<Entry Token="_code_400" Value=": {$1}got, BigDecimal a Expected" />
+	<Entry Token="_code_401" Value=": {$1}got, Decimal a Expected" />
+	<Entry Token="_code_402" Value=": {$1}got, BigInteger a Expected" />
+	<Entry Token="_code_403" Value=": {$1}got, Integer a Expected" />
+	<Entry Token="_code_404" Value=": {$1}long too Value" />
+	<Entry Token="_code_405" Value=": {$1}short too Value" />
+	<Entry Token="_code_406" Value=": {$1}list accepted match not does Value" />
+	<Entry Token="_code_407" Value=": {$1}validate not Could.  missing type Core" />
+	<Entry Token="_code_408" Value=": {$1}String as resolve to Unable" />
+	<Entry Token="_code_409" Value=": {$1}Number as resolve to Unable" />
+	<Entry Token="_code_410" Value=": {$1}Binary as resolve to Unable" />
+	<Entry Token="_code_411" Value=": {$1}Boolean as resolve to Unable" />
+	<Entry Token="_code_412" Value=": {$1}validate not Could.  match options type core No" />
+	<Entry Token="_code_413" Value=": {$1}type data required Missing" />
+	<Entry Token="_code_414" Value=": {$1}object unknown an got but, record a validate to Tried" />
+	<Entry Token="_code_415" Value=": {$1}object unknown an got but, list a validate to Tried" />
+	<Entry Token="_code_416" Value=": {$1}for check to type data Missing" />
+	<Entry Token="_code_417" Value=": {$1}items few too contains List" />
+	<Entry Token="_code_418" Value=": {$1}items many too contains List" />
+	<Entry Token="_code_419" Value=": {$2}allowed not '{$1}' Field" />
+	<Entry Token="_code_420" Value=": {$1}for check to type data Missing" />
+	<Entry Token="_code_421" Value=": {$1}resolution unknown, record-non a wrap to Tried" />
+	<Entry Token="_code_422" Value=": {$1}resolution unknown, record a wrapChild to Tried" />
+	<Entry Token="_code_423" Value=": {$1}validate not Could.  missing type Data" />
+	<Entry Token="_code_424" Value=": {$2}field for: {$1} resolve not could but, required is Value" />
+	<Entry Token="_code_425" Value="context task Missing" />
+	<Entry Token="_code_426" Value="procedure Unknown" />
+	<Entry Token="_code_427" Value="service call to authorized Not" />
+	<Entry Token="_code_428" Value="empty be should Request" />
+	<Entry Token="_code_429" Value="procedure Unknown" />
+	<Entry Token="_code_430" Value="empty be should response Procedure" />
+	<Entry Token="_code_431" Value="context task Missing" />
+	<Entry Token="_code_432" Value="operation Unknown" />
+	<Entry Token="_code_433" Value="type request Unknown" />
+	<Entry Token="_code_434" Value="service call to authorized Not" />
+	<Entry Token="_code_435" Value="type response Unknown" />
+	<Entry Token="_code_436" Value="type data Unknown" />
+	<Entry Token="_code_437" Value=": {$1}validate not Could.  missing type Data" />
+	<Entry Token="_code_438" Value=": {$1}validate not Could.  match options type data No" />
+	<Entry Token="_code_439" Value=": {$1}resolution unknown, list-non a wrap to Tried" />
+	<Entry Token="_code_440" Value=": {$1}validate not Could.  match options type data No" />
+	<Entry Token="_code_500" Value="found not '{$1}' Variable" />
+	<Entry Token="_code_501" Value=": {$1}list a found but, name field a like looks Path" />
+	<Entry Token="_code_502" Value=": {$1}bounds of out Index" />
+	<Entry Token="_code_503" Value=": {$1}scalar a on path a select to Tried" />
+	<Entry Token="_code_504" Value=": {$1}record a on index list a select to Tried" />
+	<Entry Token="_code_505" Value=": {$1}exist not does that key a of path sub select to Tried" />
+	<Entry Token="_code_506" Value="Main a contain not does Script" />
+	<Entry Token="_code_507" Value=": {$1}variable find not Could" />
+	<Entry Token="_code_508" Value=": {$1}type data composite a reference not is Variable" />
+	<Entry Token="_code_509" Value=": {$1}instruction Missing" />
+	<Entry Token="_code_510" Value=": {$1}variable find not Could" />
+	<Entry Token="_code_511" Value=": {$1}type data composite a reference not is Variable" />
+	<Entry Token="_code_512" Value="variable null add to Unable" />
+	<Entry Token="_code_513" Value=": {$1}variable add to Unable" />
+	<Entry Token="_code_514" Value=": {$1}type value create to Unable" />
+	<Entry Token="_code_515" Value=": {$1}variable find not Could" />
+	<Entry Token="_code_516" Value=": {$1}type data composite a reference not is Variable" />
+	<Entry Token="_code_517" Value=": {$1}function call to unable, missing Function" />
+	<Entry Token="_code_518" Value=": {$1}function call to unable, block type of be must Function" />
+	<Entry Token="_code_519" Value="context stack missing, executed be not could Function" />
+	<Entry Token="_code_520" Value="info variable valid missing Var" />
+	<Entry Token="_code_521" Value="SetTo valid missing With" />
+	<Entry Token="_code_522" Value="type data Missing" />
+	<Entry Token="_code_50000" Value="recognized not'{$1}' " />
+	<Entry Token="_code_50001" Value=" '{$1}'operation in Exception" />
+	<Entry Token="_code_50002" Value=" '{$1}'for context execute Missing" />
+	<Entry Token="_code_50003" Value="record retiring when table Missing" />
+	<Entry Token="_code_50004" Value="record retiring when id record Missing" />
+	<Entry Token="_code_50005" Value="record updating or inserting when table Missing" />
+	<Entry Token="_code_50006" Value="record updating or inserting when table Invalid" />
+	<Entry Token="_code_50007" Value="record updating when id record Missing" />
+	<Entry Token="_code_50008" Value="record updating or inserting when fields Missing" />
+	<Entry Token="_code_50009" Value="record updating or inserting when record deleted Encountered" />
+	<Entry Token="_code_50010" Value="record updating or inserting when field invalid Encountered" />
+	<Entry Token="_code_50011" Value="record updating when name field or id record, table Missing" />
+	<Entry Token="_code_50012" Value="record loading when id record or table Missing" />
+	<Entry Token="_code_50013" Value="query select in table Missing" />
+	<Entry Token="_code_50014" Value="query select complete to unable, large too Record" />
+	<Entry Token="_code_50100" Value="stamp time backup Missing" />
+</Locale>
+</Dictionary>

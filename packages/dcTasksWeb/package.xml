@@ -1,0 +1,13 @@
+<Package 
+	ClassRoot="dct" 
+	Abbrv="dct" 
+	Version="0.5.1"
+	MessageCodes="260000-279999"
+>
+	<DependsOn>
+		<Package Name="dcWeb" MinVersion="0.9" />
+		<Package Name="dcTasks" MinVersion="0.5" />
+	</DependsOn>
+	
+	<!-- may also list CompatibleWith for tested co-existance -->
+</Package>

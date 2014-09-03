@@ -1,0 +1,11 @@
+<dcScript Title="Very Slow Work">
+<Main Parameter="Args">
+	<Info>I have started, and am doing work, but don't finish on time...watch me 'finish' timeout!</Info>
+	
+	<!-- needs 10 minutes -->
+	<For Name="bottles" From="600" To="0" Step="-1">
+		<Info>doing some work</Info>
+		<Sleep Seconds="1" />
+	</For>
+</Main>
+</dcScript>

@@ -1,0 +1,1600 @@
+<Schema>
+	
+	<!-- general purpose descriptions of records or lists or types -->
+	<Shared>
+		<!-- core scalar types -->
+		
+		<StringType Id="String">
+			<StringRestriction MaxLength="1000000" />
+		</StringType>
+		
+		<StringType Id="BigString" />
+		
+		<NumberType Id="Integer" Class="divconq.struct.scalar.IntegerStruct">
+			<NumberRestriction Conform="Integer" />
+		</NumberType>
+		
+		<NumberType Id="BigInteger" Class="divconq.struct.scalar.BigIntegerStruct">
+			<NumberRestriction Conform="BigInteger" />
+		</NumberType>
+		
+		<NumberType Id="Decimal" Class="divconq.struct.scalar.DecimalStruct">
+			<NumberRestriction Conform="Decimal" />
+		</NumberType>
+		
+		<NumberType Id="BigDecimal" Class="divconq.struct.scalar.DecimalStruct">
+			<NumberRestriction Conform="BigDecimal" />
+		</NumberType>
+		
+		<NumberType Id="Number" Class="divconq.struct.scalar.DecimalStruct">
+			<NumberRestriction Conform="BigDecimal" />
+		</NumberType>
+		
+		<BooleanType Id="Boolean" />
+		
+		<BinaryType Id="Binary" />
+		
+		<!-- as per database, need date/time stuff for services also - when and where the services obey the locale/timezone context -->
+		<StringType Id="Time">
+			<!-- StringRestriction Pattern="([01]?[0-9]|2[0-3])(:[0-5][0-9])?(:[0-5][0-9])?(\.\d{3})?" / -->
+		</StringType>
+		
+		<StringType Id="TimeRange">
+			<StringRestriction Pattern="((([01]?[0-9]|2[0-3])(:[0-5][0-9])?|(24(:00)?))\s?-\s?(([01]?[0-9]|2[0-3])(:[0-5][0-9])?|(24(:00)?)))" />
+		</StringType>
+		
+		<StringType Id="Date">
+			<!-- StringRestriction Pattern="\d{4}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])" / -->
+		</StringType>
+		
+		<StringType Id="DateMDY">
+			<StringRestriction Pattern="(0[1-9]|1[012])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}" />
+		</StringType>
+		
+		<StringType Id="LocalDate" Class="divconq.struct.scalar.DateStruct">
+			<StringRestriction Pattern="\d{4}(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])" />
+		</StringType>
+		
+		<StringType Id="DateTime" Class="divconq.struct.scalar.DateTimeStruct">
+			<StringRestriction Pattern="\d{4}(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])T(0[0-9]|1[0-9]|2[0-4])([0-5][0-9])([0-5][0-9])(\d{3})?Z" />
+		</StringType>
+		
+		<StringType Id="BigDateTime" Class="divconq.struct.scalar.BigDateTimeStruct">
+			<StringRestriction Pattern="t\d{11,21}" />
+		</StringType>
+		
+		<StringType Id="Id">
+			<StringRestriction Pattern="\d{5}_\d{15}" />
+			<StringRestriction Pattern="\d{1,25}" />
+		</StringType>
+		
+		<!-- a flag in databases to indicate that while this is treated as string, it contains JSON -->
+		<!-- TODO add JSON validation scripts, replace hardcoded approach -->
+		<StringType Id="Json" />
+		
+		<!-- a flag in databases to indicate that while this is treated as string, it contains XML -->
+		<StringType Id="Xml" />
+		
+		<NullType Id="Null" />
+		
+		<AnyType Id="Any" />
+		
+		<StringType Id="ResultLevel">
+			<StringRestriction Enum="Error,Warn,Info,Trace,Exit" />
+		</StringType>
+		
+		<!-- common scalar types -->
+		
+		<StringType Id="dcTinyString">
+			<StringRestriction MaxLength="64" />
+		</StringType>
+		
+		<StringType Id="dcAuthToken">
+			<!-- TODO define the pattern -->
+			<StringRestriction MaxLength="64" />
+		</StringType>
+
+		<StringType Id="dcSmallString">
+			<StringRestriction MaxLength="250" />
+		</StringType>
+		
+		<StringType Id="dcUserName">
+			<StringRestriction MaxLength="64" />
+		</StringType>
+		
+		<StringType Id="dcHubId">
+			<StringRestriction Pattern="\d{5}" />
+		</StringType>
+		
+		<StringType Id="DataStreamMode">
+			<StringRestriction Enum="Source,Destination" />
+		</StringType>
+		
+		<!-- core record types -->
+
+		<List Id="List" Type="Any" />
+		<List Id="AnyList" Type="Any" />
+
+		<Record Id="Record" Any="True" />
+		<Record Id="AnyRecord" Any="True" />
+		
+		<!-- common record types -->
+		
+		<!-- UserCredentials may be overriden by customer (install) to reflect their credentialing system -->
+		<Record Id="UserCredentials">
+			<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+			<Field Name="Password" Type="dcUser:dcPassword" />
+			<Field Name="ConfirmationCode" Type="dcUser:dcConfirmCode" />
+			<Field Name="ThumbPrint" Type="dcTinyString" />
+			<Field Name="PublicKey" Type="String" />
+			<!-- Field Name="Domain" Type="dcDomain:dcName" / -->
+		</Record>
+		
+		<Record Id="UserContext">
+			<Field Name="UserId" Type="Id" />
+			<Field Name="UserName" Type="dcUser:dcUserName" />
+			<Field Name="FullName" Type="dcSmallString" />
+			<Field Name="Email" Type="dcUser:dcEmail" />
+			<Field Name="Credentials" Type="UserCredentials" />
+			<Field Name="AuthToken" Type="dcAuthToken" />
+			<Field Name="Verified" Type="Boolean" />
+			<Field Name="Locale" Type="dcSmallString" />
+			<Field Name="Chronology" Type="dcSmallString" />
+			<Field Name="DomainId" Type="Id" />
+			<Field Name="AuthTags">
+				<List Type="dcTinyString" />
+			</Field>
+		</Record>
+		
+		<Record Id="OpContext" Inherits="UserContext">
+			<Field Name="OpId" Type="dcTinyString" />
+			<Field Name="SessionId" Type="dcTinyString" />
+			<Field Name="Origin" Type="dcSmallString" />
+			<Field Name="DebugLevel" Type="dcTinyString" />
+			<Field Name="Elevated" Type="Boolean" />
+			<!-- Field Name="Bucket" Type="dcTinyString" / -->
+			
+			<!-- Field Name="Debug" Type="Any" / -->
+		</Record>
+
+		<Record Id="CoreMessage">
+			<Field Name="Service" Type="dcSmallString" Required="True" />
+			<Field Name="Feature" Type="dcTinyString" />
+			<Field Name="Op" Type="dcTinyString" />
+			<Field Name="ToHub" Type="dcHubId" />
+			<Field Name="Tag" Type="dcTinyString" />
+			<Field Name="FromHub" Type="dcHubId" />
+			<Field Name="Context" Type="OpContext" />
+		</Record>
+		
+		<Record Id="RequestMessage" Inherits="CoreMessage">
+			<Field Name="Version" Type="dcTinyString" />  <!-- version of the service requested -->
+			<Field Name="RespondTo" Type="dcTinyString" />
+			<Field Name="RespondTag" Type="dcTinyString" />
+		</Record>
+		
+		<Record Id="ResultMessage">
+			<Field Name="Level" Type="ResultLevel" Required="True" />
+			<Field Name="Code" Type="Integer" Required="True" />
+			<Field Name="Occurred" Type="DateTime" Required="True" />
+			<Field Name="Message" Type="String" />
+		</Record>			
+		
+		<Record Id="ResponseMessage" Inherits="CoreMessage">
+			<Field Name="Result" Type="Integer" Required="True" />
+			<Field Name="Message" Type="String" />
+			<Field Name="Messages">
+				<List Type="ResultMessage" />
+			</Field>
+		</Record>
+		
+		<Response Id="TaskResponseMessage" Inherits="ResponseMessage">
+			<Field Name="Body">
+				<Record>
+					<Field Name="TaskId" Type="dcTinyString" />
+					<Field Name="WorkId" Type="dcTinyString" />
+				</Record>
+			</Field>
+		</Response>
+		
+		<!-- any message should conform to GenericMessage at the least -->
+		<Record Id="GenericMessage" Inherits="RequestMessage,ResponseMessage">
+			<Field Name="Result" Type="Integer" />		<!-- not required -->
+			<Field Name="Body" Type="Any" />
+		</Record>
+		
+		<!-- incoming RPC messages must conform -->
+		<Record Id="RpcMessage">
+			<Field Name="Service" Type="dcSmallString" Required="True" />
+			<Field Name="Feature" Type="dcTinyString" />
+			<Field Name="Op" Type="dcTinyString" />
+			<Field Name="ToHub" Type="dcHubId" />
+			<Field Name="Tag" Type="dcTinyString" />
+			<Field Name="Session" Type="dcTinyString" />
+			<!-- Field Name="DeployVersion" Type="dcTinyString" / -->
+			
+			<!-- may contain request -->
+			<Field Name="Version" Type="dcTinyString" />  <!-- version of the service requested -->
+			<Field Name="RespondTag" Type="dcTinyString" />
+			<Field Name="RespondTo" Type="dcTinyString" />
+
+			<!-- may contain response -->
+			<Field Name="Result" Type="Integer" />
+			<Field Name="Message" Type="String" />
+			<Field Name="FromHub" Type="dcHubId" />
+			<Field Name="Messages">
+				<List Type="ResultMessage" />
+			</Field>
+			
+			<Field Name="Credentials" Type="UserCredentials" />
+			<Field Name="Body" Type="Any" />
+		</Record>
+		
+		<Record Id="StreamMessage">
+			<Field Name="Result" Type="Integer" />
+			<Field Name="Message" Type="String" />
+			<Field Name="Messages">
+				<List Type="ResultMessage" />
+			</Field>
+			
+			<Field Name="Op" Type="dcTinyString" />
+			<Field Name="Sequence" Type="Integer" />
+			<Field Name="Final" Type="Boolean" />
+			
+			<Field Name="ToHub" Type="dcHubId" />
+			<Field Name="ToSession" Type="dcTinyString" />
+			<Field Name="ToChannel" Type="dcTinyString" />
+			<Field Name="FromHub" Type="dcHubId" />
+			<Field Name="FromSession" Type="dcTinyString" />
+			<Field Name="FromChannel" Type="dcTinyString" />
+		</Record>
+				
+		<Record Id="DbProc">
+			<Field Name="Name" Type="String" Required="True" />
+			<Field Name="Execute" Type="String" Required="True" />
+		</Record>			
+				
+		<Record Id="DbFilter">
+			<Field Name="Name" Type="String" Required="True" />
+			<Field Name="Execute" Type="String" Required="True" />
+		</Record>			
+				
+		<Record Id="DbTable">
+			<Field Name="Name" Type="String" Required="True" />
+			<Field Name="Fields">
+				<List>
+					<Record>
+						<Field Name="Name" Type="String" Required="True" />
+						<Field Name="Type" Type="String" Required="True" />
+						<Field Name="TypeId" Type="String" />
+						<Field Name="ForeignKey" Type="String" />
+						<Field Name="Indexed" Type="Boolean" />
+						<Field Name="Required" Type="Boolean" />
+						<Field Name="List" Type="Boolean" />
+						<Field Name="Dynamic" Type="Boolean" />
+					</Record>
+				</List>
+			</Field>
+		</Record>			
+				
+		<Record Id="DbListEntry">
+			<Field Name="Data" Type="Any" Required="True" />
+			<Field Name="Sid" Type="String" Required="True" />
+		</Record>			
+				
+		<Record Id="Locale">
+			<Field Name="Name" Type="dcTinyString" Required="True" />
+			<Field Name="Tokens">
+				<List>
+					<Record>
+						<Field Name="Key" Type="dcTinyString" Required="True" />
+						<Field Name="Value" Type="String" Required="True" />
+					</Record>
+				</List>
+			</Field>
+		</Record>			
+		
+		<Record Id="dcDbCall">
+			<Field Name="Table" Type="dcTinyString" Required="True" />
+			<Field Name="Filter" Type="dcTinyString" />
+			<Field Name="Extra" Type="Any" />
+		</Record>
+		
+		<Record Id="dcDbSelectField">
+			<Field Name="Field" Type="dcTinyString" />
+			<Field Name="Name" Type="dcTinyString" />
+			<Field Name="Format" Type="dcSmallString" />
+			<Field Name="Select">
+				<List Type="dcDbSelectField" />
+			</Field>
+			<Field Name="ForeignField" Type="dcTinyString" />
+			<Field Name="Composer" Type="dcTinyString" />
+			<Field Name="Table" Type="dcTinyString" />
+			<Field Name="KeyField" Type="dcTinyString" />
+		</Record>
+		
+		<Record Id="dcDbWhereField">
+			<Field Name="Field" Type="dcTinyString" />
+			<Field Name="Format" Type="dcSmallString" />
+			<Field Name="Composer" Type="dcTinyString" />
+			<Field Name="Value" Type="Any" />
+		</Record>
+		
+		<Record Id="dcDbWhereClause">
+			<Field Name="Name" Type="dcTinyString" />
+			<Field Name="A" Type="dcDbWhereField" />
+			<Field Name="B" Type="dcDbWhereField" />
+			<Field Name="C" Type="dcDbWhereField" />
+			<Field Name="Children">
+				<List Type="dcDbWhereClause" />
+			</Field>
+		</Record>
+		
+		<StringType Id="dcDbDirection">
+			<StringRestriction Enum="Ascending,Descending" />
+		</StringType>
+		
+		<Record Id="dcDbOrderField">
+			<Field Name="Field" Type="dcTinyString" />
+			<Field Name="Name" Type="dcTinyString" />
+			<Field Name="Direction" Type="dcDbDirection" />
+			<Field Name="Format" Type="dcSmallString" />
+			<Field Name="ForeignField" Type="dcTinyString" />
+			<Field Name="Composer" Type="dcTinyString" />
+		</Record>
+		
+		<!-- general purpose -->
+		
+		<Record Id="fisFile">
+			<Field Name="Name" Type="dcSmallString" />
+			<Field Name="Size" Type="Integer" />
+			<Field Name="Modified" Type="DateTime" />
+			<Field Name="Path" Type="dcSmallString" />
+			<Field Name="IsFolder" Type="Boolean" />
+		</Record>
+		
+		<Record Id="dciFileTextReader" />
+		
+		<Record Id="dciFileStoreScanner" />
+		
+		<Record Id="dciFileStoreDriver">
+			<Field Name="MountId" Type="dcTinyString" />
+			<Field Name="WorkingDirectory" Type="dcSmallString" />
+			<Field Name="Scanner" Type="dciFileStoreScanner" />
+		</Record>
+		
+		<Record Id="dciFileSystemFile" Inherits="fisFile" Class="divconq.interchange.FileSystemFile" />
+		
+		<Record Id="dciFileSystemTextReader" Inherits="dciFileTextReader" Class="divconq.interchange.FileSystemTextReader" />
+		
+		<Record Id="dciFileSystemScanner" Inherits="dciFileStoreScanner" Class="divconq.interchange.FileSystemScanner" />
+		
+		<Record Id="dciFileSystemDriver" Inherits="dciFileStoreDriver" Class="divconq.interchange.FileSystemDriver">
+			<Field Name="Scanner" Type="dciFileSystemScanner" />
+		</Record>
+		
+		<Record Id="dciSessionStoreFile" Inherits="fisFile" Class="divconq.interchange.SessionStoreFile" />
+		
+		<Record Id="dciSessionStoreScanner" Inherits="dciFileStoreScanner" Class="divconq.interchange.SessionStoreScanner" />
+		
+		<Record Id="dciSessionStoreDriver" Inherits="dciFileStoreDriver" Class="divconq.interchange.SessionStoreDriver">
+			<Field Name="Scanner" Type="dciSessionStoreScanner" />
+		</Record>
+		
+		<Record Id="dciArchiveFile" Inherits="fisFile" Class="divconq.interchange.ArchiveFile" />
+		
+		<Record Id="dciArchiveScanner" Inherits="dciFileStoreScanner" Class="divconq.interchange.ArchiveScanner" />
+		
+		<Record Id="dciArchiveDriver" Inherits="dciFileStoreDriver" Class="divconq.interchange.ArchiveDriver">
+			<Field Name="Scanner" Type="dciArchiveScanner" />
+		</Record>
+		
+		<StringType Id="dciTransferStatus">
+			<StringRestriction Enum="Failure,Success" />
+		</StringType>
+		
+		<StringType Id="dciHashMethod">
+			<StringRestriction Enum="MD5,SHA128,SHA256,SHA512" />
+		</StringType>
+		
+		<Record Id="dcLoadDomainsResponse">
+			<Field Name="Id" Type="Id" />
+			<Field Name="Title" Type="dcDomain:dcTitle" />
+			<Field Name="Names">
+				<List Type="dcDomain:dcName" />
+			</Field>
+			<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
+			<Field Name="ObscureSeed" Type="dcDomain:dcObscureSeed" />			
+		</Record>
+		
+		<Record Id="dcSearchResult">
+			<Field Name="Table" Type="dcTinyString" />
+			<Field Name="Id" Type="dcTinyString" />
+			<Field Name="Score" Type="Integer" />
+			<Field Name="Title" Type="String" />
+			<Field Name="TitlePositions">
+				<List Type="Integer" />
+			</Field>
+			<Field Name="Body" Type="String" />
+			<Field Name="BodyPositions">
+				<List Type="Integer" />
+			</Field>
+		</Record>
+		
+		<Record Id="dcWorkQueueClaim">
+			<!-- claim -->
+			<Field Name="TaskIdentity" Type="dcTinyString" Required="True" />
+			<Field Name="WorkId" Type="Integer" Required="True" />
+			<Field Name="ClaimedStamp" Type="dcTinyString" Required="True" />
+		</Record>
+		
+		<Record Id="dcWorkQueueInfo" Inherits="dcWorkQueueClaim">
+			<!-- load work -->
+			<Field Name="Title" Type="dcTinyString" Required="True" />
+			<Field Name="Status" Type="dcTinyString" Required="True" />
+			<Field Name="AddStamp" Type="dcTinyString" />
+			<Field Name="Workpool" Type="dcTinyString" />
+			<Field Name="Squad" Type="dcTinyString" />
+			<Field Name="HubId" Type="dcTinyString" />
+			<Field Name="Builder" Type="String" Required="True" />
+			<Field Name="Tag1" Type="dcTinyString" />
+			<Field Name="Tag2" Type="dcTinyString" />
+			<Field Name="Tag3" Type="dcTinyString" />
+			<Field Name="CurrentTry" Type="Integer" Required="True" />
+			<Field Name="MaxTries" Type="Integer" Required="True" />
+			
+			<!-- start work -->
+			<Field Name="AuditId" Type="Integer" />
+		</Record>
+		
+		<Record Id="dcTask">
+			<!-- general use -->
+			<Field Name="Id" Type="dcTinyString" Required="True" />
+			<Field Name="Title" Type="dcTinyString" Required="True" />
+			<Field Name="WorkClassname" Type="dcTinyString" Required="True" />
+			<Field Name="Context" Type="OpContext" Required="True" />			
+			<Field Name="WatcherClassname" Type="dcTinyString" />
+			<Field Name="UsesTempFolder" Type="Boolean" />
+			<Field Name="Timeout" Type="Integer" />
+			<Field Name="Params" Type="AnyRecord" />
+			<Field Name="Extra" Type="AnyRecord" />
+			<Field Name="State" Type="Any" />
+			<Field Name="Tags">
+				<List Type="String" />
+			</Field>		
+			
+			<!-- for queue -->
+			<Field Name="Workpool" Type="dcTinyString" />
+			<Field Name="Squad" Type="dcTinyString" />
+			<Field Name="HubId" Type="dcTinyString" />
+			<Field Name="MaxTries" Type="Integer" Required="True" />
+			
+			<!-- from queue -->
+			<Field Name="Status" Type="dcTinyString" Required="True" />
+			<Field Name="AddStamp" Type="dcTinyString" />
+			<Field Name="WorkId" Type="Id" Required="True" />
+			<Field Name="ClaimedStamp" Type="dcTinyString" Required="True" />
+			<Field Name="CurrentTry" Type="Integer" Required="True" />
+			<Field Name="AuditId" Type="Id" />
+		</Record>
+	</Shared>
+	
+	<Services>
+		<Service Name="Replies">
+			<Secure Tags="Guest,User">
+				<Feature Name="Reply">
+					<Op Name="Deliver">
+						<Description>
+							Handles replies to requests (a callback approach).
+						</Description>
+						<Request Inherits="GenericMessage" />
+					</Op>
+				</Feature>
+			</Secure>
+		</Service>
+		
+		<Service Name="Status">
+			<Secure Tags="Guest,User">
+				<Feature Name="Echo">
+					<Op Name="Test">
+						<Description>
+							Returns the text send to it.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Type="String" Required="True" />
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body" Type="String" />
+						</Response>
+					</Op>
+				</Feature>
+				<Feature Name="Tickle">
+					<Op Name="Test">
+						<Description>
+							No reply, just generates a message on the server.
+						</Description>
+						<Request Inherits="RequestMessage" />
+					</Op>
+				</Feature>
+			</Secure>
+			<Secure Tags="User">
+				<Feature Name="Translate">
+					<Op Name="Text">
+						<Description>
+							Returns a translation of the text, if possible.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="From" Type="String" Required="True" />
+									<Field Name="To" Type="String" Required="True" />
+									<Field Name="Content" Type="String" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body" Type="String" />
+						</Response>
+					</Op>
+					<Op Name="Xml">
+						<Description>
+							Returns a translation of the text nodes of the Xml, if possible.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="From" Type="String" Required="True" />
+									<Field Name="To" Type="String" Required="True" />
+									<Field Name="Content" Type="String" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body" Type="String" />
+						</Response>
+					</Op>
+				</Feature>
+				<Feature Name="Info">
+					<Op Name="Test">
+						<Description>
+							Returns your verified user id.
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="UserId" Type="Id" Required="True" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>					
+					<Op Name="Version">
+						<Description>
+							Get hub version number.
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="App" Type="dcSmallString" />
+									<Field Name="Version" Type="dcSmallString" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+				</Feature>
+			</Secure>
+			<Secure Tags="SysAdmin">
+				<Feature Name="Info">
+					<Op Name="HubStatus">
+						<Description>
+							Returns info about the work pools, work queues and sessions on the hub.
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="ServerIdled" Type="Boolean" />
+									<Field Name="WorkPool">
+										<Record>
+											<Field Name="Queued" Type="Integer" />
+											<Field Name="Threads" Type="Integer" />
+											<Field Name="ThreadsCreated" Type="Integer" />
+											<Field Name="ThreadsHung" Type="Integer" />
+											<Field Name="Buckets">
+												<List>
+													<Record>
+														<Field Name="Name" Type="dcTinyString" />
+														<Field Name="InProgress" Type="Integer" />
+														<Field Name="Backlogged" Type="Integer" />
+														<Field Name="MaxSize" Type="Integer" />
+													</Record>
+												</List>
+											</Field>
+										</Record>
+									</Field>
+									<Field Name="WorkQueue">
+										<List>
+											<Record>
+												<Field Name="Id" Type="Id" />
+												<Field Name="TaskIdentity" Type="dcTinyString" />
+												<Field Name="Title" Type="dcSmallString" />
+												<Field Name="Status" Type="dcTinyString" />
+												<Field Name="Added" Type="dcTinyString" />
+												<Field Name="ClaimedAt" Type="dcTinyString" />
+												<Field Name="ClaimedBy" Type="dcTinyString" />
+												<Field Name="LastTry" Type="Integer" />
+												<Field Name="MaxTry" Type="Integer" />
+												<Field Name="ClaimTimeout" Type="Integer" />
+												<Field Name="Audit">
+													<List>
+														<Record>
+															<Field Name="Try" Type="Integer" />
+															<Field Name="Hub" Type="dcTinyString" />
+															<Field Name="Code" Type="Integer" />
+															<Field Name="Message" Type="String" />
+														</Record>
+													</List>
+												</Field>
+											</Record>
+										</List>
+									</Field>
+									<Field Name="Sessions">
+										<List>
+											<Record>
+												<Field Name="Id" Type="dcTinyString" />
+												<Field Name="Key" Type="dcTinyString" />
+												<Field Name="LastAccess" Type="dcTinyString" />
+												<Field Name="UserContext" Type="UserContext" />
+												<Field Name="DebugLevel" Type="dcTinyString" />
+												<Field Name="Origin" Type="dcTinyString" />
+												<Field Name="Keep" Type="Boolean" />
+												<Field Name="Tasks">
+													<List>
+														<Record>
+															<Field Name="Id" Type="dcTinyString" />
+															<Field Name="Title" Type="dcTinyString" />
+															<Field Name="Tags">
+																<List Type="dcTinyString" />
+															</Field>
+															<Field Name="Completed" Type="Boolean" />
+														</Record>
+													</List>
+												</Field>
+											</Record>
+										</List>
+									</Field>
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="TaskStatus">
+						<Description>
+							Returns info about a task.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<List>
+									<Record>
+										<Field Name="TaskId" Type="dcTinyString" />
+										<Field Name="WorkId" Type="dcTinyString" />
+									</Record>
+								</List>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<List>
+									<Record>
+										<Field Name="TaskId" Type="dcTinyString" />
+										<Field Name="WorkId" Type="dcTinyString" />
+										
+										<Field Name="Title" Type="dcSmallString" />
+										<Field Name="Status" Type="dcTinyString" />
+										<Field Name="Added" Type="dcTinyString" />
+										<Field Name="MaxTry" Type="Integer" />
+										
+										<Field Name="Start" Type="dcTinyString" />
+										<Field Name="End" Type="dcTinyString" />
+										<Field Name="Hub" Type="dcTinyString" />
+										
+										<Field Name="Try" Type="Integer" />
+										<Field Name="Code" Type="Integer" />
+										<Field Name="Message" Type="String" />
+										<Field Name="Log" Type="String" />
+										<Field Name="Progress" Type="String" />
+										<Field Name="StepName" Type="String" />
+										<Field Name="Completed" Type="Integer" />
+										<Field Name="Step" Type="Integer" />
+										<Field Name="Steps" Type="Integer" />
+									</Record>
+								</List>
+							</Field>
+						</Response>
+					</Op>
+				</Feature>
+				<Feature Name="Management">
+					<Op Name="Idle">
+						<Description>
+							Set the idle mode on the server.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Idle" Type="Boolean" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+				</Feature>
+			</Secure>
+		</Service>
+
+		<!-- keep auth small, this service may be overriden by customer -->
+		<Service Name="dcAuth">
+			<Secure Tags="Guest,User">
+				<Feature Name="Authentication">
+					<Op Name="SignIn">
+						<Description>
+							Verify credentials, start a session (AuthToken).
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="UserName" Type="dcUser:dcUserName" />
+									<Field Name="FirstName" Type="dcUser:dcFirstName" />
+									<Field Name="LastName" Type="dcUser:dcLastName" />
+									<Field Name="Email" Type="dcUser:dcEmail" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="SignOut">
+						<Description>
+							End a session (AuthToken).
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="Verify">
+						<Description>
+							Verify auth token if present - if not try credentials, start a new session (AuthToken).
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage" />
+					</Op>
+				</Feature>
+				<Feature Name="Recovery">
+					<Op Name="InitiateSelf">
+						<Description>
+							Password reset request for a single user record, based on credentials (UserName).
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Code" Type="dcUser:dcConfirmCode" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+				</Feature>
+			</Secure>
+			<Secure Tags="Admin">
+				<Feature Name="Recovery">
+					<Op Name="InitiateUser">
+						<Description>
+							Password reset request for a single user record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Code" Type="dcUser:dcConfirmCode" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+				</Feature>
+			</Secure>
+		</Service>
+		
+		<Service Name="dcCoreDataServices">
+			<Secure Tags="User">
+				<Feature Name="Users">
+					<Op Name="LoadSelf">
+						<Description>
+							Load user's own record.
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Id" Type="dcUser:Id" />
+									<Field Name="UserName" Type="dcUser:dcUserName" />
+									<Field Name="FirstName" Type="dcUser:dcFirstName" />
+									<Field Name="LastName" Type="dcUser:dcLastName" />
+									<Field Name="Groups">
+										<List Type="dcGroup:dcName" />
+									</Field>
+									<Field Name="Email" Type="dcUser:dcEmail" />
+									<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+									<Field Name="Chronology" Type="dcUser:dcChronology" />
+									<Field Name="Locale" Type="dcUser:dcLocale" />
+									<Field Name="Description" Type="dcUser:dcDescription" />
+									<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
+									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
+									<Field Name="AuthorizationTags">
+										<List Type="dcUser:dcAuthorizationTag" />
+									</Field>
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="UpdateSelf">
+						<Description>
+							Update a user's own record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="UserName" Type="dcUser:dcUserName" Required="IfPresent" />
+									<Field Name="FirstName" Type="dcUser:dcFirstName" Required="IfPresent" />
+									<Field Name="LastName" Type="dcUser:dcLastName" Required="IfPresent" />
+									<Field Name="Email" Type="dcUser:dcEmail" Required="IfPresent" />
+									<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+									<Field Name="Password" Type="dcUser:dcPassword" Required="IfPresent" />
+									<Field Name="Chronology" Type="dcUser:dcChronology" />
+									<Field Name="Locale" Type="dcUser:dcLocale" />
+									<Field Name="Description" Type="dcUser:dcDescription" />
+									<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
+									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="RetireSelf">
+						<Description>
+							Remove user's own record.
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage" />
+					</Op>
+				</Feature>
+			</Secure>
+			<Secure Tags="Admin">
+				<!-- users -->
+					
+				<Feature Name="Users">
+					<Op Name="LoadUser">
+						<Description>
+							Load a user's record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcUser:Id" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Id" Type="dcUser:Id" />
+									<Field Name="UserName" Type="dcUser:dcUserName" />
+									<Field Name="FirstName" Type="dcUser:dcFirstName" />
+									<Field Name="LastName" Type="dcUser:dcLastName" />
+									<Field Name="Email" Type="dcUser:dcEmail" />
+									<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+									<Field Name="Chronology" Type="dcUser:dcChronology" />
+									<Field Name="Locale" Type="dcUser:dcLocale" />
+									<Field Name="Description" Type="dcUser:dcDescription" />
+									<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
+									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
+									<Field Name="Groups">
+										<List Type="dcGroup:dcName" />
+									</Field>
+									<Field Name="AuthorizationTags">
+										<List Type="dcUser:dcAuthorizationTag" />
+									</Field>
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="UpdateUser">
+						<Description>
+							Update a user's record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcUser:Id" Required="True" />
+									<Field Name="UserName" Type="dcUser:dcUserName" Required="IfPresent" />
+									<Field Name="FirstName" Type="dcUser:dcFirstName" />
+									<Field Name="LastName" Type="dcUser:dcLastName" />
+									<Field Name="Email" Type="dcUser:dcEmail" />
+									<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+									<Field Name="Password" Type="dcUser:dcPassword" />
+									<Field Name="Chronology" Type="dcUser:dcChronology" />
+									<Field Name="Locale" Type="dcUser:dcLocale" />
+									<Field Name="Description" Type="dcUser:dcDescription" />
+									<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
+									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="AddUser">
+						<Description>
+							Add a user record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+									<Field Name="FirstName" Type="dcUser:dcFirstName" />
+									<Field Name="LastName" Type="dcUser:dcLastName" />
+									<Field Name="Email" Type="dcUser:dcEmail" />
+									<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+									<Field Name="Password" Type="dcUser:dcPassword" />
+									<Field Name="Chronology" Type="dcUser:dcChronology" />
+									<Field Name="Locale" Type="dcUser:dcLocale" />
+									<Field Name="Description" Type="dcUser:dcDescription" />
+									<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
+									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
+									<Field Name="AuthorizationTags">
+										<List Type="dcUser:dcAuthorizationTag" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Id" Type="dcUser:Id" />
+									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="RetireUser">
+						<Description>
+							Remove (retire) user's record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcUser:Id" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="ReviveUser">
+						<Description>
+							Undo retirement of user's record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcUser:Id" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="SetUserAuthTags">
+						<Description>
+							Set (replace) the authorization tags for each user listed.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Users" Required="True">
+										<List Type="dcUser:Id" />
+									</Field>
+									<Field Name="AuthorizationTags" Required="True">
+										<List Type="dcUser:dcAuthorizationTag" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="AddUserAuthTags">
+						<Description>
+							Add the authorization tags for each user listed.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Users" Required="True">
+										<List Type="dcUser:Id" />
+									</Field>
+									<Field Name="AuthorizationTags" Required="True">
+										<List Type="dcUser:dcAuthorizationTag" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="RemoveUserAuthTags">
+						<Description>
+							Remove the authorization tags for each user listed.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Users" Required="True">
+										<List Type="dcUser:Id" />
+									</Field>
+									<Field Name="AuthorizationTags" Required="True">
+										<List Type="dcUser:dcAuthorizationTag" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="UserNameLookup">
+						<Description>
+							Find user record id based on a user name.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="UserId" Type="dcUser:Id" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="ListUsers">
+						<Description>
+							Load a list all user records, no matter how many.  Use with discretion.
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dcUser:Id" />
+										<Field Name="UserName" Type="dcUser:dcUserName" />
+										<Field Name="FirstName" Type="dcUser:dcFirstName" />
+										<Field Name="LastName" Type="dcUser:dcLastName" />
+										<Field Name="Email" Type="dcUser:dcEmail" />
+									</Record>
+								</List>
+							</Field>
+						</Response>
+					</Op>
+				</Feature>
+				
+				<!-- groups -->
+					
+				<Feature Name="Groups">
+					<Op Name="LoadGroup">
+						<Description>
+							Load a group record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcGroup:Id" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Id" Type="dcGroup:Id" />
+									<Field Name="Name" Type="dcGroup:dcName" />
+									<Field Name="Description" Type="dcGroup:dcDescription" />
+									<Field Name="Users">
+										<List Type="dcUser:dcUserName" />
+									</Field>
+									<Field Name="AuthorizationTags">
+										<List Type="dcGroup:dcAuthorizationTag" />
+									</Field>
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="UpdateGroup">
+						<Description>
+							Update a group record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcGroup:Id" Required="True" />
+									<Field Name="Name" Type="dcGroup:dcName" Required="IfPresent" />
+									<Field Name="Description" Type="dcdcGroup:dcDescription" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="AddGroup">
+						<Description>
+							Add a group record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Name" Type="dcGroup:dcName" Required="True" />
+									<Field Name="Description" Type="dcGroup:dcDescription" />
+									<Field Name="AuthorizationTags">
+										<List Type="dcGroup:dcAuthorizationTag" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Id" Type="dcGroup:Id" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="RetireGroup">
+						<Description>
+							Remove (retire) group record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcGroup:Id" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="ReviveGroup">
+						<Description>
+							Undo retirement of a group record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcGroup:Id" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="SetGroupAuthTags">
+						<Description>
+							Set (replace) the authorization tags for each group listed.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Groups" Required="True">
+										<List Type="dcGroup:Id" />
+									</Field>
+									<Field Name="AuthorizationTags" Required="True">
+										<List Type="dcGroup:dcAuthorizationTag" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="AddGroupAuthTags">
+						<Description>
+							Add the authorization tags for each group listed.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Groups" Required="True">
+										<List Type="dcGroup:Id" />
+									</Field>
+									<Field Name="AuthorizationTags" Required="True">
+										<List Type="dcGroup:dcAuthorizationTag" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="RemoveGroupAuthTags">
+						<Description>
+							Remove the authorization tags for each group listed.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Groups" Required="True">
+										<List Type="dcGroup:Id" />
+									</Field>
+									<Field Name="AuthorizationTags" Required="True">
+										<List Type="dcGroup:dcAuthorizationTag" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="SetUsersToGroups">
+						<Description>
+							Match up each user with the listed groups, and only these groups.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Groups">
+										<List Type="dcGroup:Id" />
+									</Field>
+									<Field Name="Users">
+										<List Type="dcUser:Id" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="AddUsersToGroups">
+						<Description>
+							For each group listed, add all users listed to that group.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Groups">
+										<List Type="dcGroup:Id" />
+									</Field>
+									<Field Name="Users">
+										<List Type="dcUser:Id" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="RemoveUsersFromGroups">
+						<Description>
+							For each group listed, remove all users listed from that group.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Groups">
+										<List Type="dcGroup:Id" />
+									</Field>
+									<Field Name="Users">
+										<List Type="dcUser:Id" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="ListGroups">
+						<Description>
+							Load a list all group records, no matter how many.  Use with discretion.
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dcGroup:Id" />
+										<Field Name="Name" Type="dcGroup:dcName" />
+									</Record>
+								</List>
+							</Field>
+						</Response>
+					</Op>
+				</Feature>
+			</Secure>
+		</Service>
+		
+		<!-- TODO move to dcd -->
+		<Service Name="dcdUsers">
+			<Secure Tags="User">	<!-- choose better tagging -->
+				<Feature Name="Desktop">
+					<Op Name="LoadSelf">
+						<Description>
+							Load user's own desktop settings.
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="RootApp" Type="dcSmallString" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+				</Feature>
+			</Secure>
+		</Service>
+		
+		<Service Name="dcDomains">
+			<Secure Tags="SysAdmin">
+				<Feature Name="Manager">
+					<Op Name="LoadAll">
+						<Description>
+							Load info about all domains.
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<List Type="dcLoadDomainsResponse" />
+							</Field>
+						</Response>
+					</Op>
+				</Feature>
+			</Secure>
+		</Service>
+		
+		<Service Name="Session">
+			<Secure Tags="Guest,User">
+				<Feature Name="Manager">
+					<Op Name="Start">
+						<Description>
+							Start a Collab session.  TODO revise
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Batch">
+										<List Type="AnyRecord" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Id" Type="dcTinyString" />
+									<Field Name="AccessCode" Type="dcTinyString" />
+									<Field Name="Response">
+										<List Type="Any" />  	
+									</Field>
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="End">
+						<Description>
+							End a Collab session.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcTinyString" />
+									<Field Name="AccessCode" Type="dcTinyString" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+				</Feature>
+				<Feature Name="Session">
+					<Op Name="default">
+						<Description>
+							Pass instructions to an existing Collab session.  TODO revise
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcTinyString" />
+									<Field Name="AccessCode" Type="dcTinyString" />
+									<Field Name="Batch">
+										<List Type="AnyRecord" />  		
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Id" Type="dcTinyString" />
+									<Field Name="AccessCode" Type="dcTinyString" />
+									<Field Name="Response">
+										<List Type="Any" />  		
+									</Field>
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+				</Feature>
+				<Feature Name="Reply">
+					<Op Name="Deliver">
+						<Description>
+							Handles replies to requests (a callback approach).
+						</Description>
+						<Request Inherits="GenericMessage" />
+					</Op>
+				</Feature>
+				<Feature Name="InBox">
+					<Op Name="Deliver">
+						<Description>
+							Handles delivery of messages to the session owner.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Type="Any" />
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+				</Feature>
+				<!-- review security for these FS ops -->
+				<Feature Name="FileStore">
+					<Op Name="Connect">
+						<Description>
+							Check to see if we can connect and use the FileStore.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Type="AnyRecord" Hint="dciFileStoreDriver" />
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="Close">
+						<Description>
+							Close connection to FileStore.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Type="AnyRecord" Hint="dciFileStoreDriver" />
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="Scan">
+						<Description>
+							Find file matches to limits given.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Type="AnyRecord" Hint="dciFileStoreScanner" />
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Total" Type="Integer" />
+									<Field Name="Offset" Type="Integer" />
+									<Field Name="Matches">
+										<List Type="fisFile" />  		
+									</Field>
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+				</Feature>
+				<Feature Name="DataChannel">
+					<Op Name="Establish">
+						<Description>
+							Provide details needed to establish a data stream between two dcSessions.
+							Mode = Upload | Download
+							StreamRequest = full message requesting a stream connection from a service
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Title" Type="dcTinyString" Required="True" />
+									<Field Name="Mode" Type="dcTinyString" Required="True" />
+									<Field Name="StreamRequest">
+										<Record Inherits="RequestMessage">
+											<Field Name="Body" Type="Any" Required="True" />
+										</Record>
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body" Required="True">
+								<Record Type="Any">
+									<Field Name="ChannelId" Type="dcTinyString" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="Allocate">
+						<Description>
+							Open a channel on your user session.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Title" Type="dcTinyString" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="ChannelId" Type="dcTinyString" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="Free">
+						<Description>
+							Close a channel on your user session.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="ChannelId" Type="dcTinyString" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="Bind">
+						<Description>
+							Bind your allocated channel to another channel in another session (on another server possibily).
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="ChannelId" Type="dcTinyString" Required="True" />
+									<Field Name="Mode" Type="DataStreamMode" Required="True" />
+									<Field Name="Hub" Type="dcHubId" />
+									<Field Name="Session" Type="dcTinyString" />
+									<Field Name="Channel" Type="dcTinyString" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+				</Feature>
+			</Secure>
+			<Secure Tags="SysAdmin">
+				<Feature Name="FileStore">
+					<!-- 
+						these three operations are used by an application module in response
+						to external callers and make sense in that context
+					-->
+					<Op Name="SetForUpload">
+						<Description>
+							Mount/connect to a filestore.  Set the session to use this filestore with the
+							next upload.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Driver" Type="dcSmallString" Required="True" />
+									<Field Name="Settings" Type="AnyRecord" Hint="dciFileStoreDriver" />
+									<Field Name="File" Type="fisFile" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+				</Feature>
+			</Secure>
+		</Service>
+	</Services>
+</Schema>
+

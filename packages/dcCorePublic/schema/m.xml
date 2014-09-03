@@ -1,0 +1,565 @@
+<Schema>
+	<Database>
+		<!--
+			The root domain has a record id of 00000_000000000000001 that is always present and is reserved (note that hub 00000 is also reserved)
+			
+			tables in the root domain are recorded under just the table name - ^dcRecord("dcUser"
+			tables in other domanis are recorded under table name + domain name - ^dcRecord("dcUser#00100_000000000000001"
+			
+			therefore, for the root domain the config is in ^dcRecord("dcDomain","00000_000000000000001" while all other configs 
+			are in there own domain, e.g.  ^dcRecord("dcDomain#00975_000000123000001","00975_000000123000001"
+			
+			note how the record id matches the domain id coupled with the table name - this is on purpose and should always
+			be followed.
+			
+			the root domain has one special field - the Domain Index - which lists all the other domains.  when domains are
+			added or removed this index should be updated too
+		-->
+		
+		<Table Id="dcDomain">
+			<Field Name="dcTitle" Type="dcSmallString" Required="True" />
+			<Field Name="dcName" Type="dcSmallString" Required="True" List="True" />
+			<Field Name="dcDescription" Type="String" />
+			
+			<!-- crypto support -->
+			<Field Name="dcObscureClass" Type="dcSmallString" />
+			<Field Name="dcObscureSeed" Type="dcSmallString" />
+			
+			<!-- used by root domain only, index of all domains -->
+			<Field Name="dcDomainIndex" Type="Id" List="True" />
+		</Table>
+		
+		<!--
+			guest user = 00000_000000000000000
+			root user  = 00000_000000000000001
+			
+			root user is in ^dcRecord("dcUser","00000_000000000000001" 
+			
+			but users may be in more than on domain - a user id only appears once in entire database.  the same user id in more than
+			one domain denotes that the SAME user belongs to more than one domain.
+			
+			so root user in domain 00975_000000123000001 is ^dcRecord("dcUser#00975_000000123000001","00000_000000000000001"
+			and user 00975_000000123000999 is ^dcRecord("dcUser#00975_000000123000001","00975_000000123000999"
+			but this user may also appear in another domain, such as ^dcRecord("dcUser#00100_000000000000001","00975_000000123000999"
+		-->
+		<Table Id="dcUser">
+			<Field Name="dcUserName" Type="dcUserName" Required="True" Indexed="True" Dynamic="True" />
+			<Field Name="dcFirstName" Type="dcTinyString" Indexed="True" Dynamic="True" />
+			<Field Name="dcLastName" Type="dcTinyString" Indexed="True" Dynamic="True" />
+			
+			<Field Name="dcEmail" Type="dcSmallString" Indexed="True" Dynamic="True" />
+			<!-- dcEmail should be email within the domain, backup applies if within domain is bad, missing or user account is disabled TODO -->
+			<Field Name="dcBackupEmail" Type="dcSmallString" Indexed="True" Dynamic="True" />
+			<Field Name="dcPassword" Type="dcSmallString" Dynamic="True" />
+			<Field Name="dcLocale" Type="dcSmallString" />
+			<Field Name="dcChronology" Type="dcSmallString" />
+			<Field Name="dcDescription" Type="String" />
+			
+			<Field Name="dcLastLogin" Type="DateTime" />
+			<Field Name="dcConfirmed" Type="Boolean" />
+			<Field Name="dcConfirmCode" Type="dcTinyString" />
+			<Field Name="dcRecoverAt" Type="DateTime" />
+			
+			<Field Name="dcAuthorizationTag" Type="dcTinyString" List="True" />
+			
+			<Field Name="dcGroup" ForeignKey="dcGroup" List="True" /> 
+		</Table>
+		
+		<Table Id="dcGroup">
+			<Field Name="dcName" Type="dcSmallString" Required="True" Indexed="True" Dynamic="True" />
+			<Field Name="dcAuthorizationTag" Type="dcTinyString" List="True" />
+			<Field Name="dcDescription" Type="String" />
+		</Table>
+		
+		<RecordComposer Name="dcAuthorizationTags" Execute="recAuthTags^dcUser" />
+		<SelectComposer Name="dcAuthorizationTags" Execute="selAuthTags^dcUser" />
+		<WhereComposer Name="dcAuthorizationTags" Execute="whrAuthTags^dcUser" />
+		
+		<RecordFilter Name="dcIsAccountTaken" Execute="acctTaken^dcUser">
+			<Description>
+				Checks to see if the account name is already in use by another
+				user.
+			</Description>
+		</RecordFilter>
+		
+		<Secure Tags="Guest,User">
+			<Procedure Name="dcPing" Execute="ping^dcConn">
+				<Description>
+					Test the database, call Ping and it will return Pong.
+				</Description>
+				<Response>
+					<Field Name="Text" Type="String" />
+				</Response>
+			</Procedure>			
+			<Procedure Name="dcEcho" Execute="echo^dcConn">
+				<Description>
+					Test the database, give it a string and it will echo back.
+					Try non-latin unicode characters for fun.
+				</Description>
+				<Request>
+					<Field Name="Text" Type="String" Required="True" />
+				</Request>
+				<Response>
+					<Field Name="Text" Type="String" />
+				</Response>
+			</Procedure>			
+			<Procedure Name="dcSignIn" Execute="signIn^dcUser">
+				<Description>
+					Start a user session if credentials pass.
+				</Description>
+				<Request>
+					<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+					<Field Name="Password" Type="dcSmallString" />
+					<Field Name="At" Type="DateTime" Required="True" />
+					<Field Name="Code" Type="dcUser:dcConfirmCode" />
+					<Field Name="RecoverExpire" Type="dcUser:dcRecoverAt" />
+					<Field Name="Suspect" Type="Boolean" />
+				</Request>
+				<Response>
+					<Field Name="UserId" Type="Id" />
+					<Field Name="FirstName" Type="dcUser:dcFirstName" />
+					<Field Name="LastName" Type="dcUser:dcLastName" />
+					<Field Name="Email" Type="dcUser:dcEmail" />
+					<Field Name="Locale" Type="dcUser:dcLocale" />
+					<Field Name="Chronology" Type="dcUser:dcChronology" />
+					<Field Name="AuthToken" Type="dcAuthToken" />
+					<Field Name="AuthorizationTags">
+						<List Type="dcUser:dcAuthorizationTag" />
+					</Field>
+				</Response>
+			</Procedure>
+			<Procedure Name="dcVerifySession" Execute="verify^dcUser">
+				<Description>
+					Verify a user session.
+				</Description>
+				<Request>
+					<Field Name="UserId" Type="Id" Required="True" />
+					<Field Name="AuthToken" Type="dcAuthToken" Required="True" />
+				</Request>
+				<Response>
+					<Field Name="AuthorizationTags">
+						<List Type="dcUser:dcAuthorizationTag" />
+					</Field>
+				</Response>
+			</Procedure>			
+		</Secure>			
+		<Secure Tags="User">
+			<Procedure Name="dcInitiateRecovery" Execute="recovery^dcUser">
+				<Description>
+					Start a user "lost password" recovery sequence by setting
+					a code into the user record and marking the time.  Typically
+					the user has 30 minutes to use the code or it expires.
+					This procedure is not exposed directly to the public (Guest)
+					and may only be initiated by a trusted/controled sequence of events
+					beyond the dcDb service.
+				</Description>
+				<Request>
+					<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+					<Field Name="At" Type="DateTime" Required="True" />
+					<Field Name="Code" Type="dcUser:dcConfirmCode" Required="True" />
+				</Request>
+			</Procedure>
+			<Procedure Name="dcSignOut" Execute="signOut^dcUser">
+				<Description>
+					Kill a user session.
+				</Description>
+				<Request>
+					<Field Name="AuthToken" Type="dcAuthToken" Required="True" />
+				</Request>
+			</Procedure>			
+			<Procedure Name="dcUserNameLookup" Execute="unameLookup^dcUser">
+				<Description>
+					For a given user name, find the user id if present.
+				</Description>
+				<Request>
+					<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+				</Request>
+				<Response>
+					<Field Name="UserId" Type="Id" />
+				</Response>
+			</Procedure>			
+			
+			<Procedure Name="dcClearCache" Execute="clear^dcDbSelect">
+				<Description>
+					Remove the Select/List cache.
+				</Description>
+				<Request>
+					<Field Name="CacheId" Type="Integer" />
+				</Request>
+			</Procedure>
+		</Secure>			
+		<Secure Tags="Admin">
+			<Procedure Name="dcExportDomain" Execute="export^dcUtil">
+				<Description>
+					Dump all records (and more?) from the domain.
+				</Description>
+				<ListResponse>
+					<List Type="Any" />
+				</ListResponse>
+			</Procedure>
+			<Procedure Name="dcLoadRecord" Execute="loadRec^dcDbQuery">
+				<Description>
+					Load a single record including fields and subqueries.
+				</Description>
+				<Request Inherits="dcDbCall">
+					<Field Name="Id" Type="Id" Required="True" />
+					<Field Name="Compact" Type="Boolean" />
+					<Field Name="Historical" Type="Boolean" />
+					<Field Name="When" Type="BigDateTime" />
+					<Field Name="Select">
+						<List Type="dcDbSelectField" />
+					</Field>
+				</Request>
+				<Response Any="True" />
+			</Procedure>
+			<Procedure Name="dcSelect" Execute="select^dcDbSelect">
+				<Description>
+					Load an ordered list of records applying a Select,
+					Order and Where clause (like SQL) as well as a
+					Collector.
+				</Description>
+				<Request>
+					<Field Name="Table" Type="dcTinyString" Required="True" />
+					<Field Name="When" Type="dcTinyString" />
+					<Field Name="Select">
+						<List Type="dcDbSelectField" />
+					</Field>
+					<Field Name="Where" Type="dcDbWhereClause" />
+					<Field Name="Order">
+						<List Type="dcDbOrderField" />
+					</Field>
+					<Field Name="Collector">
+						<Record>
+							<Field Name="Name" Type="dcTinyString" />
+							<!-- or -->
+							<Field Name="Field" Type="dcTinyString" />
+							<Field Name="From" Type="Any" />
+							<Field Name="To" Type="Any" />
+							<Field Name="Values">
+								<List Type="Any" />
+							</Field>
+						</Record>
+					</Field>
+					<Field Name="Historical" Type="Boolean" />
+					<Field Name="Offset" Type="Integer" />
+					<Field Name="PageSize" Type="Integer" />
+					<Field Name="CacheId" Type="Integer" />
+					<Field Name="CacheEnabled" Type="Boolean" />
+				</Request>
+				<RecResponse>
+					<Field Name="CacheId" Type="Integer" />
+					<Field Name="Total" Type="Integer" />
+					<Field Name="Offset" Type="Integer" />
+					<Field Name="PageSize" Type="Integer" />
+					<Field Name="Data">
+						<List>
+							<Record Any="True" />
+						</List>
+					</Field>
+				</RecResponse>
+			</Procedure>
+			<Procedure Name="dcList" Execute="list^dcDbSelect">
+				<Description>
+					Load an ordered list of values applying a single Select field,
+					Order clause and Where clause (like SQL) as well as a
+					Collector.
+				</Description>
+				<Request>
+					<Field Name="Table" Type="dcTinyString" Required="True" />
+					<Field Name="When" Type="dcTinyString" />
+					<Field Name="Select" Type="dcDbSelectField" />
+					<Field Name="Where" Type="dcDbWhereClause" />
+					<Field Name="Order">
+						<List Type="dcDbOrderField" />
+					</Field>
+					<Field Name="Collector">
+						<Record>
+							<Field Name="Name" Type="dcTinyString" />
+							<!-- or -->
+							<Field Name="Field" Type="dcTinyString" />
+							<Field Name="From" Type="Any" />
+							<Field Name="To" Type="Any" />
+							<Field Name="Values">
+								<List Type="Any" />
+							</Field>
+						</Record>
+					</Field>
+					<Field Name="Historical" Type="Boolean" />
+					<Field Name="Offset" Type="Integer" />
+					<Field Name="PageSize" Type="Integer" />
+					<Field Name="CacheId" Type="Integer" />
+					<Field Name="CacheEnabled" Type="Boolean" />
+				</Request>
+				<RecResponse>
+					<Field Name="CacheId" Type="Integer" />
+					<Field Name="Total" Type="Integer" />
+					<Field Name="Offset" Type="Integer" />
+					<Field Name="PageSize" Type="Integer" />
+					<Field Name="Data">
+						<List Type="Any" />
+					</Field>
+				</RecResponse>
+			</Procedure>
+			<Procedure Name="dcSelectDirect" Execute="select^dcDbQuery">
+				<Description>
+					Load an ordered list of records applying a Select,
+					Where clause (like SQL) as well as a
+					Collector.
+				</Description>
+				<Request>
+					<Field Name="Table" Type="dcTinyString" Required="True" />
+					<Field Name="When" Type="dcTinyString" />
+					<Field Name="Select">
+						<List Type="dcDbSelectField" />
+					</Field>
+					<Field Name="Where" Type="dcDbWhereClause" />
+					<Field Name="Collector">
+						<Record>
+							<Field Name="Name" Type="dcTinyString" />
+							<!-- or -->
+							<Field Name="Field" Type="dcTinyString" />
+							<Field Name="From" Type="Any" />
+							<Field Name="To" Type="Any" />
+							<Field Name="Values">
+								<List Type="Any" />
+							</Field>
+						</Record>
+					</Field>
+					<Field Name="Historical" Type="Boolean" />
+				</Request>
+				<ListResponse>
+					<Record Any="True" />
+				</ListResponse>
+			</Procedure>
+			<Procedure Name="dcListDirect" Execute="list^dcDbQuery">
+				<Description>
+					Load an ordered list of values applying a single Select field,
+					and Where clause (like SQL) as well as a
+					Collector.
+				</Description>
+				<Request>
+					<Field Name="Table" Type="dcTinyString" Required="True" />
+					<Field Name="When" Type="dcTinyString" />
+					<Field Name="Select" Type="dcDbSelectField" />
+					<Field Name="Where" Type="dcDbWhereClause" />
+					<Field Name="Collector">
+						<Record>
+							<Field Name="Name" Type="dcTinyString" />
+							<!-- or -->
+							<Field Name="Field" Type="dcTinyString" />
+							<Field Name="From" Type="Any" />
+							<Field Name="To" Type="Any" />
+							<Field Name="Values">
+								<List Type="Any" />
+							</Field>
+						</Record>
+					</Field>
+					<Field Name="Historical" Type="Boolean" />
+				</Request>
+				<ListResponse Type="Any" />
+			</Procedure>
+			<Procedure Name="dcRetireRecord" Execute="retireRec^dcDbUpdate">
+				<Description>
+					Mark a single record as retired.
+				</Description>
+				<Request Inherits="dcDbCall">
+					<Field Name="Id" Type="Id" Required="True" />
+				</Request>
+			</Procedure>
+			<Procedure Name="dcReviveRecord" Execute="reviveRec^dcDbUpdate">
+				<Description>
+					Mark a single record as not retired.
+				</Description>
+				<Request Inherits="dcDbCall">
+					<Field Name="Id" Type="Id" Required="True" />
+				</Request>
+			</Procedure>
+			<Procedure Name="dcInsertRecord" Execute="insertRec^dcDbUpdate">
+				<Description>
+					Insert a new record.  Capable of 1MB of data.
+				</Description>
+				<Request Inherits="dcDbCall">
+					<Field Name="Fields" Type="AnyRecord" Required="True" />
+				</Request>
+				<Response>
+					<Field Name="Id" Type="Id" />
+				</Response>
+			</Procedure>
+			<Procedure Name="dcUpdateRecord" Execute="updateRec^dcDbUpdate">
+				<Description>
+					Update a single record.  Capable of 1MB of data.
+				</Description>
+				<Request Inherits="dcDbCall">
+					<Field Name="Id" Type="Id" Required="True" />
+					<Field Name="Fields" Type="AnyRecord" Required="True" />
+				</Request>
+			</Procedure>
+			<Procedure Name="dcUpdateBigField" Execute="updateFld^dcDbUpdate">
+				<Description>
+					Update a single field on a record.  Capable of 40MB of data.
+				</Description>
+				<Request Inherits="dcDbCall">
+					<Field Name="Id" Type="Id" Required="True" />
+					<Field Name="Field" Type="String" Required="True" />
+					<Field Name="Content" Type="AnyRecord" />
+				</Request>
+			</Procedure>
+			<Procedure Name="dcUpdateText" Execute="updateTxt^dcDbUpdate">
+				<Description>
+					Update text index on one or more fields on a record.  Capable of 40MB of data.
+				</Description>
+				<Request Inherits="dcDbCall">
+					<Field Name="Id" Type="Id" Required="True" />
+					<Field Name="Fields" Type="AnyRecord" Required="True" />
+				</Request>
+			</Procedure>
+			<Procedure Name="dcSearchText" Execute="srchTxt^dcDbUpdate">
+				<Description>
+					Search text index on one or more fields.
+				</Description>
+				<Request>
+					<Field Name="Sources" Type="AnyRecord" Required="True" />
+					<Field Name="AllowedSids" Type="AnyRecord" />
+					<Field Name="RequiredWords" Type="AnyRecord" />
+					<Field Name="AllowedWords" Type="AnyRecord" />
+					<Field Name="ProhibitedWords" Type="AnyRecord" />
+				</Request>
+				<ListResponse>
+					<Record Inherits="dcSearchResult" />
+				</ListResponse>
+			</Procedure>
+		</Secure>
+		<Secure Tags="SysAdmin">
+			<Procedure Name="dcCleanup" Execute="cleanup^dcUser">
+				<Description>
+					Cleanup expired temp globals such as sessions, 
+					big params and cache.
+				</Description>
+				<Request>
+					<Field Name="ExpireThreshold" Type="DateTime" Required="True" />
+					<Field Name="LongExpireThreshold" Type="DateTime" Required="True" />
+				</Request>
+			</Procedure>			
+			
+			<Procedure Name="dcStartSession" Execute="startSess^dcUser">
+				<Description>
+					Start a user session, skipping authentication.
+					Requires either user name or user id, not both.
+				</Description>
+				<Request>
+					<Field Name="At" Type="DateTime" Required="True" />
+					<Field Name="UserName" Type="dcUser:dcUserName" />
+					<Field Name="UserId" Type="Id" />
+				</Request>
+				<Response>
+					<Field Name="UserId" Type="Id" />
+					<Field Name="FirstName" Type="dcTinyString" />
+					<Field Name="LastName" Type="dcTinyString" />
+					<Field Name="Email" Type="dcSmallString" />
+					<Field Name="Locale" Type="dcSmallString" />
+					<Field Name="Chronology" Type="dcSmallString" />
+					<Field Name="AuthToken" Type="dcAuthToken" />
+					<Field Name="AuthorizationTags">
+						<List Type="dcTinyString" />
+					</Field>
+				</Response>
+			</Procedure>
+			
+			<Procedure Name="dcAllocateDomain" Execute="allocDomain^dcUser">
+				<Description>
+					Get a new domain id.
+				</Description>
+				<Response>
+					<Field Name="Id" Type="Id" />
+				</Response>
+			</Procedure>
+			
+			<Procedure Name="dcLoadDomains" Execute="loadDomains^dcUser">
+				<Description>
+					Start a user session, skipping authentication.
+					Requires either user name or user id, not both.
+				</Description>
+				<ListResponse>
+					<Record Inherits="dcLoadDomainsResponse" />
+				</ListResponse>
+			</Procedure>
+			
+			<Procedure Name="dcSeed" Execute="seed^dcUser">
+				<Description>
+					Load part of the clock's seed.
+				</Description>
+				<Response>
+					<Field Name="Seed" Type="dcTinyString" />
+				</Response>
+			</Procedure>
+
+			<Procedure Name="dcSchemaUpdate" Execute="update^dcSchema">
+				<Description>
+					Provide an up to date snapshot of the Project Schema to 
+					the database.  Enables translation, procedures, table definitions
+					within M.
+				</Description>
+				<Request>
+					<Field Name="Procs">
+						<List Type="DbProc" />
+					</Field>
+					<Field Name="RecordFilters">
+						<List Type="DbFilter" />
+					</Field>
+					<Field Name="WhereFilters">
+						<List Type="DbFilter" />
+					</Field>
+					<Field Name="RecordComposers">
+						<List Type="DbFilter" />
+					</Field>
+					<Field Name="SelectComposers">
+						<List Type="DbFilter" />
+					</Field>
+					<Field Name="WhereComposers">
+						<List Type="DbFilter" />
+					</Field>
+					<Field Name="Collectors">
+						<List Type="DbFilter" />
+					</Field>
+					<Field Name="Tables">
+						<List Type="DbTable" />
+					</Field>
+					<Field Name="Locales">
+						<List Type="Locale" />
+					</Field>
+				</Request>
+			</Procedure>
+			<Procedure Name="dcFailResultTest" Execute="fail^dcConn">
+				<Description>
+					Will cause the result parser to fail, testing the error handling of 
+					the database pool.
+				</Description>
+				<Response>
+					<Field Name="Text" Type="String" />
+				</Response>
+			</Procedure>
+			<Procedure Name="dcFailCallTest" Execute="abc^dcConn">
+				<Description>
+					Function does not exist.
+					Will cause the connection to fail, testing the recovery ability of 
+					the database pool.
+				</Description>
+				<Response>
+					<Field Name="Text" Type="String" />
+				</Response>
+			</Procedure>
+			<Procedure Name="dcFailHungUpTest" Execute="hungup^dcConn">
+				<Description>
+					Function just hangs for 20 minutes.
+					Will cause the connection to fail, testing the recovery ability of 
+					the database pool.
+				</Description>
+				<Response>
+					<Field Name="Text" Type="String" />
+				</Response>
+			</Procedure>
+		</Secure>
+		
+	</Database>
+</Schema>
+

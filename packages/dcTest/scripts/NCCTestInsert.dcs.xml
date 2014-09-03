@@ -1,0 +1,48 @@
+<dcScript Title="NCC Test Insert">
+<Main Parameter="Args">
+	<Info>a</Info>
+	
+	<SqlInsert Table="suusers">
+		<Field Name="LoginId" Value="brad" Type="VarChar" />
+		<Field Name="FullName" Value="brad man" Type="VarChar" />
+		<Field Name="Description" Value="don't be silly" Type="VarChar" />
+		<Field Name="EmailAddress" Value="brad@awww.com" Type="VarChar" />
+		<Field Name="SshAuthType" Value="2" Type="Int" />
+		<Field Name="PasswordEncryptMode" Value="1" Type="Int" />
+		<Field Name="Password" Value="bj1BDB7CC86CC1EA5FD171351B0C135988" Type="VarChar" />
+	</SqlInsert>		
+	
+	<Info>b</Info>
+	
+	<ExitIfErrored />
+		
+	<Info>c</Info>
+	
+	<SqlInsert Table="UserGroupName">
+		<Field Name="LoginID" Value="brad" Type="VarChar" />
+		<Field Name="SortIndex" Value="1" Type="Int" />
+		<Field Name="GroupName" Value="icann" Type="VarChar" />
+	</SqlInsert>
+	
+	<Info>d</Info>
+	
+	<ExitIfErrored />
+	
+	<Info>e</Info>
+	
+	<SqlUpdate Table="suusers">
+		<Field Name="FullName" Value="brad man2" Type="VarChar" />
+		<Field Name="Description" Type="VarChar" />
+		<Field Name="EmailAddress" SkipNull="True" Type="VarChar" />
+		
+		<Where Name="LoginId" Value="brad" Type="VarChar" />
+	</SqlUpdate>		
+	
+	<Info>f</Info>
+	
+	<ExitIfErrored />
+		
+	<Info>g</Info>
+	
+</Main>
+</dcScript>

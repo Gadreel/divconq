@@ -1,0 +1,5 @@
+<dcScript Title="Simple Greeting">
+<Main Parameter="Args">
+	<Info>Greetings {$Args.Greet}.</Info>
+</Main>
+</dcScript>

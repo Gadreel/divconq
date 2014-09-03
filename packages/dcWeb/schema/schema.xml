@@ -1,0 +1,12 @@
+<Schema>
+	<Database>
+		<Secure Tags="SysAdmin">
+		</Secure>
+	</Database>
+	
+	<Shared>
+	</Shared>
+	
+	<Services>
+	</Services>
+</Schema>

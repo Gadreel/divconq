@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head dir="ltr" lang="en">	
+	<meta charset="utf-8"></meta> 
+	<title>dcTasks Administration</title>
+	
+	<link rel="shortcut icon" href="/dcw/favicon.png" type="image/png" />
+	<link rel="icon" href="/dcw/favicon.png" type="image/png" />
+
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+	<link rel="stylesheet" href="/dcw/css/jquery.mobile-1.4.3.min.css" />	
+	<link rel="stylesheet" href="/dcw/css/jqm-icon-pack-ltd.css" />
+	<link rel='stylesheet' href='//fonts.googleapis.com/css?family=Open+Sans:400,700italic,800,600,300|Molengo|Signika:400,300,600,700' />
+	<link rel="stylesheet" href="/dcw/css/main.css" />
+	<link rel="stylesheet" href="/dct/css/main.css" />
+	
+	<script src="/dcw/js/jquery-1.10.2.min.js"></script>
+	<script src="/dcw/js/aes.js"></script>
+	<script src="/dcw/js/dc.lang.js"></script> 
+	<script src="/dcw/js/dc.schema.js"></script>
+	<script src="/dcw/js/schema.js"></script>	<!-- TODO replace with /schema -->
+	<script src="/dcw/js/dc.user.js"></script>
+	<script src="/dcw/js/dc.comm.js"></script>
+	<script src="/dct/js/dc.tasks.js"></script>
+	<script src="/dcw/js/dc.ui.packed.js"></script>
+	<script src="/dcw/js/moment.min.js"></script> 	
+	<script src="/dcw/js/jquery-validate/jquery.validate.js"></script> 
+	<script src="/dcw/js/jquery-validate/additional-methods.js"></script> 
+	<script src="/dcw/js/jquery.mobile-1.4.3.min.js"></script>	
+</head>
+<body>
+	<div id="pgMain" data-role="page">
+		<div data-role="header">
+			<div class="header-logo">
+				<a id="btnHome" href="#" data-role="none"><img src="/dcw/img/logo48.png" width="48" height="48" /></a>
+			</div>
+			
+			<div id="lblPageTitle" class="page-name"><h1>dcTasks Administration</h1></div>
+			
+            <div class="btn-notify">
+				<a href="#notifyPanel" class="ui-btn ui-icon-carat-l ui-btn-icon-notext ui-corner-all">Notifications</a>
+			</div>
+			
+            <div class="sign-out">
+				<a id="btnSignout" href="#" data-role="button" data-theme="a" data-icon="sign-out" data-mini="true" data-inline="true">Sign Out</a>
+			</div>
+		</div>
+		 
+		<!-- Body Content -->
+		<div role="main" class="ui-content">
+			<div id="pageContent">
+			</div>
+			<!--
+			<div id="areaTask" data-role="collapsible" data-inset="false" data-collapsed="false">
+				<h4>Watched Tasks</h4>
+				<p>I'm the collapsible content. By default I'm closed, but you can click the header to open me.</p>
+			</div>
+			-->
+		</div>
+		
+		<div data-role="footer">
+			<p class="ui-title">dcTasks 2014 - DivConq File Transfer Platform</p>
+		</div>
+	</div>
+	
+	<!-- global popup -->
+	<div data-role="popup" id="puInfo" data-theme="a" class="ui-content" data-overlay-theme="b">
+		<a data-role="button" data-theme="a" data-rel="back" class="ui-btn-right" data-icon="delete" href="#" data-iconpos="notext">Close</a> 
+		<div id="puInfoHtml"></div> 
+	</div>
+	
+	<!-- notifications panel -->
+	<div data-role="panel" id="notifyPanel" data-position="right" data-display="reveal" data-theme="b">
+
+        <h3>Right Panel: Reveal</h3>
+        <p>This panel is positioned on the right with the reveal display mode. The panel markup is <em>after</em> the header, content and footer in the source order.</p>
+        <p>To close, click off the panel, swipe left or right, hit the Esc key, or use the button below:</p>
+        <a href="#" data-rel="close" class="ui-btn ui-shadow ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-left ui-btn-inline">Close panel</a>
+	</div>
+</body>
+</html>
+			
+			

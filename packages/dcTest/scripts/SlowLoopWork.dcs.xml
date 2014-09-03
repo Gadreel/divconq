@@ -1,0 +1,11 @@
+<dcScript Title="Slow Loop Work">
+<Main Parameter="Args">
+	<Progress Steps="$Args.LoopCount" />
+		
+	<For Name="i" From="$Args.LoopCount" To="0" Step="-1">
+		<Progress Amount="$i" Step="$i" Name="Step {$i}">Prog {$i}</Progress>
+		<Info>doing some work</Info>
+		<Sleep Seconds="1" />
+	</For>
+</Main>
+</dcScript>

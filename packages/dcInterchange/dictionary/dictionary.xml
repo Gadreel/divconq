@@ -1,0 +1,30 @@
+<Dictionary>
+	<Locale Id="en">
+		<Entry Token="_code_300000" Value="Interchange web RPC IO Error: {$1}" />
+		<Entry Token="_code_300001" Value="Missing Box response XML" />
+		<Entry Token="_code_300002" Value="Missing Box response status, got: {$1}" />
+		<Entry Token="_code_300003" Value="Box method failed, got status: {$1}" />
+		<Entry Token="_code_300004" Value="Upload to Box failed on some files" />
+		<Entry Token="_code_300005" Value="Box account tree invalid, got: {$1}" />
+		<Entry Token="_code_300006" Value="Path invalid, got: {$1}" />
+		<Entry Token="_code_300007" Value="Basic folder tree not loaded" />
+		<Entry Token="_code_300008" Value="Basic folder not found" />
+		<Entry Token="_code_300009" Value="Hashes do not match, local: {$1} remote: {$2}" />
+		<Entry Token="_code_300010" Value="Unable to check file integrity, file with: {$1}" />
+		<Entry Token="_code_300011" Value="Unable to check file integrity, unable to get hash from Box.  Tried {$1} times." />
+		<Entry Token="_code_300012" Value="Unable to find file {$1} in folder {$2}" />
+		<Entry Token="_code_300013" Value="Upload file {$1} does not exist or cannot be read" />
+		<Entry Token="_code_300014" Value="Upload file is null" />
+		<Entry Token="_code_300015" Value="Destination file, from download, cannot be created or written to: {$1}" />
+		<Entry Token="_code_300016" Value="Loading account folder tree" />
+		<Entry Token="_code_300017" Value="Parsing account folder tree" />
+		<Entry Token="_code_300018" Value="Selecting/creating destination folder: {$1}" />
+		<Entry Token="_code_300019" Value="Uploading file: {$1}" />
+		<Entry Token="_code_300020" Value="Checking upload integrity, destination file id: {$1}" />
+		<Entry Token="_code_300021" Value="Selecting source folder: {$1}" />
+		<Entry Token="_code_300022" Value="Getting file info on: {$1}" />
+		<Entry Token="_code_300023" Value="Downloading: {$1} ({$2})" />
+		<Entry Token="_code_300024" Value="Checking download integrity, destination file: {$1}" />
+	</Locale>
+</Dictionary>
+

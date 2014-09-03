@@ -1,0 +1,292 @@
+<Dictionary>
+	<Locale Id="en">
+		<Entry Token="_code_1" Value="General execution error" />
+		<Entry Token="_code_2" Value="General execution warning" />
+		
+		<!-- start up codes, below 140 do not really translate because dict was not loaded yet -->
+		<Entry Token="_code_100" Value="Unable to load packages.xml file, expected: {$1}" />
+		<Entry Token="_code_101" Value="Unable to find config.xml file, expected: {$1}" />
+		<Entry Token="_code_102" Value="Unable to load config.xml file, expected: {$1}" />
+		<Entry Token="_code_103" Value="Unable to load schema file(s)" />
+		<Entry Token="_code_104" Value="Unable to load dictionary file(s)" />
+		<Entry Token="_code_105" Value="Unable to apply dictionary file, missing xml" />
+		<Entry Token="_code_106" Value="Unable to apply dictionary file, file null" />
+		<Entry Token="_code_107" Value="Missing dictionary file, expected: {$1}" />
+		<Entry Token="_code_108" Value="Unable to apply schema file, file null" />
+		<Entry Token="_code_109" Value="Missing schema file, expected: {$1}" />
+		<Entry Token="_code_110" Value="Unable to apply schema file, missing xml" />
+		<Entry Token="_code_111" Value="Unable to continue, hub rescources not properly initialized" />
+		<Entry Token="_code_112" Value="Hub resources already loaded, but contained errors" />
+		<Entry Token="_code_113" Value="Unable to continue, hub rescources not properly initialized" />
+		<Entry Token="_code_114" Value="Problem cleaning up temporary globals" />
+		<Entry Token="_code_115" Value="Missing expiration parameters" />
+		<Entry Token="_code_116" Value="Unable to load dcDb seed for database: {$1}" />
+		<Entry Token="_code_117" Value="Missing token parameter in signoff" />
+		<Entry Token="_code_118" Value="Missing username in username lookup" />
+		<Entry Token="_code_119" Value="Invalid username in username lookup" />
+		<Entry Token="_code_120" Value="Missing token or user id parameter in verify" />
+		<Entry Token="_code_121" Value="Token is invalid or expired" />
+		<Entry Token="_code_122" Value="Account in use" />
+		<Entry Token="_code_123" Value="Invalid username or password" />
+		<Entry Token="_code_124" Value="User not confirmed" />
+		<Entry Token="_code_125" Value="Password may not be blank" />
+		<Entry Token="_code_126" Value="Password cannot be used, does not meet policy" />
+		<Entry Token="_code_127" Value="UserName may not be blank" />
+		<Entry Token="_code_128" Value="UserName may not be blank" />
+		<Entry Token="_code_129" Value="User not found" />
+		<Entry Token="_code_130" Value="UserName and UserId may not be blank" />
+		<Entry Token="_code_131" Value="UserName not valid" />
+		<Entry Token="_code_132" Value="Unable to monitor local file store: {$1}" />
+		<Entry Token="_code_133" Value="No bundle resource found for path: {$1}" />
+		<Entry Token="_code_134" Value="Unable to process bundle resource {$1} as xml, error: {$2}" />
+		<Entry Token="_code_135" Value="Password matches a known, common, password" />
+		<Entry Token="_code_136" Value="Clock not properly initialized" />
+		<Entry Token="_code_137" Value="Workpool not properly initialized" />
+		<Entry Token="_code_138" Value="Scheduler not properly initialized" />
+		<Entry Token="_code_139" Value="Message Bus not properly initialized" />
+		<Entry Token="_code_140" Value="Database not properly initialized" />
+		<Entry Token="_code_141" Value="Filestore not properly initialized" />
+		<Entry Token="_code_142" Value="Session manager not properly initialized" />
+		<Entry Token="_code_143" Value="Task could not run, it has been canceled" />
+		<Entry Token="_code_144" Value="Task running in bucket: {$1}" />
+		<Entry Token="_code_145" Value="Unable to reschedule {$1} because of error: {$2}" />
+		<Entry Token="_code_146" Value="SQL Database not properly initialized" />
+		<Entry Token="_code_147" Value="Scheduler not properly started" />
+		<Entry Token="_code_148" Value="Unable to parse script for job: {$1} - Error: {$2}" />
+		<Entry Token="_code_149" Value="Unable to compile script for job: {$1} - Error: {$2}" />
+		<Entry Token="_code_150" Value="Error preparing script for job: {$1} - Error: {$2}" />
+		<Entry Token="_code_151" Value="Starting dcScript task: {$1}" />
+		<Entry Token="_code_152" Value="dcScript task done, exit code: {$1}" />
+		<Entry Token="_code_153" Value="Starting task: {$1}" />
+		<Entry Token="_code_154" Value="Task done, exit code: {$1}" />
+		<Entry Token="_code_155" Value="Error preparing for job: {$1} - Error: {$2}" />
+		<Entry Token="_code_156" Value="Unable to get SQL database connection" />
+		<Entry Token="_code_157" Value="Error inserting task into queue work table: {$1}" />
+		<Entry Token="_code_158" Value="Unable to load last id from SQL engine for task {$1}." />
+		<Entry Token="_code_159" Value="Unable to add work to queue, work was already added by some other task. {$1}" />
+		<Entry Token="_code_160" Value="Starting SQL backed work queue." />
+		<Entry Token="_code_161" Value="Stopping SQL backed work queue." />
+		<Entry Token="_code_162" Value="Unable to add work to queue, work content did not insert. {$1}" />
+		<Entry Token="_code_163" Value="Unable to update work queue audit. {$1}" />
+		<Entry Token="_code_164" Value="Unable to update work queue work record. {$1}" />
+		<Entry Token="_code_165" Value="Unable to delete work queue entry. {$1}" />
+		<Entry Token="_code_166" Value="Unable to find work queue work record. {$1}" />
+		<Entry Token="_code_167" Value="Tried to start a Completed queue entry, skipped. {$1}" />
+		<Entry Token="_code_168" Value="Tried to start a queue entry but it has used up all tries, skipped. {$1}" />
+		<Entry Token="_code_169" Value="Unable to start queue work, work audit did not insert. {$1}" />
+		<Entry Token="_code_170" Value="Unable to load last audit id from SQL engine for task {$1}." />
+		<Entry Token="_code_171" Value="Error loading claims from work queue: {$1}" />
+		<Entry Token="_code_172" Value="Work Queue is missing a driver, unable to use queue at this time." />
+		<Entry Token="_code_173" Value="Work Queue is missing driver classname." />
+		<Entry Token="_code_174" Value="Work Queue has a bad driver classname: {$1}." />
+		<Entry Token="_code_175" Value="Work Queue is not correctly configured." />
+		<Entry Token="_code_175" Value="Work Queue did not start correctly." />
+		<Entry Token="_code_176" Value="Error finding potential claims: {$1}" />
+		<Entry Token="_code_177" Value="Error making a claim: {$1}" />
+		<Entry Token="_code_178" Value="Error loading work queue record: {$1}" />
+		<Entry Token="_code_179" Value="Error starting work queue task: {$1} - Error: {$2}" />
+		<Entry Token="_code_180" Value="Work Queue has a bad alerter classname: {$1}." />
+		<Entry Token="_code_181" Value="Unable to open task log: {$1}." />
+		<Entry Token="_code_182" Value="Error reserving work: {$1}" />
+		<Entry Token="_code_183" Value="Unable to reserve work for: {$1}" />
+		<Entry Token="_code_184" Value="Hub idled, skipping task: {$1}" />
+		<Entry Token="_code_185" Value="Unable to get SQL connection to database: {$1}" />
+		<Entry Token="_code_186" Value="Error executing SQL update on database: {$1} error: {$2}" />
+		<Entry Token="_code_187" Value="Error loading last id created: {$1}" />
+		<Entry Token="_code_188" Value="Unable to update work queue claim. {$1}" />
+		<Entry Token="_code_189" Value="SQL Engine not recognized. {$1}" />
+		<Entry Token="_code_190" Value="Error initializing SQL Engine {$1}, error. {$2}" />
+		<Entry Token="_code_191" Value="Task failing because the claim was no longer valid - work queue not updated: {$1}" />
+		<Entry Token="_code_192" Value="Task failed because it was canceled or timed out - work queue not updated: {$1}" />
+		<Entry Token="_code_193" Value="Count manager not properly initialized" />
+		<Entry Token="_code_194" Value="Duplicate Primary Key error. Database: {$1} error: {$2}" />
+		<Entry Token="_code_195" Value="SQL exception. Database: {$1} code: {$2} error: {$2}" />
+		<Entry Token="_code_196" Value="Task killed: {$1}" />
+		<Entry Token="_code_197" Value="Task not started, system shutting down: {$1}" />
+		<Entry Token="_code_198" Value="Task not started, missing context: {$1}" />
+		<Entry Token="_code_199" Value="Task added to queue: {$1}" />
+		
+		<Entry Token="_code_200" Value="Missing package resource file, expected: {$1}" />
+		<Entry Token="_code_201" Value="Missing project resource file, expected: {$1}" />
+		<Entry Token="_code_202" Value="Settings decrypt encountered an invalid settings key" />
+		<Entry Token="_code_203" Value="Settings decrypt failed" />
+		<Entry Token="_code_204" Value="Settings encrypt encountered an invalid settings key" />
+		<Entry Token="_code_205" Value="Settings encrypt failed" />
+		<Entry Token="_code_206" Value="Settings hash failed" />
+		<Entry Token="_code_207" Value="Unable to load custom Settings Clock class" />
+		<Entry Token="_code_208" Value="Unable to load custom Database Clock class: {$1}" />
+		<Entry Token="_code_209" Value="Missing database configuration" />
+		<Entry Token="_code_210" Value="Missing database connection configuration" />
+		
+		<Entry Token="_code_211" Value="Task added to backlog: {$1}" />
+		<Entry Token="_code_212" Value="Error adding task: {$1} - {$2}" />
+		<Entry Token="_code_213" Value="Null argument: {$1}" />
+		<Entry Token="_code_214" Value="Unable to add task to session: {$1}" />
+		<Entry Token="_code_215" Value="Unable to create temp folder for task {$1} - {$2}" />
+		<Entry Token="_code_216" Value="Unable to prepare task: {$1}" />
+		<Entry Token="_code_217" Value="Missing work for task: {$1}" />
+		<Entry Token="_code_218" Value="Operation was abandoned, probably a time out: {$1}" />
+		<Entry Token="_code_219" Value="Message must have context to be sent: {$1}" />
+		<Entry Token="_code_220" Value="Message must have a Service to be sent: {$1}" />
+		<Entry Token="_code_221" Value="Requested Service not found: {$1}" />
+		<Entry Token="_code_222" Value="Task overdue: {$1}" />
+		<Entry Token="_code_223" Value="Task inactive: {$1}" />
+		<Entry Token="_code_224" Value="Transfer done, exit code: {$1}" />
+		<Entry Token="_code_225" Value="Starting SQL backed scheduler." />
+		<Entry Token="_code_226" Value="Stopping SQL backed scheduler." />
+		<Entry Token="_code_227" Value="Scheduler has a bad driver classname: {$1}." />
+		
+		<Entry Token="_code_230" Value="Missing value for BigDateTime" />
+		<Entry Token="_code_231" Value="Invalid format for BigDateTime, found: {$1}" />
+		<Entry Token="_code_232" Value="Missing schema for BigDateTime" />
+		<Entry Token="_code_233" Value="Unable to parse Xml, file not found: {$1}" />
+		<Entry Token="_code_234" Value="Missing end tag near line {$1}, column {$2}" />
+		<Entry Token="_code_235" Value="Missing attribute equals ('=') near line {$1}, column {$2}" />
+		<Entry Token="_code_236" Value="Missing attribute value quotes near line {$1}, column {$2}" />
+		<Entry Token="_code_237" Value="Illegal character {$3} in tag name near line {$1}, column {$2}" />
+		<Entry Token="_code_238" Value="Illegal character {$3} in instruction name '{$4}' near line {$1}, column {$2}" />
+		<Entry Token="_code_239" Value="Instruction name too long in '{$3}' near line {$1}, column {$2}" />
+		<Entry Token="_code_240" Value="Whitespace not allowed in instruction name '{$3}' near line {$1}, column {$2}" />
+		<Entry Token="_code_241" Value="Missing completion at end of element for instruction '{$3}' near line {$1}, column {$2}" />
+		<Entry Token="_code_242" Value="Expected &gt; for tag: &lt;{$3}/&gt; near line {$1}, column {$2}" />
+		<Entry Token="_code_243" Value="Illegal character '{$3}' at start of tag name near line {$1}, column {$2}" />
+		<Entry Token="_code_244" Value="No content" />
+		<Entry Token="_code_245" Value="Content not text" />
+		<Entry Token="_code_246" Value="Composite Builder State Error: {$1}" />
+		<Entry Token="_code_247" Value="No XML found in input." />
+		
+		<Entry Token="_code_300" Value="Unable to use database key file: {$1} - error: {$2}" />
+		<Entry Token="_code_301" Value="Cannot start database pool, missing configuration" />
+		<Entry Token="_code_302" Value="Error while connecting to database: {$1} - error: {$2}" />
+		<Entry Token="_code_303" Value="Request aborted because database is offline" />
+		<Entry Token="_code_304" Value="Error while connecting to database: {$1} - error: {$2}" />
+		<Entry Token="_code_305" Value="Connection failed for: {$1} - slot: {$2}" />
+		<Entry Token="_code_306" Value="Request rejected because callback was missing" />
+		<Entry Token="_code_307" Value="Null request rejected." />
+		<Entry Token="_code_308" Value="Request rejected because database is offline" />
+		<Entry Token="_code_309" Value="Request rejected because of invalid content" />
+		<Entry Token="_code_310" Value="Request rejected because task context is missing" />
+		<Entry Token="_code_311" Value="Request rejected because of invalid parameters" />
+		<Entry Token="_code_312" Value="Request rejected because task context is invalid" />
+		<Entry Token="_code_313" Value="Request rejected because of missing parameter name" />
+		<Entry Token="_code_314" Value="Request rejected because parameter named '{$1}' is too long, 250 char max" />
+		<Entry Token="_code_315" Value="Request rejected because parameter named '{$1}' contains restricted characters" />
+		<Entry Token="_code_316" Value="Request rejected because value is too long, 250 char max found {$1} characters" />
+		<Entry Token="_code_317" Value="Request rejected because value contains restricted characters" />
+		<Entry Token="_code_318" Value="Connection failed, did not receive expected HELLO" />
+		<Entry Token="_code_319" Value="Unable to create channel to database, error: {$1}" />
+		<Entry Token="_code_320" Value="Request failed due to unexpected Exception" />
+		<Entry Token="_code_321" Value="Error parsing database result: {$1}" />
+		<Entry Token="_code_322" Value="Error parsing database messages: {$1}" />
+		<Entry Token="_code_323" Value="Value could not be converted for database, builder execption: {$1}" />
+		<Entry Token="_code_324" Value="Request rejected because it was too large.  Procedure '{$1}', size {$2}." />
+		<Entry Token="_code_325" Value="Database not connected, cannot upload stored procs" />
+		<Entry Token="_code_326" Value="Error uploading stored procs: {$1}" />
+		
+		<Entry Token="_code_400" Value="Expected a BigDecimal, got: {$1}" />
+		<Entry Token="_code_401" Value="Expected a Decimal, got: {$1}" />
+		<Entry Token="_code_402" Value="Expected a BigInteger, got: {$1}" />
+		<Entry Token="_code_403" Value="Expected a Integer, got: {$1}" />
+		<Entry Token="_code_404" Value="Value too long: {$1}" />
+		<Entry Token="_code_405" Value="Value too short: {$1}" />
+		<Entry Token="_code_406" Value="Value does not match accepted list: {$1}" />
+		<Entry Token="_code_407" Value="Core type missing.  Could not validate: {$1}" />
+		<Entry Token="_code_408" Value="Unable to resolve as String: {$1}" />
+		<Entry Token="_code_409" Value="Unable to resolve as Number: {$1}" />
+		<Entry Token="_code_410" Value="Unable to resolve as Binary: {$1}" />
+		<Entry Token="_code_411" Value="Unable to resolve as Boolean: {$1}" />
+		<Entry Token="_code_412" Value="No core type options match.  Could not validate: {$1}" />
+		<Entry Token="_code_413" Value="Missing required data type: {$1}" />
+		<Entry Token="_code_414" Value="Tried to validate a record, but got an unknown object: {$1}" />
+		<Entry Token="_code_415" Value="Tried to validate a list, but got an unknown object: {$1}" />
+		<Entry Token="_code_416" Value="Missing data type to check for: {$1}" />
+		<Entry Token="_code_417" Value="List contains too few items: {$1}" />
+		<Entry Token="_code_418" Value="List contains too many items: {$1}" />
+		<Entry Token="_code_419" Value="Field '{$1}' not allowed: {$2}" />
+		<Entry Token="_code_420" Value="Missing data type to check for: {$1}" />
+		<Entry Token="_code_421" Value="Tried to wrap a non-record, unknown resolution: {$1}" />
+		<Entry Token="_code_422" Value="Tried to wrapChild a record, unknown resolution: {$1}" />
+		<Entry Token="_code_423" Value="Data type missing.  Could not validate: {$1}" />
+		<Entry Token="_code_424" Value="Value is required, but could not resolve: {$1} for field: {$2}" />
+		<Entry Token="_code_425" Value="Missing task context" />
+		<Entry Token="_code_426" Value="Unknown procedure" />
+		<Entry Token="_code_427" Value="Not authorized to call service" />
+		<Entry Token="_code_428" Value="Request should be empty" />
+		<Entry Token="_code_429" Value="Unknown procedure" />
+		<Entry Token="_code_430" Value="Procedure response should be empty" />
+		<Entry Token="_code_431" Value="Missing task context" />
+		<Entry Token="_code_432" Value="Unknown operation" />
+		<Entry Token="_code_433" Value="Unknown request type" />
+		<Entry Token="_code_434" Value="Not authorized to call service" />
+		<Entry Token="_code_435" Value="Unknown response type" />
+		<Entry Token="_code_436" Value="Unknown data type" />
+		<Entry Token="_code_437" Value="Data type missing.  Could not validate: {$1}" />
+		<Entry Token="_code_438" Value="No data type options match.  Could not validate: {$1}" />
+		<Entry Token="_code_439" Value="Tried to wrap a non-list, unknown resolution: {$1}" />
+		<Entry Token="_code_440" Value="No data type options match.  Could not validate: {$1}" />
+		<Entry Token="_code_441" Value="Service '{$1}' does not support this feature '{$2}' with operation '{$3}'" />
+		<Entry Token="_code_442" Value="Missing or invalid user credentials" />
+		<Entry Token="_code_443" Value="Data Store unavailable" />
+		<Entry Token="_code_444" Value="Missing or invalid user context" />
+		<Entry Token="_code_445" Value="RPC call interrupted {$1}" />
+		<Entry Token="_code_446" Value="IO Error on RPC call {$1}" />
+		<Entry Token="_code_447" Value="Value does not match pattern: {$1}" />
+		<Entry Token="_code_448" Value="Session {$1} is not present" />
+		<Entry Token="_code_449" Value="Configuration Error on RPC" />
+		<Entry Token="_code_450" Value="Session Adapter does not exist: {$1}" />
+		<Entry Token="_code_451" Value="Cannot deliver to Session Adapter, invalid tag: {$1}" />
+		<Entry Token="_code_452" Value="Cannot set Session Source, error: {$1}" />
+		<Entry Token="_code_453" Value="Cannot set Session Source, not allocated" />
+		<Entry Token="_code_454" Value="Cannot set Session Source, IO error: {$1}" />
+		<Entry Token="_code_455" Value="Cannot set Session Destination, not allocated" />
+		<Entry Token="_code_456" Value="Cannot set Session Destination, IO error: {$1}" />
+		<Entry Token="_code_457" Value="Cannot mount file store on session" />
+		<Entry Token="_code_458" Value="Missing record for Id." />
+		
+		<Entry Token="_code_500" Value="Variable '{$1}' not found" />
+		<Entry Token="_code_501" Value="Path looks like a field name, but found a list: {$1}" />
+		<Entry Token="_code_502" Value="Index out of bounds: {$1}" />
+		<Entry Token="_code_503" Value="Tried to select a path on a scalar: {$1}" />
+		<Entry Token="_code_504" Value="Tried to select a list index on a record: {$1}" />
+		<Entry Token="_code_505" Value="Tried to select sub path of a key that does not exist: {$1}" />
+		<Entry Token="_code_506" Value="Script does not contain a Main" />
+		<Entry Token="_code_507" Value="Could not find variable: {$1}" />
+		<Entry Token="_code_508" Value="Variable is not reference a composite data type: {$1}" />
+		<Entry Token="_code_509" Value="Missing instruction: {$1}" />
+		<Entry Token="_code_510" Value="Could not find variable: {$1}" />
+		<Entry Token="_code_511" Value="Variable is not reference a composite data type: {$1}" />
+		<Entry Token="_code_512" Value="Unable to add null variable" />
+		<Entry Token="_code_513" Value="Unable to add variable: {$1}" />
+		<Entry Token="_code_514" Value="Unable to create value type: {$1}" />
+		<Entry Token="_code_515" Value="Could not find variable: {$1}" />
+		<Entry Token="_code_516" Value="Variable is not reference a composite data type: {$1}" />
+		<Entry Token="_code_517" Value="Function missing, unable to call function: {$1}" />
+		<Entry Token="_code_518" Value="Function must be of type block, unable to call function: {$1}" />
+		<Entry Token="_code_519" Value="Function could not be executed, missing stack context" />
+		<Entry Token="_code_520" Value="Var missing valid variable info" />
+		<Entry Token="_code_521" Value="Var/With/Global missing valid SetTo" />
+		<Entry Token="_code_522" Value="Missing data type" />
+		
+		<Entry Token="_code_50000" Value="'{$1}' not recognized" />
+		<Entry Token="_code_50001" Value="Exception in operation '{$1}'" />
+		<Entry Token="_code_50002" Value="Missing execute context for '{$1}'" />
+		<Entry Token="_code_50003" Value="Missing table when retiring record" />
+		<Entry Token="_code_50004" Value="Missing record id when retiring record" />
+		<Entry Token="_code_50005" Value="Missing table when inserting or updating record" />
+		<Entry Token="_code_50006" Value="Invalid table when inserting or updating record" />
+		<Entry Token="_code_50007" Value="Missing record id when updating record" />
+		<Entry Token="_code_50008" Value="Missing fields when inserting or updating record" />
+		<Entry Token="_code_50009" Value="Encountered deleted record when inserting or updating record" />
+		<Entry Token="_code_50010" Value="Encountered invalid field when inserting or updating record" />
+		<Entry Token="_code_50011" Value="Missing table, record id or field name when updating record" />
+		<Entry Token="_code_50012" Value="Missing table or record id when loading record" />
+		<Entry Token="_code_50013" Value="Missing table in select query" />
+		<Entry Token="_code_50014" Value="Record too large, unable to complete select query" />
+		<Entry Token="_code_50015" Value="Missing {$1} parameter in call to procedure {$2}." />
+		<Entry Token="_code_50016" Value="Requested record is missing or unavailable" />
+		<Entry Token="_code_50100" Value="Missing backup time stamp" />
+		
+		<!-- TODO remove, just for demo -->
+		<Entry Token="_code_900123" Value="File {$1} does not match file {$2}, first hash {$3} second hash {$4}." />
+	</Locale>
+</Dictionary>

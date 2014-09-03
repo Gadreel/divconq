@@ -1,0 +1,35 @@
+<dcScript Title="12 Bottles of Beer Song">
+<Main Parameter="Args">
+	<Info>
+This performance is dedicated to {$Args.DedicatedTo}.</Info>
+
+	<For Name="bottles" From="9" To="0" Step="-1">
+		<Switch Target="$bottles">
+		<Case GreaterThan="2">
+			<Var Name="bottlesleft" Type="Integer" SetTo="$bottles">
+				<Dec />
+			</Var>
+
+			<Info>
+{$bottles} bottles of beer on the wall, {$bottles} bottles of beer.
+Take one down and pass it around, {$bottlesleft} bottles of beer on the wall.</Info>
+		</Case>
+		<Case Equal="2">
+			<Info>
+{$bottles} bottles of beer on the wall, {$bottles} bottles of beer.
+Take one down and pass it around, 1 bottle of beer on the wall.</Info>
+		</Case>
+		<Case Equal="1">
+			<Info>
+{$bottles} bottle of beer on the wall, {$bottles} bottle of beer.
+Take one down and pass it around, no more bottles of beer on the wall.</Info>
+		</Case>
+		<Case Equal="0">
+			<Info>
+No more bottles of beer on the wall, no more bottles of beer.
+Go to the store and buy some more, 12 bottles of beer on the wall.</Info>
+		</Case>
+		</Switch>
+	</For>
+</Main>
+</dcScript>

@@ -1,0 +1,160 @@
+<Dictionary>
+<Locale Id="x-pig-latin">
+	<Entry Token="_code_1" Value="Eneralgay executionway errorway" />
+	<Entry Token="_code_2" Value="Eneralgay executionway arningway" />
+	<Entry Token="_code_100" Value="Unableway otay oadlay ackagespay.lxmay ilefay, expectedway: {$1}" />
+	<Entry Token="_code_101" Value="Unableway otay indfay onfigcay.lxmay ilefay, expectedway: {$1}" />
+	<Entry Token="_code_102" Value="Unableway otay oadlay onfigcay.lxmay ilefay, expectedway: {$1}" />
+	<Entry Token="_code_103" Value="Unableway otay oadlay emaschay ilefay(say)" />
+	<Entry Token="_code_104" Value="Unableway otay oadlay ictionaryday ilefay(say)" />
+	<Entry Token="_code_105" Value="Unableway otay applyway ictionaryday ilefay, issingmay lxmay" />
+	<Entry Token="_code_106" Value="Unableway otay applyway ictionaryday ilefay, ilefay ullnay" />
+	<Entry Token="_code_107" Value="Issingmay ictionaryday ilefay, expectedway: {$1}" />
+	<Entry Token="_code_108" Value="Unableway otay applyway emaschay ilefay, ilefay ullnay" />
+	<Entry Token="_code_109" Value="Issingmay emaschay ilefay, expectedway: {$1}" />
+	<Entry Token="_code_110" Value="Unableway otay applyway emaschay ilefay, issingmay lxmay" />
+	<Entry Token="_code_111" Value="Unableway otay ontinuecay, ubhay escourcesray otnay operlypray initializedway" />
+	<Entry Token="_code_112" Value="Ubhay esourcesray alreadyway oadedlay, utbay ontainedcay errorsway" />
+	<Entry Token="_code_113" Value="Unableway otay ontinuecay, ubhay escourcesray otnay operlypray initializedway" />
+	<Entry Token="_code_114" Value="Oblempray eaningclay upway emporarytay obalsglay" />
+	<Entry Token="_code_115" Value="Issingmay expirationway arameterspay" />
+	<Entry Token="_code_116" Value="Unableway otay oadlay bdcDAY eedsay orfay atabaseday: {$1}" />
+	<Entry Token="_code_117" Value="Issingmay okentay arameterpay inway ignoffsay" />
+	<Entry Token="_code_118" Value="Issingmay usernameway inway usernameway ookuplay" />
+	<Entry Token="_code_119" Value="Invalidway usernameway inway usernameway ookuplay" />
+	<Entry Token="_code_120" Value="Issingmay okentay orway userway idway arameterpay inway erifyvay" />
+	<Entry Token="_code_121" Value="Okentay isway invalidway orway expiredway" />
+	<Entry Token="_code_122" Value="Accountway inway useway" />
+	<Entry Token="_code_123" Value="Invalidway usernameway orway asswordpay" />
+	<Entry Token="_code_124" Value="Userway otnay onfirmedcay" />
+	<Entry Token="_code_125" Value="Asswordpay aymay otnay ebay ankblay" />
+	<Entry Token="_code_126" Value="Asswordpay annotcay ebay usedway, oesday otnay eetmay olicypay" />
+	<Entry Token="_code_127" Value="UserNameway aymay otnay ebay ankblay" />
+	<Entry Token="_code_128" Value="UserNameway aymay otnay ebay ankblay" />
+	<Entry Token="_code_129" Value="Userway otnay oundfay" />
+	<Entry Token="_code_130" Value="UserNameway andway UserIdway aymay otnay ebay ankblay" />
+	<Entry Token="_code_131" Value="UserNameway otnay alidvay" />
+	<Entry Token="_code_200" Value="Issingmay ackagepay esourceray ilefay, expectedway: {$1}" />
+	<Entry Token="_code_201" Value="Issingmay ojectpray esourceray ilefay, expectedway: {$1}" />
+	<Entry Token="_code_202" Value="Ettingssay ecryptday encounteredway anway invalidway ettingssay eykay" />
+	<Entry Token="_code_203" Value="Ettingssay ecryptday ailedfay" />
+	<Entry Token="_code_204" Value="Ettingssay encryptway encounteredway anway invalidway ettingssay eykay" />
+	<Entry Token="_code_205" Value="Ettingssay encryptway ailedfay" />
+	<Entry Token="_code_206" Value="Ettingssay ashhay ailedfay" />
+	<Entry Token="_code_207" Value="Unableway otay oadlay ustomcay Ettingssay Ockclay assclay" />
+	<Entry Token="_code_208" Value="Unableway otay oadlay ustomcay Atabaseday Ockclay assclay: {$1}" />
+	<Entry Token="_code_209" Value="Issingmay atabaseday onfigurationcay" />
+	<Entry Token="_code_210" Value="Issingmay atabaseday onnectioncay onfigurationcay" />
+	<Entry Token="_code_230" Value="Issingmay aluevay orfay IgDateTimebay" />
+	<Entry Token="_code_231" Value="Invalidway ormatfay orfay IgDateTimebay, oundfay: {$1}" />
+	<Entry Token="_code_232" Value="Issingmay emaschay orfay IgDateTimebay" />
+	<Entry Token="_code_300" Value="Unableway otay useway atabaseday eykay ilefay: {$1} - errorway: {$2}" />
+	<Entry Token="_code_301" Value="Annotcay artstay atabaseday oolpay, issingmay onfigurationcay" />
+	<Entry Token="_code_302" Value="Errorway ilewhay onnectingcay otay atabaseday: {$1} - errorway: {$2}" />
+	<Entry Token="_code_303" Value="Equestray abortedway ecausebay atabaseday isway offlineway" />
+	<Entry Token="_code_304" Value="Errorway ilewhay onnectingcay otay atabaseday: {$1} - errorway: {$2}" />
+	<Entry Token="_code_305" Value="Onnectioncay ailedfay orfay: {$1} - otslay: {$2}" />
+	<Entry Token="_code_306" Value="Equestray ejectedray ecausebay allbackcay asway issingmay" />
+	<Entry Token="_code_307" Value="Ullnay equestray ejectedray." />
+	<Entry Token="_code_308" Value="Equestray ejectedray ecausebay atabaseday isway offlineway" />
+	<Entry Token="_code_309" Value="Equestray ejectedray ecausebay ofway invalidway ontentcay" />
+	<Entry Token="_code_310" Value="Equestray ejectedray ecausebay asktay ontextcay isway issingmay" />
+	<Entry Token="_code_311" Value="Equestray ejectedray ecausebay ofway invalidway arameterspay" />
+	<Entry Token="_code_312" Value="Equestray ejectedray ecausebay asktay ontextcay isway invalidway" />
+	<Entry Token="_code_313" Value="Equestray ejectedray ecausebay ofway issingmay arameterpay amenay" />
+	<Entry Token="_code_314" Value="Equestray ejectedray ecausebay arameterpay amednay '{$1}' isway ootay onglay, 250 archay axmay" />
+	<Entry Token="_code_315" Value="Equestray ejectedray ecausebay arameterpay amednay '{$1}' ontainscay estrictedray aracterschay" />
+	<Entry Token="_code_316" Value="Equestray ejectedray ecausebay aluevay isway ootay onglay, 250 archay axmay oundfay {$1} aracterschay" />
+	<Entry Token="_code_317" Value="Equestray ejectedray ecausebay aluevay ontainscay estrictedray aracterschay" />
+	<Entry Token="_code_318" Value="Onnectioncay ailedfay, idday otnay eceiveray expectedway ELLOHAY" />
+	<Entry Token="_code_319" Value="Unableway otay eatecray annelchay otay atabaseday, errorway: {$1}" />
+	<Entry Token="_code_320" Value="Equestray ailedfay ueday otay unexpectedway Exceptionway" />
+	<Entry Token="_code_321" Value="Errorway arsingpay atabaseday esultray: {$1}" />
+	<Entry Token="_code_322" Value="Errorway arsingpay atabaseday essagesmay: {$1}" />
+	<Entry Token="_code_323" Value="Aluevay ouldcay otnay ebay onvertedcay orfay atabaseday, uilderbay execptionway: {$1}" />
+	<Entry Token="_code_324" Value="Equestray ejectedray ecausebay itway asway ootay argelay.  Ocedurepray '{$1}', izesay {$2}." />
+	<Entry Token="_code_325" Value="Atabaseday otnay onnectedcay, annotcay uploadway oredstay ocspray" />
+	<Entry Token="_code_326" Value="Errorway uploadingway oredstay ocspray: {$1}" />
+	<Entry Token="_code_400" Value="Expectedway away IgDecimalbay, otgay: {$1}" />
+	<Entry Token="_code_401" Value="Expectedway away Ecimalday, otgay: {$1}" />
+	<Entry Token="_code_402" Value="Expectedway away IgIntegerbay, otgay: {$1}" />
+	<Entry Token="_code_403" Value="Expectedway away Integerway, otgay: {$1}" />
+	<Entry Token="_code_404" Value="Aluevay ootay onglay: {$1}" />
+	<Entry Token="_code_405" Value="Aluevay ootay ortshay: {$1}" />
+	<Entry Token="_code_406" Value="Aluevay oesday otnay atchmay acceptedway istlay: {$1}" />
+	<Entry Token="_code_407" Value="Orecay ypetay issingmay.  Ouldcay otnay alidatevay: {$1}" />
+	<Entry Token="_code_408" Value="Unableway otay esolveray asway Ingstray: {$1}" />
+	<Entry Token="_code_409" Value="Unableway otay esolveray asway Umbernay: {$1}" />
+	<Entry Token="_code_410" Value="Unableway otay esolveray asway Inarybay: {$1}" />
+	<Entry Token="_code_411" Value="Unableway otay esolveray asway Ooleanbay: {$1}" />
+	<Entry Token="_code_412" Value="Onay orecay ypetay optionsway atchmay.  Ouldcay otnay alidatevay: {$1}" />
+	<Entry Token="_code_413" Value="Issingmay equiredray ataday ypetay: {$1}" />
+	<Entry Token="_code_414" Value="Iedtray otay alidatevay away ecordray, utbay otgay anway unknownway objectway: {$1}" />
+	<Entry Token="_code_415" Value="Iedtray otay alidatevay away istlay, utbay otgay anway unknownway objectway: {$1}" />
+	<Entry Token="_code_416" Value="Issingmay ataday ypetay otay eckchay orfay: {$1}" />
+	<Entry Token="_code_417" Value="Istlay ontainscay ootay ewfay itemsway: {$1}" />
+	<Entry Token="_code_418" Value="Istlay ontainscay ootay anymay itemsway: {$1}" />
+	<Entry Token="_code_419" Value="Ieldfay '{$1}' otnay allowedway: {$2}" />
+	<Entry Token="_code_420" Value="Issingmay ataday ypetay otay eckchay orfay: {$1}" />
+	<Entry Token="_code_421" Value="Iedtray otay apwray away onnay-ecordray, unknownway esolutionray: {$1}" />
+	<Entry Token="_code_422" Value="Iedtray otay apChildwray away ecordray, unknownway esolutionray: {$1}" />
+	<Entry Token="_code_423" Value="Ataday ypetay issingmay.  Ouldcay otnay alidatevay: {$1}" />
+	<Entry Token="_code_424" Value="Aluevay isway equiredray, utbay ouldcay otnay esolveray: {$1} orfay ieldfay: {$2}" />
+	<Entry Token="_code_425" Value="Issingmay asktay ontextcay" />
+	<Entry Token="_code_426" Value="Unknownway ocedurepray" />
+	<Entry Token="_code_427" Value="Otnay authorizedway otay allcay ervicesay" />
+	<Entry Token="_code_428" Value="Equestray ouldshay ebay emptyway" />
+	<Entry Token="_code_429" Value="Unknownway ocedurepray" />
+	<Entry Token="_code_430" Value="Ocedurepray esponseray ouldshay ebay emptyway" />
+	<Entry Token="_code_431" Value="Issingmay asktay ontextcay" />
+	<Entry Token="_code_432" Value="Unknownway operationway" />
+	<Entry Token="_code_433" Value="Unknownway equestray ypetay" />
+	<Entry Token="_code_434" Value="Otnay authorizedway otay allcay ervicesay" />
+	<Entry Token="_code_435" Value="Unknownway esponseray ypetay" />
+	<Entry Token="_code_436" Value="Unknownway ataday ypetay" />
+	<Entry Token="_code_437" Value="Ataday ypetay issingmay.  Ouldcay otnay alidatevay: {$1}" />
+	<Entry Token="_code_438" Value="Onay ataday ypetay optionsway atchmay.  Ouldcay otnay alidatevay: {$1}" />
+	<Entry Token="_code_439" Value="Iedtray otay apwray away onnay-istlay, unknownway esolutionray: {$1}" />
+	<Entry Token="_code_440" Value="Onay ataday ypetay optionsway atchmay.  Ouldcay otnay alidatevay: {$1}" />
+	<Entry Token="_code_442" Value="Issingmay orway invalidway userway edentialscray" />
+	<Entry Token="_code_500" Value="Ariablevay '{$1}' otnay oundfay" />
+	<Entry Token="_code_501" Value="Athpay ookslay ikelay away ieldfay amenay, utbay oundfay away istlay: {$1}" />
+	<Entry Token="_code_502" Value="Indexway outway ofway oundsbay: {$1}" />
+	<Entry Token="_code_503" Value="Iedtray otay electsay away athpay onway away alarscay: {$1}" />
+	<Entry Token="_code_504" Value="Iedtray otay electsay away istlay indexway onway away ecordray: {$1}" />
+	<Entry Token="_code_505" Value="Iedtray otay electsay ubsay athpay ofway away eykay atthay oesday otnay existway: {$1}" />
+	<Entry Token="_code_506" Value="Iptscray oesday otnay ontaincay away Ainmay" />
+	<Entry Token="_code_507" Value="Ouldcay otnay indfay ariablevay: {$1}" />
+	<Entry Token="_code_508" Value="Ariablevay isway otnay eferenceray away ompositecay ataday ypetay: {$1}" />
+	<Entry Token="_code_509" Value="Issingmay instructionway: {$1}" />
+	<Entry Token="_code_510" Value="Ouldcay otnay indfay ariablevay: {$1}" />
+	<Entry Token="_code_511" Value="Ariablevay isway otnay eferenceray away ompositecay ataday ypetay: {$1}" />
+	<Entry Token="_code_512" Value="Unableway otay addway ullnay ariablevay" />
+	<Entry Token="_code_513" Value="Unableway otay addway ariablevay: {$1}" />
+	<Entry Token="_code_514" Value="Unableway otay eatecray aluevay ypetay: {$1}" />
+	<Entry Token="_code_515" Value="Ouldcay otnay indfay ariablevay: {$1}" />
+	<Entry Token="_code_516" Value="Ariablevay isway otnay eferenceray away ompositecay ataday ypetay: {$1}" />
+	<Entry Token="_code_517" Value="Unctionfay issingmay, unableway otay allcay unctionfay: {$1}" />
+	<Entry Token="_code_518" Value="Unctionfay ustmay ebay ofway ypetay ockblay, unableway otay allcay unctionfay: {$1}" />
+	<Entry Token="_code_519" Value="Unctionfay ouldcay otnay ebay executedway, issingmay ackstay ontextcay" />
+	<Entry Token="_code_520" Value="Arvay issingmay alidvay ariablevay infoway" />
+	<Entry Token="_code_521" Value="Ithway issingmay alidvay EtTosay" />
+	<Entry Token="_code_522" Value="Issingmay ataday ypetay" />
+	<Entry Token="_code_50000" Value="'{$1}' otnay ecognizedray" />
+	<Entry Token="_code_50001" Value="Exceptionway inway operationway '{$1}'" />
+	<Entry Token="_code_50002" Value="Issingmay executeway ontextcay orfay '{$1}'" />
+	<Entry Token="_code_50003" Value="Issingmay abletay enwhay etiringray ecordray" />
+	<Entry Token="_code_50004" Value="Issingmay ecordray idway enwhay etiringray ecordray" />
+	<Entry Token="_code_50005" Value="Issingmay abletay enwhay insertingway orway updatingway ecordray" />
+	<Entry Token="_code_50006" Value="Invalidway abletay enwhay insertingway orway updatingway ecordray" />
+	<Entry Token="_code_50007" Value="Issingmay ecordray idway enwhay updatingway ecordray" />
+	<Entry Token="_code_50008" Value="Issingmay ieldsfay enwhay insertingway orway updatingway ecordray" />
+	<Entry Token="_code_50009" Value="Encounteredway eletedday ecordray enwhay insertingway orway updatingway ecordray" />
+	<Entry Token="_code_50010" Value="Encounteredway invalidway ieldfay enwhay insertingway orway updatingway ecordray" />
+	<Entry Token="_code_50011" Value="Issingmay abletay, ecordray idway orway ieldfay amenay enwhay updatingway ecordray" />
+	<Entry Token="_code_50012" Value="Issingmay abletay orway ecordray idway enwhay oadinglay ecordray" />
+	<Entry Token="_code_50013" Value="Issingmay abletay inway electsay eryquay" />
+	<Entry Token="_code_50014" Value="Ecordray ootay argelay, unableway otay ompletecay electsay eryquay" />
+	<Entry Token="_code_50100" Value="Issingmay ackupbay imetay ampstay" />
+</Locale>
+</Dictionary>

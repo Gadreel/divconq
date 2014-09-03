@@ -1,0 +1,14 @@
+<Package 
+	ClassRoot="divconq" 
+	Abbrv="dcw" 
+	Version="0.9.3"
+	MessageCodes="150000-199999"
+>
+	<DependsOn>
+		<Package Name="dcCorePublic" MinVersion="0.9" />
+	
+		<Library File="commons-lang3-3.1.jar" />
+	</DependsOn>
+	
+	<!-- may also list CompatibleWith for tested co-existance -->
+</Package>
