@@ -88,9 +88,10 @@ public class HubResources {
 		return true;
 	}	
 	
-	protected String deployment = "one";
+	protected String deployment = "dcFileServer";
 	protected String hubid = "00001";		// reserved for utilities and stand alones - 00000 reserved for system/core 
 	protected String squad = "one";
+	protected String team = "one";
 	protected HubMode mode = HubMode.Private;		// Gateway, Public (server), Private (server or utility)
 	protected DebugLevel startuplevel = DebugLevel.Info;
 	
@@ -180,6 +181,14 @@ public class HubResources {
 	 */
 	public void setSquadId(String v) {
 		this.squad = v;
+	}
+	
+	public String getTeamId() {
+		return this.team;
+	}
+	
+	public void setTeamId(String v) {
+		this.team = v;
 	}
 	
 	public HubMode getMode() {
@@ -330,6 +339,9 @@ public class HubResources {
 		
 		if (!f.exists()) 
 			f = new File("./config/" + this.deployment + "/" + this.squad + ".xml");
+		
+		if (!f.exists()) 
+			f = new File("./config/" + this.deployment + "/" + this.team + ".xml");
 	
 		if (!f.exists())
 			f = new File("./config/" + this.deployment + "/_config.xml");
@@ -354,6 +366,9 @@ public class HubResources {
 		
 		if (this.config.hasAttribute("Squad"))
 			this.setSquadId(this.config.getAttribute("Squad"));
+		
+		if (this.config.hasAttribute("Team"))
+			this.setTeamId(this.config.getAttribute("Team"));
 		
 		if (this.config.hasAttribute("Mode")) 
 			this.mode = HubMode.valueOf(this.config.getAttribute("Mode"));

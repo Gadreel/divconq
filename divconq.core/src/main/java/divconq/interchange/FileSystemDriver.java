@@ -108,12 +108,24 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 	
 	@Override
 	public void connect(RecordStruct params, OperationCallback callback) {
-		// nothing to do
+		// create root folder if we have one specified and it is not present
+		if (!this.isFieldEmpty("RootFolder")) {
+			Path wd = Paths.get(this.getFieldAsString("RootFolder"));
+			
+			if (Files.notExists(wd))
+				try {
+					Files.createDirectories(wd);
+				} 
+				catch (IOException x) {
+					if (callback != null)
+						callback.error("Unable to mount root folder: " + x);
+				}
+		}
+		
+		//System.out.println("cwd: " + this.getFieldAsString("RootFolder"));
 		
 		if (callback == null)
 			return;
-		
-		//System.out.println("cwd: " + this.getFieldAsString("RootFolder"));
 		
 		callback.completed();
 	}

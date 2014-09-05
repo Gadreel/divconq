@@ -97,7 +97,7 @@ abstract public class OperationCallback extends OperationResult {
 			if (this.called && !this.repeatable)
 				return false;
 			
-			this.errorTr(218, this.opcontext);
+			this.errorTr(218, this.opcontext.freezeToSafeRecord());
 			this.completed();
 		}
 		finally {

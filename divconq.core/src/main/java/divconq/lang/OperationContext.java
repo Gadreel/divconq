@@ -451,6 +451,16 @@ public class OperationContext {
 		return clone;
 	}
 	
+	public RecordStruct freezeToSafeRecord() {
+		RecordStruct clone = (RecordStruct) this.opcontext.deepCopy();
+		
+		this.userctx.freezeSafe(clone);
+		
+		clone.setField("DebugLevel", this.level.toString());
+		
+		return clone;
+	}
+	
 	// return an approved/verified user context (guest if nothing else)
 	// verify says - the given auth token, if any, is valid - if there is none then you are a guest and that is valid
 	// 

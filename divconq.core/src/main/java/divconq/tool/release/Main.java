@@ -123,6 +123,9 @@ public class Main implements ILocalCommandLine {
 					boolean includeinstaller = Struct.objectToBooleanOrFalse(relchoice.getAttribute("IncludeInstaller"));
 					String prinpackage = relchoice.getAttribute("PrincipalPackage");
 					
+					int pspos = prinpackage.lastIndexOf('/');
+					String prinpackagenm = (pspos != -1) ? prinpackage.substring(pspos + 1) : prinpackage;
+					
 					Set<String> instpkgs = new HashSet<>(); 
 					instpkgs.add(prinpackage);
 					
@@ -152,7 +155,7 @@ public class Main implements ILocalCommandLine {
 								if (xres.hasErrors()) 
 									System.out.println("package.xml found, but not usable: " + path);
 								else 
-									availpackages.put(pkgspath.relativize(path).toString(), xres.getResult());
+									availpackages.put(pkgspath.relativize(path).toString().replace('\\', '/'), xres.getResult());
 								
 								return FileVisitResult.SKIP_SUBTREE; 
 							}
@@ -319,7 +322,7 @@ public class Main implements ILocalCommandLine {
 					
 					// copy the principle config
 					Path csrc = Paths.get("./packages/" + prinpackage + "/config");
-					Path cdest = tempfolder.resolve("config/" + prinpackage);
+					Path cdest = tempfolder.resolve("config/" + prinpackagenm);
 					
 					if (Files.exists(csrc)) {
 						Files.createDirectories(cdest);
@@ -331,6 +334,37 @@ public class Main implements ILocalCommandLine {
 							break;
 						}
 					}
+					
+					boolean configpassed = true;
+					
+					// copy packages with config = true
+					for (XElement pkg : relchoice.selectAll("Package")) {
+						if (!"true".equals(pkg.getAttribute("Config")))
+							break;
+						
+						String pname = pkg.getAttribute("Name");
+						
+						pspos = pname.lastIndexOf('/');
+						String pnm = (pspos != -1) ? pname.substring(pspos + 1) : pname;
+						
+						csrc = Paths.get("./packages/" + pname + "/config");
+						cdest = tempfolder.resolve("config/" + pnm);
+						
+						if (Files.exists(csrc)) {
+							Files.createDirectories(cdest);
+							
+							OperationResult cres = FileUtil.copyFileTree(csrc, cdest);
+							
+							if (cres.hasErrors()) {
+								System.out.println("Error with prepping extra config");
+								configpassed = false;
+								break;
+							}
+						}
+					}
+					
+					if (!configpassed)
+						break;
 
 					// also copy installer config if being used
 					if (includeinstaller) {
@@ -389,10 +423,11 @@ public class Main implements ILocalCommandLine {
 					}
 
 					// write env file
-					d1res = IOUtil.saveEntireFile(tempfolder.resolve("env.bat"), "set mem=" + relchoice.getAttribute("Memory", "2048") + "\n"
-							+ "SET project=" + prinpackage + "\n"
-							+ "SET service=" + relchoice.getAttribute("Service", prinpackage) + "\n"
-							+ "SET servicename=" + relchoice.getAttribute("ServiceName", prinpackage + " Service") + "\n");			
+					d1res = IOUtil.saveEntireFile(tempfolder.resolve("env.bat"), 
+							"set mem=" + relchoice.getAttribute("Memory", "2048") + "\r\n"
+							+ "SET project=" + prinpackagenm + "\r\n"
+							+ "SET service=" + relchoice.getAttribute("Service", prinpackagenm) + "\r\n"
+							+ "SET servicename=" + relchoice.getAttribute("ServiceName", prinpackagenm + " Service") + "\r\n");			
 					
 					if (d1res.hasErrors()) {
 						System.out.println("Error with prepping env");
@@ -401,7 +436,12 @@ public class Main implements ILocalCommandLine {
 					
 					System.out.println("Packing Release file.");
 					
-					ZipArchiveOutputStream zipout = new ZipArchiveOutputStream(relpath.resolve(rname + "/" + rname + "-" + relvers + "-bin.zip").toFile()); 
+					Path relbin = relpath.resolve(rname + "/" + rname + "-" + relvers + "-bin.zip");
+					
+					if (Files.notExists(relbin.getParent()))
+						Files.createDirectories(relbin.getParent());
+					
+					ZipArchiveOutputStream zipout = new ZipArchiveOutputStream(relbin.toFile()); 
 					
 			        try {
 						Files.walkFileTree(tempfolder, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,

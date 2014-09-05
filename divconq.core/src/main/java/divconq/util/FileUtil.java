@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.EnumSet;
@@ -346,7 +347,7 @@ public class FileUtil {
 			                Path targetdir = target.resolve(source.relativize(dir));
 			                
 			                try {
-			                    Files.copy(dir, targetdir);
+			                    Files.copy(dir, targetdir, StandardCopyOption.COPY_ATTRIBUTES);
 			                } 
 			                catch (FileAlreadyExistsException x) {
 			                     if (!Files.isDirectory(targetdir))
@@ -361,7 +362,7 @@ public class FileUtil {
 			                throws IOException
 			            {
 			            	if ((filter == null) || filter.test(file))
-			            		Files.copy(file, target.resolve(source.relativize(file)));
+			            		Files.copy(file, target.resolve(source.relativize(file)), StandardCopyOption.COPY_ATTRIBUTES);
 			                
 			                return FileVisitResult.CONTINUE;
 			            }

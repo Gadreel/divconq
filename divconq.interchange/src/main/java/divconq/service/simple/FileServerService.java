@@ -56,8 +56,17 @@ public class FileServerService extends ExtensionBase implements IService {
 		this.minEvidence = "Size";
 		
 		if (config != null) {
-			if (config.hasAttribute("FileStorePath")) 
+			if (config.hasAttribute("FileStorePath")) {
 				this.fsd.setRootFolder(config.getAttribute("FileStorePath"));
+				
+				// don't wait on this, it'll log correctly
+				this.fsd.connect(null, new WrappedOperationCallback(log) {					
+					@Override
+					public void callback() {
+						// NA
+					}
+				});
+			}
 			
 			if (config.hasAttribute("BestEvidence")) 
 				this.bestEvidence = config.getAttribute("BestEvidence");

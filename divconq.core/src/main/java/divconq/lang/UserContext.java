@@ -254,7 +254,16 @@ public class UserContext {
 	
 	@Override
 	public String toString() {
-		return this.context.toPrettyString(); 
+		RecordStruct usr = (RecordStruct) this.context.deepCopy();
+		
+		RecordStruct creds = usr.getFieldAsRecord("Credentials");
+		
+		if (creds != null) {
+			if (creds.hasField("Password"))
+				creds.setField("Password", "*****");
+		}
+		
+		return usr.toPrettyString(); 
 	}
 	
 	@Override
@@ -263,5 +272,16 @@ public class UserContext {
 			return false;
 		
 		return this.context.equals(((UserContext)obj).context);
+	}
+
+	public void freezeSafe(RecordStruct m) {
+		m.copyFields(this.context);
+		
+		RecordStruct creds = m.getFieldAsRecord("Credentials");
+		
+		if (creds != null) {
+			if (creds.hasField("Password"))
+				creds.setField("Password", "*****");
+		}
 	}
 }
