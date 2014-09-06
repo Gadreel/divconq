@@ -15,8 +15,8 @@ Links
 -----
 
 * [Web Site] (http://divconq.com/mft)
-* Downloads
-* Documentation
+* [Downloads] (https://github.com/Gadreel/divconq/wiki/Downloads)
+* [Documentation] (https://github.com/Gadreel/divconq/wiki)
 
 Building
 --------
