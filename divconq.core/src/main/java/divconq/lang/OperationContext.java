@@ -290,13 +290,13 @@ public class OperationContext {
 	static public void isGuest(OperationContext ctx, final FuncCallback<Boolean> cb) {
 		if ((ctx == null) || (ctx.userctx == null)) {
 			cb.setResult(false);
-			cb.completed();
+			cb.complete();
 			return;
 		}
 			
 		if (ctx.userctx.looksLikeGuest()) {
 			cb.setResult(true);
-			cb.completed();
+			cb.complete();
 			return;
 		}
 		
@@ -305,7 +305,7 @@ public class OperationContext {
 			public void callback() {
 				// be sure to call TaskContext.get() because task context can change during verify
 				cb.setResult(this.getResult().looksLikeGuest());
-				cb.completed();
+				cb.complete();
 			}
 		});
 	}
@@ -468,13 +468,13 @@ public class OperationContext {
 		if (this.userctx == null) {
 			cb.errorTr(444);
 			cb.setResult(UserContext.allocateGuest());
-			cb.completed();
+			cb.complete();
 			return;
 		}
 			
 		if (this.userctx.isVerified() || this.isElevated()) {
 			cb.setResult(this.userctx);
-			cb.completed();
+			cb.complete();
 			return;
 		}
 		
@@ -488,7 +488,7 @@ public class OperationContext {
 			else 
 				cb.setResult(r.getContext().getUserContext());
 			
-			cb.completed();
+			cb.complete();
 		});
 	}
 	

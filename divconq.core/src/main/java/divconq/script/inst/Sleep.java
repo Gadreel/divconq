@@ -26,11 +26,9 @@ import divconq.script.StackEntry;
 import divconq.work.TaskRun;
 
 public class Sleep extends Instruction {
-	protected ScheduledFuture<?> future = null;
-	
 	@Override
 	public void run(StackEntry stack) {
-		this.future = null;
+		stack.getStore().removeField("Future");
 		
 		// TODO support Period or Duration also
 		int secs = (int) stack.intFromSource("Seconds");
@@ -39,8 +37,8 @@ public class Sleep extends Instruction {
 		TaskRun srun = stack.getActivity().getTaskRun();
 		int omin2 = 0;
 		
-		// if we are inside a task (most of the time, but not for single step debug) we have only 1 minute, what if sleep is longer?
-		// don't worry about restoring the timeout, each time we run an instruction it is reset to 1 min
+		// if we are inside a task we have only 1 minute, what if sleep is longer?
+		// automatically change timeout for the instruction
 		if (srun != null) {
 			omin2 = srun.getTask().getTimeout();
 			int pmin = (secs / 60) + 1;  // convert sleep to minutes
@@ -49,34 +47,33 @@ public class Sleep extends Instruction {
 		
 		int omin = omin2;
 		
-		//System.out.println("sleep started");
-		
-		// do not use, scheduler shuts down and leaves Script thread hanging on the resume, resume must execute even in shut down
-		this.future = Hub.instance.getClock().scheduleOnceInternal(() -> {
+		// TODO review if shutdown leaves Script thread hanging and uncanceled if sleep is long
+		stack.getStore().setField("Future", Hub.instance.getClock().scheduleOnceInternal(() -> {
 			//System.out.println("after sleep point");
-			Sleep.this.future = null;
+			stack.getStore().removeField("Future");
 			
-			// strictly speaking may not be needed, but good idea to ensure you are always working with the correct context
+			// ensure we are working with the correct context during resume 
 			OperationContext.set(ctx);
 			
 			if (srun != null) 
-				srun.getTask().withTimeout(omin);		// up the timeout for this instruction
+				srun.getTask().withTimeout(omin);		// restore the original timeout 
 			
 			stack.setState(ExecuteState.Done);
 			stack.resume();
-		}, secs);
+		}, secs));
 	}
 	
 	@Override
 	public void cancel(StackEntry stack) {
-		System.out.println("sleep cancelled");
+		//System.out.println("sleep cancelled");
 		
 		// avoid race condition
-		ScheduledFuture<?> lf = this.future;
+		ScheduledFuture<?> lf = (ScheduledFuture<?>) stack.getStore().getFieldAsAny("Future");
 		
 		if (lf != null) {
 			lf.cancel(false);
-			this.future = null;
+			
+			stack.getStore().removeField("Future");
 		}
 	}
 }

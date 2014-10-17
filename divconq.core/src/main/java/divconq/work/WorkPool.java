@@ -40,10 +40,8 @@ import divconq.xml.XElement;
 
 public class WorkPool implements ExecutorService {
 	protected LinkedBlockingQueue<TaskRun> queue = new LinkedBlockingQueue<>();
-	protected ConcurrentHashMap<Integer, Worker> slots = new ConcurrentHashMap<>();
+	protected Worker[] slots = null;
 	protected ConcurrentHashMap<String, WorkBucket> buckets = new ConcurrentHashMap<>();
-	
-	protected int size = 16;
 	
 	// when set, the pool will work only on N number of tasks until one of those tasks completes
 	// where upon a new task from the general queue "queue" can be accepted
@@ -58,23 +56,29 @@ public class WorkPool implements ExecutorService {
 	protected boolean poolTrace = false;
 	
 	public void init(OperationResult or, XElement config) {
+		int size = 16;
+		
+		if (config != null) {
+			size = Integer.parseInt(config.getAttribute("Threads", "16"));
+			this.scheduleFreq = Integer.parseInt(config.getAttribute("TimeoutChecker", "150"));
+			this.poolTrace = "True".equals(config.getAttribute("Trace", "False"));
+		}
+		
+		this.slots = new Worker[size];
+		
 		// place the default bucket in - it might be overridden in config
 		WorkBucket defbucket = new WorkBucket();
-		defbucket.init(or, new XElement("Bucket", new XAttribute("Name", "Default")), this.size);
+		defbucket.init(or, new XElement("Bucket", new XAttribute("Name", "Default")), size);
 		
 		if (or.hasErrors())
 			return;
 		
 		this.buckets.put(defbucket.getName(), defbucket);
-
+		
 		if (config != null) {
-			this.size = Integer.parseInt(config.getAttribute("Threads", "16"));
-			this.scheduleFreq = Integer.parseInt(config.getAttribute("TimeoutChecker", "150"));
-			this.poolTrace = "True".equals(config.getAttribute("Trace", "False"));
-						
  			for (XElement bucketel : config.selectAll("Bucket")) {
  				WorkBucket bucket = new WorkBucket();
- 				bucket.init(or, bucketel, this.size);
+ 				bucket.init(or, bucketel, size);
  				
  				if (or.hasErrors())
  					return;
@@ -85,7 +89,7 @@ public class WorkPool implements ExecutorService {
 		
 		Hub.instance.getCountManager().allocateSetNumberCounter("dcWorkPool_Buckets", this.buckets.size());
 		
-		Hub.instance.getCountManager().allocateSetNumberCounter("dcWorkPool_Threads", this.size);
+		Hub.instance.getCountManager().allocateSetNumberCounter("dcWorkPool_Threads", size);
 	}
 
 	public void addBucket(WorkBucket bucket) {
@@ -96,14 +100,8 @@ public class WorkPool implements ExecutorService {
 		this.buckets.remove(name);
 	}
 	
-	public void init(int threads) {
-		this.size = threads;
-		
-		Hub.instance.getCountManager().allocateSetNumberCounter("dcWorkPool_Threads", this.size);
-	}
-	
 	public int threadCount() {
-		return this.size; 
+		return this.slots.length; 
 	}
 	
 	public long threadsCreated() {
@@ -193,7 +191,7 @@ public class WorkPool implements ExecutorService {
 		
 		// this will also catch if run was resubmitted but killed
 		if (run.hasErrors()) {
-			run.errorTr(216, run);
+			run.errorTr(216, run);		// TODO different error messages if resume
 			run.complete();
 			return;
 		}
@@ -203,6 +201,14 @@ public class WorkPool implements ExecutorService {
 			run.errorTr(198, run);
 			run.complete();
 			return;
+		}
+		
+		// if resume then see if we are a currently running thread, if so just reuse the thread (throttling allowing)
+		if (run.hasStarted()) { 
+			Worker w = this.slots[run.slot];
+			
+			if ((w != null) && w.resume(run))
+				return;
 		}
 		
 		// find the work bucket
@@ -259,7 +265,7 @@ public class WorkPool implements ExecutorService {
 	}
 	
 	public void start(OperationResult or) {
-		for (int i = 0; i < this.size; i++) 
+		for (int i = 0; i < this.slots.length; i++) 
 			this.initSlot(i);
 		
 		// the task defines a timeout, not the pool.  tasks with no timeout set
@@ -271,8 +277,12 @@ public class WorkPool implements ExecutorService {
 				reporter.setStatus("Reviewing hung buckets");
 				
 				// even when stopping we still want to clear hung tasks
-				for (Worker w : WorkPool.this.slots.values()) 
-					w.checkIfHung();
+				for (int i = 0; i < WorkPool.this.slots.length; i++) {
+					Worker w = WorkPool.this.slots[i];
+					
+					if (w != null) 
+						w.checkIfHung();
+				}
 				
 				for (WorkBucket b : WorkPool.this.buckets.values()) 
 					b.checkIfHung();
@@ -290,22 +300,13 @@ public class WorkPool implements ExecutorService {
 	protected void initSlot(int slot) {
 		if (!this.shutdown) {
 			Worker work = new Worker();
-			this.slots.put(slot, work);
+			this.slots[slot] = work;
 			work.start(slot);
 		}
 		else
-			this.slots.remove(slot);
+			this.slots[slot] = null;
 		
-		Logger.trace("Thread Pool slot " + slot + " changed, now have " + this.slots.size() + " threads");
-	}
-	
-	public void stopNice(OperationResult or) {
-		or.trace(0, "Work Pool Stopping Nice");
-		
-		this.shutdown = true;
-		
-		for (Worker w : this.slots.values()) 
-			w.stopNice();
+		//Logger.trace("Thread Pool slot " + slot + " changed, now have " + this.slots.size() + " threads");
 	}
 	
 	public void stop(OperationResult or) {
@@ -313,16 +314,32 @@ public class WorkPool implements ExecutorService {
 		
 		this.shutdown = true;
 		
+		// quickly let everyone know it is time to stop
 		or.trace(0, "Work Pool Stopping Nice");
 		
-		for (Worker w : this.slots.values()) 
-			w.stopNice();
+		for (int i = 0; i < WorkPool.this.slots.length; i++) {
+			Worker w = WorkPool.this.slots[i];
+			
+			if (w != null) 
+				w.stopNice();
+		}
 		
 		or.trace(0, "Work Pool Waiting");
 				
+		int remaincnt = 0;
+		
 		// wait a minute for things to finish up.   -- TODO config
-		for (int i = 0; i < 60; i++) {
-			if (this.slots.size() == 0)
+		for (int i2 = 0; i2 < 60; i2++) {
+			remaincnt = 0;
+			
+			for (int i = 0; i < WorkPool.this.slots.length; i++) {
+				Worker w = WorkPool.this.slots[i];
+				
+				if (w != null) 
+					remaincnt++;
+			}
+			
+			if (remaincnt == 0)
 				break;
 			
 			try {
@@ -332,12 +349,21 @@ public class WorkPool implements ExecutorService {
 			}
 		}
 		
-		or.trace(0, "Work Pool Size: " + this.slots.size());
+		or.trace(0, "Work Pool Size: " + remaincnt);
 		
 		or.trace(0, "Work Pool Interrupt Remaining Workers");
 		
-		for (Worker w : this.slots.values()) 
-			w.stop();
+		for (int i = 0; i < WorkPool.this.slots.length; i++) {
+			Worker w = WorkPool.this.slots[i];
+			
+			if (w != null) 
+				w.stop();
+		}
+		
+		or.trace(0, "Work Pool Cleaning Buckets");
+		
+		for (WorkBucket bucket : this.buckets.values()) 
+			bucket.stop();
 		
 		or.trace(0, "Work Pool Stopped");
 	}

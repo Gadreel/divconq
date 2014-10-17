@@ -16,13 +16,18 @@
 ************************************************************************ */
 package divconq.web;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.stream.ChunkedInput;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import divconq.bus.Message;
 import divconq.session.Session;
 import divconq.util.MimeUtil;
@@ -178,6 +183,33 @@ public class HttpContext {
 			this.response.write(this.chan);
 	}
 	
+	public void sendStart(int contentLength) {
+		if ((this.chan != null) && (this.response != null)) 
+			this.response.writeStart(this.chan, contentLength);
+	}
+
+	public void send(ByteBuf content) {
+		if (this.chan != null)  
+			this.chan.write(new DefaultHttpContent(content));
+	}
+
+	public void send(ChunkedInput<HttpContent> content) {
+		if (this.chan != null)  
+			this.chan.write(content).addListener(new GenericFutureListener<Future<? super Void>>() {
+				@Override
+				public void operationComplete(Future<? super Void> future)
+						throws Exception {
+					//System.out.println("Sending an end");
+					//HttpContext.this.response.writeEnd(HttpContext.this.chan);
+				}
+			});
+	}
+	
+	public void sendEnd() {
+		if ((this.chan != null) && (this.response != null)) 
+			this.response.writeEnd(this.chan);
+	}
+	
 	public void sendChunked() {
 		//if ((this.chan != null) && this.chan.isWritable() && (this.response != null)) 
 		if ((this.chan != null) && (this.response != null)) 
@@ -231,6 +263,8 @@ public class HttpContext {
 		try {
 			if ((this.chan != null)) 
 				this.chan.writeAndFlush(chunk).sync();    // for downloads we do need sync so we don't overwhelm client
+			
+			// TODO see if we can use something other than sync - http://normanmaurer.me/presentations/2014-facebook-eng-netty/slides.html#10.0
 		}
 		catch (Exception x) {
 		}

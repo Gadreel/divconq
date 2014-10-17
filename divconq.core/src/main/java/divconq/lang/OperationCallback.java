@@ -36,15 +36,10 @@ abstract public class OperationCallback extends OperationResult {
 	protected boolean called = false;
 	protected ISchedule timeout = null;
 	protected ReentrantLock oplock = new ReentrantLock();
-	protected boolean repeatable = false;
 	protected TaskRun run = null;
 	
 	public OperationCallback() {
 		super();
-	}
-	
-	public void setRepeatable(boolean v) {
-		this.repeatable = v;
 	}
 	
 	public OperationCallback(DebugLevel loglevel) {
@@ -88,69 +83,71 @@ abstract public class OperationCallback extends OperationResult {
 	// return true if timeout occurred, false if already completed
 	public boolean abandon() {
 		// courtesy only, no need to look if we do know called is true, real called check below
-		if (this.called && !this.repeatable)
+		if (this.called)
 			return false;
 		
 		this.oplock.lock();
 		
 		try {
-			if (this.called && !this.repeatable)
+			if (this.called)
 				return false;
 			
 			this.errorTr(218, this.opcontext.freezeToSafeRecord());
-			this.completed();
 		}
 		finally {
 			this.oplock.unlock();
 		}
 		
+		this.complete();
+		
 		return true;
 	}
 	
-	public void completed() {
+	public void complete() {
 		// courtesy only, no need to look if we do know called is true, real called check below
-		if (this.called && !this.repeatable)
+		if (this.called)
 			return;
 		
 		this.oplock.lock();
 		
 		try {
-			if (this.called && !this.repeatable)
+			// check for race condition
+			if (this.called)
 				return;
 			
 			this.called = true;
-			
-			if (this.timeout != null)
-				this.timeout.cancel();
-			
-			// if we are related to a task in the workpool, this is all we need to get the task working correctly again 
-			// see TaskRun.resume - must keep this idea and that idea in sync
-			
-			if (this.run != null) 
-				this.run.resume();			// do not use local context if have run, run's context may be fresher than ours do due to multiple callbacks after a bus call
-			else if (this.opcontext != null)
-				OperationContext.set(this.opcontext);
-			
-			this.callback();
-			
-			for (IOperationObserver ob : this.observers) {
-				try {
-					if (ob instanceof ICallbackObserver)
-						((ICallbackObserver)ob).completed(this);			
-				} 
-				catch (Exception x) {
-					this.error("Error notifying completing task: " + x);
-				}
-				
-				// they might change context on us, return context
-				if (this.run != null) 
-					this.run.resume();			// do not use local context if have run, run's context may be fresher than ours do due to multiple callbacks after a bus call
-				else if (this.opcontext != null)
-					OperationContext.set(this.opcontext);
-			}
 		}
 		finally {
 			this.oplock.unlock();
+		}
+		
+		if (this.timeout != null)
+			this.timeout.cancel();
+		
+		// if we are related to a task in the workpool, this is all we need to get the task working correctly again 
+		// see TaskRun.resume - must keep this idea and that idea in sync
+		
+		if (this.run != null) 
+			this.run.thawContext();			// do not use local context if have run, run's context may be fresher than ours do due to multiple callbacks after a bus call
+		else if (this.opcontext != null)
+			OperationContext.set(this.opcontext);
+		
+		this.callback();
+		
+		for (IOperationObserver ob : this.observers) {
+			try {
+				if (ob instanceof ICallbackObserver)
+					((ICallbackObserver)ob).completed(this);			
+			} 
+			catch (Exception x) {
+				this.error("Error notifying completing task: " + x);
+			}
+			
+			// they might change context on us, return context
+			if (this.run != null) 
+				this.run.thawContext();			// do not use local context if have run, run's context may be fresher than ours do due to multiple callbacks after a bus call
+			else if (this.opcontext != null)
+				OperationContext.set(this.opcontext);
 		}
 	}
 

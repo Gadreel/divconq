@@ -61,10 +61,15 @@ public abstract class BlockInstruction extends Instruction {
 	// no need for try catch here, should always be handled in the subclass
 	@Override
     public void run(final StackEntry stack) {
-		if (stack.getState() == ExecuteState.Ready) {
-        	stack.setState(ExecuteState.Resume);
+		if (stack.getState() == ExecuteState.Done) {
         	stack.resume();
         	return;
+		}
+		
+		if (stack.getState() == ExecuteState.Ready) {
+        	stack.setState(ExecuteState.Resume);
+        	//stack.resume();
+        	//return;
 		}
 		
 		this.alignInstruction(stack, new OperationCallback() {			
@@ -96,9 +101,7 @@ public abstract class BlockInstruction extends Instruction {
 							ExecuteState cstate = child.getState();
 							
 							if ((cstate != ExecuteState.Ready) && (cstate != ExecuteState.Resume)) {
-						        if (cstate == ExecuteState.Exit) 
-						        	bstack.setState(ExecuteState.Exit);
-						        else if (cstate == ExecuteState.Break)  
+						        if (cstate == ExecuteState.Break)  
 						        	bstack.setState(ExecuteState.Done);
 						        else if (cstate == ExecuteState.Continue) 
 						        	BlockInstruction.this.continueInstruction(stack);
@@ -141,7 +144,7 @@ public abstract class BlockInstruction extends Instruction {
     	// if at end of block, treat as a continue - initiate iteration logic
     	if (bstack.getPosition() >= this.instructions.size()) { 
     		this.continueInstruction(stack);
-    		callback.completed();
+    		callback.complete();
     	}
     	else
     		this.alignInstruction(stack, callback);
@@ -152,12 +155,8 @@ public abstract class BlockInstruction extends Instruction {
     public void alignInstruction(final StackEntry stack, OperationCallback callback) {
     	StackBlockEntry bstack = (StackBlockEntry)stack;
     	
-    	if ((bstack.getState() == ExecuteState.Done) || (bstack.getState() == ExecuteState.Exit)) {
+    	if ((bstack.getState() == ExecuteState.Done) || (bstack.getState() == ExecuteState.Break) || (bstack.getState() == ExecuteState.Continue)) {
         	bstack.setChild(null);
-    	}
-    	else if ((bstack.getState() == ExecuteState.Break) || (bstack.getState() == ExecuteState.Continue)) {
-        	bstack.setChild(null);
-    		//stack.setState(ExecuteState.Done);
     	}
     	else if (bstack.getPosition() >= this.instructions.size()) {
         	bstack.setChild(null);
@@ -172,7 +171,7 @@ public abstract class BlockInstruction extends Instruction {
 	        	bstack.setChild(inst.createStack(stack.getActivity(), bstack));
         }
     	
-    	callback.completed();
+    	callback.complete();
     }
 
     @Override

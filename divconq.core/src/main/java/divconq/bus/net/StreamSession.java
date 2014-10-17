@@ -21,7 +21,7 @@ import javax.security.cert.X509Certificate;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.handler.ssl.SslHandler;
+import divconq.net.ssl.SslHandler;
 import divconq.bus.HubRouter;
 import divconq.hub.Hub;
 import divconq.lang.OperationContext;
@@ -110,8 +110,10 @@ public class StreamSession {
 			}
 		}
 		catch (Exception x) {
-			System.out.println("Error writing stream message: " + m);
-			System.out.println("Error writing stream message: " + x);
+			Logger.error("Error writing stream message: " + m);
+			Logger.error("Error writing stream message: " + x);
+			
+			x.printStackTrace();
 			
 			// TODO close channel ?
 		}
@@ -119,7 +121,7 @@ public class StreamSession {
 			//m.release();		// if the data is on the network we don't need the buffer anymore  -- release in stream encoder
 		}
 		
-		System.out.println("Could not write stream message");
+		Logger.error("Could not write stream message");
 		
 		return false;
 	}

@@ -56,45 +56,137 @@ public class BigIntegerStruct extends ScalarStruct {
 	public boolean isEmpty() {
 		return (this.value == null);
 	}
-
-
-		/*
-		switch (operation)
-		{
-			case "Inc":
-				Value++;
-				break;
-			case "Dec":
-				Value--;
-				break;
-			case "Copy":
-				Value = iv.Value;
-				break;
-			case "Add":
-				Value += iv.Value;
-				break;
-			case "Subtract":
-				Value -= iv.Value;
-				break;
-			case "Multiply":
-				Value *= iv.Value;
-				break;
-			case "Divide":
-				Value /= iv.Value;
-				break;
-			case "Min":
-				Value = (iv.Value < Value) ? iv.Value : Value;
-				break;
-			case "Max":
-				Value = (iv.Value > Value) ? iv.Value : Value;
-				break;
-			case "Abs":
-				Value = Math.Abs(iv.Value);
-				break;
-			default:
-				throw new IllegalArgumentException("Unknown operation: " + operation);
+	
+	@Override
+	public boolean isNull() {
+		return (this.value == null);
+	}
+	
+	@Override
+	public void operation(StackEntry stack, XElement code) {
+		// we are loose on the idea of null/zero.  operations always perform on 0, except Validate
+		if ((this.value == null) && !"Validate".equals(code.getName()))
+			this.value = BigInteger.ZERO;
+		
+		if ("Inc".equals(code.getName())) {
+			this.value = this.value.add(BigInteger.ONE);
+			stack.resume();
+			return;
 		}
-		*/
+		else if ("Dec".equals(code.getName())) {
+			this.value = this.value.subtract(BigInteger.ONE);
+			stack.resume();
+			return;
+		}
+		else if ("Set".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+			
+			this.adaptValue(sref);			
+			
+			stack.resume();
+			return;
+		}
+		else if ("Add".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+
+			try {
+				this.value = this.value.add(Struct.objectToBigInteger(sref));			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		else if ("Subtract".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+
+			try {
+				this.value = this.value.subtract(Struct.objectToBigInteger(sref));			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		else if ("Multiply".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+
+			try {
+				this.value = this.value.multiply(Struct.objectToBigInteger(sref));			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		else if ("Divide".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+
+			try {
+				this.value = this.value.divide(Struct.objectToBigInteger(sref));			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		else if ("Min".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+
+			try {
+				this.value = this.value.min(Struct.objectToBigInteger(sref));			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		else if ("Max".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+		
+			try {
+				this.value = this.value.max(Struct.objectToBigInteger(sref));			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+				
+			stack.resume();
+			return;
+		}
+		else if ("Abs".equals(code.getName())) {
+			this.value = this.value.abs();			
+			
+			stack.resume();
+			return;
+		}
+		
+		super.operation(stack, code);
+	}
 
     @Override
     protected void doCopy(Struct n) {
@@ -155,22 +247,6 @@ public class BigIntegerStruct extends ScalarStruct {
 	
 	@Override
 	public boolean checkLogic(StackEntry stack, XElement source) {
-		boolean isok = true;
-		boolean condFound = false;
-		
-		if (isok && source.hasAttribute("IsNull")) {
-			isok = stack.boolFromElement(source, "IsNull") ? (this.value == null) : (this.value != null);
-            condFound = true;
-        }
-		
-		if (isok && source.hasAttribute("IsEmpty")) {
-			isok = stack.boolFromElement(source, "IsEmpty") ? this.isEmpty() : !this.isEmpty();
-            condFound = true;
-        }
-		
-		if (!condFound) 
-			isok = false;			
-		
-		return isok;
+		return Struct.objectToBooleanOrFalse(this.value);
 	}
 }

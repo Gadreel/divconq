@@ -63,7 +63,7 @@ public class LocalFileStore {
 		FileStoreEvent evnt = new FileStoreEvent();
 		
 		evnt.packagename = p.getName(0);
-		evnt.path = p.subpathAbs(1);
+		evnt.path = p.subpath(1);
 		evnt.delete = deleted;		
 		
 		CopyOnWriteArrayList<FuncCallback<FileStoreEvent>> cblist = this.listeners.get(evnt.packagename);
@@ -71,7 +71,7 @@ public class LocalFileStore {
 		if (cblist != null) {
 			for (FuncCallback<FileStoreEvent> cb : cblist) {
 				cb.setResult(evnt);
-				cb.completed();
+				cb.complete();
 			}
 		}
 	}

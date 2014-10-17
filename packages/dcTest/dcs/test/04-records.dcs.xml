@@ -1,0 +1,153 @@
+<dcScript>
+<Main>
+	<!-- 
+		When you set a variable to the value of a field, it is a copy
+		not a reference.  See how append works differently with the copy.
+		
+		Output will be:
+		Color: Green
+		Color Copy: Green
+		Color: Green and Healthy!
+		Color Copy: Green and Mean!
+	-->
+	<Var Name="obj" Type="Record">
+		<SetField Name="Color" Value="Green" />
+	</Var>
+	
+	<Console>Color: {$obj.Color}</Console>
+	
+	<Var Name="ColorCopy" Type="String" SetTo="$obj.Color" />
+	
+	<Console>Color Copy: {$ColorCopy}</Console>
+	
+	<With Target="$obj.Color">
+		<Append Value=" and Healthy!" />
+	</With>
+	
+	<With Target="$ColorCopy">
+		<Append Value=" and Mean!" />
+	</With>
+	
+	<Console>Color: {$obj.Color}</Console>
+	<Console>Color Copy: {$ColorCopy}</Console>
+	
+	<!-- 
+		Due to a quirk of dcScript you can sometimes set the value of a
+		Field with SetTo.  Only if the field already exists though.
+		Use of this quirk is not recommended but may at some point
+		be helpful to recognize.
+		
+		Output will be:
+		Field will be null: null
+		Field will be "temp": temp
+		Field will be "YES": YES
+		Field will be "final": final
+	-->
+	<Var Name="Rec1" Type="Record" />
+
+	<!-- will not set because Fld1 does not exist -->
+	<With Target="$Rec1.Fld1" SetTo="NO" />
+		
+	<Console>Field will be null: {$Rec1.Fld1}</Console>
+
+	<IfEmpty Target="$Rec1.Fld1">
+		<With Target="$Rec1">
+			<SetField Name="Fld1" Value="temp" />
+		</With>
+	</IfEmpty>
+
+	<Console>Field will be "temp": {$Rec1.Fld1}</Console>
+
+	<!-- SetTo works here because the field already exists -->
+	<With Target="$Rec1.Fld1" SetTo="YES" />
+
+	<Console>Field will be "YES": {$Rec1.Fld1}</Console>
+
+	<IfNotEmpty Target="$Rec1.Fld1">
+		<With Target="$Rec1">
+			<SetField Name="Fld1" Value="final" />
+		</With>
+	</IfNotEmpty>
+
+	<Console>Field will be "final": {$Rec1.Fld1}</Console>	
+	
+	<!-- 
+		Additional examples of Records and Lists as
+		Fields.  
+		
+		Output will be:
+		Field 1 in Rec 1 - temp
+		Field 3 in Rec 1 via Rec 2 - vine
+		Item 3 in List 1 - e3
+		Item 2 in List 1 via Rec 2 - e2
+	-->
+	<Var Name="Rec2" Type="Record" />
+	<Var Name="List1" Type="List" />
+
+	<With Target="$Rec1">
+		<SetField Name="Fld1" Value="temp" />
+	</With>
+
+	<With Target="$Rec2">
+		<SetField Name="FldA" Value="$Rec1" />
+		<SetField Name="FldB" Value="other" />
+	</With>
+
+	<With Target="$Rec1">
+		<SetField Name="Fld2" Value="out there" />
+	</With>
+	
+	<With Target="$List1">
+		<AddItem Value="e1" />
+		<AddItem Value="e2" />
+		<AddItem Value="e3" />
+	</With>
+
+	<With Target="$Rec2">
+		<SetField Name="FldC" Value="$List1" />
+	</With>
+
+	<With Target="$Rec2.FldC">
+		<AddItem Value="e4" />
+	</With>
+
+	<With Target="$Rec2.FldA">
+		<SetField Name="Fld3" Value="vine" />
+	</With>
+
+	<Console>Field 1 in Rec 1 - {$Rec1.Fld1}</Console>
+	<Console>Field 3 in Rec 1 via Rec 2 - {$Rec2.FldA.Fld3}</Console>
+	<Console>Item 3 in List 1 - {$List1.2}</Console>
+	<Console>Item 2 in List 1 via Rec 2 - {$Rec2.FldC.1}</Console>
+	
+	<!-- 
+		Examples of indirection - using Strings as variable names.  
+		
+		Output will be:
+		out there
+		out there
+		out there
+		out there
+		out there
+		out there
+		out there
+		e2
+		e2
+	-->
+	<Var Name="n1" Type="String" SetTo="Rec2" />
+	<Var Name="n2" Type="String" SetTo="FldA" />
+	<Var Name="n3" Type="String" SetTo="Fld2" />
+	<Var Name="n4" Type="String" SetTo="1" />
+	
+	<Console>${$n1}.FldA.Fld2</Console>
+	<Console>$Rec2.{$n2}.Fld2</Console>
+	<Console>$Rec2.FldA.{$n3}</Console>
+	<Console>$Rec2.{$n2}.{$n3}</Console>
+	<Console>${$n1}.{$n2}.Fld2</Console>
+	<Console>${$n1}.FldA.{$n3}</Console>
+	<Console>${$n1}.{$n2}.{$n3}</Console>
+	
+	<Console>$Rec2.FldC.{$n4}</Console>
+	<Console>${$n1}.FldC.{$n4}</Console>
+</Main>
+</dcScript>

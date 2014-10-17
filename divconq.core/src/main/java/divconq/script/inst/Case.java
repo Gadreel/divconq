@@ -32,7 +32,7 @@ public class Case extends LogicBlockInstruction {
     	if (bstack.getPosition() >= this.instructions.size()) {
     		stack.setState(ExecuteState.Break);						// Break, not Done - get out of the Switch
         	
-        	callback.completed();
+        	callback.complete();
     	}
         else
         	super.alignInstruction(stack, callback);
@@ -40,12 +40,6 @@ public class Case extends LogicBlockInstruction {
     
     @Override
     public void run(final StackEntry stack) {
-		if (stack.isDone()) {
-        	stack.setState(ExecuteState.Done);
-        	stack.resume();
-        	return;
-		}
-		
 		// mark the flag as ready to stop, but to give debugger a
 		// natural feel don't actually stop until second execute
 		if (stack.getState() == ExecuteState.Ready) {
@@ -64,7 +58,8 @@ public class Case extends LogicBlockInstruction {
 	        
 	        // if we do not have or do not pass logical condition then mark as done so we will skip this block
 	        // note that for the sake of nice debugging we do not set Done state here, would cause skip in debugger
-	        stack.setDone((var == null) || !this.checkLogic(stack, (ScalarStruct)var, this.source)); 
+	        if ((var == null) || !LogicBlockInstruction.checkLogic(stack, (ScalarStruct)var, this.source))
+	        	stack.setState(ExecuteState.Done);
 		}
 
     	super.run(stack);

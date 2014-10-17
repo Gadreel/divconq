@@ -29,26 +29,21 @@ public class While extends LogicBlockInstruction {
     	
     	// signal end if conditional logic fails after loop
     	if (bstack.getPosition() >= this.instructions.size())
-    			if (this.checkLogic(stack))
-    				bstack.setPosition(0);
-    			else
-    				stack.setState(ExecuteState.Done);
+			if (this.checkLogic(stack))
+				bstack.setPosition(0);
+			else
+				stack.setState(ExecuteState.Done);
     	
        	super.alignInstruction(stack, callback);
     }
     
     @Override
     public void run(final StackEntry stack) {
-		if (stack.isDone()) {
-        	stack.setState(ExecuteState.Done);
-        	stack.resume();
-        	return;
-		}
-		
         // if we do not pass logical condition then mark as done so we will skip this block
         // note that for the sake of nice debugging we do not set Done state here, would cause skip in debugger
 		if (stack.getState() == ExecuteState.Ready) 
-	        stack.setDone(!this.checkLogic(stack)); 
+	        if (!this.checkLogic(stack))
+	        	stack.setState(ExecuteState.Done);
 
     	super.run(stack);
     }

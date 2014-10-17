@@ -19,23 +19,20 @@ package divconq.work;
 import java.nio.file.Path;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationCallback;
 import divconq.lang.OperationResult;
 import divconq.script.Activity;
-import divconq.script.ActivityManager;
-import divconq.script.Script;
 import divconq.struct.RecordStruct;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
-import divconq.xml.XElement;
-import divconq.xml.XmlReader;
 
-public class ScriptWork implements ISmartWork {
+public class ScriptWork extends Activity {
+	// TODO return func result - parse XML and add title, throttle, etc to Task
+	// return error if to valid XML, though compile errors will have to be during run
 	static public boolean addScript(Task info, Path source) {
 		return ScriptWork.addScript(info, IOUtil.readEntireFile(source).getResult());
 	}
 	
+	// TODO keep just file path normally, option for source  _ScriptPath or _Script
 	static public boolean addScript(Task info, CharSequence source) {
 		if (StringUtil.isEmpty(source))
 			return false;
@@ -50,54 +47,43 @@ public class ScriptWork implements ISmartWork {
 		params.setField("_Script", source);
 		
 		info.withWork(ScriptWork.class);
+		info.withThrottleIfEmpty(10);		// increase default for scripts
 		
 		return true;
 	}
 	
-	// members
-	protected Activity act = null;
-	
 	@Override
-	public void run(final TaskRun scriptrun) {
-		scriptrun.infoTr(151, scriptrun.getTask().getId());
-		
-		RecordStruct params = scriptrun.getTask().getParams();
-		
-		if (params == null) {
-			scriptrun.errorTr(148, scriptrun.getTask().getId(), "Missing task parameters");
-			scriptrun.complete();
+	public void run(TaskRun scriptrun) {
+		// if already initialized then go right into run
+		if (this.stack != null) {
+			super.run(scriptrun);
 			return;
 		}
 		
-		String source = params.getFieldAsString("_Script");
-		
-		if (StringUtil.isEmpty(source)) {
-			scriptrun.errorTr(148, scriptrun.getTask().getId(), "Missing task script parameter");
-			scriptrun.complete();
-			return;
-		}
-		
-		Script srpt = null;
-		
+		// initialize the script and stack
 		try {
-			ActivityManager man = Hub.instance.getActivityManager();
+			scriptrun.infoTr(151, scriptrun.getTask().getId());
 			
-			FuncResult<XElement> xres = XmlReader.parse(source, true); 
+			RecordStruct args = scriptrun.getTask().getParams();
 			
-			if (xres.hasErrors()) {
-				Hub.instance.getWorkQueue().sendAlert(148, scriptrun.getTask().getId(), xres.getMessage());					
-				
-				scriptrun.errorTr(148, scriptrun.getTask().getId(), xres.getMessage());
+			if (args == null) {
+				scriptrun.errorTr(148, scriptrun.getTask().getId(), "Missing task parameters");
 				scriptrun.complete();
 				return;
 			}
 			
-			XElement script = xres.getResult(); 
+			String source = args.getFieldAsString("_Script");
+			
+			if (StringUtil.isEmpty(source)) {
+				scriptrun.errorTr(148, scriptrun.getTask().getId(), "Missing task script parameter");
+				scriptrun.complete();
+				return;
+			}
 	
-			srpt = new Script(man);
-			OperationResult compilelog = srpt.compile(script);
+			OperationResult compilelog = this.compile(source);
 			
 			if (compilelog.hasErrors()) {
+				// TODO replace with hub events
 				Hub.instance.getWorkQueue().sendAlert(149, scriptrun.getTask().getId(), compilelog.getMessage());
 				
 				scriptrun.errorTr(149, scriptrun.getTask().getId(), compilelog.getMessage());
@@ -114,28 +100,7 @@ public class ScriptWork implements ISmartWork {
 			return;
 		}
 		
-		this.act = new Activity(srpt, params);
-		
-		this.act.setLog(scriptrun);
-		
-		this.act.run(new OperationCallback() {				
-			@Override
-			public void callback() {
-				scriptrun.complete();
-			}
-		}, scriptrun.getTask());		
+		// run for first time
+		super.run(scriptrun);
 	}
-
-	@Override
-	public void cancel(TaskRun run) {
-		System.out.println("script work cancelled");
-		
-		if (this.act != null)
-			this.act.cancel();
-	}
-
-	@Override
-	public void completed(TaskRun run) {
-		
-	}	
 }

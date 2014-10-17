@@ -11,16 +11,18 @@
 		<Library File="bcpkix-jdk15on-150.jar"/>
 		<Library File="bcprov-ext-jdk15on-150.jar"/>
 		<Library File="commons-daemon-1.0.15.jar"/>
-		<Library File="commons-compress-1.3.jar" />
+		<Library File="commons-compress-1.9.jar" />
 		<Library File="groovy-all-2.3.4-indy.jar"/>
 		<Library File="java-ipv6-0.15.jar"/>
 		<Library File="joda-time-2.0.jar" />
 		<Library File="jnotify-0.94.jar"/>
-		<Library File="netty-all-4.0.19.Final.jar" />
+		<Library File="netty-all-4.0.23.Final.jar" />
 		<Library File="jsch-0.1.47.jar" />
 		<Library File="mariadb-java-client-1.1.6.jar" />
 		<Library File="h2-1.3.171.jar" />
 		<Library File="sqljdbc4.jar" />
+		<Library File="rsyntaxtextarea-2.0.2.jar"/>
+		<Library File="slf4j-api-1.6.4.jar"/>
 		
 		<Folder Path="bin"/>
 		<Folder Path="util"/>
@@ -45,6 +47,9 @@
 	<DependsOn Option="Linux">
 		<Library File="libjnotify.jnilib"/>
 		<Library File="libjnotify.so"/>
+		
+		<File Path="foreground.sh"/>
+		<File Path="update.sh"/>
 	</DependsOn>
 	
 	<DependsOn Option="Public">
@@ -53,6 +58,9 @@
 	</DependsOn>
 
 	<NoLongerDependsOn>
+		<Library File="netty-all-4.0.19.Final.jar" />
+		<Library File="commons-compress-1.3.jar" />
+		
 		<Library File="csv4180-0.2.3.jar"/>
 		<Library File="jackson-core-2.3.1.jar"/>
 		<Library File="jackson-annotations-2.3.1.jar"/>
@@ -62,14 +70,12 @@
 		<Library File="commons-lang3-3.1.jar" />
 		<Library File="commons-io-2.1.jar" />
 		<Library File="commons-codec-1.6.jar"/>
-		<Library File="rsyntaxtextarea-2.0.2.jar"/>
 		<Library File="guava-14.0-rc1.jar"/>
 		<Library File="snappy-0.3.jar"/>
 		<Library File="mina-core-2.0.7.jar"/>
 		<Library File="sshd-core-0.11.0.jar"/>
 		<Library File="sshd-pam-0.11.0.jar"/>
 		<Library File="sshd-sftp-0.11.0.jar"/>
-		<Library File="slf4j-api-1.6.4.jar"/>
 		<Library File="slf4j-jdk14-1.6.4.jar"/>
 		<Library File="leveldb-api-0.5.jar"/>
 		<Library File="leveldb-0.5.jar" />
@@ -83,6 +89,8 @@
 		<Library File="commons-httpclient-3.1.jar" />
 		<Library File="commons-logging-1.1.1.jar" />
 		<Library File="encoder-1.1.1.jar" />
+		
+		<Library File="divconq-diagnostic.jar" />
 	</NoLongerDependsOn>
 
 	<IgnorePaths>
@@ -90,6 +98,7 @@
 		<Ignore Path="util" />
 		<Ignore Path="env.bat" />
 		<Ignore Path="Update.bat" />
+		<Ignore Path="Update.sh" />
 		<Ignore Path="packages/z" />
 		<Ignore Path="config" />
 	</IgnorePaths>

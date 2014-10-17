@@ -45,6 +45,7 @@ import org.joda.time.DateTime;
 
 import divconq.interchange.CommonPath;
 import divconq.io.OutputWrapper;
+import divconq.io.test.LocalEcho;
 import divconq.lang.FuncResult;
 import divconq.lang.Memory;
 import divconq.lang.chars.Utf8Decoder;
@@ -61,12 +62,68 @@ import divconq.struct.serial.CompositeToBufferBuilder;
 import divconq.util.HexUtil;
 import divconq.work.TaskObserver;
 import divconq.work.TaskRun;
-
 import static divconq.struct.StructUtil.*;
 
 public class TestYaml {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
+		LocalEcho.main(args);
+	}
+	
+	public static void maincp(String[] args) {
+		CommonPath p = new CommonPath("/hi.txt");
+		System.out.println("1: " + p);
+		p = new CommonPath("/lie/hi.txt");
+		System.out.println("2: " + p);
+		//p = new CommonPath("/lie/./hi.txt");
+		//System.out.println("3: " + p);
+		p = new CommonPath("/lie/../hi.txt");
+		System.out.println("4: " + p);
+	}
+	
+	/*
+	public static void main4(String[] args) {
+		ExecutorService pool = Executors.newSingleThreadExecutor();
+		
+		ResourceLeakDetector.setLevel(Level.PARANOID);
+		
+		Logger.init(null);
+		
+		FileSystemDriver localfs = new FileSystemDriver();
+		localfs.setRootFolder("C:/");
+		
+		FileCollection files = new FileCollection();
+		files.add(localfs.getReference("/Users/andy/Documents/writing/buck2/story.xml"));
+		files.add(localfs.getReference("/GreasySpoon/conf/mime.types"));
+		
+		FileSourceStream src = new FileSourceStream(pool, files);
+		TarStream tar = new TarStream();
+		GzipStream gz = new GzipStream();
+		FileDestStream dest = new FileDestStream(localfs.getReference("/temp/test/files.tar.gz"));
+		
+		tar.setUpstream(src);
+		gz.setUpstream(tar);
+		dest.setUpstream(gz);
+		
+		dest.execute(new OperationCallback() {			
+			@Override
+			public void callback() {
+
+				System.out.println("Done");
+			}
+		});
+		
+		try (Scanner scan = new Scanner(System.in)) {
+			System.out.println("Press enter to close");
+			scan.nextLine();
+		}
+		
+		Logger.stop(new OperationResult());
+		pool.shutdown();
+	}
+	*/
+	
+	public static void main3(String[] args) {		
 		// create records, fields and lists easily
 		RecordStruct rec = record(
 				field("Name", "Fred"),

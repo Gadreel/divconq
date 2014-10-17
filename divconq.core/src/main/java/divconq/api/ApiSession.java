@@ -30,13 +30,15 @@ import divconq.lang.OperationCallback;
 import divconq.lang.OperationContext;
 import divconq.lang.TimeoutPlan;
 import divconq.lang.UserContext;
+import divconq.script.StackEntry;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.xml.XElement;
 
-abstract public class ApiSession {
+// TODO make some of the properties accessible via RecordStruct fields for dcScript
+abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 	static public ApiSession createLocalSession(String domain) {
 		return Hub.instance.createLocalApiSession(domain);
 	}
@@ -60,7 +62,7 @@ abstract public class ApiSession {
 		return this.lastResult;
 	}
 	
-	abstract public void init(IApiSessionFactory fac, XElement config);
+	abstract public void init(XElement config);
 	
 	public void receiveMessage(Message msg) {
 		// we need to restore/set the local operation context if anything is done here.
@@ -97,7 +99,7 @@ abstract public class ApiSession {
 		return this.sendMessage(msg, TimeoutPlan.Regular);
 	}
 	
-	public Message sendMessage(final Message msg, TimeoutPlan timeoutPlan) {
+	public Message sendMessage(Message msg, TimeoutPlan timeoutPlan) {
 		this.lastResult = null;
 		
 		final CountDownLatch latch = new CountDownLatch(1);
@@ -134,7 +136,7 @@ abstract public class ApiSession {
 				if (!this.hasErrors())
 					callback.setResult(this.getBodyAsRec().getFieldAsString("ChannelId"));
 				
-				callback.completed();				
+				callback.complete();				
 			}
 		});			
 	}
@@ -146,7 +148,7 @@ abstract public class ApiSession {
 			@Override
 			public void callback() {
 				callback.copyMessages(this);				
-				callback.completed();				
+				callback.complete();				
 			}
 		});			
 	}
@@ -166,7 +168,7 @@ abstract public class ApiSession {
 				if (!this.hasErrors())
 					callback.setResult(this.getBodyAsRec());
 				
-				callback.completed();				
+				callback.complete();				
 			}
 		});			
 	}
@@ -188,7 +190,7 @@ abstract public class ApiSession {
 			@Override
 			public void callback() {
 				callback.copyMessages(this);				
-				callback.completed();				
+				callback.complete();				
 			}
 		});			
 	}
@@ -210,7 +212,7 @@ abstract public class ApiSession {
 			@Override
 			public void callback() {
 				callback.copyMessages(this);				
-				callback.completed();				
+				callback.complete();				
 			}
 		});			
 	}
@@ -265,7 +267,8 @@ abstract public class ApiSession {
 	
 	public boolean startSession(RecordStruct creds) {
 		// new creds means new user, start as guest
-		this.clearToGuest();
+		if (creds != null)
+			this.clearToGuest();
 		
 		Message msg = new Message();
 		msg.setField("Service", "Session");
@@ -290,12 +293,12 @@ abstract public class ApiSession {
 		Message msg = new Message();
 		msg.setField("Service", "Session");
 		msg.setField("Feature", "Control");
-		msg.setField("Op", "Terminate");
+		msg.setField("Op", "Stop");
 		
 		this.sendForgetMessage(msg);
 		
 		this.clearToGuest();
-		this.stop();
+		this.stopped();
 	}
 	
 	abstract public void stopped();
@@ -324,5 +327,22 @@ abstract public class ApiSession {
 		}
 		
 		return msgs;
+	}
+	
+	@Override
+	public void operation(StackEntry stack, XElement code) {
+		if ("Stop".equals(code.getName())) {
+			this.stop();
+			
+			stack.resume();
+			return;
+		}
+		
+		super.operation(stack, code);
+	}
+	
+	@Override
+	public void close() {
+		this.stop();
 	}
 }

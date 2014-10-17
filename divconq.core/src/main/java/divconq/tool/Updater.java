@@ -228,6 +228,7 @@ public class Updater {
 		System.out.println("Checking for updated files: ");
 		
 		try {
+			@SuppressWarnings("resource")
 			ZipFile zf = new ZipFile(matchpack);
 			
 			Enumeration<ZipArchiveEntry> entries = zf.getEntries();

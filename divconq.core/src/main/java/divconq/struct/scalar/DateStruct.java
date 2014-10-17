@@ -17,6 +17,8 @@
 package divconq.struct.scalar;
 
 import org.joda.time.LocalDate;
+import org.joda.time.Period;
+import org.joda.time.format.ISOPeriodFormat;
 
 import divconq.hub.Hub;
 import divconq.schema.DataType;
@@ -68,73 +70,84 @@ public class DateStruct extends ScalarStruct {
 	}
 	
 	@Override
-	public void operation(StackEntry stack, XElement codeEl) {
+	public boolean isNull() {
+		return (this.value == null);
+	}
+	
+	@Override
+	public void operation(StackEntry stack, XElement code) {
+		String op = code.getName();
 		
-		if ("Add".equals(codeEl.getName())) {
-			long years = stack.intFromElement(codeEl, "Years", 0);
-			long months = stack.intFromElement(codeEl, "Months", 0);
-			long days = stack.intFromElement(codeEl, "Days", 0);
-
-			if (this.value != null) {
-				this.value = this.value.plusYears((int) years);
-				this.value = this.value.plusMonths((int) months);
-				this.value = this.value.plusDays((int) days);
+		// we are loose on the idea of null/zero.  operations always perform on now, except Validate
+		if ((this.value == null) && !"Validate".equals(op))
+			this.value = new LocalDate();
+		
+		if ("Inc".equals(op)) {
+			this.value = this.value.plusDays(1);
+			stack.resume();
+			return;
+		}
+		else if ("Dec".equals(op)) {
+			this.value = this.value.minusDays(1);
+			stack.resume();
+			return;
+		}
+		else if ("Set".equals(op)) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+			
+			this.adaptValue(sref);
+			stack.resume();
+			return;
+		}
+		else if ("Add".equals(op)) {
+			try { 
+				if (code.hasAttribute("Years")) 
+					this.value = this.value.plusYears((int)stack.intFromElement(code, "Years"));
+				else if (code.hasAttribute("Months")) 
+					this.value = this.value.plusMonths((int)stack.intFromElement(code, "Months"));
+				else if (code.hasAttribute("Days")) 
+					this.value = this.value.plusDays((int)stack.intFromElement(code, "Days"));
+				else if (code.hasAttribute("Weeks")) 
+					this.value = this.value.plusWeeks((int)stack.intFromElement(code, "Weeks"));
+				else if (code.hasAttribute("Period")) {
+					Period p = ISOPeriodFormat.standard().parsePeriod(stack.stringFromElement(code, "Period"));
+					this.value = this.value.plus(p);
+				}
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + op + ": " + x);
 			}
 			
 			stack.resume();
 			return;
 		}
-
-		super.operation(stack, codeEl);
-	}
-
-		/*
-			switch (operation)
-			{
-				case "Set":
-				case "Copy":
-					Value = iv.Value;
-					break;
-				case "Add":
-					if (source.HasA("Years"))
-					{
-						m_value = iv.Value.AddYears(Convert.ToInt32(proc.ResolveValueToString(inst, source.A("Years"))));
-					}
-
-					if (source.HasA("Months"))
-					{
-						m_value = iv.Value.AddMonths(Convert.ToInt32(proc.ResolveValueToString(inst, source.A("Months"))));
-					}
-
-					if (source.HasA("Days"))
-					{
-						m_value = iv.Value.AddDays(Convert.ToInt32(proc.ResolveValueToString(inst, source.A("Days"))));
-					}
-
-					if (source.HasA("Hours"))
-					{
-						m_value = iv.Value.AddHours(Convert.ToInt32(proc.ResolveValueToString(inst, source.A("Hours"))));
-					}
-
-					if (source.HasA("Minutes"))
-					{
-						m_value = iv.Value.AddMinutes(Convert.ToInt32(proc.ResolveValueToString(inst, source.A("Minutes"))));
-					}
-
-					if (source.HasA("Seconds"))
-					{
-						m_value = iv.Value.AddSeconds(Convert.ToInt32(proc.ResolveValueToString(inst, source.A("Seconds"))));
-					}
-
-					if (source.HasA("Weeks"))
-					{
-						m_value = iv.Value.AddDays(Convert.ToInt32(proc.ResolveValueToString(inst, source.A("Weeks"))) * 7);
-					}
-					break;
-				default:
-					throw new ArgumentException();
+		else if ("Subtract".equals(op)) {
+			try { 
+				if (code.hasAttribute("Years")) 
+					this.value = this.value.minusYears((int)stack.intFromElement(code, "Years"));
+				else if (code.hasAttribute("Months")) 
+					this.value = this.value.minusMonths((int)stack.intFromElement(code, "Months"));
+				else if (code.hasAttribute("Days")) 
+					this.value = this.value.minusDays((int)stack.intFromElement(code, "Days"));
+				else if (code.hasAttribute("Weeks")) 
+					this.value = this.value.minusWeeks((int)stack.intFromElement(code, "Weeks"));
+				else if (code.hasAttribute("Period")) {
+					Period p = ISOPeriodFormat.standard().parsePeriod(stack.stringFromElement(code, "Period"));
+					this.value = this.value.minus(p);
+				}
 			}
-		*/
+			catch (Exception x) {
+				stack.log().error("Error doing " + op + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		
+		super.operation(stack, code);
+	}
 
     @Override
     protected void doCopy(Struct n) {
@@ -198,22 +211,6 @@ public class DateStruct extends ScalarStruct {
 	
 	@Override
 	public boolean checkLogic(StackEntry stack, XElement source) {
-		boolean isok = true;
-		boolean condFound = false;
-		
-		if (isok && source.hasAttribute("IsNull")) {
-			isok = stack.boolFromElement(source, "IsNull") ? (this.value == null) : (this.value != null);
-            condFound = true;
-        }
-		
-		if (isok && source.hasAttribute("IsEmpty")) {
-			isok = stack.boolFromElement(source, "IsEmpty") ? this.isEmpty() : !this.isEmpty();
-            condFound = true;
-        }
-		
-		if (!condFound) 
-			isok = false;			
-		
-		return isok;
+		return Struct.objectToBooleanOrFalse(this.value);
 	}
 }

@@ -16,21 +16,24 @@
 ************************************************************************ */
 package divconq.scheduler;
 
+import java.nio.file.Paths;
+
 import divconq.hub.Hub;
 import divconq.lang.FuncResult;
 import divconq.lang.OperationResult;
-import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.StringUtil;
+import divconq.work.ScriptWork;
 import divconq.work.Task;
 
 public class ScheduleEntry {
 	static public enum ScheduleArea {
 		Squad,
+		Team,
 		Local
 	}
 	
-	protected CompositeStruct params = null;
+	protected RecordStruct params = null;
 	protected Task task = null;
 	protected String provider = null;
 	protected ISchedule schedule = null;
@@ -86,11 +89,11 @@ public class ScheduleEntry {
 		this.area = area;
 	}
 	
-	public CompositeStruct getParams() {
+	public RecordStruct getParams() {
 		return this.params;
 	}
 	
-	public void setParams(CompositeStruct params) {
+	public void setParams(RecordStruct params) {
 		this.params = params;
 	}
 
@@ -109,8 +112,17 @@ public class ScheduleEntry {
 				else
 					or.error("Could not load task provider for schedule");
 			}		
-			// TODO if starts with $ then run a script at that path
-			// else embedded script, so run it
+			else if (this.provider.startsWith("$")) {
+				Task t = new Task()
+					.withTitle(this.title)
+					.withParams(this.params)			
+					.withRootContext();
+				
+				if (ScriptWork.addScript(t, Paths.get(this.provider.substring(1)))) 
+					this.task = t;
+				else
+					or.error("Error compiling script");
+			}		
 		}
 		
 		if (this.task == null)

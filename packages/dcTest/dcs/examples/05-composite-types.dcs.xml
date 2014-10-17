@@ -1,0 +1,148 @@
+<dcScript Title="Composite Types">
+<Main>
+	<!-- 
+		Lists and Records are Composite types, meaning
+		they are composed of 0 or more values.  The other
+		types we looked at where scalar types, meaning
+		they are composed of 1 value. 
+		
+		You can AddItem (operation) to a List.
+
+		Output will be:
+		
+		Bottles:
+		 - Found a blue bottle!
+		 - Found a green bottle!
+		 - Found a white bottle!
+	-->
+	<Var Name="bottles" Type="List">
+		<AddItem Value="blue bottle" />
+		<AddItem Value="green bottle" />
+		<AddItem Value="white bottle" />
+	</Var>
+	
+	<Console>Bottles:</Console>
+	
+	<ForEach Name="color" In="$bottles">
+		<Console> - Found a {$color}!</Console>
+	</ForEach>
+
+	<!-- 
+		You can also RemoveItem (operation) from a List.
+		Note how the ForEach loop is used.  To exit the
+		loop conditionally use BreakIf.  ContinueIf is
+		also valid.
+
+		Output will be:
+		
+		Bottles Reduced:
+		 - Found a blue bottle!
+		 - Found a white bottle!
+	-->
+	<With Target="$bottles">
+		<RemoveItem Index="1" />
+	</With>
+	
+	<Console>Bottles Reduced:</Console>
+	
+	<ForEach Name="color" In="$bottles">
+		<Console> - Found a {$color}!</Console>
+	</ForEach>
+
+	<!-- 
+		Records are composed of fields.  A field may
+		hold any value, including a List or another Record.
+		
+		There is an operation to set a field value.  To later
+		access a field use a dot after the varaible,
+		such as $box.Color.
+
+		Output will be:
+		
+		Box Fields:
+		 - Field Color equals blue
+		 - Field Volume equals 1500
+		 - Field Weight equals 12
+	-->
+	<Var Name="box" Type="Record">
+		<SetField Name="Color" Value="blue" />
+		<SetField Name="Volume" Value="1500" />
+		<SetField Name="Weight" Value="12" />
+	</Var>
+	
+	<Console>Box Fields:</Console>
+	
+	<ForEach Name="field" In="$box">
+		<Console> - Field {$field} equals {$box.$field}</Console>
+	</ForEach>
+	
+	<!-- 
+		You may also set fields using a JSON like syntax.  Or
+		even a JavaScript syntax like below.
+
+		Output will be:
+		
+		Tape Fields:
+		 - Field color equals gray
+		 - Field weight equals 1.2
+		 - Field width equals 2
+	-->
+	<Var Name="tape" Type="Record">
+		<Set>color: 'gray', weight: 1.2, width: 2</Set>
+	</Var>
+	
+	<Console>Tape Fields:</Console>
+	
+	<ForEach Name="field" In="$tape">
+		<Console> - Field {$field} equals {$tape.$field}</Console>
+	</ForEach>
+
+	<!-- 
+		Fields can be removed and added later.  Fields
+		can be the target of an Empty check.
+
+		Output will be:
+		lower case "color" removed
+		upper case "Color" added
+	-->
+	<With Target="$tape">
+		<RemoveField Name="color" />
+		<SetField Name="Color" Value="gray" />
+	</With>
+	
+	<IfEmpty Target="$tape.color">
+		<Console>lower case "color" removed</Console>
+	</IfEmpty>
+	
+	<IfNotEmpty Target="$tape.Color">
+		<Console>upper case "Color" added</Console>
+	</IfNotEmpty>
+	
+	<!-- 
+		Fields can contain records or lists.  It is possible to operate
+		on fields within fields such as $box.Tape.Color or on items
+		within fields such as $box.Contents.0.
+
+		Output will be:
+		The color of the tape on the box is: gray
+		The contents of the box are:
+		 - blue bottle
+		 - white bottle
+		The first item in the box is: blue bottle
+	-->
+	<With Target="$box">
+		<SetField Name="Tape" Value="$tape" />
+		<SetField Name="Contents" Value="$bottles" />
+	</With>
+
+	<Console>The color of the tape on the box is: {$box.Tape.Color}</Console>
+	
+	<Console>The contents of the box are:</Console>
+	
+	<ForEach Name="bottle" In="$box.Contents">
+		<Console> - {$bottle}</Console>
+	</ForEach>
+	
+	<Console>The first item in the box is: {$box.Contents.0}</Console>
+</Main>
+</dcScript>

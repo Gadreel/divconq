@@ -22,6 +22,7 @@ import divconq.schema.RootType;
 import divconq.script.StackEntry;
 import divconq.struct.ScalarStruct;
 import divconq.struct.Struct;
+import divconq.util.FileUtil;
 import divconq.xml.XElement;
 
 public class IntegerStruct extends ScalarStruct {
@@ -66,32 +67,149 @@ public class IntegerStruct extends ScalarStruct {
 	}
 	
 	@Override
+	public boolean isNull() {
+		return (this.value == null);
+	}
+	
+	@Override
 	public void operation(StackEntry stack, XElement code) {
+		// we are loose on the idea of null/zero.  operations always perform on 0, except Validate
+		if ((this.value == null) && !"Validate".equals(code.getName()))
+			this.value = 0L;
+		
 		if ("Inc".equals(code.getName())) {
-			this.value = (this.value == null) ? 1 : this.value + 1;
+			this.value++;
 			stack.resume();
 			return;
 		}
 		else if ("Dec".equals(code.getName())) {
-			this.value = (this.value == null) ? -1 : this.value - 1;
+			this.value--;
 			stack.resume();
 			return;
 		}
 		else if ("Set".equals(code.getName())) {
-			Struct sref = stack.refFromElement(code, "Value"); 
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+			
 			this.adaptValue(sref);
 			stack.resume();
 			return;
 		}
 		else if ("Add".equals(code.getName())) {
-			long me = (this.value == null) ? 0 : this.value;
-			
-			Struct sref = stack.refFromElement(code, "Value");
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
 			
 			Long it = Struct.objectToInteger(sref);
 			
-			if (it != null) 
-				this.value = me + it;
+			try { 
+				this.value += it;
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		else if ("Subtract".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+
+			try {
+				this.value -= Struct.objectToInteger(sref);			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		else if ("Multiply".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+
+			try {
+				this.value *= Struct.objectToInteger(sref);			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		else if ("Divide".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+
+			try {
+				this.value /= Struct.objectToInteger(sref);			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		else if ("Min".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+
+			try {
+				this.value = Math.min(this.value, Struct.objectToInteger(sref));			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		else if ("Max".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+
+			try {
+				this.value = Math.max(this.value, Struct.objectToInteger(sref));			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
+			
+			stack.resume();
+			return;
+		}
+		else if ("Abs".equals(code.getName())) {
+			this.value = Math.abs(this.value);			
+			
+			stack.resume();
+			return;
+		}
+		else if ("Random".equals(code.getName())) {
+			long from = 1;
+			long to = 100;
+			
+			try {
+				if (code.hasAttribute("From")) 
+						from = Struct.objectToInteger(stack.refFromElement(code, "From"));
+				
+				if (code.hasAttribute("To")) 
+						to = Struct.objectToInteger(stack.refFromElement(code, "To"));
+				
+				this.value = FileUtil.testrnd.nextInt((int) (to - from)) + from;			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
 			
 			stack.resume();
 			return;
@@ -99,38 +217,6 @@ public class IntegerStruct extends ScalarStruct {
 		
 		super.operation(stack, code);
 	}
-
-		/*
-		 * TODO add more
-		 * 
-			case "Multiply":
-				Value *= iv.Value;
-				break;
-			case "Divide":
-				Value /= iv.Value;
-				break;
-			case "Min":
-				Value = (iv.Value < Value) ? iv.Value : Value;
-				break;
-			case "Max":
-				Value = (iv.Value > Value) ? iv.Value : Value;
-				break;
-			case "Abs":
-				Value = Math.Abs(iv.Value);
-				break;
-			case "Random":
-				int from = 1;
-				int to = 100;
-
-				if (source.HasA("From")) from = Convert.ToInt32(proc.ResolveValueToString(inst, source.A("From")));
-				if (source.HasA("To")) to = Convert.ToInt32(proc.ResolveValueToString(inst, source.A("To")));
-
-				Value = new Random().Next(to - from + 1) + from;
-				break;
-			default:
-				throw new IllegalArgumentException("Unknown operation: " + operation);
-		}
-		*/
 
     @Override
     protected void doCopy(Struct n) {
@@ -191,22 +277,6 @@ public class IntegerStruct extends ScalarStruct {
 	
 	@Override
 	public boolean checkLogic(StackEntry stack, XElement source) {
-		boolean isok = true;
-		boolean condFound = false;
-		
-		if (isok && source.hasAttribute("IsNull")) {
-			isok = stack.boolFromElement(source, "IsNull") ? (this.value == null) : (this.value != null);
-            condFound = true;
-        }
-		
-		if (isok && source.hasAttribute("IsEmpty")) {
-			isok = stack.boolFromElement(source, "IsEmpty") ? this.isEmpty() : !this.isEmpty();
-            condFound = true;
-        }
-		
-		if (!condFound) 
-			isok = false;			
-		
-		return isok;
+		return Struct.objectToBooleanOrFalse(this.value);
 	}
 }

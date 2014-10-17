@@ -23,6 +23,7 @@ import org.joda.time.DateTime;
 
 import divconq.bus.Message;
 import divconq.hub.Hub;
+import divconq.lang.OperationCallback;
 import divconq.lang.OperationContext;
 import divconq.lang.OperationResult;
 import divconq.log.Logger;
@@ -35,11 +36,39 @@ import divconq.util.StringUtil;
 
 // conforms to dcTaskInfo data type
 public class Task {
-	// for immediate use tasks only
+	// create a subtask of a running task
+	public static Task subtask(TaskRun run, String suffix, OperationCallback cb) {
+		Task t = new Task();
+		
+		Task parent = run.getTask();
+		
+		t.context = parent.context;
+		
+		t.withId(parent.getId() + "_" + Session.nextUUId());
+		t.withTitle(parent.getTitle() + " - Subtask: " + suffix);
+
+		t.withTimeout(parent.getTimeout());
+		t.withThrottle(parent.getThrottle());
+		
+		// subtasks should almost always use default bucket
+		
+		if (cb != null) {
+			t.withObserver(new WrappedTaskObserver(run) {
+				@Override
+				public void completed(TaskRun or) {
+					cb.complete();
+				}
+			});
+		}
+		
+		return t;
+	}
+	
+	// used during run
 	protected IWork work = null;
 	protected List<ITaskObserver> observers = null;
 	
-	// used with immediate or queueable
+	// used with run or queueable
 	protected OperationContext context = null;	
 	protected RecordStruct info = null;
 
@@ -335,6 +364,23 @@ public class Task {
 	
 	public int getMaxTries() {
 		return (int)this.info.getFieldAsInteger("MaxTries", 1);
+	}
+	
+	public Task withThrottle(int v) {
+		this.info.setField("Throttle", v);
+		return this;
+	}
+	
+	public Task withThrottleIfEmpty(int v) {
+		if (this.info.isFieldEmpty("Throttle"))
+			this.info.setField("Throttle", v);
+		
+		return this;
+	}
+	
+	// default to 2 resumes
+	public int getThrottle() {
+		return (int)this.info.getFieldAsInteger("Throttle", 2);
 	}
 	
 	public Task withClaimedStamp(String v) {

@@ -16,8 +16,10 @@
 ************************************************************************ */
 package divconq.hub;
 
+import java.awt.GraphicsEnvironment;
 import java.io.Console;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.joda.time.DateTime;
 
@@ -30,6 +32,12 @@ import divconq.lang.OperationResult;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
 import divconq.mod.ModuleLoader;
+import divconq.script.Activity;
+import divconq.script.IDebuggerHandler;
+import divconq.script.ui.ScriptUtility;
+import divconq.struct.ListStruct;
+import divconq.struct.RecordStruct;
+import divconq.struct.builder.JsonStreamBuilder;
 import divconq.util.StringUtil;
 import divconq.work.TaskRun;
 import divconq.work.WorkBucket;
@@ -39,6 +47,8 @@ import divconq.xml.XElement;
 /*
  */
 public class Foreground {
+	static public TaskRun lastdebugrequest = null; 
+	
 	public static void main(String[] args) {
 		String deployment = (args.length > 0) ? args[0] : "default";
 		String squadid = (args.length > 1) ? args[1] : "default";
@@ -61,6 +71,22 @@ public class Foreground {
 			Hub.instance.stop();
 			return;
 		}
+		
+		Hub.instance.getActivityManager().registerDebugger(new IDebuggerHandler() {				
+			@Override
+			public void startDebugger(TaskRun run) {
+				if (!GraphicsEnvironment.isHeadless()) {
+					ScriptUtility.goSwing(run);
+				}
+				else {
+					System.out.println("---------------------------------------------------------------------------");
+					System.out.println("  Script Requesting Debugger: " + run.getTask().getTitle());
+					System.out.println("---------------------------------------------------------------------------");
+					
+					Foreground.lastdebugrequest = run;
+				}
+			}
+		});
 		
 		OperationContext.useNewRoot();
 		
@@ -190,6 +216,7 @@ public class Foreground {
 				System.out.println("2)  Hash Setting");
 				//System.out.println("3)  Decrypt Setting");
 				System.out.println("4)  System Status");
+				System.out.println("100)  Enter Script Debugger");
 
 				String opt = scan.nextLine();
 				
@@ -227,12 +254,118 @@ public class Foreground {
 					Foreground.dumpStatus();
 					break;
 				}
+				case 100: {
+					Foreground.debugScript(scan);
+					break;
+				}
 				}
 			}
 			catch(Exception x) {
 				System.out.println("CLI error: " + x);
 			}
 		}		
+	}
+	
+	static void debugScript(Scanner scn) {
+		TaskRun r = Foreground.lastdebugrequest;
+		
+		if (r == null) {
+			System.out.println("No debugger requests are availabled.");
+			return;
+		}
+		
+		Activity act = (Activity) Foreground.lastdebugrequest.getTask().getWork();
+		act.setInDebugger(true);
+		
+		AtomicLong lastinstrun = new AtomicLong(act.getRunCount());
+		AtomicLong lastinstmrk = new AtomicLong(lastinstrun.get());
+		
+		Hub.instance.getClock().schedulePeriodicInternal(new Runnable() {
+			@Override
+			public void run() {
+				long cnt = act.getRunCount();
+				
+				if (lastinstrun.get() == cnt)
+					return;
+				
+				lastinstrun.set(cnt);
+				
+				if (r.isComplete())
+					System.out.println("DEBUGGER: Press enter to exit or ? for help.");
+				else {
+					RecordStruct debuginfo = act.getDebugInfo();
+					
+					ListStruct stack = debuginfo.getFieldAsList("Stack");					
+					RecordStruct currinst = stack.getItemAsRecord(stack.getSize() - 1);
+					long line = currinst.getFieldAsInteger("Line");
+					long col = currinst.getFieldAsInteger("Column");
+					
+					System.out.println("DEBUGGER: (" + line + "," + col +") " + currinst.getFieldAsString("Command"));
+					System.out.println("DEBUGGER: Press enter to continue or ? for help.");
+				}
+			}
+		}, 1);
+		
+		System.out.println("DEBUGGER: Press enter to continue or ? for help.");
+		
+		while (!r.isComplete()) {
+			String cmd = scn.nextLine();
+			
+			// dump
+			if (cmd.startsWith("d")) {
+				System.out.println("------------------------------------------------------------------------");
+
+				try {
+					act.getDebugInfo().toBuilder(new JsonStreamBuilder(System.out, true));	
+				}
+				catch (Exception x) {
+					System.out.println("DEBUGGER: unable to dump" + x);
+				}
+				
+				System.out.println("------------------------------------------------------------------------");
+			}
+			// help
+			else if (cmd.startsWith("?")) {
+				System.out.println("(n)ext");
+				System.out.println("(r)un");
+				System.out.println("(s)top");
+				System.out.println("(d)ump stack");
+			}
+			// stop
+			else if (cmd.startsWith("s")) {
+				r.kill();
+			}
+			// run
+			else if (cmd.startsWith("r")) {
+				if (lastinstmrk.get() > lastinstrun.get()) {
+					System.out.println("DEBUGGER: Wait, script is executing...");
+				}
+				else {
+					lastinstmrk.set(lastinstrun.get());
+					lastinstmrk.incrementAndGet();
+					
+					System.out.println("DEBUGGER: Running...");
+					act.setDebugMode(false);
+					Hub.instance.getWorkPool().submit(r);
+				}
+			}
+			// next
+			else if (!r.isComplete()) {
+				if (lastinstmrk.get() > lastinstrun.get()) {
+					System.out.println("DEBUGGER: Wait, script is executing...");
+				}
+				else {
+					lastinstmrk.set(lastinstrun.get());
+					lastinstmrk.incrementAndGet();
+					
+					System.out.println("DEBUGGER: Executing...");
+					act.setDebugMode(true);
+					Hub.instance.getWorkPool().submit(r);
+				}
+			}
+		}
+		
+		System.out.println("DEBUGGER: Script done.");
 	}
 	
 	static public void dumpStatus() {

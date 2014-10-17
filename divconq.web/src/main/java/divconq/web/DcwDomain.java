@@ -16,13 +16,13 @@
 ************************************************************************ */
 package divconq.web;
 
-import divconq.web.AssetInfo;
-import divconq.web.WebContext;
 import divconq.web.WebDomain;
 
-public class DcwDomain extends WebDomain {	
+public class DcwDomain extends WebDomain {
+	/*
 	@Override
 	protected AssetInfo findAsset(String name, WebContext ctx) {
 		return ((DcwExtension)this.extension).findAsset(name);
 	}
+	*/
 }

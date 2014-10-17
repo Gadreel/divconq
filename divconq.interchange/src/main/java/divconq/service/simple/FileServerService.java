@@ -162,7 +162,7 @@ public class FileServerService extends ExtensionBase implements IService {
 				
 				fdata.setField("FileName", fi.getName());
 				fdata.setField("IsFolder", fi.isFolder());
-				fdata.setField("LastModified", fi.getMofificationTime());
+				fdata.setField("LastModified", fi.getModificationTime());
 				fdata.setField("Size", fi.getSize());
 				
 				String meth = rec.getFieldAsString("Method");
@@ -297,7 +297,7 @@ public class FileServerService extends ExtensionBase implements IService {
 					
 					fdata.setField("FileName", file.getName());
 					fdata.setField("IsFolder", file.isFolder());
-					fdata.setField("LastModified", file.getMofificationTime());
+					fdata.setField("LastModified", file.getModificationTime());
 					fdata.setField("Size", file.getSize());
 					
 					files.addItem(fdata);

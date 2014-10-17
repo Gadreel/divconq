@@ -22,13 +22,12 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
-import io.netty.handler.ssl.SslHandler;
+import divconq.net.ssl.SslHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -46,24 +45,8 @@ import divconq.xml.XElement;
 //TODO integrate streaming - http://code.google.com/p/red5/
 public class WebModule extends ModuleBase {
 	protected SslContextFactory ssl = new SslContextFactory(); 
-	protected EventLoopGroup bossGroup = null;
-	protected EventLoopGroup serverGroup = null;
 	protected ConcurrentHashMap<Integer, Channel> activelisteners = new ConcurrentHashMap<>();
     protected ReentrantLock listenlock = new ReentrantLock();
-    
-	public EventLoopGroup getServerGroup() {
-		if (this.serverGroup == null)
-			this.serverGroup = new NioEventLoopGroup();
-			
-		return this.serverGroup;
-	}
-    
-	public EventLoopGroup getBossGroup() {
-		if (this.bossGroup == null)
-			this.bossGroup = new NioEventLoopGroup();
-			
-		return this.bossGroup;
-	}
 
 	@Override
 	public void start(OperationResult log) {
@@ -101,9 +84,13 @@ public class WebModule extends ModuleBase {
 				// -------------------------------------------------
 		        ServerBootstrap b = new ServerBootstrap();
 		        
-		        b.group(this.getBossGroup(), this.getServerGroup())
+		        // TODO consider using shared EventLoopGroup
+		        // http://normanmaurer.me/presentations/2014-facebook-eng-netty/slides.html#25.0
+		        
+		        b.group(Hub.instance.getEventLoopGroup())
 		         .channel(NioServerSocketChannel.class)
-		         .option(ChannelOption.SO_BACKLOG, 125)			// this is probably not needed but serves as note to research
+		         .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
+		         //.option(ChannelOption.SO_BACKLOG, 125)			// this is probably not needed but serves as note to research
 		         .option(ChannelOption.TCP_NODELAY, true)			
 		         .childHandler(new ChannelInitializer<SocketChannel>() {
 					@Override
@@ -119,9 +106,10 @@ public class WebModule extends ModuleBase {
 		    	        pipeline.addLast("decoder", new HttpRequestDecoder(4096,8192,262144));
 		    	        pipeline.addLast("encoder", new HttpResponseEncoder());
 		    	        
-		    	        //pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+		    	        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
 		    	        
-		    	        // TODO maybe
+		    	        // TODO maybe - but currently we selectively compress files which is more efficient
+		    	        // this can also be a cached & compressed response that way
 		    	        //pipeline.addLast("deflater", new HttpContentCompressor());
 		    	        
 		    	        pipeline.addLast("handler", new ServerHandler(httpconfig));
@@ -188,12 +176,5 @@ public class WebModule extends ModuleBase {
 	@Override
 	public void stop(OperationResult log) {
 		this.goOffline();
-		
-		if (this.bossGroup != null)
-			this.bossGroup.shutdownGracefully();
-		
-		if (this.serverGroup != null)
-			this.serverGroup.shutdownGracefully();
 	}
-
 }

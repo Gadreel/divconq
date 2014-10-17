@@ -29,7 +29,7 @@ import divconq.xml.XElement;
 public class ExitIfErrored extends Instruction {
 	@Override
 	public void run(final StackEntry stack) {
-		if (!stack.getActivity().getLog().hasErrors()) {
+		if (!stack.getActivity().hasErrored()) {
 			stack.setState(ExecuteState.Done);
 			stack.resume();
 			return;
@@ -41,7 +41,7 @@ public class ExitIfErrored extends Instruction {
 		
 		if (StringUtil.isNotEmpty(output))
 			stack.log().exit(code, output);
-		else if (code > 0) {
+		else if (code > 1) {
 			List<XElement> params = this.source.selectAll("Param");
 			Object[] oparams = new Object[params.size()];
 			
@@ -64,7 +64,8 @@ public class ExitIfErrored extends Instruction {
 			stack.setLastResult(result);
 		}
 			
-		stack.setState(ExecuteState.Exit);
+		stack.getActivity().setExitFlag(true);
+		stack.setState(ExecuteState.Done);
 		stack.resume();
 	}
 	

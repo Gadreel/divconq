@@ -18,16 +18,20 @@ package divconq.script;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import divconq.lang.OperationResult;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
 public class Script {
+	static public final Pattern includepattern = Pattern.compile("(\\s*<\\?include\\s+\\/[A-Za-z0-9-_\\/]+\\.dcsl\\.xml\\s+\\?>\\s*\r?\n)", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+	
 	protected XElement xml = null;
     protected ActivityManager manager = null;
 	protected Map<String,Instruction> functions = new HashMap<String,Instruction>();
 	protected Instruction main = null;
+	protected String source = null;
 
     public Script(ActivityManager man) {
     	this.manager = man;
@@ -53,9 +57,14 @@ public class Script {
 		
 		return (sc != null) ? sc.getAttribute("Title") : "[Untitled]"; 
 	}
+	
+	public String getSource() {
+		return this.source;
+	}
 
-    public OperationResult compile(XElement doc) {
+    public OperationResult compile(XElement doc, String src) {
         this.xml = doc;
+        this.source = src;
         this.main = null;
         this.functions.clear();
         

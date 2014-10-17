@@ -30,12 +30,12 @@ public class ClassicIteratorAdapter<T> implements IAsyncIterator<T> {
 	@Override
 	public void hasNext(FuncCallback<Boolean> callback) {
 		callback.setResult(this.classic.hasNext());
-		callback.completed();
+		callback.complete();
 	}
 
 	@Override
 	public void next(FuncCallback<T> callback) {
 		callback.setResult(this.classic.next());
-		callback.completed();
+		callback.complete();
 	}
 }

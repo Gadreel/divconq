@@ -21,6 +21,8 @@
  */
 package divconq.interchange.simple;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,20 +33,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+
 import divconq.api.ApiSession;
 import divconq.api.DumpCallback;
 import divconq.api.ServiceResult;
 import divconq.api.tasks.TaskFactory;
 import divconq.bus.Message;
+import divconq.hub.Foreground;
 import divconq.hub.Hub;
 import divconq.hub.ILocalCommandLine;
 import divconq.interchange.CommonPath;
+import divconq.io.test.LocalEcho;
 import divconq.lang.OperationResult;
 import divconq.lang.TimeoutPlan;
+import divconq.script.Activity;
+import divconq.script.ui.ScriptUtility;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.FileUtil;
+import divconq.util.IOUtil;
 import divconq.util.StringUtil;
+import divconq.work.IWork;
+import divconq.work.ScriptWork;
 import divconq.work.Task;
 import divconq.work.TaskObserver;
 import divconq.work.TaskRun;
@@ -82,6 +94,12 @@ public class FileStoreClient implements ILocalCommandLine {
 				System.out.println("10) Generate Test Files");
 				System.out.println("11) Test Uploads");
 				System.out.println("12) Test Downloads");
+				System.out.println("100) dcScript Debugger");
+				System.out.println("101) dcScript Invoke Debugger");
+				System.out.println("102) Test Throttle and Quick Resume");
+				System.out.println("104) Start Test dcBus");
+				System.out.println("105) Send Test dcBus");
+				System.out.println("200) Local Utilities");
 
 				String opt = scan.nextLine();
 				
@@ -570,6 +588,143 @@ public class FileStoreClient implements ILocalCommandLine {
 
 					break;
 				}	// end case 12
+				
+				case 100: {
+					ScriptUtility.goSwing(null);					
+					break;
+				}
+				
+				case 101: {
+					Activity act = new Activity();
+					
+					OperationResult compilelog = act.compile(IOUtil.readEntireFile(new File("./packages/dcTest/dcs/debugger-1.dcs.xml")));
+					
+					if (compilelog.hasErrors()) {
+						System.out.println("Error compiling script: " + compilelog.getMessage());
+						break;
+					}
+					
+					Task task = new Task()
+						.withRootContext()
+						.withTitle(act.getScript().getXml().getAttribute("Title", "Debugging dcScript"))	
+						.withTimeout(0)							// no timeout in editor mode
+						.withWork(act);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+				
+				case 102: {
+					IWork w = new IWork() {
+						int x = 0;
+						
+						@Override
+						public void run(TaskRun trun) {
+							x++;
+							
+							if (x % 1000 == 0)
+								trun.info("msg: " + x);
+							
+							if (x == 100000)
+								trun.complete();
+							else
+								trun.resume();
+						}
+					};
+					
+					Task task = new Task()
+						.withRootContext()
+						.withTitle("Debugging resume work")	
+						.withTimeout(0)							// no timeout in editor mode
+						.withThrottle(1)
+						.withWork(w);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+				
+				case 103: {
+					Task task = new Task()
+						.withTitle("Many Bottles")
+						.withThrottle(10)
+						.withRootContext();
+					
+					if (!ScriptWork.addScript(task, Paths.get("./packages/dcTest/dcs/many-bottles.dcs.xml"))) {
+						System.out.println("Error compiling script");
+						break;
+					}
+					
+					Hub.instance.getWorkPool().submit(task, new TaskObserver() {
+						@Override
+						public void completed(TaskRun or) {
+							System.out.println("Script done. #" 
+									+ ((Activity)or.getTask().getWorkInstance()).getRuntime() 
+									+ " - Cnt: " + ((Activity)or.getTask().getWorkInstance()).getRunCount() 
+									+ " - Code: " + or.getCode() 
+									+ " - Message: " + or.getMessage());			
+						}
+					});
+					
+					break;
+				}
+				
+				case 104: {
+					LocalEcho.start();
+					
+					break;
+				}
+				
+				case 105: {
+					LocalEcho.test1();
+					
+					break;
+				}
+				
+				case 106: {
+					LocalEcho.test2();
+					
+					break;
+				}
+				
+				case 107: {
+					TarArchiveInputStream tarin = new TarArchiveInputStream(new FileInputStream("c:/temp/test/files.tar"));
+					
+					TarArchiveEntry entry = tarin.getNextTarEntry();
+					
+					while (entry != null) {
+						System.out.println("name: " + entry.getName());
+						
+						entry = tarin.getNextTarEntry();
+					}
+					
+					tarin.close();
+					
+					break;
+				}
+				
+				case 108: {
+					
+					long x = StringUtil.parseLeadingInt("10MB");
+					
+					System.out.println("1: " + x);
+					
+					x = StringUtil.parseLeadingInt("10 MB");
+					
+					System.out.println("2: " + x);
+					
+					x = StringUtil.parseLeadingInt("1024");
+					
+					System.out.println("3: " + x);
+					
+					break;
+				}
+				
+				case 200: {
+					Foreground.utilityMenu(scan);					
+					break;
+				}
 				}
 			}
 			catch (Exception x) {

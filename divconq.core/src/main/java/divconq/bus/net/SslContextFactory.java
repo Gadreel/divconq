@@ -25,6 +25,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 
 import divconq.hub.Hub;
+import divconq.util.ISettingsObfuscator;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
@@ -48,7 +49,15 @@ public final class SslContextFactory {
 	        String protocol = sslconfig.getAttribute("Protocol", "TLSv1.2");
 	        
 	        String jksfile = sslconfig.getAttribute("File");
-	        String jkspass = Hub.instance.getClock().getObfuscator().decryptHexToString(sslconfig.getAttribute("Password"));	
+	        String jkspass = null;
+	        
+	        ISettingsObfuscator ob = Hub.instance.getClock().getObfuscator();
+	        
+	        if (ob != null)
+	        	jkspass = ob.decryptHexToString(sslconfig.getAttribute("Password"));	
+	        
+	        if (jkspass == null)
+	        	jkspass = sslconfig.getAttribute("Password");
 	        
 	        if (StringUtil.isNotEmpty(jksfile))
 		        try {
@@ -86,6 +95,9 @@ public final class SslContextFactory {
         SSLEngine engine = SslContextFactory.ServerContext.createSSLEngine();
         engine.setUseClientMode(false);
         engine.setWantClientAuth(true);
+        
+        Hub.instance.harden(engine);
+        
 		return engine;
 	}
 
@@ -96,6 +108,9 @@ public final class SslContextFactory {
 	public static SSLEngine getClientEngine() {
         SSLEngine engine = SslContextFactory.ClientContext.createSSLEngine();
         engine.setUseClientMode(true);
+        
+        Hub.instance.harden(engine);
+        
         return engine;
 	}
 

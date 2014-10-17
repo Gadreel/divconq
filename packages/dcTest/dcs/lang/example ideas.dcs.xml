@@ -1,0 +1,28 @@
+<dcScript Title="Progress and Logging">
+<Main Steps="3">
+<!--
+
+error handling
+	Debugger
+	OnError
+	Exit		- with out codes
+
+advanced
+	data validation (and error handling)
+		SSN
+		records
+		lists
+
+	async
+		Sleep
+
+	shell
+	
+	call script
+	
+ctp sessions/transfers
+
+-->
+
+</Main>
+</dcScript>

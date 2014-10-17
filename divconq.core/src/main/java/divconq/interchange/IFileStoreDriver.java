@@ -16,13 +16,11 @@
 ************************************************************************ */
 package divconq.interchange;
 
-import java.io.InputStream;
 import java.util.List;
 
 import divconq.lang.FuncCallback;
 import divconq.lang.OperationCallback;
 import divconq.script.StackEntry;
-import divconq.struct.IItemCollection;
 import divconq.struct.RecordStruct;
 import divconq.xml.XElement;
 
@@ -53,21 +51,27 @@ public interface IFileStoreDriver {
 	
 	void customCommand(RecordStruct params, FuncCallback<RecordStruct> callback);
 
-	IFileStoreScanner getScanner();
+	IFileStoreScanner scanner();
 	
 	void getFolderListing(CommonPath path, FuncCallback<List<IFileStoreFile>> callback);
 	//void getFolderListing2(String path, FuncCallback<ListStruct> callback);
 	
-	void put(InputStream in, long size, IFileStoreFile dest, boolean relative, OperationCallback callback);
+	//void put(InputStream in, long size, IFileStoreFile dest, boolean relative, OperationCallback callback);
 	
-	void put(IFileStoreFile source, boolean relative, FuncCallback<IFileStoreFile> callback);
+	//void put(IFileStoreFile source, boolean relative, FuncCallback<IFileStoreFile> callback);
 	
-	void putAll(IItemCollection files, boolean relative, OperationCallback callback);
+	//void putAll(IItemCollection files, boolean relative, OperationCallback callback);
 	
 	// scripts
 	void operation(final StackEntry stack, XElement code);
 	
 	IFileStoreFile wrapFileRecord(RecordStruct file);
+
+	// the only thing we can mount are folders, not files - so all root folders are safe 
+	// for use without needing to use async   
+	IFileStoreFile rootFolder();
+	
+	CommonPath resolvePath(CommonPath path);
 	
 	//String resolveToWorkingPath(CommonPath path);
 	

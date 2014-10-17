@@ -338,6 +338,7 @@ public class SqlManager {
 				}
 				
 				// TODO add other databases
+				
 				or.errorTr(195, this.name, ((SQLException) x).getErrorCode(), x);	    	
 				return;
 			}
@@ -603,7 +604,7 @@ public class SqlManager {
 		    
 		    // execute
 	    	FuncResult<ListStruct> res2 = this.callAndFormat(selects, pstmt);
-	    	res2.copyMessages(res);
+	    	res.copyMessages(res2);
 	    	
 	    	ListStruct lrs = res2.getResult();
 	    	

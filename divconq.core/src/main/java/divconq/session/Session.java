@@ -67,7 +67,7 @@ public class Session {
 		  return OperationContext.getHubId() + "_" + part + "_" + UUID.randomUUID().toString().replace("-", "");
 	}	
 	
-	static public String nextChannelId() {
+	static public String nextUUId() {
 		  return UUID.randomUUID().toString().replace("-", "");
 	}	
 	
@@ -418,7 +418,7 @@ Context: {
 		if (msg.hasField("Credentials")) {
 			// we don't want the creds in the message root on the bus - because they should
 			// travel as part of the context with the message
-			RecordStruct newcreds = msg.getFieldAsRecord("Credentials");
+			RecordStruct newcreds = msg.getFieldAsRecord("Credentials").deepCopyExclude();
 			msg.removeField("Credentials");
 			
 			// if the sent credentials are different from those already in context then change
@@ -526,7 +526,7 @@ Context: {
 					
 					if (cb != null) {
 						cb.setResult(this.toMessage());
-						cb.completed();
+						cb.complete();
 					}
 				}
 			});
@@ -536,7 +536,7 @@ Context: {
 		
 		if (cb != null) {
 			cb.setResult(MessageUtil.success());
-			cb.completed();
+			cb.complete();
 		}
 	}
 	
@@ -684,7 +684,7 @@ Context: {
 			try {
 				if (this.sendwaitCallback != null) {
 					this.sendwaitCallback.setReply(msg);
-					this.sendwaitCallback.completed();
+					this.sendwaitCallback.complete();
 					
 					this.sendwaitCallback = null;
 					this.sendwaitMessage = null;
@@ -856,6 +856,10 @@ Context: {
 
 	public void clearToGuest() {
 		this.user = UserContext.allocateGuest();
+	}
+
+	public void setToRoot() {
+		this.user = UserContext.allocateRoot();
 	}
 
 	public void reviewPlan() {

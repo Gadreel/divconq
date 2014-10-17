@@ -84,7 +84,7 @@ abstract public class WrappedOperationCallback extends OperationCallback {
 	}
 	
 	@Override
-	public long getAmountCompleted() {
+	public int getAmountCompleted() {
 		return this.or.getAmountCompleted();
 	}
 	

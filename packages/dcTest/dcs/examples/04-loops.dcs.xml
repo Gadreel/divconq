@@ -1,0 +1,140 @@
+<dcScript Title="Loop Blocks">
+<Main>
+	<!-- 
+		For loops are supported. Step defaults to 1.  ForEach
+		loops are also supported, but that comes in a future
+		example.
+
+		Output will be:
+		
+		bottles is greater than 2 -- 5
+		bottles is greater than 2 -- 4
+		bottles is greater than 2 -- 3
+		bottles is less than or equal to 2 -- 2
+		bottles is less than or equal to 2 -- 1
+		bottles is less than or equal to 2 -- 0
+	-->
+	<For Name="bottles" From="5" To="0" Step="-1">
+		<If Target="$bottles" GreaterThan="2">
+			<Console>bottles is greater than 2 -- {$bottles}</Console>
+		</If>
+		<Else>
+			<Console>bottles is less than or equal to 2 -- {$bottles}</Console>
+		</Else>
+	</For>
+	
+	<!-- 
+		While loops use the same conditional extensions that If and Case do.
+		Loops while condition is true.
+
+		Output will be:
+		
+		bottles = 5
+		bottles = 4
+		bottles = 3
+		bottles = 2
+		bottles = 1
+		bottles = 0
+	-->
+	
+	<Var Name="bottles" Type="Integer" SetTo="5" />
+	
+	<While Target="$bottles" GreaterThanOrEqual="0">
+		<Console>bottles = {$bottles}</Console>
+			
+		<With Target="$bottles">
+			<Dec />
+		</With>
+	</While>
+	
+	<!-- 
+		Until loops use the same conditional extensions that If and Case do.
+		Loops while condition is false.
+
+		Output will be:
+			
+		bottles = 5
+		bottles = 4
+		bottles = 3
+		bottles = 2
+		bottles = 1
+	-->
+
+	<With Target="$bottles" SetTo="5" />
+	
+	<Until Target="$bottles" Equal="0">
+		<Console>bottles = {$bottles}</Console>
+			
+		<With Target="$bottles">
+			<Dec />
+		</With>
+	</Until>
+	
+	<!-- 
+		dcScript handles Break and Continue different from many languages.
+		Putting Break inside a conditional doesn't work right, so instead
+		we have BreakIf and ContinueIf.  These statements apply to the block
+		they are in.
+
+		Output will be:
+
+		bottles = 5
+		bottles = 4
+		bottles = 3
+	-->
+
+	<With Target="$bottles" SetTo="5" />
+	
+	<Until Target="$bottles" Equal="0">
+		<BreakIf Target="$bottles" Equal="2" />
+	
+		<Console>bottles = {$bottles}</Console>
+			
+		<With Target="$bottles">
+			<Dec />
+		</With>
+	</Until>
+
+	<!-- 
+		In this example ContinueIf allows us to skip output of 2.
+
+		Output will be:
+			
+		bottles = 4
+		bottles = 3
+		bottles = 1
+		bottles = 0
+	-->
+	
+	<With Target="$bottles" SetTo="5" />
+	
+	<Until Target="$bottles" Equal="0">
+		<With Target="$bottles">
+			<Dec />
+		</With>
+		
+		<ContinueIf Target="$bottles" Equal="2" />
+	
+		<Console>bottles = {$bottles}</Console>
+	</Until>
+	
+	<!-- 
+		Break and Continue apply to any instruction block.  For example below
+		we will skip over 4, but still print 3.  The reason is that break applies
+		to the If not the For like it would in Java, C# or most other languages
+		(MUMPS is like this however).
+
+		Output will be:
+		
+		bottles is greater than 2 -- 5
+		bottles is greater than 2 -- 3
+	-->
+	<For Name="bottles" From="5" To="0" Step="-1">
+		<If Target="$bottles" GreaterThan="2">
+			<BreakIf Target="$bottles" Equal="4" />
+			
+			<Console>bottles is greater than 2 -- {$bottles}</Console>
+		</If>
+	</For>
+</Main>
+</dcScript>

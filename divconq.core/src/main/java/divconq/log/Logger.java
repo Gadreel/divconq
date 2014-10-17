@@ -20,6 +20,7 @@ import io.netty.util.ResourceLeakDetector;
 import io.netty.util.ResourceLeakDetector.Level;
 import io.netty.util.internal.logging.AbstractInternalLogger;
 import io.netty.util.internal.logging.InternalLogger;
+import io.netty.util.internal.logging.InternalLoggerFactory;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -121,6 +122,15 @@ public class Logger {
     	
 		// set by operation context init 
     	//Logger.locale = LocaleUtil.getDefaultLocale();
+		
+		// From here on we can use netty and so we need the logger setup
+		
+		InternalLoggerFactory.setDefaultFactory(new InternalLoggerFactory() {			
+			@Override
+			protected InternalLogger newInstance(String arg0) {
+				return Logger.getNettyLogger();
+			}
+		});
     	
     	if (Logger.config != null) {
     		// set by operation context init 
@@ -131,6 +141,9 @@ public class Logger {
     			ResourceLeakDetector.setLevel(Level.valueOf(Logger.config.getAttribute("NettyLevel")));
     			
     			Logger.debug("Netty Level set to: " + ResourceLeakDetector.getLevel());    			
+    		}
+    		else if (!"none".equals(System.getenv("dcnet"))) {
+    			// TODO anything more we should do here?  maybe paranoid isn't helpful?
     		}
     		
     		// set by operation context init 

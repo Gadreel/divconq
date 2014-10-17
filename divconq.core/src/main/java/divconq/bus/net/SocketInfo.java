@@ -31,15 +31,15 @@ public class SocketInfo {
 		Loopback,
 		All,
 		VmPipe,
-		Interface
+		Tcp
 	}
 	
-	protected ConnectorKind kind = ConnectorKind.Loopback;
+	protected ConnectorKind kind = ConnectorKind.Tcp;
 	protected String name = null;
-	protected int port = 0;
+	protected int port = 7443;
 	protected int streamport = 0;
 	protected boolean useSsl = false;
-	protected int count = 1;
+	protected int count = 2;
 	protected int streamcount = 2;
 	protected String hubid = null;
 	protected String targetthumbprint = null;
@@ -52,13 +52,22 @@ public class SocketInfo {
 		if (config == null)
 			return;
 		
+		/* TODO only TCP/IP supported currently
 		String kind = config.getAttribute("Kind");
 		
-		if ("Interface".equals(kind))
-			this.kind = ConnectorKind.Interface;
+		if ("Loopback".equals(kind))
+			this.kind = ConnectorKind.Loopback;
+		else if ("Interface".equals(kind))
+			this.kind = ConnectorKind.Tcp;
+		else if ("Tcp".equals(kind))
+			this.kind = ConnectorKind.Tcp;
 		else if ("VmPipe".equals(kind))
 			this.kind = ConnectorKind.VmPipe;
 		else if ("All".equals(kind))
+			this.kind = ConnectorKind.All;
+		*/
+		
+		if ("Listener".equals(config.getName()))
 			this.kind = ConnectorKind.All;
 		
 		if (config.hasAttribute("Address"))
@@ -84,16 +93,16 @@ public class SocketInfo {
 			// TODO log error
 		}
 		
-		this.useSsl = "True".equals(config.getAttribute("Ssl"));
+		this.useSsl = "true".equals(config.getAttribute("Ssl", "true").toLowerCase());
 		
 		// TODO given just the hubid we should be able to find the address/port/thumbprint/kind from
 		// the MATRIX file...
 		this.hubid = config.getAttribute("HubId");
 		
 		if (config.hasAttribute("TargetThumbprint"))
-			this.targetthumbprint = config.getAttribute("TargetThumbprint").toLowerCase().replace(":", "");
+			this.targetthumbprint = config.getAttribute("TargetThumbprint").toLowerCase().replace(":", "").trim();
 		
-		this.count = (int) StringUtil.parseInt(config.getAttribute("Number"), 1);
+		this.count = (int) StringUtil.parseInt(config.getAttribute("Number"), 2);
 		
 		this.streamcount = (int) StringUtil.parseInt(config.getAttribute("StreamNumber"), 2);
 	}
@@ -189,7 +198,7 @@ public class SocketInfo {
     	case VmPipe: 
     		// TODO return new VmPipeAddress(this.port);
     		break;
-    	case Interface: 
+    	case Tcp: 
     		return new InetSocketAddress(this.getAddr(), this.port);
     	case All: 
     		try {
@@ -218,7 +227,7 @@ public class SocketInfo {
     	case VmPipe: 
     	//	TODO return new VmPipeAddress(this.port);
     		break;
-    	case Interface: 
+    	case Tcp: 
     		return new InetSocketAddress(this.getAddr(), this.getStreamPort());
     	case All: 
 			try {
@@ -234,7 +243,7 @@ public class SocketInfo {
 
 	public static SocketInfo buildRemote(String name, int port, boolean ssl) {
 		SocketInfo info = new SocketInfo();
-		info.setKind(ConnectorKind.Interface);
+		info.setKind(ConnectorKind.Tcp);
 		info.setUseSsl(ssl);
 		info.setPort(port);
 		info.setName(name);
@@ -244,6 +253,14 @@ public class SocketInfo {
 	public static SocketInfo buildLoopback(int port, boolean ssl) {
 		SocketInfo info = new SocketInfo();
 		info.setKind(ConnectorKind.Loopback);
+		info.setUseSsl(ssl);
+		info.setPort(port);
+		return info;
+	}
+
+	public static SocketInfo buildAll(int port, boolean ssl) {
+		SocketInfo info = new SocketInfo();
+		info.setKind(ConnectorKind.All);
 		info.setUseSsl(ssl);
 		info.setPort(port);
 		return info;

@@ -21,6 +21,5 @@ public enum ExecuteState {
     Resume,       // been run at least once, ready to continue runs
     Done,		// instruction is complete, go on to next
     Break,      // stop this block, return to parent block
-    Continue,   // restart this block, but keep the variables
-    Exit        // the script is done, leave all levels of the code
+    Continue
 }

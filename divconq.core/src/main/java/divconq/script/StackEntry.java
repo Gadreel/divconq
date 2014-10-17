@@ -31,7 +31,6 @@ public class StackEntry {
 	protected Activity activity = null;
 	protected Instruction inst = null;
 	protected RecordStruct inststore = new RecordStruct();
-	protected boolean doneFlag = false;
 	protected IInstructionCallback callback = null;
 	
 	public StackEntry(Activity act, StackEntry parent, Instruction inst) {
@@ -60,16 +59,8 @@ public class StackEntry {
 		this.inst = v;
 	}
 	
-	public boolean isDone() {
-		return this.doneFlag;
-	}
-	
-	public void setDone(boolean v) {
-		this.doneFlag = v;
-	}
-	
     public ExecuteState getState() {
-        return (this.state != null) ? this.state : ExecuteState.Exit;
+        return (this.state != null) ? this.state : ExecuteState.Done;
     }
     
     public void setState(ExecuteState v) {
@@ -409,7 +400,7 @@ public class StackEntry {
     	return false;
 	}
 
-	public void dispose() {
-		this.inststore.dispose();
+	public StackEntry getExecutingStack() {
+		return this;
 	}
 }

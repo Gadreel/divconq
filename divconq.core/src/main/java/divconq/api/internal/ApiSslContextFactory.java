@@ -87,6 +87,9 @@ public final class ApiSslContextFactory {
 	public SSLEngine getClientEngine() {
         SSLEngine engine = this.clientContext.createSSLEngine();
         engine.setUseClientMode(true);
+        
+        Hub.instance.harden(engine);
+        
         return engine;
 	}
 }

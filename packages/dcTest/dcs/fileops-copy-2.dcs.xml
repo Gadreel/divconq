@@ -1,0 +1,12 @@
+<dcScript Title="FileOps Copy Tests">
+<Main>
+	<LocalFolder Name="fs0" Path="/Work/Temp/Source" />
+	<LocalFolder Name="fs1" Path="/Work/Temp/Dest" />
+	
+	<FileOps>
+		<Tar Source="$fs0" NameHint="test-files-3" />
+		<Gzip Dest="NULL" />
+	</FileOps>
+	
+</Main>
+</dcScript>

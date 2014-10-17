@@ -14,27 +14,17 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.script.inst;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.concurrent.CountDownLatch;
+package divconq.script.inst.ext;
 
 import divconq.bus.Message;
 import divconq.bus.ServiceResult;
 import divconq.hub.Hub;
-import divconq.interchange.IFileStoreFile;
-import divconq.io.OutputWrapper;
-import divconq.lang.Memory;
-import divconq.lang.OperationCallback;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
 import divconq.script.StackEntry;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
-import divconq.struct.Struct;
-import divconq.xml.XElement;
 
 public class SendEmail extends Instruction {
 	@Override
@@ -45,6 +35,7 @@ public class SendEmail extends Instruction {
 		String body = stack.stringFromSource("Body");
 		ListStruct attachments = new ListStruct();
 		
+		/* TODO
 		XElement cmd = stack.getInstruction().getXml();
 		
 		for (XElement attach : cmd.selectAll("Attachment")) {
@@ -93,6 +84,7 @@ public class SendEmail extends Instruction {
 				return;
 			}
 		}
+			*/
 		
 		Hub.instance.getBus().sendMessage(
 				new Message("dciEmail", "Message", "Send", new RecordStruct(

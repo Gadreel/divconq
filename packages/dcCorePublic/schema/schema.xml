@@ -5,7 +5,7 @@
 		<!-- core scalar types -->
 		
 		<StringType Id="String">
-			<StringRestriction MaxLength="1000000" />
+			<StringRestriction MaxLength="16000000" />
 		</StringType>
 		
 		<StringType Id="BigString" />
@@ -513,7 +513,9 @@
 						<Description>
 							No reply, just generates a message on the server.
 						</Description>
-						<Request Inherits="RequestMessage" />
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Type="String" />
+						</Request>
 					</Op>
 				</Feature>
 			</Secure>

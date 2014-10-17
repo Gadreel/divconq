@@ -29,14 +29,14 @@ public class WebSessionFactory implements IApiSessionFactory {
 	@Override
 	public ApiSession create() {
 		WebSession sess = new WebSession();
-		sess.init(this, this.config);
+		sess.init(this.config);
 		return sess;
 	}
 
 	@Override
 	public ApiSession create(XElement config) {
 		WebSession sess = new WebSession();
-		sess.init(this, config);
+		sess.init(config);
 		return sess;
 	}
 

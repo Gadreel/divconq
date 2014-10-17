@@ -49,7 +49,7 @@ public class ReplyService implements IService {
 					Hub.instance.getCountManager().allocateSetNumberCounter("dcBusReplyHandlers", this.handlers.size());
 					
 					resp.setReply(msg);
-					resp.completed();
+					resp.complete();
 				}
 			}
 			catch (Exception x) {	

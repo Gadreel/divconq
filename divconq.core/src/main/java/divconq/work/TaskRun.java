@@ -18,6 +18,8 @@ package divconq.work;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -43,11 +45,18 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 	
 	protected long started = -1;  
 	protected long lastclaimed = -1; 
+	protected int slot = 0;
 	
 	protected boolean completed = false;
 	protected boolean killed = false;	
 	
 	protected final Lock completionlock = new ReentrantLock();
+	
+	protected Set<AutoCloseable> closeables = new HashSet<>();
+	
+	public boolean hasStarted() {
+		return (this.started > -1);
+	}
 	
 	// don't alter this after submitting to work pool, this is for view only as submit
 	public Task getTask() {
@@ -278,6 +287,9 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 			if (work != null)			
 				System.out.println("Work pool caught exception: " + work.getClass());
 			
+			System.out.println("Stack Trace: ");
+			x.printStackTrace();
+			
 			this.complete();
 		}
 		finally {
@@ -290,10 +302,55 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 	//
 	// caution - before making this do anything more than resume context, keep in mind that the dcBus
 	//           restores a task only by setting context, if this needs to do more then so does the bus  (try not to) 
-	public void resume() {
+	public void thawContext() {
 		OperationContext.set(this.opcontext);
 	}
-
+	
+	public void resume() {
+		Hub.instance.getWorkPool().submit(this);		
+	}
+	
+	public void kill(String msg) {
+		this.completionlock.lock();
+		
+		try {			
+			this.error(msg);
+			
+			this.kill();
+		}
+		finally {
+			this.completionlock.unlock();
+		}
+	}
+	
+	/**
+	 * @param code code for message
+	 * @param msg message
+	 */
+	public void kill(long code, String msg) {
+		this.completionlock.lock();
+		
+		try {			
+			this.error(code, msg);
+			
+			this.kill();
+		}
+		finally {
+			this.completionlock.unlock();
+		}
+	}
+	
+	public void exitTr(long code, Object... params) {
+		this.completionlock.lock();
+		
+		try {			
+			this.infoTr(code, params);
+		}
+		finally {
+			this.completionlock.unlock();
+		}
+	}
+	
 	public void kill() {
 		this.completionlock.lock();
 		
@@ -408,6 +465,16 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 				if (StringUtil.isNotEmpty(tempFolder))
 					FileUtil.deleteDirectory(Paths.get(tempFolder));
 			}			
+			
+			for (AutoCloseable ac : this.closeables)
+				try {
+					ac.close();
+				} 
+				catch (Exception x) {
+					// ???
+				}
+			
+			this.closeables.clear();
 			
 			// TODO what should we do if not started - (this.started == -1)
 			if (this.task.isFromWorkQueue())
@@ -538,5 +605,9 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 		status.setField("Steps", this.getSteps());
 		
 		return status;
+	}
+
+	public void addCloseable(AutoCloseable v) {
+		this.closeables.add(v);
 	}
 }

@@ -16,6 +16,10 @@
 ************************************************************************ */
 package divconq.struct.scalar;
 
+import java.text.DecimalFormat;
+
+import org.joda.time.format.DateTimeFormat;
+
 import divconq.hub.Hub;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
@@ -67,6 +71,11 @@ public class StringStruct extends ScalarStruct {
 	}
 	
 	@Override
+	public boolean isNull() {
+		return (this.value == null);
+	}
+	
+	@Override
 	public void operation(StackEntry stack, XElement code) {
 		if ("Lower".equals(code.getName())) {
 			if (StringUtil.isNotEmpty(this.value))
@@ -88,6 +97,30 @@ public class StringStruct extends ScalarStruct {
 					: stack.resolveValue(code.getText());
 			
 			this.adaptValue(sref);			
+			
+			stack.resume();
+			return;
+		}
+		else if ("Format".equals(code.getName())) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+
+			String pat = stack.stringFromElement(code, "Pattern");
+					
+			try {
+				if (sref instanceof DateTimeStruct)
+					this.value = DateTimeFormat.forPattern(pat).print(((DateTimeStruct)sref).getValue());			
+				else if (sref instanceof DateStruct)
+					this.value = DateTimeFormat.forPattern(pat).print(((DateStruct)sref).getValue());			
+				else if (sref instanceof DecimalStruct)
+					this.value = new DecimalFormat(pat).format(((DecimalStruct)sref).getValue());			
+				else if (sref instanceof IntegerStruct || sref instanceof BigIntegerStruct)		
+					this.value = String.format(pat, ((ScalarStruct)sref).getGenericValue());			
+			}
+			catch (Exception x) {
+				stack.log().error("Error doing " + code.getName() + ": " + x);
+			}
 			
 			stack.resume();
 			return;
@@ -152,33 +185,60 @@ public class StringStruct extends ScalarStruct {
 		}
 		else if ("Trim".equals(code.getName())) {
 			if (StringUtil.isNotEmpty(this.value)) 
-				this.value = this.value.trim();
+				this.value = StringUtil.stripWhitespace(this.value.trim());
+						
+			stack.resume();
+			return;
+		}
+		else if ("TrimStart".equals(code.getName())) {
+			if (StringUtil.isNotEmpty(this.value)) 
+				this.value = StringUtil.stripLeadingWhitespace(this.value);
+						
+			stack.resume();
+			return;
+		}
+		else if ("TrimEnd".equals(code.getName())) {
+			if (StringUtil.isNotEmpty(this.value)) 
+				this.value = StringUtil.stripTrailingWhitespace(this.value);
+						
+			stack.resume();
+			return;
+		}
+		else if ("LeftPad".equals(code.getName())) {
+			if (StringUtil.isEmpty(this.value)) 
+				this.value = "";
+			
+			int size = (int) stack.intFromElement(code, "Size", 1);
+			String ch = code.hasAttribute("With") ? stack.stringFromElement(code, "With") : " ";
+				
+			this.value = StringUtil.leftPad(this.value, size, ch);
+						
+			stack.resume();
+			return;
+		}
+		else if ("RightPad".equals(code.getName())) {
+			if (StringUtil.isEmpty(this.value)) 
+				this.value = "";
+			
+			int size = (int) stack.intFromElement(code, "Size", 1);
+			String ch = code.hasAttribute("With") ? stack.stringFromElement(code, "With") : " ";
+				
+			this.value = StringUtil.rightPad(this.value, size, ch);
 						
 			stack.resume();
 			return;
 		}
 		
+		/*
+		// TODO also implement
+		 *  <Join List="$var" With="delim" />
+		// <Piece Delim="str" Index="num" />
+		// <Align Size="num" Pad="left|right" PadChar="c" />
+		 */
+		
 		super.operation(stack, code);
 	}
 	
-		/*
-			// TODO also implement
-			// <Piece Delim="str" Index="num" />
-			// <LeftPad Size="num" Char="c" />
-			// <RightPad Size="num" Char="c" />
-			// <Align Size="num" Pad="left|right" PadChar="c" />
-
-			switch (operation)
-			{
-				case "TrimEnd":
-					Value = iv.Value.TrimEnd();
-					break;
-				case "TrimStart":
-					Value = iv.Value.TrimStart();
-					break;
-			}
-		*/
-
     @Override
     protected void doCopy(Struct n) {
     	super.doCopy(n);
@@ -241,32 +301,22 @@ public class StringStruct extends ScalarStruct {
 		boolean isok = true;
 		boolean condFound = false;
 		
-		if (isok && source.hasAttribute("IsNull")) {
-			isok = stack.boolFromElement(source, "IsNull") ? (this.value == null) : (this.value != null);
-            condFound = true;
-        }
-		
-		if (isok && source.hasAttribute("IsEmpty")) {
-			isok = stack.boolFromElement(source, "IsEmpty") ? this.isEmpty() : !this.isEmpty();
-            condFound = true;
-        }
-
 		if (this.value != null) {
 			boolean caseinsensitive = stack.boolFromElement(source, "CaseInsensitive", false);
 			
-			if (isok && source.hasAttribute("Contains")) {
+			if (!condFound && source.hasAttribute("Contains")) {
 				String other = stack.stringFromElement(source, "Contains");
 	            isok = caseinsensitive ? this.value.toLowerCase().contains(other.toLowerCase()) : this.value.contains(other);
 	            condFound = true;
 	        }
 			
-			if (isok && source.hasAttribute("StartsWith")) {
+			if (!condFound && source.hasAttribute("StartsWith")) {
 				String other = stack.stringFromElement(source, "StartsWith");
 	            isok = caseinsensitive ? this.value.toLowerCase().startsWith(other.toLowerCase()) : this.value.startsWith(other);
 	            condFound = true;
 	        }
 			
-			if (isok && source.hasAttribute("EndsWith")) {
+			if (!condFound && source.hasAttribute("EndsWith")) {
 				String other = stack.stringFromElement(source, "EndsWith");
 	            isok = caseinsensitive ? this.value.toLowerCase().endsWith(other.toLowerCase()) : this.value.endsWith(other);
 	            condFound = true;
@@ -274,7 +324,7 @@ public class StringStruct extends ScalarStruct {
 		}
 		
 		if (!condFound) 
-			isok = false;			
+			isok = Struct.objectToBooleanOrFalse(this.value);
 		
 		return isok;
 	}

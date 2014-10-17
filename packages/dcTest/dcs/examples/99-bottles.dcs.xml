@@ -1,0 +1,32 @@
+<dcScript Title="99 Bottles of Beer Song">
+<Main>
+	<For Name="bottles" From="99" To="0" Step="-1">
+		<Switch Target="$bottles">
+		<Case GreaterThan="2">
+			<Var Name="bottlesleft" Type="Integer" SetTo="$bottles">
+				<Dec />
+			</Var>
+
+			<Console>
+{$bottles} bottles of beer on the wall, {$bottles} bottles of beer.
+Take one down and pass it around, {$bottlesleft} bottles of beer on the wall.</Console>
+		</Case>
+		<Case Equal="2">
+			<Console>
+{$bottles} bottles of beer on the wall, {$bottles} bottles of beer.
+Take one down and pass it around, 1 bottle of beer on the wall.</Console>
+		</Case>
+		<Case Equal="1">
+			<Console>
+{$bottles} bottle of beer on the wall, {$bottles} bottle of beer.
+Take one down and pass it around, no more bottles of beer on the wall.</Console>
+		</Case>
+		<Case Equal="0">
+			<Console>
+No more bottles of beer on the wall, no more bottles of beer.
+Go to the store and buy some more, 99 bottles of beer on the wall.</Console>
+		</Case>
+		</Switch>
+	</For>
+</Main>
+</dcScript>

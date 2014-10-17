@@ -89,6 +89,11 @@ public class AnyStruct extends ScalarStruct {
 	public boolean isEmpty() {
 		return (this.value == null);
 	}
+	
+	@Override
+	public boolean isNull() {
+		return (this.value == null);
+	}
 
 	@Override
 	public int hashCode() {
@@ -124,22 +129,6 @@ public class AnyStruct extends ScalarStruct {
 	
 	@Override
 	public boolean checkLogic(StackEntry stack, XElement source) {
-		boolean isok = true;
-		boolean condFound = false;
-		
-		if (isok && source.hasAttribute("IsNull")) {
-			isok = stack.boolFromElement(source, "IsNull") ? (this.value == null) : (this.value != null);
-            condFound = true;
-        }
-		
-		if (isok && source.hasAttribute("IsEmpty")) {
-			isok = stack.boolFromElement(source, "IsEmpty") ? this.isEmpty() : !this.isEmpty();
-            condFound = true;
-        }
-		
-		if (!condFound) 
-			isok = false;			
-		
-		return isok;
+		return Struct.objectToBooleanOrFalse(this.value);
 	}
 }

@@ -116,7 +116,7 @@ public class SchedulerDriver implements ISchedulerDriver {
 		if (!rec.isFieldEmpty("dcTask")) 
 			entry.setTask(new Task(rec.getFieldAsRecord("dcTask")));
 		
-		entry.setParams(rec.getFieldAsComposite("dcParams"));		
+		entry.setParams(rec.getFieldAsRecord("dcParams"));		
 		
 		res.setResult(entry);
 		

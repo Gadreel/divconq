@@ -21,16 +21,10 @@ import java.awt.Frame;
 import java.awt.Toolkit;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.util.concurrent.CountDownLatch;
 
 import javax.swing.*;
 
-import divconq.hub.Hub;
-import divconq.hub.HubResources;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationResult;
-import divconq.log.DebugLevel;
-import divconq.log.Logger;
+import divconq.work.TaskRun;
 
 public class ScriptUtility extends JFrame {
 	/**
@@ -39,8 +33,10 @@ public class ScriptUtility extends JFrame {
 	private static final long serialVersionUID = -1235058341209416285L;
 
 
-	public ScriptUtility(final OperationCallback cb) {
-		this.setRootPane(new EditorPane());		
+	public ScriptUtility(TaskRun run) {
+		EditorPane epane = new EditorPane();
+		
+		this.setRootPane(epane);		
 		
 		this.addWindowListener(new WindowListener() {			
 			@Override
@@ -49,7 +45,7 @@ public class ScriptUtility extends JFrame {
 
 			@Override
 			public void windowClosed(WindowEvent arg0) {
-				cb.completed();
+				epane.shutdown();
 			}
 
 			@Override
@@ -70,20 +66,19 @@ public class ScriptUtility extends JFrame {
 
 			@Override
 			public void windowOpened(WindowEvent arg0) {
+				epane.start(run);
 			}
 		});
 		
 		this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-		this.setTitle("dcScript FT Demo");
-		
-		//this.pack();
+		this.setTitle("dcScript Debugger");
 		
 		this.setMinimumSize(new Dimension(500, 500));
 		
 		this.setExtendedState(this.getExtendedState() | Frame.MAXIMIZED_BOTH);
 	}
 
-	public static void goSwing(final OperationCallback cb) {
+	public static void goSwing(TaskRun run) {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {				
 				try {
@@ -93,37 +88,9 @@ public class ScriptUtility extends JFrame {
 				}
 				
 				Toolkit.getDefaultToolkit().setDynamicLayout(true);
-				new ScriptUtility(cb).setVisible(true);
+				new ScriptUtility(run).setVisible(true);
 			}
 		});
 	}
-	
-	public static void main(String[] args) throws Exception {
-		HubResources resources = new HubResources();
-		resources.setSquadId("dcbackend0050x");
-		resources.setDebugLevel(DebugLevel.Warn);
-		OperationResult or = resources.init();
-		
-		if (or.hasErrors()) {
-			Logger.error("Unable to continue, hub resources not properly initialized");
-			return;
-		}
-		
-		final CountDownLatch latch = new CountDownLatch(1);
-		
-		Hub.instance.start(resources);
-
-		ScriptUtility.goSwing(new OperationCallback() {			
-			@Override
-			public void callback() {
-				latch.countDown();
-			}
-		});
-		
-		latch.await();
-		
-		Hub.instance.stop();
-	}
-
 
 }

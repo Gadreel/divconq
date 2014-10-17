@@ -1,0 +1,80 @@
+<Function Name="ValidateToyList" Parameter="toylist">
+	<Var Name="FailCount" Type="Integer" />
+	
+	<Progress Add="20">Check for empty toy list</Progress>
+	
+	<IfEmpty Target="$toylist">
+		<Error Code="90000" />
+	</IfEmpty>
+	
+	<ReturnIfErrored Target="$FailCount" ResetFlag="true" />
+	
+	<Progress Add="30">Check each toy on the list, we don't allow guns</Progress>
+	
+	<ForEach Name="toy" In="$toylist">
+		<Console> - Found a {$toy}!</Console>
+		
+		<If Target="$toy" EndsWith="Gun">
+			<With Target="$FailCount">
+				<Inc />
+			</With>
+			
+			<Error Code="90001">
+				<Param Value="$toy" />
+			</Error>
+		</If>
+	</ForEach>
+	
+	<Return Target="$FailCount" />
+</Function>
+<Function Name="BuildWishList">
+	<Progress Add="30">Load the global wish list</Progress>
+	
+	<!-- note the use of Global here makes wishlist available to any part of this script without being passed about -->
+	<Global Name="wishlist" Type="List">
+		<AddItem Value="Legos" />
+ 		<AddItem Value="Puzzle" />
+ 		<AddItem Value="Kite" />
+ 		<AddItem Value="Cap Gun" />
+ 		<AddItem Value="Playdough" />
+ 		<AddItem Value="Bike" />
+ 		<AddItem Value="Softball" />
+ 		<AddItem Value="Softball Bat" />
+ 		<AddItem Value="Jump Rope" />
+ 		<AddItem Value="BB Gun" />
+ 		<AddItem Value="Softball Glove" />
+ 		<AddItem Value="Frisbee" />
+	</Global>
+	
+	<Progress Add="40">Global wish list built</Progress>
+	
+	<!-- clear any error flags -->
+	<Return />
+</Function>
+<Function Name="BuildToyList" Parameter="toylist">
+	<Progress Add="10">Clear the toy list</Progress>
+	
+	<With Target="$toylist">
+		<Clear />
+	</With>
+	
+	<Progress Add="10">Create the toy (gift) list from 5 random choices</Progress>
+	
+	<For From="1" To="5">
+		<Var Name="choice" Type="Integer">
+			<Random From="1" To="$wishlist.Length" />
+			<Dec />
+		</Var>
+		
+		<Var Name="toy" SetTo="$wishlist.{$choice}" />
+
+		<Progress Add="10">Adding {$toy}</Progress>
+		
+		<With Target="$toylist">
+			<AddItem Value="$toy" />
+		</With>
+	</For>
+	
+	<!-- clear any error flags -->
+	<Return />
+</Function>

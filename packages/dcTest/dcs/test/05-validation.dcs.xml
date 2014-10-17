@@ -1,0 +1,72 @@
+<dcScript Title="Test Validation">
+<Main>
+	<!-- this is a valid ResultMessage -->
+	<Var Name="msg1" Type="ResultMessage">
+		<SetField Name="Level" Value="Info" />
+		<SetField Name="Code" Value="3" />
+		<SetField Name="Occurred" Value="$_Now" />
+		<SetField Name="Message" Value="Howday partner!" />
+		<Validate />
+	</Var>
+	
+	<IfErrored>
+		<Console>msg1 did not pass validation</Console>
+		<ResetErrored />
+	</IfErrored>
+	
+	<!-- this is not a valid ResultMessage -->
+	<Var Name="msg2" Type="ResultMessage">
+		<SetField Name="Level" Value="Warning" />
+		<SetField Name="Code" Value="5" />
+		<SetField Name="Occurred" Value="$_Now" />
+		<SetField Name="Message" Value="Goodday partner!" />
+		<Validate />
+	</Var>
+	
+	<IfErrored>
+		<Console>msg2 did not pass validation</Console>
+		<ResetErrored />
+	</IfErrored>
+	
+	<!-- this is a valid ResponseMessage -->
+	<Var Name="resp" Type="ResponseMessage">
+		<SetField Name="Service" Value="Reply" />
+		<SetField Name="Result" Value="6" />
+		<NewList Name="Messages" />
+		<Validate />
+	</Var>
+	
+	<IfErrored>
+		<Console>resp did not pass first validation</Console>
+		<ResetErrored />
+	</IfErrored>
+	
+	<!-- this is a valid ResponseMessage with a valid ResultMessage -->
+	<With Target="$resp.Messages">
+		<AddItem Value="$msg1" />
+	</With>
+
+	<With Target="$resp">
+		<Validate />
+	</With>
+	
+	<IfErrored>
+		<Console>resp did not pass second validation</Console>
+		<ResetErrored />
+	</IfErrored>
+
+	<!-- this is a valid ResponseMessage with both a valid and invalid ResultMessage -->
+	<With Target="$resp.Messages">
+		<AddItem Value="$msg2" />
+	</With>
+
+	<With Target="$resp">
+		<Validate />
+	</With>
+	
+	<IfErrored>
+		<Console>resp did not pass third validation</Console>
+		<ResetErrored />
+	</IfErrored>
+</Main>
+</dcScript>

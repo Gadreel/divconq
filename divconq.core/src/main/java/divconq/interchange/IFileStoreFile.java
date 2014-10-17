@@ -16,11 +16,10 @@
 ************************************************************************ */
 package divconq.interchange;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-
 import org.joda.time.DateTime;
 
+import divconq.io.stream.IStreamDest;
+import divconq.io.stream.IStreamSource;
 import divconq.lang.FuncCallback;
 import divconq.lang.OperationCallback;
 import divconq.script.StackEntry;
@@ -31,21 +30,30 @@ import divconq.xml.XElement;
 
 public interface IFileStoreFile {
 	String getName();
+	void setName(String v);
 	String getPath();
+	void setPath(String v);
 	String getExtension();
 	String getFullPath();
-	DateTime getMofificationTime();
+	DateTime getModificationTime();
 	long getSize();
 	boolean isFolder();
+	void isFolder(boolean b);
 	boolean exists();
 	
+	CommonPath path();
+	CommonPath resolvePath(CommonPath path);
+	
+	IFileStoreDriver driver();
+	IFileStoreScanner scanner();
+	
 	// TODO use DataStreamChannel instead
-	void copyTo(OutputStream out, OperationCallback callback);
+	//void copyTo(OutputStream out, OperationCallback callback);
 	
 	void hash(String method, FuncCallback<String> callback);
 	
 	// TODO use DataStreamChannel instead
-	void getInputStream(FuncCallback<InputStream> callback);
+	//void getInputStream(FuncCallback<InputStream> callback);
 	
 	void rename(String name, OperationCallback callback);
 	
@@ -63,4 +71,7 @@ public interface IFileStoreFile {
 	
 	void openRead(DataStreamChannel channel, FuncCallback<RecordStruct> callback);
 	void openWrite(DataStreamChannel channel, FuncCallback<RecordStruct> callback);
+	
+	IStreamDest allocDest();
+	IStreamSource allocSrc();
 }

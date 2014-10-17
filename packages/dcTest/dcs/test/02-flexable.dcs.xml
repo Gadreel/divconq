@@ -1,0 +1,64 @@
+<dcScript>
+<Main>
+	<!--
+		try to be flexible - handle things the way the coder expects
+	-->
+
+	<Console>Hello!</Console>
+	<Console>`Hello!</Console>
+
+	<Var Name="bottles" Type="Integer" SetTo="99" />
+	
+	<Console>`$bottles = {$bottles}</Console>
+	
+	<Var Name="bottles2" Type="Integer" SetTo="{$bottles}">
+		<Inc />
+	</Var>
+	
+	<Var Name="bottles3" Type="Integer" SetTo="$bottles">
+		<Dec />
+	</Var>
+	
+	<If Target="$bottles" LessThan="100">
+		<Console>
+			Passed check 1.
+		</Console>
+	</If>
+	
+	<If Target="$bottles" LessThan="{$bottles2}">
+		<Console>
+			Passed check 2.
+		</Console>
+	</If>
+	
+	<If Target="$bottles" LessThan="$bottles2">
+		<Console>
+			Passed check 3.
+		</Console>
+	</If>
+	
+	<If Target="$bottles" LessThan="$bottles3">
+		<Console>
+			Failed check 4.  Bottles3 is 98, which is not less than.
+		</Console>
+	</If>
+	
+	<If Target="$bottles" LessThan="bottles3">
+		<Console>
+			Failed check 5.  Should not compare to string.
+		</Console>
+	</If>
+	
+	<Var Name="bname" Type="String" SetTo="bottles" />
+	
+	<Console>`$bname = {$bname}</Console>
+	<Console>$bname</Console>
+	<Console>${$bname}</Console>
+	
+	<If Target="${$bname}" LessThan="$bottles2">
+		<Console>
+			Passed check 6.
+		</Console>
+	</If>
+</Main>
+</dcScript>

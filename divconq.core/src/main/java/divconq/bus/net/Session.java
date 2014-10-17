@@ -21,7 +21,7 @@ import javax.security.cert.X509Certificate;
 
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.handler.ssl.SslHandler;
+import divconq.net.ssl.SslHandler;
 import divconq.bus.Message;
 import divconq.bus.HubRouter;
 import divconq.hub.Hub;
@@ -93,13 +93,15 @@ public class Session {
 			}
 		}
 		catch (Exception x) {
-			System.out.println("Error writing stream message: " + m);
-			System.out.println("Error writing stream message: " + x);
+			Logger.error("Error writing bus message: " + m);
+			Logger.error("Error writing bus message: " + x);
+			
+			x.printStackTrace();
 			
 			// TODO close channel ?
 		}
 		
-		System.out.println("Could not write stream message");
+		Logger.error("Could not write bus message");
 		
 		return false;
 	}

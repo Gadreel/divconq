@@ -421,7 +421,7 @@ public class DataType {
 		Struct s = this.core.wrap(data, mr);
 		
 		if (s != null) {
-			if (!s.hasExplicitType())
+			if (!s.hasExplicitType()  && (!"Any".equals(this.id)))
 				s.setType(this);
 			
 			return s;

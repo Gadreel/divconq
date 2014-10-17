@@ -1,0 +1,25 @@
+<dcScript Title="Test Debugger Features">
+<Main>
+	<Info>aaa</Info>
+	
+	<Debugger />
+	
+	<Error>bbb1</Error>
+	<Error Code="222">bbb2</Error>
+	
+	<OnError Mode="Debug" />
+	<Error>bbb3</Error>
+	<Error>bbb4</Error>
+	<Error>bbb4a</Error>
+	<Error>bbb4b</Error>
+	<Error>bbb4c</Error>
+	<Error>bbb4d</Error>
+	
+	<OnError Mode="Exit" />
+	<Error>bbb5</Error>
+	<Error>bbb6</Error>
+	
+	<Info>ccc</Info>
+	<Info>ddd</Info>
+</Main>
+</dcScript>

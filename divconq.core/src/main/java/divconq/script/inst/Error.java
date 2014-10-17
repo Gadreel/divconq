@@ -47,13 +47,7 @@ public class Error extends Instruction {
 		}		
 		
 		stack.log().error(code, output);
-		
-		if (stack.codeHasAttribute("Code")) 
-			stack.setLastCode(code);
-		
-		//System.out.println(output);
 		stack.setState(ExecuteState.Done);
-		
 		stack.resume();
 	}
 	

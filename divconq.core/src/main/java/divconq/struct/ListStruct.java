@@ -37,6 +37,7 @@ import divconq.schema.DataType;
 import divconq.script.StackEntry;
 import divconq.struct.builder.BuilderStateException;
 import divconq.struct.builder.ICompositeBuilder;
+import divconq.struct.scalar.IntegerStruct;
 import divconq.struct.scalar.NullStruct;
 import divconq.util.ClassicIterableAdapter;
 import divconq.util.IAsyncIterable;
@@ -113,7 +114,12 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 		if (log == null)
 			return NullStruct.instance;
 		
-		if (part.isField()) {
+		String fld = part.getField();
+		
+		if ("Length".equals(fld))
+			return new IntegerStruct(this.items.size());
+		
+		if (fld != null) {
 			log.warnTr(501, this);
 			return NullStruct.instance;
 		}
@@ -457,14 +463,9 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 	/**
 	 * @param idx position in list of the item to remove from list
 	 */
-	public void removeItem(long idx) {		
+	public void removeItem(int idx) {		
 		if (idx >= this.items.size())
 			return;
-		
-		//Struct old = this.items.get((int) idx);
-		
-		//if (old != null)
-		//	old.dispose();
 		
 		this.items.remove(idx);
 	}
@@ -472,11 +473,9 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 	/**
 	 * @param idx position in list of the item to remove from list
 	 */
-	public void removeItem(Struct itm) {		
-		//if (idx >= this.items.size())
-		//	return;
-		
-		//Struct old = this.items.get((int) idx);
+	public void removeItem(Struct itm) {
+		// TODO dispose
+		//Struct old = this.items.get(itm);
 		
 		//if (old != null)
 		//	old.dispose();
@@ -516,25 +515,13 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 	 */
 	@Override
 	public void clear() {
-		//for (Struct var : this.items) 
-		//	var.dispose();
-		
 		this.items.clear();
-	}
-	
-	/* (non-Javadoc)
-	 * @see divconq.struct.Struct#dispose()
-	 */
-	@Override
-	public void dispose() {
-		//this.clear();
-		super.dispose();		
 	}
 	
 	@Override
 	public void operation(StackEntry stack, XElement code) {
 		if ("Set".equals(code.getName())) {
-			this.items.clear();
+			this.clear();
 			
 			String json = stack.resolveValueToString(code.getText());
 			
@@ -560,7 +547,13 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 			long idx = stack.intFromElement(code, "Index", -1); 
 			
 			if (idx > -1)
-				this.removeItem(idx);
+				this.removeItem((int) idx);
+			
+			stack.resume();
+			return;
+		}
+		else if ("Clear".equals(code.getName())) {
+			this.clear();
 			
 			stack.resume();
 			return;

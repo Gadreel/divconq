@@ -1,0 +1,266 @@
+<dcScript Title="Conditional Logic Blocks">
+<?include /packages/dcTest/dcs/examples/lib1.dcsl.xml ?>
+<Main>
+	<!-- 
+		Boolean.  Value for booleans is case insensitive
+		and may be true, True or TRUE or any other combination
+		of casing.
+
+		Output will be:
+		
+		Initial value: true
+	-->
+	<Var Name="myFlag" Type="Boolean" SetTo="TRUE" />
+	
+	<Console>Initial value: {$myFlag}</Console>
+	
+	<!-- 
+		If and Else work as expected.  Below the If will be run.
+
+		Output will be:
+		
+		flag is true
+	-->
+	<If Target="$myFlag">
+		<Console>flag is true</Console>
+	</If>
+	<Else>
+		<Console>flag is false</Console>
+	</Else>
+
+	<!-- 
+		Boolean supports operations too.
+		
+		Output will be:
+		
+		Flipped value: false
+	-->
+	<With Target="$myFlag">
+		<Flip />
+	</With>
+	
+	<Console>Flipped value: {$myFlag}</Console>
+	
+	<!-- 
+		Below the Else will be run.
+
+		Output will be:
+		
+		flag is false
+	-->
+	<If Target="$myFlag">
+		<Console>flag is true</Console>
+	</If>
+	<Else>
+		<Console>flag is false</Console>
+	</Else>
+	
+	<!-- 
+		Note that Else is actually a seperate statement.  Can you
+		run code between If and Else?  Yes.  Will it work as expected?
+		Yes, as long as you don't run another If between your If
+		and Else.
+
+		Output will be:
+		
+		between code
+		flag is false
+	-->
+	<If Target="$myFlag">
+		<Console>flag is true</Console>
+	</If>
+	
+	<Console>between code</Console>
+	
+	<Else>
+		<Console>flag is false</Console>
+	</Else>
+	
+	<!-- 
+		What about nesting If, will that work correctly?  Yes.
+
+		Output will be:
+		
+		flag2 is true
+		between code for inner if
+		flag1 is false
+		between code for outer if
+	-->
+	<Var Name="myFlag2" Type="Boolean" SetTo="TRUE" />
+	
+	<If Target="$myFlag2">
+		<Console>flag2 is true</Console>
+		
+		<If Target="$myFlag">
+			<Console>flag1 is true</Console>
+		</If>
+		
+		<Console>between code for inner if</Console>
+		
+		<Else>
+			<Console>flag1 is false</Console>
+		</Else>
+	</If>
+		
+	<Console>between code for outer if</Console>
+	
+	<Else>
+		<Console>flag2 is false</Console>
+	</Else>
+	
+	<!-- 
+		Can we check something besides a Booleans?  Yes, you can with
+		conditional extensions.  Some common extensions are:
+			IsNull
+			IsEmpty
+			Equal
+			LessThan
+			GreaterThan
+			LessThanOrEqual
+			GreaterThanOrEqual
+			Not
+			
+		A few examples follow.  First is an decimal compare, second
+		compares decimal and integer.
+
+		Output will be:
+		
+		shipping is less than price
+		shipping is greater or equal than handling
+	-->
+	
+	<Var Name="price" Type="Decimal" SetTo="19.95" />
+	<Var Name="shipping" Type="Decimal" SetTo="4.50" />
+	<Var Name="handling" Type="Integer" SetTo="2" />
+	
+	<If Target="$shipping" LessThan="$price">
+		<Console>shipping is less than price</Console>
+	</If>
+	
+	<If Target="$shipping" GreaterThanOrEqual="$handling">
+		<Console>shipping is greater or equal than handling</Console>
+	</If>
+	
+	<!-- 
+		Strings can use the above extensions.
+
+		Output will be:
+		
+		name is "carrie"
+	-->
+	<Var Name="name" Type="String" SetTo="carrie" />
+	
+	<If Target="$name" Equal="carrie">
+		<Console>name is "carrie"</Console>
+	</If>
+	
+	<!-- 
+		Strings also have some special extensions, like StartsWith.
+
+		Output will be:
+		
+		name starts with "car"
+	-->
+	<If Target="$name" StartsWith="car">
+		<Console>name starts with "car"</Console>
+	</If>
+	
+	<!-- 
+		Not can be added to a conditional check.  Not really only makes sense with
+		a value of "true".
+
+		Output will be:
+		
+		name does not contain "rat"
+	-->
+	<If Target="$name" Not="true" Contains="rat">
+		<Console>name does not contain "rat"</Console>
+	</If>
+	
+	<!-- 
+		Often we need to check for Empty/Null.  Empty
+		checks both - with strings this means an
+		Empty string.  Other data types it only
+		means null.
+
+		Output will be:
+		
+		brand is empty
+	-->
+	<Var Name="brand" Type="String" />
+	
+	<If Target="$brand" IsEmpty="true">
+		<Console>brand is empty</Console>
+	</If>
+	
+	<!-- 
+		Empty/Null check is so common it has its
+		own instruction.
+
+		Output will be:
+		
+		brand is still empty
+	-->
+	<IfEmpty Target="$brand">
+		<Console>brand is still empty</Console>
+	</IfEmpty>
+	
+	<!-- 
+		Empty/Null check is so common it has its
+		own Not instruction.  BTW, you can use Else
+		with these special If instructions.
+
+		Output will be:
+		
+		name is not empty
+	-->
+	<IfNotEmpty Target="$name">
+		<Console>name is not empty</Console>
+	</IfNotEmpty>
+	<Else>
+		<Console>name is empty</Console>
+	</Else>
+	
+	<!-- 
+		Switch is very powerful.  You can use ANY one of the conditional
+		extensions with each Case, including the special extensions
+		such as Contains.  There are no fall throughs with Case, however.
+		The first Case to be evaluated true is run, all others are ignored.
+
+		Output will be:
+		
+		name is less than janet
+	-->
+	<Switch Target="$name">
+	<Case GreaterThan="mindy">
+		<Console>name is greater than mindy</Console>
+	</Case>
+	<Case LessThan="janet">
+		<Console>name is less than janet</Console>
+	</Case>
+	<Case>
+		<Console>default case reached</Console>
+	</Case>
+	</Switch>
+	
+	<!-- 
+		Switch also allows you to place Target with the Case.
+
+		Output will be:
+		
+		shipping target is local to Case
+	-->
+	<Switch>
+	<Case Target="$name" GreaterThan="mindy">
+		<Console>name is greater than mindy</Console>
+	</Case>
+	<Case Target="$shipping" GreaterThanOrEqual="$handling">
+		<Console>shipping target is local to Case</Console>
+	</Case>
+	<Case>
+		<Console>default case reached</Console>
+	</Case>
+	</Switch>
+
+</Main>
+</dcScript>

@@ -1,0 +1,33 @@
+<dcScript Title="Functions Reentrant">
+<Function Name="ReentrantTest" Parameter="bottles">
+	<If Target="$bottles" GreaterThan="1">
+		<Var Name="newbottles" SetTo="$bottles">
+			<Dec />
+		</Var>
+		
+		<CallFunction Name="ReentrantTest" Argument="$newbottles" />
+	</If>
+	<!-- only print bottle # after code above has completed -->
+	<Console>Bottle #{$bottles}</Console>
+</Function>
+<Main>
+	<!--
+		dcScript functions are reentrant.  To print the bottle numbers
+		in reverse we can use reentrant code (as an example, stepping
+		down with For would be more sensible here).
+	
+		Bottle #1
+		Bottle #2
+		Bottle #3
+		Bottle #4
+		Bottle #5
+		Bottle #6
+		Bottle #7
+		Bottle #8
+		Bottle #9
+	-->
+	<Var Name="bottles" Type="Integer" SetTo="9" />
+		
+	<CallFunction Name="ReentrantTest" Argument="$bottles" />
+</Main>
+</dcScript>

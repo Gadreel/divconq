@@ -323,8 +323,12 @@ public class CoreType {
 			ret = new BooleanStruct();				
 		else if (this.root == RootType.Null) 
 			ret = new NullStruct(); 	// need to do this because we set type later - could be a custom type
-		else if (this.root == RootType.Any) 
+		else if (this.root == RootType.Any) {
+			if (data instanceof Struct)
+				return (Struct)data;
+			
 			ret = new AnyStruct();
+		}
 		
 		if (ret != null)
 			ret.adaptValue(data);

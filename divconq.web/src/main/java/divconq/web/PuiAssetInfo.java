@@ -20,8 +20,8 @@ import java.nio.file.Path;
 import java.util.Map.Entry;
 
 import divconq.interchange.CommonPath;
+import divconq.io.ByteBufWriter;
 import divconq.lang.FuncResult;
-import divconq.lang.Memory;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
@@ -34,9 +34,9 @@ public class PuiAssetInfo extends AssetInfo {
 	public PuiAssetInfo(WebContext ctx, CommonPath path, Path content, long when) {
 		super(path, when);
 		
-		this.mcontent = new Memory();
+		this.buffer = ByteBufWriter.createLargeHeap();
 
-		this.mcontent.writeLine("dc.pui.Loader.addPageDefinition('" + path + "', {");
+		this.buffer.writeLine("dc.pui.Loader.addPageDefinition('" + path + "', {");
 		
 		FuncResult<CharSequence> xmlres = IOUtil.readEntireFile(content);
 		
@@ -53,21 +53,21 @@ public class PuiAssetInfo extends AssetInfo {
 			XElement root = pres.getResult();
 			
 			if (root.hasAttribute("Title")) {
-				this.mcontent.write("\tTitle: '");
+				this.buffer.write("\tTitle: '");
 				this.writeJsString(root.getAttribute("Title"));
-				this.mcontent.writeLine("',");
+				this.buffer.writeLine("',");
 			}
 			
-			this.mcontent.writeLine("\tLayout: [");
+			this.buffer.writeLine("\tLayout: [");
 			
 			XElement layout = root.selectFirst("Layout");
 			
 			this.writeLayoutChildren("\t", layout);
 			
-			this.mcontent.writeLine();
-			this.mcontent.writeLine("\t],");
+			this.buffer.writeLine();
+			this.buffer.writeLine("\t],");
 			
-			this.mcontent.writeLine("\tFunctions: {");
+			this.buffer.writeLine("\tFunctions: {");
 			
 			boolean first = true;
 			
@@ -78,25 +78,25 @@ public class PuiAssetInfo extends AssetInfo {
 				if (first)
 					first = false;
 				else
-					this.mcontent.writeLine(",");
+					this.buffer.writeLine(",");
 				
-				this.mcontent.write("\t\t" + func.getAttribute("Name") + ": function(" + func.getAttribute("Params", "") + ") {");
+				this.buffer.write("\t\t" + func.getAttribute("Name") + ": function(" + func.getAttribute("Params", "") + ") {");
 				
-				this.mcontent.write(func.getText());
+				this.buffer.write(func.getText());
 				
-				this.mcontent.write("\t\t}");
+				this.buffer.write("\t\t}");
 			}
 			
-			this.mcontent.writeLine();
+			this.buffer.writeLine();
 			
-			this.mcontent.writeLine("\t}");
+			this.buffer.writeLine("\t}");
 		}
 		
-		this.mcontent.writeLine("});");
+		this.buffer.writeLine("});");
 		
-		this.mcontent.writeLine();
+		this.buffer.writeLine();
 		
-		this.mcontent.writeLine("dc.pui.Loader.resumePageLoad();");
+		this.buffer.writeLine("dc.pui.Loader.resumePageLoad();");
 	}
 
 	public void writeLayoutChildren(String tabs, XElement parent) {
@@ -113,11 +113,11 @@ public class PuiAssetInfo extends AssetInfo {
 				
 				if (StringUtil.isNotEmpty(val)) {
 					if (!first)
-						this.mcontent.writeLine(",");
+						this.buffer.writeLine(",");
 					
-					this.mcontent.write(tabs + "'");
+					this.buffer.write(tabs + "'");
 					this.writeJsString(val);
-					this.mcontent.write("'");
+					this.buffer.write("'");
 					
 					first = false;
 				}
@@ -127,11 +127,11 @@ public class PuiAssetInfo extends AssetInfo {
 
 	public void writeElement(String tabs, boolean first, XElement child) {
 		if (!first)
-			this.mcontent.writeLine(",");
+			this.buffer.writeLine(",");
 		
-		this.mcontent.writeLine(tabs + "{");
+		this.buffer.writeLine(tabs + "{");
 		
-		this.mcontent.write(tabs + "\tElement: '" + child.getName() + "'");
+		this.buffer.write(tabs + "\tElement: '" + child.getName() + "'");
 		
 		boolean hasCoreAttrs = false;
 		boolean missingFinalLine = false;
@@ -142,27 +142,27 @@ public class PuiAssetInfo extends AssetInfo {
 				continue;
 			}
 			
-			this.mcontent.writeLine(",");
+			this.buffer.writeLine(",");
 			
-			this.mcontent.write(tabs + "\t" + entry.getKey() + ": ");
+			this.buffer.write(tabs + "\t" + entry.getKey() + ": ");
 			
 			String v =  XNode.unquote(entry.getValue());
 			
 			if (v.startsWith("{") && v.endsWith("}"))
-				this.mcontent.write(v);
+				this.buffer.write(v);
 			else {
-				this.mcontent.write("'");
+				this.buffer.write("'");
 				this.writeJsString(v);
-				this.mcontent.write("'");
+				this.buffer.write("'");
 			}
 			
 			missingFinalLine = true;
 		}
 		
 		if (hasCoreAttrs) {
-			this.mcontent.writeLine(",");
+			this.buffer.writeLine(",");
 			
-			this.mcontent.writeLine(tabs + "\tAttributes: {");
+			this.buffer.writeLine(tabs + "\tAttributes: {");
 			
 			boolean firstattr = true;
 			
@@ -173,36 +173,36 @@ public class PuiAssetInfo extends AssetInfo {
 				if (firstattr)
 					firstattr = false;
 				else
-					this.mcontent.writeLine(",");
+					this.buffer.writeLine(",");
 				
-				this.mcontent.write(tabs + "\t\t'" + entry.getKey() + "': '");
+				this.buffer.write(tabs + "\t\t'" + entry.getKey() + "': '");
 				this.writeJsString( XNode.unquote(entry.getValue()));
-				this.mcontent.write("'");
+				this.buffer.write("'");
 			}
 			
-			this.mcontent.writeLine();
-			this.mcontent.write(tabs + "\t}");
+			this.buffer.writeLine();
+			this.buffer.write(tabs + "\t}");
 			
 			missingFinalLine = true;
 		}
 		
 		if (child.hasChildren()) {
-			this.mcontent.writeLine(",");
+			this.buffer.writeLine(",");
 		
-			this.mcontent.writeLine(tabs + "\tChildren: [");
+			this.buffer.writeLine(tabs + "\tChildren: [");
 			
 			this.writeLayoutChildren(tabs + "\t\t", child);
 			
-			this.mcontent.writeLine();
-			this.mcontent.write(tabs + "\t]");
+			this.buffer.writeLine();
+			this.buffer.write(tabs + "\t]");
 			
 			missingFinalLine = true;
 		}
 		
 		if (missingFinalLine)
-			this.mcontent.writeLine();
+			this.buffer.writeLine();
 		
-		this.mcontent.write(tabs + "}");
+		this.buffer.write(tabs + "}");
 	}
 	
     public void writeJsString(String s) {
@@ -213,43 +213,43 @@ public class PuiAssetInfo extends AssetInfo {
 			
 			switch(ch){
 			case '\'':
-				this.mcontent.write("\\\'");
+				this.buffer.write("\\\'");
 				break;
 			case '\\':
-				this.mcontent.write("\\\\");
+				this.buffer.write("\\\\");
 				break;
 			case '\b':
-				this.mcontent.write("\\b");
+				this.buffer.write("\\b");
 				break;
 			case '\f':
-				this.mcontent.write("\\f");
+				this.buffer.write("\\f");
 				break;
 			case '\n':
-				this.mcontent.write("\\n");
+				this.buffer.write("\\n");
 				break;
 			case '\r':
-				this.mcontent.write("\\r");
+				this.buffer.write("\\r");
 				break;
 			case '\t':
-				this.mcontent.write("\\t");
+				this.buffer.write("\\t");
 				break;
 			case '/':
-				this.mcontent.write("\\/");
+				this.buffer.write("\\/");
 				break;
 			default:
                 //Reference: http://www.unicode.org/versions/Unicode5.1.0/
 				if((ch>='\u0000' && ch<='\u001F') || (ch>='\u007F' && ch<='\u009F') || (ch>='\u2000' && ch<='\u20FF')) {
 					String ss=Integer.toHexString(ch);
 					
-					this.mcontent.write("\\u");
+					this.buffer.write("\\u");
 					
 					for(int k = 0; k < 4 - ss.length(); k++)
-						this.mcontent.writeChar('0');
+						this.buffer.writeChar('0');
 					
-					this.mcontent.write(ss.toUpperCase());
+					this.buffer.write(ss.toUpperCase());
 				}
 				else 
-					this.mcontent.writeChar(ch);
+					this.buffer.writeChar(ch);
 			}
 		}//for
 	}

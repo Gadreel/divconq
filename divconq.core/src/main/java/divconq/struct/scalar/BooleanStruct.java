@@ -64,17 +64,37 @@ public class BooleanStruct extends ScalarStruct {
 	public boolean isEmpty() {
 		return (this.value == null);
 	}
-
-		/*
-			switch (operation)
-			{
-				case "Copy":
-					Value = iv.Value;
-					break;
-				default:
-					throw new ArgumentException();
-			}
-		*/
+	
+	@Override
+	public boolean isNull() {
+		return (this.value == null);
+	}
+	
+	@Override
+	public void operation(StackEntry stack, XElement code) {
+		String op = code.getName();
+		
+		// we are loose on the idea of null/zero.  operations always perform on false, except Validate
+		if ((this.value == null) && !"Validate".equals(op))
+			this.value = false;
+		
+		if ("Flip".equals(op)) {
+			this.value = !this.value;
+			stack.resume();
+			return;
+		}
+		else if ("Set".equals(op)) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+			
+			this.adaptValue(sref);
+			stack.resume();
+			return;
+		}
+		
+		super.operation(stack, code);
+	}
 
     @Override
     protected void doCopy(Struct n) {
@@ -135,22 +155,6 @@ public class BooleanStruct extends ScalarStruct {
 	
 	@Override
 	public boolean checkLogic(StackEntry stack, XElement source) {
-		boolean isok = true;
-		boolean condFound = false;
-		
-		if (isok && source.hasAttribute("IsNull")) {
-			isok = stack.boolFromElement(source, "IsNull") ? (this.value == null) : (this.value != null);
-            condFound = true;
-        }
-		
-		if (isok && source.hasAttribute("IsEmpty")) {
-			isok = stack.boolFromElement(source, "IsEmpty") ? this.isEmpty() : !this.isEmpty();
-            condFound = true;
-        }
-		
-		if (!condFound && (this.value != null))
-	    	isok = this.value.booleanValue();
-		
-		return isok;
+		return Struct.objectToBooleanOrFalse(this.value);
 	}
 }

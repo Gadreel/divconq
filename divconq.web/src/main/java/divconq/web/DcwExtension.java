@@ -21,8 +21,6 @@ import java.util.Map;
 
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
-import divconq.interchange.CommonPath;
-import divconq.util.IOUtil;
 import divconq.web.WebExtension;
 
 public class DcwExtension extends WebExtension {
@@ -35,6 +33,7 @@ public class DcwExtension extends WebExtension {
 	@Override
 	public void online() {
 		try {
+			/* TODO review/restore
 			try {
 				// provide the JSON schema defs
 				// load the schema into JSON...
@@ -49,6 +48,7 @@ public class DcwExtension extends WebExtension {
 			}
 			catch (Exception x) {			
 			}
+			*/
 			
 			for (DomainInfo d : Hub.instance.getDomains()) {
 				final String did = d.getId();

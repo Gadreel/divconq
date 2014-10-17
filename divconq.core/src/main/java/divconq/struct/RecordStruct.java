@@ -660,12 +660,15 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 	 * @param name of field to remove
 	 */
 	public void removeField(String name) {
-		//FieldStruct fld = this.fields.get(name);
-		
-		//if (fld != null)
-		//	fld.dispose();
+		this.fields.remove(name);
+	}
+
+	public Struct sliceField(String name) {
+		FieldStruct fld = this.fields.get(name);
 		
 		this.fields.remove(name);
+		
+		return fld.sliceValue();
 	}
 
     @Override
@@ -710,25 +713,13 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 	 */
 	@Override
 	public void clear() {		
-		//for (FieldStruct var : this.fields.values()) 
-		//	var.dispose();
-		
 		this.fields.clear();
-	}
-	
-	/**
-	 * Remove all child fields and mark record for disposal.
-	 */
-	@Override
-	public void dispose() {
-		//this.clear();
-		super.dispose();		
 	}
 	
 	@Override
 	public void operation(StackEntry stack, XElement code) {
 		if ("Set".equals(code.getName())) {
-			// TODO clear first, as name suggests
+			this.clear();
 			
 			String json = stack.resolveValueToString(code.getText());
 			
@@ -737,8 +728,6 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 
 				this.copyFields(pjson);
 			}
-			
-			// TODO else check for Xml or Yaml
 			
 			stack.resume();
 			return;
@@ -772,7 +761,7 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 			}
             
 			if (var == null) {
-				stack.setState(ExecuteState.Exit);
+				stack.setState(ExecuteState.Done);
 				stack.log().errorTr(520);
 				stack.resume();
 				return;
@@ -793,6 +782,40 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 			}
 			
 			this.removeField(name);
+			
+			stack.resume();
+			return;
+		}
+
+		if ("NewList".equals(code.getName())) {
+			String name = stack.stringFromElement(code, "Name");
+			
+			if (StringUtil.isEmpty(name)) {
+				// TODO log
+				stack.resume();
+				return;
+			}
+			
+			this.removeField(name);
+			
+			this.setField(name, new ListStruct());
+			
+			stack.resume();
+			return;
+		}
+
+		if ("NewRecord".equals(code.getName())) {
+			String name = stack.stringFromElement(code, "Name");
+			
+			if (StringUtil.isEmpty(name)) {
+				// TODO log
+				stack.resume();
+				return;
+			}
+			
+			this.removeField(name);
+			
+			this.setField(name, new RecordStruct());
 			
 			stack.resume();
 			return;

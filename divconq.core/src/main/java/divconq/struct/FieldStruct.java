@@ -37,6 +37,12 @@ public class FieldStruct implements ICompositeOutput {
 	public Struct getValue() {
 		return this.value;
 	}
+	
+	public Struct sliceValue() {
+		Struct s = this.value;
+		this.value = null;
+		return s;
+	}
 
 	public void setValue(Struct v) {
 		this.value = v;
@@ -68,14 +74,10 @@ public class FieldStruct implements ICompositeOutput {
 		FieldStruct cp = new FieldStruct(this.name);
 		cp.orgvalue = this.orgvalue;
 		cp.prepped = this.prepped;
-		cp.value = this.value;
-		return cp;
-	}
-
-	public void dispose() {
-		//if (this.value != null)
-		//	this.value.dispose();
 		
-		this.value = null;
+		if (this.value != null)
+			cp.value = this.value.deepCopy();
+		
+		return cp;
 	}
 }

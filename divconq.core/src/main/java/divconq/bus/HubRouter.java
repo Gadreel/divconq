@@ -302,7 +302,7 @@ public class HubRouter {
 					// don't verify a Verify request or it'll be stuck forever making new verify checks
 					if (msg.isVerifyRequest()) {
 						fcb.setResult(tc.getUserContext());
-						fcb.completed();
+						fcb.complete();
 					}
 					else 
 						tc.verify(fcb);
@@ -445,7 +445,10 @@ public class HubRouter {
 			
 			if ((sessionsize == 1) && this.isDirect()) 	    	    	
     	    	// let hub know we are connected, in another thread
-    	    	Hub.instance.getWorkPool().submit(trun -> Hub.instance.fireEvent(HubEvents.BusConnected, null));
+    	    	Hub.instance.getWorkPool().submit(trun ->  { 
+    	    		Hub.instance.fireEvent(HubEvents.BusConnected, null);
+    	    		trun.complete();
+    	    	});
 		}
 		finally {
 			this.sessionlock.unlock();
@@ -498,7 +501,10 @@ public class HubRouter {
 		if (sessionsize == 0) {
 	    	// let hub know we are disconnected, in another thread
 			if (direct)
-				Hub.instance.getWorkPool().submit(trun -> Hub.instance.fireEvent(HubEvents.BusDisconnected, null));
+				Hub.instance.getWorkPool().submit(trun -> {
+					Hub.instance.fireEvent(HubEvents.BusDisconnected, null);
+					trun.complete();
+				});
 			
 			this.clearMyTunnels(this.proxied.values());
 			Hub.instance.getBus().indexServices(this);
@@ -522,7 +528,10 @@ public class HubRouter {
 			
 			if ((sessionsize == 1) && this.isDirect()) 	    	    	
     	    	// let hub know we are connected, in another thread
-    	    	Hub.instance.getWorkPool().submit(trun -> Hub.instance.fireEvent(HubEvents.BusConnected, null));
+    	    	Hub.instance.getWorkPool().submit(trun -> {
+    	    		Hub.instance.fireEvent(HubEvents.BusConnected, null);
+    	    		trun.complete();
+    	    	});
 		}
 		finally {
 			this.sessionlock.unlock();
@@ -558,7 +567,10 @@ public class HubRouter {
 		if (sessionsize == 0) {
 			if (direct)
 		    	// let hub know we are disconnected, in another thread
-		    	Hub.instance.getWorkPool().submit(trun -> Hub.instance.fireEvent(HubEvents.BusDisconnected, null));
+		    	Hub.instance.getWorkPool().submit(trun -> { 
+		    		Hub.instance.fireEvent(HubEvents.BusDisconnected, null);
+		    		trun.complete();
+		    	});
 		}
 	}
 	

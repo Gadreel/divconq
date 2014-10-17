@@ -16,16 +16,6 @@
 ************************************************************************ */
 package divconq.interchange;
 
-import divconq.lang.FuncCallback;
-import divconq.script.StackEntry;
-import divconq.struct.RecordStruct;
-import divconq.xml.XElement;
-
-public interface IFileStoreScanner {
-
-	void scan(FuncCallback<RecordStruct> callback);
-	
-	// scripts
-	public void operation(final StackEntry stack, XElement code);
-	
+public interface IFileStoreScanner extends IFileCollection {
+	// ???
 }

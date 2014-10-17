@@ -20,19 +20,24 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import io.netty.handler.codec.http.HttpChunkedInput;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.stream.ChunkedInput;
+import io.netty.handler.stream.ChunkedNioFile;
 import divconq.interchange.CommonPath;
-import divconq.lang.FuncResult;
-import divconq.lang.Memory;
-import divconq.lang.chars.Utf8Encoder;
+import divconq.io.ByteBufWriter;
 import divconq.util.FileUtil;
-import divconq.util.IOUtil;
 import divconq.util.MimeUtil;
 import divconq.util.StringUtil;
 
 public class AssetInfo {
-	//protected InputStream content = null;   TODO for efficiency someday evaluate a plan for streaming Assets - disabled for now
-	protected Memory mcontent = null;
-	protected byte[] bcontent = null;
+	//protected InputStream content = null;   TODO for efficiency someday evaluate how to use chunkedinput for streaming
+	
+	protected ByteBufWriter buffer = null;
+	
+	protected ChunkedInput<HttpContent> chunks = null;
+	protected long chunkSize = -1;
+	
 	protected CommonPath path= null;
 	protected long when = 0;
 	protected String mime = null; 
@@ -63,14 +68,26 @@ public class AssetInfo {
 		return this.attachmentName;
 	}
 	
-	public Memory getContent() {
-		if (this.mcontent != null) 
-			return new Memory(this.mcontent);
-		
-		if (this.bcontent != null)
-			return new Memory(this.bcontent);
-		
-		return null;  //this.content;
+	public boolean isRegion() {
+		return (this.chunks != null);
+	}
+	
+	public ChunkedInput<HttpContent> getChunks() {
+		return this.chunks;
+	}
+	
+	public void setRegionSize(long regionSize) {
+		this.chunkSize = regionSize;
+	}
+	
+	public int getSize() {
+		return this.isRegion() ? (int)this.chunkSize 
+				: (this.buffer != null) ? this.buffer.readableBytes() 
+				: -1;
+	}
+	
+	public ByteBufWriter getBuffer() {
+		return this.buffer;
 	}
 	
 	public long getWhen() {
@@ -87,19 +104,16 @@ public class AssetInfo {
 			this.setMimeForFile(fname);
 			
 			if (fname.endsWith(".html")) {
-				FuncResult<CharSequence> htmlres = IOUtil.readEntireFile(content);
+				this.buffer = ByteBufWriter.createLargeHeap();
 				
-				if (htmlres.hasErrors())
-					return;
-				
-				String html = htmlres.getResult().toString();
-				
-				html = ctx.expandMacros(html);
-				
-				this.bcontent = Utf8Encoder.encode(html);
+				Files.lines(content).forEach(line -> {
+					this.buffer.writeLine(ctx.expandMacros(line));
+				});
 			}
-			else
-				this.bcontent = Files.readAllBytes(content);
+			else {
+				this.chunkSize = Files.size(content);
+				this.chunks = new HttpChunkedInput(new ChunkedNioFile(content.toFile()));
+			}
 		} 
 		catch (IOException x) {
 			// TODO improve support
@@ -111,24 +125,12 @@ public class AssetInfo {
 		this.when = when;
 	}
 	
-	public AssetInfo(CommonPath path, Memory content, long when) {
+	public AssetInfo(CommonPath path, ByteBufWriter content, long when) {
 		this.path = path;
-		this.mcontent = content;
+		this.buffer = content;
 		this.when = when;
 	}
 	
-	public AssetInfo(CommonPath path, byte[] content, long when) {
-		this.path = path;
-		this.bcontent = content;
-		this.when = when;
-	}
-	
-	public AssetInfo(CommonPath path, byte[] content) {
-		this.path = path;
-		this.bcontent = content;
-		this.when = System.currentTimeMillis();
-	}
-
 	public void setMimeForFile(String fname) {
 		String ext = FileUtil.getFileExtension(fname);
 		

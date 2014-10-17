@@ -37,7 +37,7 @@ public class WebSession extends HyperSession {
 		callback.copyMessages(or);
 		
 		if (callback.hasErrors()) {
-			callback.completed();
+			callback.complete();
 			return;
 		}
 		
@@ -58,12 +58,12 @@ public class WebSession extends HyperSession {
 	}
 
 	@Override
-    public void init(IApiSessionFactory fac, XElement config) {
+    public void init(XElement config) {
     	// run only once even if call multiple times
 		if (this.info != null)
 			return;
 
-		super.init(fac, config);
+		super.init(config);
 		
 		if (this.info != null)
 			this.info.kind = ConnectorKind.WebSocket;

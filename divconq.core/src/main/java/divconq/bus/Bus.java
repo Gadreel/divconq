@@ -31,7 +31,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.ssl.SslHandler;
+import divconq.net.ssl.SslHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -77,10 +77,6 @@ public class Bus {
 	// info for this Hub
 	protected HubRouter localhub = null;
     
-	protected EventLoopGroup clientGroup = null;
-	protected EventLoopGroup bossGroup = null;
-	protected EventLoopGroup serverGroup = null;
-	
 	protected boolean proxymode = false;
 	
 	// includes Hubs exposed through PP2 connectors
@@ -99,35 +95,19 @@ public class Bus {
 	
 	// desired connectors
 	protected ConcurrentHashMap<String,SocketInfo> connectors = new ConcurrentHashMap<>();
-    
-	// allocate the network thread groups only when needed
-	public EventLoopGroup getClientGroup() {
-		if (this.clientGroup == null)
-			this.clientGroup = new NioEventLoopGroup();
-			
-		return this.clientGroup;
-	}
-    
-	public EventLoopGroup getServerGroup() {
-		if (this.serverGroup == null)
-			this.serverGroup = new NioEventLoopGroup();
-			
-		return this.serverGroup;
-	}
-    
-	public EventLoopGroup getBossGroup() {
-		if (this.bossGroup == null)
-			this.bossGroup = new NioEventLoopGroup();
-			
-		return this.bossGroup;
-	}
+	
+	// bus event group is separate from rest
+	protected EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
 	
     /*
      * set localHub before calling this
      */
     public void init(OperationResult or, XElement config) {
-    	int syncperiodsec = 15;
-    	int conninterval = 15;	// TODO up to 15 or so
+    	// TODO this should be separate from keep alive.  Sync Services should happen on demand as services change on Hub 
+    	// - update based on timestamp, so keep alive may have the timestamp but not the services payload - other side then needs to poll services if out of date.
+    	// keep alive can be more like 1 minute or so, except when pushed to indicate status change (Hub Status or Service Status changes)
+    	int syncperiodsec = 15;		
+    	int conninterval = 5;	
 		
 		this.localhub = new HubRouter();
 		
@@ -355,7 +335,7 @@ public class Bus {
 			callback.error(1, "Latch failed");		// TODO code 
 		}
 		
-		callback.completed();
+		callback.complete();
     }
 	
     public void sendReply(Message msg, Message original) {
@@ -531,9 +511,10 @@ public class Bus {
 				if (conncount < info.getCount()) {
 			        Bootstrap b = new Bootstrap();
 			        
-			        b.group(this.getClientGroup())
+			        b.group(this.eventLoopGroup)
 			         .channel(NioSocketChannel.class)
-			         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 250)			
+			         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 250)		
+			         .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
 			         .handler(new ChannelInitializer<SocketChannel>() {
 			             @Override
 			             public void initChannel(SocketChannel ch) throws Exception {
@@ -576,9 +557,10 @@ public class Bus {
 				if (conncount < info.getStreamCount()) {
 			        Bootstrap b = new Bootstrap();
 			        
-			        b.group(this.getClientGroup())
+			        b.group(this.eventLoopGroup)
 			         .channel(NioSocketChannel.class)
 			         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 250)			
+			         .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
 			         .handler(new ChannelInitializer<SocketChannel>() {
 			             @Override
 			             public void initChannel(SocketChannel ch) throws Exception {
@@ -641,8 +623,9 @@ public class Bus {
 				// -------------------------------------------------
 		        ServerBootstrap b = new ServerBootstrap();
 		        
-		        b.group(this.getBossGroup(), this.getServerGroup())
+		        b.group(this.eventLoopGroup)
 		         .channel(NioServerSocketChannel.class)
+		         .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
 		         //.option(ChannelOption.SO_BACKLOG, 125)			// this is probably not needed but serves as note to research
 		         .childHandler(new ChannelInitializer<SocketChannel>() {
 					@Override
@@ -686,8 +669,9 @@ public class Bus {
 				// -------------------------------------------------
 		        b = new ServerBootstrap();
 		        
-		        b.group(this.getBossGroup(), this.getServerGroup())
+		        b.group(this.eventLoopGroup)
 		         .channel(NioServerSocketChannel.class)
+		         .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
 		         //.option(ChannelOption.SO_BACKLOG, 125)			// this is probably not needed but serves as note to research
 		         .childHandler(new ChannelInitializer<SocketChannel>() {
 					@Override
@@ -857,15 +841,12 @@ public class Bus {
     
     public void stopFinal(OperationResult or) {
     	// TODO sync these guys
-    	
-    	if (this.clientGroup != null)
-    		this.clientGroup.shutdownGracefully();
-    	
-    	if (this.serverGroup != null)
-    		this.serverGroup.shutdownGracefully();
 		
-    	if (this.bossGroup != null)
-    		this.bossGroup.shutdownGracefully();
+		try {
+			this.eventLoopGroup.shutdownGracefully().await();
+		} 
+		catch (InterruptedException x) {
+		}
     }
 	
 	public void dumpInfo() {
@@ -928,11 +909,6 @@ public class Bus {
 			
 			System.out.println("  >>> " + StringUtil.join(al, ","));
 		}
-		
-		System.out.println();
-		System.out.println("Boss Threads: " + this.getBossGroup().isShutdown() + " - " + this.getBossGroup().isShuttingDown() + " - " + this.getBossGroup().isTerminated());
-		System.out.println("Server Threads: " + this.getServerGroup().isShutdown() + " - " + this.getServerGroup().isShuttingDown() + " - " + this.getServerGroup().isTerminated());
-		System.out.println();		
 		
 		Hub.instance.dumpDomainNames();
 	}

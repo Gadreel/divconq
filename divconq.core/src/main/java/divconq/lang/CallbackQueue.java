@@ -31,7 +31,7 @@ public class CallbackQueue<T> {
 	public void pop(FuncCallback<T> callback) {
 		if (this.disposed) {
 			callback.error(1, "Disposed");		// TODO better code
-			callback.completed();
+			callback.complete();
 			return;
 		}
 		
@@ -39,7 +39,7 @@ public class CallbackQueue<T> {
 		
 		if (resource != null) {
 			callback.setResult(resource);
-			callback.completed();
+			callback.complete();
 			return;
 		}
 		
@@ -58,7 +58,7 @@ public class CallbackQueue<T> {
 		
 		if (callback != null) {
 			callback.setResult(resource);
-			callback.completed();
+			callback.complete();
 			return;
 		}
 		
@@ -74,7 +74,7 @@ public class CallbackQueue<T> {
 		
 		while (callback != null) {
 			callback.error(1, "Nothing more to do");		// TODO better code
-			callback.completed();
+			callback.complete();
 			callback = this.callbacks.poll();
 		}		
 		

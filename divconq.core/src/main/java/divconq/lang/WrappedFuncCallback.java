@@ -84,7 +84,7 @@ abstract public class WrappedFuncCallback<T> extends FuncCallback<T> {
 	}
 	
 	@Override
-	public long getAmountCompleted() {
+	public int getAmountCompleted() {
 		return this.or.getAmountCompleted();
 	}
 	

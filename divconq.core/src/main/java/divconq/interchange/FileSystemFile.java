@@ -18,10 +18,7 @@ package divconq.interchange;
 
 import io.netty.buffer.ByteBuf;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
@@ -38,6 +35,10 @@ import org.joda.time.DateTime;
 import divconq.bus.MessageUtil;
 import divconq.bus.net.StreamMessage;
 import divconq.hub.Hub;
+import divconq.io.stream.FileDestStream;
+import divconq.io.stream.FileSourceStream;
+import divconq.io.stream.IStreamDest;
+import divconq.io.stream.IStreamSource;
 import divconq.lang.FuncCallback;
 import divconq.lang.FuncResult;
 import divconq.lang.OperationCallback;
@@ -60,11 +61,10 @@ import divconq.xml.XElement;
 public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	protected FileSystemDriver driver = null;
 	protected Path localpath = null;
-	protected FileInputStream input = null;
-	protected long offset = 0;
 		
 	public FileSystemFile() {
-		this.setType(Hub.instance.getSchema().getType("dciFileSystemFile"));
+		if (Hub.instance.getSchema() != null)
+			this.setType(Hub.instance.getSchema().getType("dciFileSystemFile"));
 	}
 
 	public FileSystemFile(FileSystemDriver driver, Path file) {
@@ -84,6 +84,17 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 		
 		refreshProps();
 	}
+
+	public FileSystemFile(FileSystemDriver driver, CommonPath file, boolean folder) {
+		this();
+		
+		this.driver = driver;
+		this.localpath = driver.resolveToLocalPath(file);
+		
+		this.setField("IsFolder", folder);
+		
+		refreshProps();
+	}
 	
     public FileSystemFile(FileSystemDriver driver, RecordStruct rec) {
 		this();
@@ -92,7 +103,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 		
 		((RecordStruct) this).copyFields(rec);
 		
-		// only works with relative paths - even if my path is / it is considered relative to WF
+		// only works with relative paths - even if my path is / it is considered relative to root
 		// which is good
 		String cwd = driver.getFieldAsString("RootFolder");
 		this.localpath = Paths.get(cwd, this.getFieldAsString("Path"));
@@ -101,11 +112,23 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	}
     
     public void refreshProps() {
+		// ignore what the caller told us, these are the right values:
+		this.setField("Name", this.localpath.getFileName().toString());
+		
+		String cwd = this.driver.getFieldAsString("RootFolder");
+		String fpath = this.localpath.normalize().toString();
+		
+		// common path format in "absolute" relative to mount (TODO not relative to WF - fix instead relative to RootFolder)
+		// also, since fpath may be absolute - only do substring thing if cwd is above fpath in folder chain TODO
+		
+		if (fpath.length() == cwd.length())
+		this.setField("Path", "/");
+		else
+		this.setField("Path", "/" + fpath.substring(cwd.length() + 1).replace('\\', '/'));
+		
+		this.setField("FullPath", fpath);
 		
 		if (Files.exists(this.localpath)) {
-			// ignore what the caller told us, these are the right values:
-			this.setField("Name", this.localpath.getFileName());
-			
 			try {
 				this.setField("Size", Files.size(this.localpath));
 				this.setField("Modified", new DateTime(Files.getLastModifiedTime(this.localpath).toMillis()));
@@ -115,21 +138,19 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 			
 			this.setField("IsFolder", Files.isDirectory(this.localpath));
 			this.setField("Exists", true);
-						
-			// TODO enhance for "absolute"
-			String cwd = this.driver.getFieldAsString("RootFolder");
-			String fpath = this.localpath.normalize().toString();
-			
-			// common path format in "absolute" relative to mount (TODO not relative to WF - fix instead relative to RootFolder)
-			// also, since fpath may be absolute - only do substring thing if cwd is above fpath in folder chain TODO
-			this.setField("Path", "/" + fpath.substring(cwd.length() + 1).replace('\\', '/'));
-			this.setField("FullPath", fpath);
 		}
+		else
+			this.setField("Exists", false);
     }
     
     @Override
     public boolean exists() {
     	return this.getFieldAsBooleanOrFalse("Exists");
+    }
+    
+    @Override
+    public CommonPath path() {
+    	return new CommonPath(this.getFieldAsString("Path"));
     }
 
 	@Override
@@ -138,8 +159,18 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	}
 
 	@Override
+	public void setName(String v) {
+		this.setField("Name", v);
+	}
+	
+	@Override
 	public String getPath() {
 		return this.getFieldAsString("Path");
+	}
+	
+	@Override
+	public void setPath(String v) {
+		this.setField("Path", v);
 	}
 
 	@Override
@@ -153,7 +184,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	}
 
 	@Override
-	public DateTime getMofificationTime() {
+	public DateTime getModificationTime() {
 		return this.getFieldAsDateTime("Modified");
 	}
 
@@ -166,7 +197,55 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	public boolean isFolder() {
 		return this.getFieldAsBooleanOrFalse("IsFolder");
 	}
+	
+	@Override
+	public void isFolder(boolean v) {
+		this.setField("IsFolder", v);
+	}
+	
+	public Path localPath() {
+		return this.localpath;
+	}
+	
+	public FileSystemDriver driver() {
+		return this.driver;
+	}
+	
+	public CommonPath resolvePath(CommonPath path) {
+		if (this.isFolder())
+			return this.path().resolve(path);
+		
+		return this.path().getParent().resolve(path);
+	}
+	
+	@Override
+	public IFileStoreScanner scanner() {
+		if (this.isFolder())
+			return new FileSystemScanner(this);
+		
+		return null;
+	}
+	
+	@Override
+	public IStreamDest allocDest() {
+		return new FileDestStream(this);
+	}
+	
+	@SuppressWarnings("resource")
+	public IStreamDest allocDest(boolean relative) {
+		return new FileDestStream(this).withRelative(relative);
+	}
 
+	@Override
+	public IStreamSource allocSrc() {
+    	if (this.isFolder()) 
+    		return new FileSourceStream(this.scanner());
+    	
+    	FileCollection filesrc = new FileCollection();
+		filesrc.add(this);
+		return new FileSourceStream(filesrc);
+	}
+	
 	/*
 	@Override
 	public Iterable<Struct> getItems() {
@@ -205,12 +284,6 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 		FileSystemFile cp = new FileSystemFile();
 		this.doCopy(cp);
 		return cp;
-	}
-	
-	@Override
-	public void dispose() {
-		// TODO support this!!!
-		super.dispose();
 	}
 
 	@Override
@@ -362,6 +435,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	}
 
 	// TODO use DataStreamChannel instead
+	/*
 	@Override
 	public void copyTo(OutputStream out, OperationCallback callback) {
 		try {
@@ -378,6 +452,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 		
 		callback.completed();
 	}
+	*/
 	
 	public class DestinationDriver implements IFileStoreStreamDriver {						
 		protected FileChannel fchannel = null;
@@ -401,12 +476,6 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 			this.path = new CommonPath(rec.getFieldAsString("FilePath"));
 			this.expectedsize = rec.getFieldAsInteger("FileSize", 0);
 			
-			if (!this.path.isAbsolute()) {
-				or.error(1, "Path must be absolute");
-				or.completed();
-				return;
-			}
-			
 			this.file = FileSystemFile.this.driver.resolveToLocalPath(this.path);
 			
 			boolean exists = Files.exists(this.file);
@@ -418,7 +487,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 			
 			if (mdres.hasErrors()) {
 	        	or.error("FS failed to open file: " + this.file);
-	        	or.completed();				
+	        	or.complete();				
 			}
 			
 	        try {
@@ -461,7 +530,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	        	or.error(1, "FS failed to open file: " + x);
 	        }
 	        
-			or.completed();
+			or.complete();
 		}
 		
 		@Override
@@ -567,23 +636,17 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 			this.path = new CommonPath(rec.getFieldAsString("FilePath"));
 			this.offset = rec.getFieldAsInteger("Offset", 0);
 			
-			if (!this.path.isAbsolute()) {
-				or.error(1, "Path must be absolute");
-				or.completed();
-				return;
-			}
-			
 			this.file = FileSystemFile.this.driver.resolveToLocalPath(this.path);
 			
 	        if (!Files.exists(this.file)) {
 	    		or.error(1, "FS failed to find file: " + this.file);
-				or.completed();
+				or.complete();
 				return;
 	        }
 	        
 	        if (Files.isDirectory(this.file)) {
 	        	or.error(1, "FS found directory: " + this.file);
-				or.completed();
+				or.complete();
 				return;
 	        }
 	        
@@ -598,7 +661,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	        	or.error(1, "FS failed to open file: " + x);
 	        }
 			
-			or.completed();
+			or.complete();
 		}
 		
 		@Override
@@ -738,7 +801,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 					callback.setResult(resp);
 				}
 				
-				callback.completed();
+				callback.complete();
 			}
 		});
 	}
@@ -750,7 +813,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 		} 
 		catch (IOException x) {
 			callback.error(1, "Unable to create destination folder path: " + x);
-			callback.completed();
+			callback.complete();
 			return;
 		}
 		
@@ -778,7 +841,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 					callback.setResult(resp);
 				}
 				
-				callback.completed();
+				callback.complete();
 			}
 		});
 	}
@@ -796,10 +859,11 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 			callback.error(1, "Unable to read file for hash: " + x);
 		}
 		
-		callback.completed();
+		callback.complete();
 	}
 
 	// TODO use DataStreamChannel instead
+	/*
 	@Override
 	public void getInputStream(FuncCallback<InputStream> callback) {
 		try {
@@ -811,6 +875,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 		
 		callback.completed();
 	}
+	*/
 
 	@Override
 	public void rename(String name, OperationCallback callback) {
@@ -834,7 +899,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 			}
 		}
 		
-		callback.completed();
+		callback.complete();
 	}
 
 	@Override

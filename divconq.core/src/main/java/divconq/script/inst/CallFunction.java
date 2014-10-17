@@ -24,17 +24,19 @@ import divconq.script.StackCallEntry;
 import divconq.script.StackEntry;
 import divconq.script.StackFunctionEntry;
 import divconq.struct.Struct;
+import divconq.util.StringUtil;
 
 public class CallFunction extends Instruction {
 	@Override
-    public void run(final StackEntry stack) {
-		if (stack.isDone()) {
+    public void run(StackEntry stack) {
+		// TODO there is likely a better way to code Done...cleanup
+		if (stack.getStore().getFieldAsBooleanOrFalse("Done")) {
         	stack.setState(ExecuteState.Done);
         	stack.resume();
         	return;
 		}
 				
-		final StackCallEntry cstack = (StackCallEntry)stack;
+		StackCallEntry cstack = (StackCallEntry)stack;
 		
 		if (stack.getState() == ExecuteState.Ready) {
 			String name = stack.stringFromSource("Name");
@@ -44,14 +46,14 @@ public class CallFunction extends Instruction {
 
 			if (func == null) {
 				stack.log().errorTr(517, name);
-	        	stack.setState(ExecuteState.Exit); 
+	        	stack.setState(ExecuteState.Done); 
 			}
 			else {
 				StackEntry sfunc = func.createStack(stack.getActivity(), stack);
 				
 				if ((sfunc == null) || !(sfunc instanceof StackFunctionEntry)) {
 					stack.log().errorTr(518, name);
-		        	stack.setState(ExecuteState.Exit); 
+		        	stack.setState(ExecuteState.Done); 
 				}
 				else {
 					StackFunctionEntry sbfunc = (StackFunctionEntry)sfunc;
@@ -76,7 +78,7 @@ public class CallFunction extends Instruction {
         
         if (child == null) {
 			stack.log().errorTr(519);
-        	stack.setState(ExecuteState.Exit); 
+        	stack.setState(ExecuteState.Done); 
         	stack.resume();
         	return;
         }
@@ -87,12 +89,16 @@ public class CallFunction extends Instruction {
 				ExecuteState cstate = child.getState();
 				
 				if ((cstate != ExecuteState.Ready) && (cstate != ExecuteState.Resume)) {
-			        if (cstate == ExecuteState.Exit) 
-			        	stack.setState(ExecuteState.Exit);
-			        else  {
-			        	stack.setDone(true);
-			        	cstack.setChild(null);
-			        }
+		        	stack.getStore().setField("Done", true);
+		        	
+		        	Struct result = child.queryVariable("_LastResult");
+		        	
+					String name = stack.stringFromSource("ResultName");
+					
+					if (StringUtil.isNotEmpty(name))
+						stack.addVariable(name, result);
+					
+		        	cstack.setChild(null);
 				}
 				
 				stack.resume();

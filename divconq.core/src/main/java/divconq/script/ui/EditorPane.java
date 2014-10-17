@@ -19,7 +19,9 @@ package divconq.script.ui;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
@@ -54,16 +56,10 @@ import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import divconq.hub.Hub;
-import divconq.interchange.FileSystemDriver;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationContext;
 import divconq.lang.OperationObserver;
 import divconq.lang.OperationResult;
 import divconq.script.Activity;
-import divconq.script.ActivityManager;
-import divconq.script.ExecuteState;
-import divconq.script.IInstructionCallback;
-import divconq.script.Script;
+import divconq.script.IDebugger;
 import divconq.session.Session;
 import divconq.struct.CompositeStruct;
 import divconq.struct.FieldStruct;
@@ -72,11 +68,12 @@ import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.struct.builder.JsonStreamBuilder;
 import divconq.util.IOUtil;
-import divconq.xml.XElement;
-import divconq.xml.XmlReader;
+import divconq.work.Task;
+import divconq.work.TaskLogger;
+import divconq.work.TaskRun;
 
 @SuppressWarnings("rawtypes")
-public class EditorPane extends JRootPane implements SyntaxConstants {
+public class EditorPane extends JRootPane implements SyntaxConstants, IDebugger {
 	private static final long serialVersionUID = -162698015493544827L;
 	
 	protected RSyntaxTextArea editor = null;
@@ -86,8 +83,7 @@ public class EditorPane extends JRootPane implements SyntaxConstants {
 	protected JList varslst = null;
 	protected JTextArea vardetail = null;
 	
-	protected Activity curractivity = null;
-	protected OperationContext dbgtask = OperationContext.useNewRoot();
+	protected TaskRun currrun = null;
 	protected Session fssession = null;
 	protected RecordStruct debuginfo = null;
 
@@ -98,6 +94,11 @@ public class EditorPane extends JRootPane implements SyntaxConstants {
 	protected JLabel statuslbl = new JLabel("Status: stopped");
 	protected SmallButton runbtn = null;
 	protected SmallButton stepbtn = null;
+	
+	protected Timer uitimer = null;
+	protected long lastinstrun = 0;
+	
+	protected TaskLogger logfmt = new TaskLogger();
 	
 	@SuppressWarnings("unchecked")
 	public EditorPane() {
@@ -167,7 +168,7 @@ public class EditorPane extends JRootPane implements SyntaxConstants {
 			private static final long serialVersionUID = 1389157371678339040L;
 
 			public void actionPerformed(ActionEvent e) {
-				EditorPane.this.stop();
+				EditorPane.this.stop(true);
 			}
 		};
 		
@@ -301,8 +302,6 @@ public class EditorPane extends JRootPane implements SyntaxConstants {
 		
 		this.getContentPane().add(bigsplit);
 		
-		// -------------------------- Final Init --------------------------------
-		
 		this.setJMenuBar(this.createMenuBar());
 		
 		// resizing
@@ -319,25 +318,268 @@ public class EditorPane extends JRootPane implements SyntaxConstants {
 				leftsplit.setDividerLocation(0.7);
 			}
 		});
+	}
+	
+	public void start(TaskRun r) {
+		this.currrun = r;
 		
-		// TODO load
-		this.setText(new File("../docs/dcl/rectest2.dcs.xml"));
+		if (this.currrun == null) {
+			// TODO load last - better management
+			this.setText(new File("./packages/dcTest/dcs/fileops-copy-2.dcs.xml"));
+		}
+		else {
+			Activity act = (Activity) r.getTask().getWork();
+			act.setInDebugger(true);
+			act.setDebugger(this);
+			
+			this.setText(act.getScript().getSource());
+			
+			//this.console.setText(r.getLog());		// TODO just the messages
+			
+			r.getMessages().recordStream().forEach(entry -> this.log(entry));
+			
+			this.lastinstrun = act.getRunCount();
+			
+			r.addObserver(new OperationObserver() {
+				@Override
+				public void log(OperationResult or, RecordStruct entry) {
+					EditorPane.this.log(entry);
+				}
+				
+				@Override
+				public void step(OperationResult or, int num, int of, String name) {
+					EditorPane.this.console.append("##### Step " + num + " of " + of + ": " + name + " #####\n");
+				}
+				
+				@Override
+				public void progress(OperationResult or, String msg) {
+					EditorPane.this.console.append("***** " + msg + " *****\n");
+				}
+				
+				@Override
+				public void amount(OperationResult or, int v) {
+					EditorPane.this.console.append(">>>>> " + v + "% <<<<<\n");
+				}
+			});
+		}
 		
-		OperationContext.set(this.dbgtask);
+        ActionListener taskPerformer = new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                //...Perform a task...
+
+                //System.out.println("Reading SMTP Info.");
+            	
+            	EditorPane.this.updateDebuggerUI();
+            }
+        };
+        
+        this.uitimer = new Timer(1000, taskPerformer);
+        this.uitimer.start();
+	}
+	
+	public void shutdown() {
+		if (this.uitimer != null)
+			this.uitimer.stop();
+	}
+	
+	public void prepTask(boolean debugmode) {
+		this.console.setText("");
+		this.lastinstrun = 0;
 		
-		this.fssession= Hub.instance.getSessions().create("hub:", null);
-		String sid = this.fssession.getId();
+		Activity act = new Activity();
+		act.setDebugMode(debugmode);
+		act.setInDebugger(true);
+		act.setDebugger(this);
 		
-		FileSystemDriver fs = new FileSystemDriver();
-		fs.setField("RootFolder", ".");
+		OperationResult compilelog = act.compile(this.editor.getText());
 		
-		// TODO rework this.fssession.setMountedStore(fs);
+		// update text pane in case includes where added - TODO make sure user does not save over their file with includes intact
+		this.setText(act.getScript().getSource());
 		
-		System.out.println("Started new session for SessionStore: " + sid);		
+		if (compilelog.hasErrors()) {
+			JOptionPane.showMessageDialog(EditorPane.this, "Error compiling script: " + compilelog.getMessage(), "Compile Error", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		
+		Task task = new Task()
+			.withRootContext()
+			.withTitle(act.getScript().getXml().getAttribute("Title", "Debugging dcScript"))	
+			.withTimeout(0)							// no timeout in editor mode
+			.withWork(act);
+		
+		this.currrun = new TaskRun(task);
+				
+		this.currrun.addObserver(new OperationObserver() {
+			@Override
+			public void log(OperationResult or, RecordStruct entry) {
+				EditorPane.this.log(entry);
+			}
+			
+			@Override
+			public void step(OperationResult or, int num, int of, String name) {
+				EditorPane.this.console.append("##### Step " + num + " of " + of + ": " + name + " #####\n");
+			}
+			
+			@Override
+			public void progress(OperationResult or, String msg) {
+				EditorPane.this.console.append("***** " + msg + " *****\n");
+			}
+			
+			@Override
+			public void amount(OperationResult or, int v) {
+				EditorPane.this.console.append(">>>>> " + v + "% <<<<<\n");
+			}
+		});
+	}
+	
+	public void log(RecordStruct entry) {
+		this.console.append(this.logfmt.formatLogEntry(entry) + "\n");
+	}
+	
+	public void run() {
+		if (this.currrun == null)
+			this.prepTask(false);
+		
+		if (this.currrun == null)
+			return;
+		
+		((Activity) this.currrun.getTask().getWork()).setDebugMode(false);
+		
+		this.statuslbl.setText("Status: running");
+		this.stepbtn.setEnabled(false);
+		this.runbtn.setEnabled(false);
+		
+		Hub.instance.getWorkPool().submit(this.currrun);
+	}
+	
+	public void step() {
+		if (this.currrun == null) 
+			this.prepTask(true);
+		
+		if (this.currrun == null)
+			return;
+		
+		((Activity) this.currrun.getTask().getWork()).setDebugMode(true);
+		
+		this.lastinstrun = 0;
+		
+		this.statuslbl.setText("Status: executing");
+		this.editor.setEditable(false);
+		this.stepbtn.setEnabled(false);
+		this.runbtn.setEnabled(false);
+		
+		Hub.instance.getWorkPool().submit(this.currrun);
+	}
+	
+	public void updateDebuggerUI() {
+		TaskRun run = this.currrun;
+		
+		if (run != null) {
+			Activity act = (Activity) run.getTask().getWork();
+			
+			// TODO maybe also every 5 seconds refresh?
+			// only update UI if a new instruction has run
+			//if (this.lastinstrun == act.getRunCount())
+			//	return;
+			
+			this.debuginfo = act.getDebugInfo();
+	
+			ListStruct stack = this.debuginfo.getFieldAsList("Stack");
+			
+			RecordStruct currinst = stack.getItemAsRecord(stack.getSize() - 1);
+			long line = currinst.getFieldAsInteger("Line") - 1;
+			
+			try {
+				int linemustbevisible = Math.max((int)line - 2, 0);
+
+				// make sure at least a couple lines appear above the current instruction
+				int viewpos = this.editor.getLineStartOffset(linemustbevisible);
+				Rectangle viewRect = this.editor.modelToView(viewpos);
+				
+				if (!this.editor.getVisibleRect().contains(viewRect)) {
+					this.editor.scrollRectToVisible(viewRect);
+				}
+				else {
+					// also try to make it so that at least a few lines show below current instruction
+					linemustbevisible = (int)line + Math.min(this.editor.getLineCount() - (int)line, 5);
+	
+					viewpos = this.editor.getLineStartOffset(linemustbevisible);
+					viewRect = this.editor.modelToView(viewpos);
+					
+					if (!this.editor.getVisibleRect().contains(viewRect)) 
+						this.editor.scrollRectToVisible(viewRect);
+				}
+				
+				int pos = this.editor.getLineStartOffset((int)line);
+				this.editor.setCaretPosition(pos);
+			} 
+			catch (BadLocationException x) {
+			}
+			
+			this.stackmodel.update(stack);
+			
+			if (act.isDebugMode() && (this.lastinstrun < act.getRunCount())) {
+				this.statuslbl.setText("Status: ready");
+				this.stepbtn.setEnabled(true);
+				this.runbtn.setEnabled(true);
+				
+				this.lastinstrun = act.getRunCount();
+			}
+			
+			if (act.isExitFlag()) {
+				this.statuslbl.setText("Status: ready");
+				this.stepbtn.setEnabled(true);
+				this.runbtn.setEnabled(true);
+				
+				System.out.println("Script done. #" + act.getRuntime() + " - Code: " + run.getCode() + " - Message: " + run.getMessage());			
+				this.stop(false);
+			}
+		}
 	}
 
+	@Override
+	public void console(String msg) {
+		this.console.append(msg + "\n");
+	}	
+	
+	protected Runnable uirefresher = new Runnable() {		
+		@Override
+		public void run() {
+			EditorPane.this.updateDebuggerUI();
+		}
+	};
+	
+	@Override
+	public void stepped() {
+		if (SwingUtilities.isEventDispatchThread()) 
+			this.uirefresher.run();
+		else
+			SwingUtilities.invokeLater(this.uirefresher);
+	}
+	
+	public void stop(boolean kill) {
+		if (this.currrun == null)
+			return;
+		
+		this.stackmodel.clear();
+		this.vardetail.setText("");
+		
+		if (kill)
+			this.currrun.kill();
+		else
+			this.currrun.complete();
+		
+		this.currrun = null;
+		
+		this.editor.setCaretPosition(0);
+		this.editor.setEditable(true);
+		
+		this.statuslbl.setText("Status: stopped");
+		this.stepbtn.setEnabled(true);
+		this.runbtn.setEnabled(true);
+	}
+	
 	private JMenuBar createMenuBar() {
-
 		JMenuBar mb = new JMenuBar();
 
 		JMenu menu = new JMenu("File");
@@ -430,130 +672,6 @@ public class EditorPane extends JRootPane implements SyntaxConstants {
 		return mb;
 	}
 
-	public void prepActivity() {
-		this.console.setText("");
-		
-		ActivityManager man = Hub.instance.getActivityManager();
-		
-		FuncResult<XElement> xres = XmlReader.parse(this.editor.getText(), true); 
-		
-		if (xres.hasErrors()) {
-			JOptionPane.showMessageDialog(EditorPane.this, "Error parsing script: " + xres.getMessage(), "Parse Error", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-		
-		XElement script = xres.getResult(); 
-		
-		if (script == null) {
-			JOptionPane.showMessageDialog(EditorPane.this, "Error parsing script: No XML found", "Parse Error", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-
-		Script srpt = new Script(man);
-		OperationResult compilelog = srpt.compile(script);
-		
-		if (compilelog.hasErrors()) {
-			JOptionPane.showMessageDialog(EditorPane.this, "Error compiling script: " + xres.getMessage(), "Compile Error", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-		
-		this.curractivity = new Activity(srpt, this.fssession.getId());
-				
-		this.curractivity.getLog().addObserver(new OperationObserver() {
-			@Override
-			public void log(OperationResult or, RecordStruct entry) {
-				EditorPane.this.console.append(entry.getFieldAsString("Message") + "\n");
-			}
-		});
-		
-	}
-	
-	public void run() {
-		OperationContext.set(this.dbgtask);
-
-		if (this.curractivity == null)
-			this.prepActivity();
-		
-		if (this.curractivity == null)
-			return;
-		
-		this.statuslbl.setText("Status: running");
-		
-		this.curractivity.run();
-		
-		System.out.println("Script done. #" + this.curractivity.getRuntime());
-		
-		this.stop();
-	}
-	
-	public void step() {
-		OperationContext.set(this.dbgtask);
-
-		if (this.curractivity == null) {
-			this.prepActivity();
-			
-			if (this.curractivity == null)
-				return;
-			
-			this.editor.setEditable(false);
-		}
-		
-		if (this.curractivity.getState() == ExecuteState.Exit) {
-			this.stop();
-			return;
-		}
-		
-		this.statuslbl.setText("Status: executing");
-		this.stepbtn.setEnabled(false);
-		this.runbtn.setEnabled(false);
-		
-		this.curractivity.runSingleInstruction(new IInstructionCallback() {			
-			@Override
-			public void resume() {
-				//System.out.println("done");	
-				EditorPane.this.debuginfo = EditorPane.this.curractivity.getDebugInfo();
-
-				ListStruct stack = EditorPane.this.debuginfo.getFieldAsList("Stack");
-				
-				RecordStruct currinst = stack.getItemAsRecord(stack.getSize() - 1);
-				long line = currinst.getFieldAsInteger("Line") - 1;
-				
-				try {
-					int pos = EditorPane.this.editor.getLineStartOffset((int)line);
-					EditorPane.this.editor.setCaretPosition(pos);
-				} 
-				catch (BadLocationException x) {
-				}
-				
-				EditorPane.this.stackmodel.update(stack);
-				
-				EditorPane.this.statuslbl.setText("Status: ready");
-				EditorPane.this.stepbtn.setEnabled(true);
-				EditorPane.this.runbtn.setEnabled(true);
-			}
-		});
-	}
-	
-	public void stop() {
-		OperationContext.set(this.dbgtask);
-
-		if (this.curractivity == null)
-			return;
-		
-		this.stackmodel.clear();
-		this.vardetail.setText("");
-		
-		this.curractivity.dispose();
-		this.curractivity = null;
-		
-		this.editor.setCaretPosition(0);
-		this.editor.setEditable(true);
-		
-		this.statuslbl.setText("Status: stopped");
-		EditorPane.this.stepbtn.setEnabled(true);
-		EditorPane.this.runbtn.setEnabled(true);
-	}
-	
 	/**
 	 * Creates the text area for this application.
 	 *
@@ -619,6 +737,14 @@ public class EditorPane extends JRootPane implements SyntaxConstants {
 		}
 		catch (IOException x) { 
 		}
+	}
+	
+	private void setText(String src) {
+		this.currfile = null;
+		
+		this.editor.setText(src);
+		this.editor.setCaretPosition(0);
+		this.editor.discardAllEdits();
 	}
 	
 	public class VarsListModel extends AbstractListModel {
@@ -690,6 +816,8 @@ public class EditorPane extends JRootPane implements SyntaxConstants {
 			
 			if (this.stack != null)
 				changed -= this.stack.getSize();
+			else
+				changed = 0;
 			
 			this.stack = stack;
 			
@@ -712,7 +840,7 @@ public class EditorPane extends JRootPane implements SyntaxConstants {
 			
 			int changed = this.stack.getSize();
 			
-			this.stack.clear();
+			this.stack = null;
 			
 			if (changed > 0)
 				this.fireIntervalRemoved(this, 0, changed);
@@ -821,5 +949,4 @@ public class EditorPane extends JRootPane implements SyntaxConstants {
 			setBorder(this.inactive);
 		}
 	}
-	
 }

@@ -28,10 +28,13 @@ public class Progress extends Instruction {
 		long steps = stack.intFromSource("Steps", -1);
 		long step = stack.intFromSource("Step", -1);
 		long amount = stack.intFromSource("Amount", -1);
+		long add = stack.intFromSource("Add", -1);
 		String name = stack.stringFromSource("Name");
 		
 		if (amount >= 0)
 			stack.log().setAmountCompleted((int) amount);
+		else if (add >= 0)
+			stack.log().setAmountCompleted(stack.log().getAmountCompleted() + (int) add);
 		
 		if ((step >= 0) && StringUtil.isNotEmpty(name))
 			stack.log().setCurrentStep((int) step, name);

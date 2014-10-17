@@ -18,8 +18,6 @@ package divconq.interchange;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,18 +26,15 @@ import java.util.List;
 
 import divconq.lang.FuncCallback;
 import divconq.lang.OperationCallback;
-import divconq.lang.OperationResult;
 import divconq.script.StackEntry;
 import divconq.struct.FieldStruct;
-import divconq.struct.IItemCollection;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.util.FileUtil;
-import divconq.util.IOUtil;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
-public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
+public class FileSystemDriver extends RecordStruct implements IFileStoreDriver, AutoCloseable {
 
 	//protected HashSet<CommonPath> locallocks = new HashSet<>();
 	//protected ReentrantLock locallockslock = new ReentrantLock();
@@ -51,8 +46,11 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 	}
 	
 	public FileSystemDriver() {
-		this.setField("Scanner", new FileSystemScanner(this));
 		this.setField("RootFolder", ".");
+	}
+	
+	public FileSystemDriver(Path path) {
+		this.setField("RootFolder", path.normalize().toString());
 	}
 	
     @Override
@@ -71,9 +69,9 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 	}
 	
 	@Override
-	public void dispose() {
-		// TODO support this!!!
-		super.dispose();
+	public void close() {
+		if (this.isTemp())
+			FileUtil.deleteDirectory(this.localPath());
 	}
 
 	/*
@@ -127,14 +125,10 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 		if (callback == null)
 			return;
 		
-		callback.completed();
+		callback.complete();
 	}
 	
 	public Path resolveToLocalPath(CommonPath path) {
-		// client must interact with us using absolute paths
-		if (!path.isAbsolute())
-			return null;
-		
 		// TODO make sure the resolved path is lower than the root (fspath) path, no access to higher folders allowed via this api
 		
 		Path wd = Paths.get(this.getFieldAsString("RootFolder"));
@@ -142,14 +136,25 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 		return wd.resolve(path.toString().substring(1));
 	}
 	
+	public Path localPath() {
+		return Paths.get(this.getFieldAsString("RootFolder"));
+	}
+	
+	@Override
+	public CommonPath resolvePath(CommonPath path) {
+		return CommonPath.ROOT.resolve(path);
+	}
+	
+	public FileSystemFile getReference(String path) {
+		return new FileSystemFile(FileSystemDriver.this, new RecordStruct(new FieldStruct("Path", path)));
+	}
+	
 	@Override
 	public void close(OperationCallback callback) {
-		// TODO reset scanner
-		
 		if (callback == null)
 			return;
 		
-		callback.completed();
+		callback.complete();
 	}
 	
 	@Override
@@ -226,6 +231,7 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 			return;
 		}
 		
+		/*
 		if ("Put".equals(codeEl.getName())) {
 			
 			// TODO integrate with put method below
@@ -290,6 +296,7 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 			
 			return;
 		}
+		*/
 		
 		/*
 		if ("ChangeDirectory".equals(code.getName())) {
@@ -340,7 +347,7 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 		FileSystemFile f = new FileSystemFile(this, path);
 		
 		callback.setResult(f);
-		callback.completed();
+		callback.complete();
 	}
 
 	public String getRootFolder() {
@@ -364,7 +371,7 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 			callback.copyMessages(FileUtil.confirmOrCreateDir(localpath));
 		}
 		
-		callback.completed();
+		callback.complete();
 	}
 
 	@Override
@@ -373,7 +380,7 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 		
 		FileUtil.deleteDirectory(callback, localpath);
 		
-		callback.completed();
+		callback.complete();
 	}
 
 	@Override
@@ -390,29 +397,34 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 	}
 
 	@Override
-	public IFileStoreScanner getScanner() {
-		return (IFileStoreScanner) this.getField("Scanner");
+	public IFileStoreScanner scanner() {
+		return new FileSystemScanner(this);
 	}
 
+	@Override
+	public IFileStoreFile rootFolder() {
+		return new FileSystemFile(this, CommonPath.ROOT);
+	}
+	
 	@Override
 	public void getFolderListing(CommonPath path, FuncCallback<List<IFileStoreFile>> callback) {
 		Path folder = this.resolveToLocalPath(path);
 		
 		if (folder == null) {
 			callback.error("Requested path is invalid");
-			callback.completed();
+			callback.complete();
 			return;
 		}
 		
 		if (!Files.exists(folder)) {
 			callback.error("Requested path does not exist");
-			callback.completed();
+			callback.complete();
 			return;
 		}
 		
 		if (!Files.isDirectory(folder)) {
 			callback.error("Requested path is not a folder");
-			callback.completed();
+			callback.complete();
 			return;
 		}
 		
@@ -430,10 +442,21 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 			callback.error("Problem listing files: " + x);
 		}
 		
-		callback.completed();
+		callback.complete();
 		
 	}
 
+	protected boolean tempfolder = false;
+	
+	public void isTemp(boolean v) {
+		this.tempfolder = v;
+	}
+	
+	public boolean isTemp() {
+		return this.tempfolder;
+	}
+
+	/*
 	@Override
 	public void put(IFileStoreFile source, boolean relative, final FuncCallback<IFileStoreFile> callback) {
 		if (source == null) {
@@ -615,8 +638,9 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver {
 		
 		for (int i = 0; i < threadcount; i++) 
 			Hub.instance.getScheduler().runNow(copy);
-			*/
+			* /
 	}
+	*/
 	
 	/*
 	// return true if got lock

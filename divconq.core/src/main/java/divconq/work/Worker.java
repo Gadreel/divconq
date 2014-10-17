@@ -16,21 +16,20 @@
 ************************************************************************ */
 package divconq.work;
 
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.StampedLock;
 
 import divconq.hub.Hub;
 import divconq.log.Logger;
 
 public class Worker implements Runnable {
 	protected Thread thread = null;
-	
-	// when not null we are busy
-	protected TaskRun run = null;
-	
 	protected boolean stopping = false;
-	protected ReentrantLock lock = new ReentrantLock();
 	protected int slot = 0;
-	protected int jobs = 0;
+	
+	protected TaskRun run = null;			// we are busy when not null 
+	protected int taskThrottle = -1;
+	protected boolean resumeTask = false;
+	protected StampedLock lock = new StampedLock();
 	
 	public void start(int slot) {
 		this.slot = slot;
@@ -43,9 +42,43 @@ public class Worker implements Runnable {
 		this.thread.start();
 	}
 	
+	// if tr is the current running task then allow it to resume without going all the way to the back of the line
+	// note that if we get here then we are the task (only the task is allowed to resume itself) so no need to 
+	// lock the member variables
+	//
+	// return false if we cannot resume
+	public boolean resume(TaskRun tr) {
+		long stamp = this.lock.readLock();
+		
+		try {
+			if ((this.run != tr) || (this.taskThrottle == 0))
+				return false;
+			
+			long wstamp = this.lock.tryConvertToWriteLock(stamp);
+			
+			if (wstamp == 0L) {
+				this.lock.unlockRead(stamp);
+				wstamp = this.lock.writeLock();  
+			}
+			
+			stamp = wstamp;
+
+			// check again for good measure, in case we didn't get write convert
+			if ((this.run != tr) || (this.taskThrottle == 0))
+				return false;
+			
+			this.resumeTask = true;		
+			return true;
+		}
+		finally {
+			this.lock.unlock(stamp);
+		}
+	}
+	
 	@Override
 	public void run() {
 		Logger.trace("Work pool thread started: " + this.slot);		
+		
 		Hub.instance.getWorkPool().incThreadsCreated();
 		
 		while (!this.stopping) {
@@ -56,20 +89,76 @@ public class Worker implements Runnable {
 				
 				r.touch();		// make sure the task does not timeout immediately (especially when debugging)
 				
-				this.lock.lockInterruptibly();
+				int tthrottle = r.getTask().getThrottle();		// always run at least once even if we get 0 
 				
-				this.run = r;
+				long wstamp = this.lock.writeLock();
 				
-				this.lock.unlock();
-				
-				if (!this.stopping) {
-					Logger.trace("Work pool thread running: " + this.slot);
-					
-					r.run();
+				try {
+					this.run = r;
+					this.taskThrottle = tthrottle;
+					this.resumeTask = false;		// run once
+				}
+				finally {
+					this.lock.unlock(wstamp);
 				}
 				
-				if (Thread.currentThread().isInterrupted())
-					break;
+				// it is important to record the slot, if we do not then during resume
+				// we may find an older worker still pointing to this run and think it can resume us
+				r.slot = this.slot;
+				
+				// taskThrottle == -1 means unlimited local resumes
+				// taskThrottle == 0 or 1 means don't allow local resumes
+				// taskThrottle > 1 means allow N - 1 number of resumes before putting back into the work pool
+				
+				while (!this.stopping) {
+					long stamp1 = this.lock.writeLock();
+					
+					try {
+						// -1 has special meaning, do not go under 0
+						if (this.taskThrottle > 0)
+							this.taskThrottle--;
+						
+						this.resumeTask = false;
+					}
+					finally {
+						this.lock.unlock(stamp1);
+					}
+					
+					//Logger.trace("Work pool thread running: " + this.slot);
+						
+					r.run();
+					
+					long stamp2 = this.lock.readLock();
+					
+					try {
+						// if we have no more resumes then break
+						boolean needbreak = (Thread.currentThread().isInterrupted() || (this.taskThrottle == 0) || !this.resumeTask);
+						
+						if (needbreak) {
+							long wstamp2 = this.lock.tryConvertToWriteLock(stamp2);
+							
+							if (wstamp2 == 0L) {
+								this.lock.unlockRead(stamp2);
+								wstamp2 = this.lock.writeLock();  
+							}
+							
+							stamp2 = wstamp2;
+							
+							needbreak = (Thread.currentThread().isInterrupted() || (this.taskThrottle == 0) || !this.resumeTask);
+							
+							if (needbreak) {
+								this.taskThrottle = 0;
+								this.resumeTask = false;
+								this.run = null;
+								
+								break;
+							}
+						}
+					}
+					finally {
+						this.lock.unlock(stamp2);
+					}
+				}   
 			}
 			catch (InterruptedException x) {
 				break;
@@ -82,8 +171,20 @@ public class Worker implements Runnable {
 				throw x;
 			}
 			
-			this.run = null;
+			long wstamp = this.lock.writeLock();
+			
+			try {
+				this.taskThrottle = 0;
+				this.resumeTask = false;
+				this.run = null;
+			}
+			finally {
+				this.lock.unlock(wstamp);
+			}
 		}
+		
+		// for interrupted flow
+		this.run = null;
 		
 		Logger.trace("Work pool thread stopped: " + this.slot);
 	}
@@ -105,20 +206,25 @@ public class Worker implements Runnable {
 	}
 	
 	public void checkIfHung() {
-		// if not alive then toss this worker out
-		if (!this.thread.isAlive()) 
-			this.stopNice();
+		Thread th = this.thread;
 		
-		if ((this.run != null) && (this.run.isHung())) {
+		// if not alive then toss this worker out
+		// replace/remove my thread
+		if ((th == null) || !th.isAlive())
+			Hub.instance.getWorkPool().initSlot(this.slot);
+		
+		TaskRun tr = this.run;
+		
+		if ((tr != null) && (tr.isHung())) {
 			Logger.warn("Work pool thread hung: " + this.slot);
 			
 			// TODO remove
-			System.out.println("Overdue: " + this.run.isOverdue());
-			System.out.println("Overdue Time: " + this.run.getTask().getDeadlineMS());
-			System.out.println("Inactive: " + this.run.isInactive());
-			System.out.println("Inactive Time: " + this.run.getTask().getTimeoutMS());
+			System.out.println("Overdue: " + tr.isOverdue());
+			System.out.println("Overdue Time: " + tr.getTask().getDeadlineMS());
+			System.out.println("Inactive: " + tr.isInactive());
+			System.out.println("Inactive Time: " + tr.getTask().getTimeoutMS());
 			
-			this.run.kill();
+			tr.kill();
 			
 			this.dumpDebug();
 			
@@ -130,38 +236,41 @@ public class Worker implements Runnable {
 	public void stop() {
 		this.stopping = true;
 		
+		Thread th = this.thread;
+		
+		if ((th == null) || !th.isAlive())
+			return;
+		
 		try {
-			if (this.thread.isAlive())
-				this.thread.interrupt();
+			th.interrupt();
 		}
 		catch (Exception x) {				
 		}
 		
-		// replace my thread
+		// replace/remove my thread
 		Hub.instance.getWorkPool().initSlot(this.slot);
 	}
 	
-	// TODO define how this is different from stop so we know when to call it
+	// 
 	public void stopNice() {
 		this.stopping = true;
 		
+		Thread th = this.thread;
+		
+		if ((th == null) || !th.isAlive())
+			return;
+		
+		// only stop if not busy, if run is null then no work is being done
+		if (this.run != null)
+			return;
+		
 		try {
-			this.lock.lockInterruptibly();
-			
-			// only if not busy
-			try {
-				if ((this.run == null) && this.thread.isAlive()) 
-					this.thread.interrupt();
-					
-				Hub.instance.getWorkPool().initSlot(this.slot);   
-			}
-			catch (Exception x) {				
-			}
-			finally {
-				this.lock.unlock();
-			}
-		} 
-		catch (InterruptedException x) {
+			th.interrupt();
 		}
+		catch (Exception x) {				
+		}
+		
+		// replace/remove my thread
+		Hub.instance.getWorkPool().initSlot(this.slot);   
 	}
 }

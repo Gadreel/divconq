@@ -16,62 +16,99 @@
 ************************************************************************ */
 package divconq.interchange;
 
-import java.io.File;
-import java.util.Iterator;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 
 import divconq.hub.Hub;
 import divconq.lang.FuncCallback;
-import divconq.script.StackEntry;
-import divconq.struct.FieldStruct;
-import divconq.struct.ListStruct;
-import divconq.struct.RecordStruct;
+import divconq.lang.OperationResult;
 import divconq.struct.Struct;
-import divconq.xml.XElement;
 
-public class FileSystemScanner extends RecordStruct implements IFileStoreScanner {
+/**
+ * Eventually we may shift to a "yield" approach, for now collects all files
+ * 
+ * @author andy
+ *
+ */
+public class FileSystemScanner extends FileCollection implements IFileStoreScanner {
 	protected FileSystemDriver driver = null;
+	protected FileSystemFile folder = null;
 	
 	public FileSystemScanner() {
-		this.setType(Hub.instance.getSchema().getType("dciFileSystemScanner"));
+		if (Hub.instance.getSchema() != null)
+			this.setType(Hub.instance.getSchema().getType("dciFileSystemScanner"));
 	}
 
 	public FileSystemScanner(FileSystemDriver driver) {
 		this();
 		
 		this.driver = driver;
+		this.basePath = driver.resolvePath(CommonPath.ROOT);
+	}
+
+	public FileSystemScanner(FileSystemFile folder) {
+		this();
+		
+		this.driver = folder.driver();
+		this.folder = folder;
+		this.basePath = folder.path();
+	}
+	
+	public void collectAll(OperationResult or) {
+		// don't collect more than once
+		if (this.collection != null)
+			return;
+		
+		this.collection = new ArrayList<>();
+		
+		// TODO support filters/sorting/etc
+		
+		Path folder = (this.folder == null) ? this.driver.localPath() : this.folder.localPath();
+		
+		// collect all for now...may be more efficient later
+
+		try {
+			Files.walkFileTree(folder, new SimpleFileVisitor<Path>() {
+				@Override
+				public FileVisitResult preVisitDirectory(Path sfolder, BasicFileAttributes attrs) throws IOException {
+					if (!sfolder.equals(folder))
+						FileSystemScanner.this.collection.add(new FileSystemFile(FileSystemScanner.this.driver, sfolder));
+					
+					return FileVisitResult.CONTINUE;
+				}
+				
+				@Override
+				public FileVisitResult visitFile(Path sfile, BasicFileAttributes attrs) throws IOException {
+					FileSystemScanner.this.collection.add(new FileSystemFile(FileSystemScanner.this.driver, sfile));
+					
+					return FileVisitResult.CONTINUE;
+				}
+			});
+		}
+		catch (IOException x) {
+			or.error("Unable to delete directory: " + folder + ", error: " + x);
+		}
 	}
 	
 	@Override
-	public void scan(FuncCallback<RecordStruct> callback) {
-		// TODO support offset/max and paging
-		ListStruct res = new ListStruct();
+	public void next(FuncCallback<IFileStoreFile> callback) {
+		this.collectAll(callback);
 		
-		Iterable<Struct> files = this.getItems();
-		
-		// collect all for now...
-		
-		if (files != null) 
-			for (Struct file : files) 
-				res.addItem(file);
-		
-		callback.setResult(
-			new RecordStruct(
-				new FieldStruct("Total", res.getSize()),
-				new FieldStruct("Offset", 0),
-				new FieldStruct("Matches", res)
-			)
-		);
-		
-		callback.completed();
+		super.next(callback);		
 	}
 	
 	// TODO change to lazy stream
+	/* TODO
 	@Override
 	public Iterable<Struct> getItems() {
 		if (this.driver == null)
 			return null;
 		
-		/* TODO
 		String cwd = this.driver.getFieldAsString("RootFolder");
 		Boolean recursive = this.getFieldAsBoolean("Recursive");
 		ListStruct match = this.getFieldAsList("MatchFiles");
@@ -88,7 +125,7 @@ public class FileSystemScanner extends RecordStruct implements IFileStoreScanner
 		// TODO support more options, size/date, folder filter
 		return new Matches(new File(cwd), filefilter, 
 				((recursive != null) && recursive) ? TrueFileFilter.TRUE : FalseFileFilter.FALSE);
-				*/
+				* /
 		
 		return null;
 	}
@@ -101,7 +138,7 @@ public class FileSystemScanner extends RecordStruct implements IFileStoreScanner
 		public Matches(File folder, IOFileFilter filefilter, IOFileFilter folderfilter) {
 			this.itr = FileUtils.iterateFiles(folder, filefilter, folderfilter);
 		}
-		*/
+		* /
 
 		@Override
 		public Iterator<Struct> iterator() {
@@ -123,6 +160,7 @@ public class FileSystemScanner extends RecordStruct implements IFileStoreScanner
 			this.itr.remove();
 		}
 	}
+	*/
 	
     @Override
     protected void doCopy(Struct n) {
@@ -137,80 +175,5 @@ public class FileSystemScanner extends RecordStruct implements IFileStoreScanner
 		FileSystemScanner cp = new FileSystemScanner();
 		this.doCopy(cp);
 		return cp;
-	}
-	
-	@Override
-	public void dispose() {
-		// TODO support this!!!
-		super.dispose();
-	}
-	
-	/*
-	@Override
-	public void toBuilder(ICompositeBuilder builder) throws BuilderStateException {
-		builder.startRecord();
-		
-		for (FieldStruct f : this.fields.values()) 
-			f.toBuilder(builder);
-		
-		// TODO add in FS specific fields
-		
-		builder.endRecord();
-	}
-	
-	@Override
-	public Struct select(PathPart... path) {
-		if (path.length > 0) {
-			PathPart part = path[0];
-			
-			if (part.isField()) {			
-				String fld = part.getField();
-				
-				if ("Scanner".equals(fld))
-					return this.search;
-			}			
-		}
-		
-		return super.select(path);
-	}
-	*/
-	
-	@Override
-	public void operation(StackEntry stack, XElement code) {
-		/*
-		if ("ChangeDirectory".equals(code.getName())) {
-			String path = stack.stringFromElement(code, "Path");
-			
-			if (StringUtil.isEmpty(path)) {
-				// TODO log
-				stack.resume();
-				return;
-			}
-			
-			this.cwd = new File(path);
-			
-			stack.resume();
-			return;
-		}
-		
-		if ("ScanFilter".equals(code.getName())) {
-			String path = stack.stringFromElement(code, "Path");
-			
-			...
-			
-			if (StringUtil.isEmpty(path)) {
-				// TODO log
-				stack.resume();
-				return;
-			}
-			
-			this.cwd = new File(path);
-			
-			stack.resume();
-			return;
-		}
-		*/
-		
-		super.operation(stack, code);
 	}
 }

@@ -1,0 +1,193 @@
+<dcScript Title="Functions with Globals">
+<Main Steps="4">
+	<!--
+		Create the global wish list.
+	
+		Output will be:
+		
+		>>>>> 0% <<<<<
+		##### Step 1 of 4: Create the global wish list #####
+		>>>>> 30% <<<<<
+		***** Load the global wish list *****
+		>>>>> 70% <<<<<
+		***** Global wish list built *****
+	-->
+	<Progress Step="1" Name="Create the global wish list" Amount="0" />
+	
+	<CallFunction Name="BuildWishList" />
+	
+	<!--
+		Validate our empty list.
+	
+		Output will be:
+		
+		>>>>> 0% <<<<<
+		##### Step 2 of 4: Validate our folder's toy List #####
+		>>>>> 10% <<<<<
+		***** Get the folder out *****
+		>>>>> 30% <<<<<
+		***** Check for empty toy list *****
+		2014-10-11T15:47:35.369Z Error Missing toy list
+		>>>>> 60% <<<<<
+		***** If there were validation failures then print message *****
+	-->
+	<Progress Step="2" Name="Validate our folder's toy List" Amount="0" />
+
+	<Progress Add="10">Get the folder out</Progress>
+	
+	<Var Name="folder" Type="Record">
+		<NewList Name="ToyList" />
+	</With>
+	
+	<CallFunction Name="ValidateToyList" Argument="$folder.ToyList" ResultName="FailCount" />
+	
+	<Progress Add="30">If there were validation failures then print message</Progress>
+	
+	<If Target="$FailCount" GreaterThan="0">
+		<Console>The toy list is invalid, it contains {$FailCount} policy violations.</Console>
+	</If>
+	
+	<!--
+		Build the new toy list.
+		
+		Output will be:
+		
+		>>>>> 0% <<<<<
+		##### Step 3 of 4: Create a random toy List from the wish list #####
+		>>>>> 10% <<<<<
+		***** Clear the toy list *****
+		>>>>> 20% <<<<<
+		***** Create the toy (gift) list from 5 random choices *****
+		>>>>> 30% <<<<<
+		***** Adding Softball *****
+		>>>>> 40% <<<<<
+		***** Adding BB Gun *****
+		>>>>> 50% <<<<<
+		***** Adding Playdough *****
+		>>>>> 60% <<<<<
+		***** Adding BB Gun *****
+		>>>>> 70% <<<<<
+		***** Adding Cap Gun *****
+		>>>>> 80% <<<<<
+		***** Our toy (gift) list now has 5 items. *****
+	-->
+	<Progress Step="3" Name="Create a random toy List from the wish list" Amount="0" />
+	
+	<CallFunction Name="BuildToyList" Argument="$folder.ToyList" />
+	
+	<Progress Add="10">Our toy (gift) list now has {$folder.ToyList.Length} items.</Progress>
+	
+	<!--
+		Here we call ValidateToyList again, reusing the function.
+		
+		Output will be:
+		
+		>>>>> 0% <<<<<
+		##### Step 4 of 4: Validate our folder's toy List again #####
+		>>>>> 20% <<<<<
+		***** Check for empty toy list *****
+		>>>>> 50% <<<<<
+		***** Check each toy on the list, we don't allow guns *****
+		 - Found a Softball!
+		 - Found a BB Gun!
+		2014-10-11T15:47:35.386Z Error Toy not allowed: BB Gun
+		 - Found a Playdough!
+		 - Found a BB Gun!
+		2014-10-11T15:47:35.389Z Error Toy not allowed: BB Gun
+		 - Found a Cap Gun!
+		2014-10-11T15:47:35.391Z Error Toy not allowed: Cap Gun
+		>>>>> 80% <<<<<
+		***** If there were validation failures then print message *****
+		The toy list is invalid, it contains 3 policy violations.
+	-->
+	<Progress Step="4" Name="Validate our folder's toy List again" Amount="0" />
+	
+	<CallFunction Name="ValidateToyList" Argument="$folder.ToyList" ResultName="FailCount" />
+	
+	<Progress Add="30">If there were validation failures then print message</Progress>
+	
+	<If Target="$FailCount" GreaterThan="0">
+		<Console>The toy list is invalid, it contains {$FailCount} policy violations.</Console>
+	</If>
+</Main>
+<Function Name="ValidateToyList" Parameter="toylist">
+	<Var Name="FailCount" Type="Integer" />
+	
+	<Progress Add="20">Check for empty toy list</Progress>
+	
+	<IfEmpty Target="$toylist">
+		<Error Code="90000" />
+	</IfEmpty>
+	
+	<ReturnIfErrored Target="$FailCount" ResetFlag="true" />
+	
+	<Progress Add="30">Check each toy on the list, we don't allow guns</Progress>
+	
+	<ForEach Name="toy" In="$toylist">
+		<Console> - Found a {$toy}!</Console>
+		
+		<If Target="$toy" EndsWith="Gun">
+			<With Target="$FailCount">
+				<Inc />
+			</With>
+			
+			<Error Code="90001">
+				<Param Value="$toy" />
+			</Error>
+		</If>
+	</ForEach>
+	
+	<Return Target="$FailCount" />
+</Function>
+<Function Name="BuildWishList">
+	<Progress Add="30">Load the global wish list</Progress>
+	
+	<!-- note the use of Global here makes wishlist available to any part of this script without being passed about -->
+	<Global Name="wishlist" Type="List">
+		<AddItem Value="Legos" />
+ 		<AddItem Value="Puzzle" />
+ 		<AddItem Value="Kite" />
+ 		<AddItem Value="Cap Gun" />
+ 		<AddItem Value="Playdough" />
+ 		<AddItem Value="Bike" />
+ 		<AddItem Value="Softball" />
+ 		<AddItem Value="Softball Bat" />
+ 		<AddItem Value="Jump Rope" />
+ 		<AddItem Value="BB Gun" />
+ 		<AddItem Value="Softball Glove" />
+ 		<AddItem Value="Frisbee" />
+	</Global>
+	
+	<Progress Add="40">Global wish list built</Progress>
+	
+	<!-- clear any error flags -->
+	<Return />
+</Function>
+<Function Name="BuildToyList" Parameter="toylist">
+	<Progress Add="10">Clear the toy list</Progress>
+	
+	<With Target="$toylist">
+		<Clear />
+	</With>
+	
+	<Progress Add="10">Create the toy (gift) list from 5 random choices</Progress>
+	
+	<For From="1" To="5">
+		<Var Name="choice" Type="Integer">
+			<Random From="1" To="$wishlist.Length" />
+			<Dec />
+		</Var>
+		
+		<Var Name="toy" SetTo="$wishlist.{$choice}" />
+
+		<Progress Add="10">Adding {$toy}</Progress>
+		
+		<With Target="$toylist">
+			<AddItem Value="$toy" />
+		</With>
+	</For>
+	
+	<!-- clear any error flags -->
+	<Return />
+</Function>
+</dcScript>

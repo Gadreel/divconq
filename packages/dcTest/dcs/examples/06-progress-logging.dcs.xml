@@ -1,0 +1,275 @@
+<dcScript Title="Progress and Logging">
+<Main Steps="3">
+	<!--
+		Note the attribute Steps above.  Scripts have built-in progress
+		tracking that you may or may not use depending on the application.
+
+		Below we set the first step and give it a name.  We also set the
+		Amount of progress (0 to 100) to 0.
+		
+		As we progress we increase the amount and add progress messages,
+		which are different from the step name.  For tracking progress
+		we have avaialable:
+		
+		Steps
+		Step (current)
+		Step Name
+		Current Message
+		Amount (completed)
+	
+		Output will be:
+		
+		>>>>> 0% <<<<<
+		##### Step 1 of 3: Validate our folder's toy List #####
+		>>>>> 10% <<<<<
+		***** Get the folder out *****
+		>>>>> 20% <<<<<
+		***** Check folder for missing toy list *****
+	-->
+	<Progress Step="1" Name="Validate our folder's toy List" Amount="0" />
+
+	<Progress Amount="10">Get the folder out</Progress>
+	
+	<Var Name="folder" Type="Record" />
+	
+	<Progress Amount="20">Check folder for missing toy list</Progress>
+	
+	<!--
+		In addition to tracking progress we can track errors as they occur.
+		Below we will record an error with the code 90000.  90000 happens
+		to be in our translation tables, so a message will be printed:
+		"Missing toy list".
+	
+		Output will be:
+		
+		2014-10-10T22:50:19.054Z Error Missing toy list
+		>>>>> 50% <<<<<
+		***** Check each toy on the list, we don't allow guns *****
+	-->
+	<IfEmpty Target="$folder.ToyList">
+		<Error Code="90000" />
+	</IfEmpty>
+	
+	<Progress Amount="50">Check each toy on the list, we don't allow guns</Progress>
+	
+	<!--
+		The list is empty so the loop is skipped and there is no output.
+		
+		Output will be:
+		
+	-->
+	<Var Name="FailCount" Type="Integer" />
+	
+	<ForEach Name="toy" In="$folder.ToyList">
+		<Console> - Found a {$toy}!</Console>
+		
+		<If Target="$toy" EndsWith="Gun">
+			<With Target="$FailCount">
+				<Inc />
+			</With>
+			
+			<Error Code="90001">
+				<Param Value="$toy" />
+			</Error>
+		</If>
+	</ForEach>
+	
+	<!--
+		Since there were no toys to fail, the are no recorded failures.
+		
+		Output will be:
+		
+		>>>>> 80% <<<<<
+		***** If there were validation failures then print message *****
+	-->
+	<Progress Amount="80">If there were validation failures then print message</Progress>
+	
+	<If Target="$FailCount" GreaterThan="0">
+		<Console>The toy list is invalid, it contains {$FailCount} policy violations.</Console>
+	</If>
+	
+	<!--
+		Now we transition to the next Step and Step Name, starting at 0% again.
+		How you handle % complete is up to you.  Each step may progress from 0 to 100 or
+		the entire script may progress from 0 to 100 no matter the number of steps.
+		
+		The NewList operation below resets the field with a new List.  If there had been 
+		a value in the field before the operation it would be removed.
+		
+		Output will be:
+		
+		>>>>> 0% <<<<<
+		##### Step 2 of 3: Create a random toy List from the wish list #####
+		>>>>> 10% <<<<<
+		***** Clear/initialize our toy list *****
+		>>>>> 20% <<<<<
+		***** Load the wish list *****
+	-->
+	<Progress Step="2" Name="Create a random toy List from the wish list" Amount="0" />
+	
+	<Progress Amount="10">Clear/initialize our toy list</Progress>
+	
+	<With Target="$folder">
+		<NewList Name="ToyList" />
+	</With>
+	
+	<Progress Add="10">Load the wish list</Progress>
+	
+	<Var Name="wishlist" Type="List">
+		<AddItem Value="Legos" />
+ 		<AddItem Value="Puzzle" />
+ 		<AddItem Value="Kite" />
+ 		<AddItem Value="Cap Gun" />
+ 		<AddItem Value="Playdough" />
+ 		<AddItem Value="Bike" />
+ 		<AddItem Value="Softball" />
+ 		<AddItem Value="Softball Bat" />
+ 		<AddItem Value="Jump Rope" />
+ 		<AddItem Value="BB Gun" />
+ 		<AddItem Value="Softball Glove" />
+ 		<AddItem Value="Frisbee" />
+	</Var>
+	
+	<!--
+		Progress increases with each toy we add to provide feedback
+		of work being done.
+	
+		Output will be:
+		
+		>>>>> 30% <<<<<
+		***** Create the toy (gift) list from 5 random choices *****
+		>>>>> 40% <<<<<
+		***** Adding Jump Rope *****
+		>>>>> 50% <<<<<
+		***** Adding Cap Gun *****
+		>>>>> 60% <<<<<
+		***** Adding BB Gun *****
+		>>>>> 70% <<<<<
+		***** Adding Softball Bat *****
+		>>>>> 80% <<<<<
+		***** Adding Frisbee *****
+		>>>>> 90% <<<<<
+		***** Our toy (gift) list now has 5 items. *****
+	-->
+	<Progress Add="10">Create the toy (gift) list from 5 random choices</Progress>
+	
+	<For From="1" To="5">
+		<Var Name="choice" Type="Integer">
+			<Random From="1" To="$wishlist.Length" />
+			<Dec />
+		</Var>
+		
+		<Var Name="toy" SetTo="$wishlist.{$choice}" />
+
+		<Progress Add="10">Adding {$toy}</Progress>
+		
+		<With Target="$folder.ToyList">
+			<AddItem Value="$toy" />
+		</With>
+	</For>
+	
+	<Progress Add="10">Our toy (gift) list now has {$folder.ToyList.Length} items.</Progress>
+	
+	<!--
+		Here we repeat the entire verification process.
+	
+		Output will be:
+		
+		>>>>> 0% <<<<<
+		##### Step 3 of 3: Validate our folder's toy List again #####
+		>>>>> 20% <<<<<
+		***** Check folder for missing toy list *****
+		>>>>> 50% <<<<<
+		***** Check each toy on the list, we don't allow guns *****
+		 - Found a Jump Rope!
+		 - Found a Cap Gun!
+		2014-10-10T23:24:15.799Z Error Toy not allowed: Cap Gun
+		 - Found a BB Gun!
+		2014-10-10T23:24:15.802Z Error Toy not allowed: BB Gun
+		 - Found a Softball Bat!
+		 - Found a Frisbee!
+		>>>>> 80% <<<<<
+		***** If there were validation failures then print message *****
+		The toy list is invalid, it contains 2 policy violations.
+	-->
+	<Progress Step="3" Name="Validate our folder's toy List again" Amount="0" />
+	
+	<Progress Amount="20">Check folder for missing toy list</Progress>
+	
+	<IfEmpty Target="$folder.ToyList">
+		<Error Code="90000" />
+	</IfEmpty>
+	
+	<Progress Amount="50">Check each toy on the list, we don't allow guns</Progress>
+	
+	<Var Name="FailCount" Type="Integer" />
+	
+	<ForEach Name="toy" In="$folder.ToyList">
+		<Console> - Found a {$toy}!</Console>
+		
+		<If Target="$toy" EndsWith="Gun">
+			<With Target="$FailCount">
+				<Inc />
+			</With>
+			
+			<Error Code="90001">
+				<Param Value="$toy" />
+			</Error>
+		</If>
+	</ForEach>
+	
+	<Progress Amount="80">If there were validation failures then print message</Progress>
+	
+	<If Target="$FailCount" GreaterThan="0">
+		<Console>The toy list is invalid, it contains {$FailCount} policy violations.</Console>
+	</If>
+	
+	<!--
+		There are six levels of debugging available: Trace, Debug, Info, Warn, Error, None.
+		The debugging level of the script's OperationContext will determine what logging is
+		collected for the script.  Since you will likely run at Info level you will not
+		see messages for Trace or Debug.  
+		
+		Already seen above you may use a code for Error messages.  Below you see you may 
+		also use plain text for any log level.
+	
+		Output will be:
+		
+		2014-10-10T22:50:19.138Z Info  This is an info message
+		2014-10-10T22:50:19.139Z Warn  This is a warn message
+		2014-10-10T22:50:19.139Z Error This is an error message
+	-->	
+	<Trace>This is a trace message</Trace>
+	<Debug>This is a debug message</Debug>
+	<Info>This is an info message</Info>
+	<Warn>This is a warn message</Warn>
+	<Error>This is an error message</Error>
+	
+	<!--
+		Furthermore, codes are not restricted to Error and may be used with Info
+		(below) or any other level.
+	
+		Output will be:
+		
+		2014-10-10T22:50:19.140Z Info  Missing toy list
+		2014-10-10T22:50:19.141Z Info  Toy not allowed: Boat
+	-->
+	<Info Code="90000" />
+	
+	<Info Code="90001">
+		<Param Value="Boat" />
+	</Info>
+
+	<!--
+		Exit is a special form of Info.  It logs like Info does but: a) sets the final return
+		code for the scritpt and, b) stops the script execution.
+		
+		Output will be:
+		
+		2014-10-10T22:50:19.142Z Info  Missing toy list
+	-->
+	<Exit Code="90000" />
+	
+	<Console>We'll never see this line because of Exit.</Console>
+</Main>
+</dcScript>

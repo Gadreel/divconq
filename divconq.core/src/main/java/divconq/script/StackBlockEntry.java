@@ -27,6 +27,7 @@ import divconq.struct.ListStruct;
 import divconq.struct.Struct;
 import divconq.struct.RecordStruct;
 import divconq.util.StringUtil;
+import divconq.work.TaskRun;
 
 public class StackBlockEntry extends StackEntry {
 	protected Map<String, Struct> variables = new HashMap<String, Struct>();
@@ -55,9 +56,6 @@ public class StackBlockEntry extends StackEntry {
     }
     
     public void setChild(StackEntry v) { 
-    	if (this.currEntry != null)
-    		this.currEntry.dispose();
-    		
     	this.currEntry = v; 
     }
     
@@ -72,12 +70,15 @@ public class StackBlockEntry extends StackEntry {
 	@Override
     public void addVariable(String name, Struct var) {
     	this.variables.put(name, var);
+    	
+    	if ((var instanceof AutoCloseable) && (this.activity != null)) {
+    		TaskRun run = this.activity.getTaskRun();
+    		
+    		run.addCloseable((AutoCloseable) var);
+    	}
     }
 
     public void clearVariables() {		
-		for (Struct var : this.variables.values()) 
-			var.dispose();
-		
 		this.variables.clear();
     }
 
@@ -152,17 +153,7 @@ public class StackBlockEntry extends StackEntry {
 	}
 	
 	@Override
-	public void dispose() {
-    	if (this.currEntry != null)
-    		this.currEntry.dispose();
-    	
-    	this.currEntry = null;
-    	
-		super.dispose();
-		
-		for (Struct var : this.variables.values()) 
-			var.dispose();
-		
-		this.variables.clear();
+	public StackEntry getExecutingStack() {
+		return (this.currEntry != null) ? this.currEntry : this;
 	}
 }

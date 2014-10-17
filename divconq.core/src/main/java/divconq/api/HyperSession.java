@@ -21,9 +21,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -36,7 +35,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
-import io.netty.handler.ssl.SslHandler;
+import divconq.net.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 
 import java.nio.channels.ScatteringByteChannel;
@@ -61,20 +60,11 @@ import divconq.xml.XElement;
 public class HyperSession extends ApiSession {
 	protected ClientInfo info = null;
 	protected ApiSslContextFactory sslfac = null;
-	protected IApiSessionFactory fac = null;
     
-	protected EventLoopGroup clientGroup = null;
 	protected ClientHandler handler = null;
 
 	protected HashMap<String, UploadPutHandler> uploadstreams = new HashMap<>();
 	protected HashMap<String, DownloadHandler> downloadstreams = new HashMap<>();
-	
-	public EventLoopGroup getClientGroup() {
-		if (this.clientGroup == null)
-			this.clientGroup = new NioEventLoopGroup();
-			
-		return this.clientGroup;
-	}
 	
 	public ClientInfo getInfo() {
 		return this.info;
@@ -85,7 +75,7 @@ public class HyperSession extends ApiSession {
 	}
 
 	@Override
-    public void init(IApiSessionFactory fac, XElement config) {
+    public void init(XElement config) {
     	// run only once even if call multiple times
 		if (this.info != null)
 			return;
@@ -128,8 +118,9 @@ public class HyperSession extends ApiSession {
 		
         Bootstrap b = new Bootstrap();
         
-        b.group(this.getClientGroup())
+        b.group(Hub.instance.getEventLoopGroup())
          .channel(NioSocketChannel.class)
+         .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
          .handler(new ChannelInitializer<SocketChannel>() {
              @Override
              public void initChannel(SocketChannel ch) throws Exception {
@@ -192,7 +183,8 @@ public class HyperSession extends ApiSession {
 		
         Bootstrap b = new Bootstrap();
         
-        b.group(this.getClientGroup())
+        b.group(Hub.instance.getEventLoopGroup())
+         .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
          .channel(NioSocketChannel.class)
          .handler(new ChannelInitializer<SocketChannel>() {
              @Override
@@ -273,18 +265,11 @@ public class HyperSession extends ApiSession {
 	}
 	
 	@Override
-	public void stop() {
+	public void stopped() {
 		if (this.handler != null)
 			this.handler.close();
-	}
-	
-	@Override
-	public void stopped() {
-		// TODO disconnected event?
 		
-		this.replies.forgetReplyAll();		
-		
-		this.clientGroup.shutdownGracefully();
+		this.replies.forgetReplyAll();
 	}
 	
 	@Override
@@ -320,7 +305,7 @@ public class HyperSession extends ApiSession {
 		callback.copyMessages(or);;
 		
 		if (callback.hasErrors()) {
-			callback.completed();
+			callback.complete();
 			return;
 		}
     	

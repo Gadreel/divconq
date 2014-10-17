@@ -39,7 +39,7 @@ public class ReplyService {
 		if (resp != null) 
 			try {
 				resp.setReply(msg);
-				resp.completed();
+				resp.complete();
 			}
 			catch (Exception x) {	
 				// TODO log
@@ -83,7 +83,7 @@ public class ReplyService {
 		for (ServiceResult resp : this.handlers.values()) {
 			try {
 				resp.error("Session disconnect, response is lost");
-				resp.completed();
+				resp.complete();
 			}
 			catch(Exception x) {
 				// TODO log

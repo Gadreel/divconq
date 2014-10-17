@@ -46,7 +46,7 @@ public class Debug extends Instruction {
 					: LocaleUtil.tr(LocaleUtil.getDefaultLocale(), "_code_" + code, oparams);
 		}		
 		
-		stack.log().trace(code, output);
+		stack.log().debug(code, output);
 		
 		//System.out.println(output);
 		stack.setState(ExecuteState.Done);

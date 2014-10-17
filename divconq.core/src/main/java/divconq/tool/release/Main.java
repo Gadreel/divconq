@@ -484,6 +484,63 @@ public class Main implements ILocalCommandLine {
 					break;
 				}
 				
+				case 4: {
+					System.out.println("Packing jar library files.");
+					
+					String[] packlist = new String[] {	
+							"divconq.core", "divconq.interchange", "divconq.web",
+							"divconq.tasks", "divconq.tasks.api", "ncc.uploader.api", 
+							"ncc.uploader.core", "ncc.workflow", "sd.core" };
+					
+					String[] packnames = new String[] {	
+							"dcCore", "dcInterchange", "dcWeb", 
+							"dcTasks", "dcTasksApi", "nccUploaderApi", 
+							"nccUploader", "nccWorkflow", "sd/sdBackend" };
+					
+					for (int i = 0; i < packlist.length; i++) {
+						String lib = packlist[i];
+						String pname = packnames[i]; 
+						
+						Path relbin = Paths.get("./ext/" + lib + ".jar");
+						Path srcbin = Paths.get("./" + lib + "/bin");
+						Path packbin = Paths.get("./packages/" + pname + "/lib/" + lib + ".jar");
+						
+						if (Files.notExists(relbin.getParent()))
+							Files.createDirectories(relbin.getParent());
+						
+						Files.deleteIfExists(relbin);
+						
+						ZipArchiveOutputStream zipout = new ZipArchiveOutputStream(relbin.toFile()); 
+						
+				        try {
+							Files.walkFileTree(srcbin, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
+							        new SimpleFileVisitor<Path>() {
+							            @Override
+							            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+							                throws IOException
+							            {
+											ZipArchiveEntry entry = new ZipArchiveEntry(srcbin.relativize(file).toString());
+											entry.setSize(Files.size(file));
+											zipout.putArchiveEntry(entry);
+											zipout.write(Files.readAllBytes(file));
+											zipout.closeArchiveEntry();					
+							                
+							                return FileVisitResult.CONTINUE;
+							            }
+							        });
+						} 
+				        catch (IOException x) {
+							System.out.println("Error building zip: " + x);
+						}
+				        
+				        zipout.close();
+						
+						Files.copy(relbin, packbin, StandardCopyOption.REPLACE_EXISTING);
+					}
+					
+					break;
+				}
+				
 				case 5: {
 					System.out.println("Cleaning folders");
 					

@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import divconq.api.HyperSession;
+import divconq.hub.Hub;
 import divconq.lang.OperationCallback;
 import divconq.lang.OperationResult;
 import io.netty.bootstrap.Bootstrap;
@@ -33,6 +34,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
@@ -51,7 +53,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.ssl.SslHandler;
+import divconq.net.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 
 public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
@@ -67,8 +69,9 @@ public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
 		
         Bootstrap b = new Bootstrap();
         
-        b.group(parent.getClientGroup())
+        b.group(Hub.instance.getEventLoopGroup())
          .channel(NioSocketChannel.class)
+		 .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
          .handler(new ChannelInitializer<SocketChannel>() {
              @Override
              public void initChannel(SocketChannel ch) throws Exception {
@@ -131,7 +134,7 @@ public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
     	this.src = this.allocateChannel(parent, callback);
     	
     	if (this.callback.hasErrors()) {
-        	callback.completed();
+        	callback.complete();
         	return;
     	}
 		
@@ -158,7 +161,7 @@ public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
 		}
 		
 		this.closeSource();
-		this.callback.completed();
+		this.callback.complete();
 	}
 	
 	@Override

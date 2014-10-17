@@ -55,17 +55,49 @@ public class BinaryStruct extends ScalarStruct {
 	public boolean isEmpty() {
 		return (this.value == null) || (this.value.getLength() == 0);
 	}
-
-		/*
-			switch (operation)
-			{
-				case "Copy":
-					Value = iv.Value;
-					break;
-				default:
-					throw new ArgumentException();
-			}
-		*/
+	
+	@Override
+	public boolean isNull() {
+		return (this.value == null);
+	}
+	
+	@Override
+	public void operation(StackEntry stack, XElement code) {
+		String op = code.getName();
+		
+		// we are loose on the idea of null/zero.  operations always perform on now, except Validate
+		if ((this.value == null) && !"Validate".equals(op))
+			this.value = new Memory();
+		
+		if ("Position".equals(op)) {
+			this.value.setPosition((int) stack.intFromElement(code, "At", 0));
+			stack.resume();
+			return;
+		}
+		else if ("Capacity".equals(op)) {
+			this.value.setCapacity((int) stack.intFromElement(code, "At", 0));
+			stack.resume();
+			return;
+		}
+		else if ("Length".equals(op)) {
+			this.value.setLength((int) stack.intFromElement(code, "At", 0));
+			stack.resume();
+			return;
+		}
+		else if ("Set".equals(op)) {
+			Struct sref = code.hasAttribute("Value")
+					? stack.refFromElement(code, "Value")
+					: stack.resolveValue(code.getText());
+			
+			this.adaptValue(sref);
+			stack.resume();
+			return;
+		}
+		
+		// TODO support more
+		
+		super.operation(stack, code);
+	}
 
     @Override
     protected void doCopy(Struct n) {
@@ -127,22 +159,6 @@ public class BinaryStruct extends ScalarStruct {
 	
 	@Override
 	public boolean checkLogic(StackEntry stack, XElement source) {
-		boolean isok = true;
-		boolean condFound = false;
-		
-		if (isok && source.hasAttribute("IsNull")) {
-			isok = stack.boolFromElement(source, "IsNull") ? (this.value == null) : (this.value != null);
-            condFound = true;
-        }
-		
-		if (isok && source.hasAttribute("IsEmpty")) {
-			isok = stack.boolFromElement(source, "IsEmpty") ? this.isEmpty() : !this.isEmpty();
-            condFound = true;
-        }
-		
-		if (!condFound) 
-			isok = false;			
-		
-		return isok;
+		return Struct.objectToBooleanOrFalse(this.value);
 	}
 }

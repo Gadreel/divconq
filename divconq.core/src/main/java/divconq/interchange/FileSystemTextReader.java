@@ -17,7 +17,6 @@
 package divconq.interchange;
 
 import java.io.InputStream;
-import java.nio.charset.Charset;
 
 import divconq.hub.Hub;
 import divconq.io.LineIterator;
@@ -29,7 +28,6 @@ import divconq.struct.Struct;
 import divconq.struct.scalar.StringStruct;
 import divconq.util.IAsyncIterable;
 import divconq.util.IAsyncIterator;
-import divconq.util.IOUtil;
 import divconq.xml.XElement;
 
 public class FileSystemTextReader extends RecordStruct implements ITextReader {
@@ -65,10 +63,11 @@ public class FileSystemTextReader extends RecordStruct implements ITextReader {
 
 		public void init(final OperationCallback callback) {
 			if (this.zin != null) {
-				callback.completed();
+				callback.complete();
 				return;
 			}
 			
+			/* TODO
 			FileSystemTextReader.this.file.getInputStream(new FuncCallback<InputStream>() {				
 				@Override
 				public void callback() {
@@ -84,6 +83,7 @@ public class FileSystemTextReader extends RecordStruct implements ITextReader {
 					callback.completed();
 				}
 			});
+			*/
 		}
 		
 		@Override
@@ -92,7 +92,7 @@ public class FileSystemTextReader extends RecordStruct implements ITextReader {
 				@Override
 				public void callback() {
 					callback.setResult(TextReader.this.lineit.hasNext());
-					callback.completed();
+					callback.complete();
 				}
 			});
 		}
@@ -103,7 +103,7 @@ public class FileSystemTextReader extends RecordStruct implements ITextReader {
 				@Override
 				public void callback() {
 					callback.setResult(new StringStruct(TextReader.this.lineit.next()));
-					callback.completed();
+					callback.complete();
 				}
 			});
 		}
@@ -122,12 +122,6 @@ public class FileSystemTextReader extends RecordStruct implements ITextReader {
 		FileSystemTextReader cp = new FileSystemTextReader();
 		this.doCopy(cp);
 		return cp;
-	}
-	
-	@Override
-	public void dispose() {
-		// TODO support this!!!
-		super.dispose();
 	}
 	
 	/*

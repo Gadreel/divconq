@@ -1,0 +1,7 @@
+<dcScript Title="Schedule Test">
+<Main>
+	<Info>Scheduled Work Started with {$_Param.val}</Info>
+	<Sleep Seconds="3" />
+	<Info>Scheduled Work Finished</Info>
+</Main>
+</dcScript>

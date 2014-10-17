@@ -266,6 +266,24 @@
 		<Entry Token="_code_520" Value="Var missing valid variable info" />
 		<Entry Token="_code_521" Value="Var/With/Global missing valid SetTo" />
 		<Entry Token="_code_522" Value="Missing data type" />
+		<Entry Token="_code_523" Value="Missing path for LocalFile" />
+		<Entry Token="_code_524" Value="Invalid path for LocalFile: {$1}" />
+		<Entry Token="_code_525" Value="Missing path for LocalFolder" />
+		<Entry Token="_code_526" Value="Invalid path for LocalFolder: {$1}" />
+		<Entry Token="_code_527" Value="Missing Name for CtpSession" />
+		<Entry Token="_code_528" Value="Missing Host for CtpSession" />
+		<Entry Token="_code_529" Value="CtpSession requires User for authentication" />
+		<Entry Token="_code_530" Value="CtpSession failed to connect or to sign in" />
+		<Entry Token="_code_531" Value="CtpSend is missing send" />
+		<Entry Token="_code_532" Value="CtpSend has an invalid request Message reference" />
+		<Entry Token="_code_533" Value="CtpSend missing values to form a request Message" />
+		<Entry Token="_code_534" Value="Missing root folder for LocalFileStore" />
+		<Entry Token="_code_535" Value="Invalid path for LocalFileStore: {$1}" />
+		<Entry Token="_code_536" Value="Folder has an invalid In reference" />
+		<Entry Token="_code_537" Value="Missing path for Folder" />
+		<Entry Token="_code_538" Value="Unable to initialize Folder object" />
+		<Entry Token="_code_539" Value="Missing path for TempFile" />
+		<Entry Token="_code_540" Value="SetTo requires a scalar target" />
 		
 		<Entry Token="_code_50000" Value="'{$1}' not recognized" />
 		<Entry Token="_code_50001" Value="Exception in operation '{$1}'" />

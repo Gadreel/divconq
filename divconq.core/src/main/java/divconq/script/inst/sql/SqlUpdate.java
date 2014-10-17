@@ -14,7 +14,7 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.script.inst;
+package divconq.script.inst.sql;
 
 import java.util.Arrays;
 import java.util.List;

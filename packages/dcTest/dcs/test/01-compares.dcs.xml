@@ -1,0 +1,71 @@
+<dcScript Title="Compare 1">
+<Main Parameter="pArgs">
+	<Var Name="str0" Type="String" />
+	<Var Name="str1" Type="String" SetTo="abc" />
+	<Var Name="str2" Type="String" SetTo="abc" />
+	<Var Name="str3" Type="String" SetTo="456" />
+	
+	<Var Name="int1" Type="Integer" SetTo="456" />
+	<Var Name="int2" Type="Integer" SetTo="457" />
+
+	<If Target="$str0" IsEmpty="True">
+		<Console>Empty GOOD</Console>
+	</If>
+
+	<If Target="$str1" IsEmpty="True">
+		<Console>Empty BAD</Console>
+	</If>
+
+	<If Target="$str0" IsEmpty="False">
+		<Console>NOT Empty BAD</Console>
+	</If>
+
+	<If Target="$str3" IsEmpty="False">
+		<Console>NOT Empty GOOD</Console>
+	</If>
+
+	<If Target="$str0" Equals="$str1">
+		<Console>Equals BAD</Console>
+	</If>
+
+	<If Target="$str3" Equals="$str1">
+		<Console>Equals BAD</Console>
+	</If>
+
+	<If Target="$str2" Equals="$str1">
+		<Console>Equals GOOD</Console>
+	</If>
+
+	<If Target="$str0" Equals="$int1">
+		<Console>str-int Equals BAD</Console>
+	</If>
+
+	<If Target="$str2" Equals="$int1">
+		<Console>str-int Equals BAD</Console>
+	</If>
+
+	<If Target="$str3" Equals="$int1">
+		<Console>str-int Equals GOOD</Console>
+	</If>
+
+	<If Target="$str3" Equals="456">
+		<Console>str-str lit Equals Good</Console>
+	</If>
+
+	<If Target="$int1" Equals="$str0">
+		<Console>int-str Equals BAD</Console>
+	</If>
+
+	<If Target="$int1" Equals="$str2">
+		<Console>int-str Equals BAD</Console>
+	</If>
+
+	<If Target="$int1" Equals="$str3">
+		<Console>int-str Equals GOOD</Console>
+	</If>
+	
+	<If Target="$int1" Equals="456">
+		<Console>int-str lit Equals Good</Console>
+	</If>
+</Main>
+</dcScript>

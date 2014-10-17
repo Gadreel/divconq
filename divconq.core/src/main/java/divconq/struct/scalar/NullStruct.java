@@ -62,6 +62,11 @@ public class NullStruct extends ScalarStruct {
 	public boolean isEmpty() {
 		return true;
 	}
+	
+	@Override
+	public boolean isNull() {
+		return true;
+	}
     
 	@Override
 	public Struct deepCopy() {
@@ -116,22 +121,6 @@ public class NullStruct extends ScalarStruct {
 	
 	@Override
 	public boolean checkLogic(StackEntry stack, XElement source) {
-		boolean isok = true;
-		boolean condFound = false;
-		
-		if (isok && source.hasAttribute("IsEmpty")) {
-			isok = stack.boolFromElement(source, "IsEmpty");
-            condFound = true;
-        }
-		
-		if (isok && source.hasAttribute("IsNull")) {
-			isok = stack.boolFromElement(source, "IsNull");
-            condFound = true;
-        }
-		
-		if (!condFound) 
-			isok = false;			
-		
-		return isok;
+		return false;
 	}
 }

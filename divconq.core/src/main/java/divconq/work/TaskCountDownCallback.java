@@ -89,7 +89,7 @@ public class TaskCountDownCallback extends CountDownCallback {
 					.withWork(new ISynchronousWork() {
 						@Override
 						public void run(TaskRun run) {
-							TaskCountDownCallback.this.callback.completed();
+							TaskCountDownCallback.this.callback.complete();
 						}
 					});
 				

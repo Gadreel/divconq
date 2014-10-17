@@ -34,7 +34,7 @@ import divconq.struct.Struct;
  *  if a receive of "Block" on source happens then error
  */
 public class DataStreamChannel extends OperationResult {
-	protected String id = Session.nextChannelId();
+	protected String id = Session.nextUUId();
 	protected String title = null;
 	protected CommonPath path = null;
 	protected String mime = null;

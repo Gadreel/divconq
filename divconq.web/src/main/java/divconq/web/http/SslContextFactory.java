@@ -156,6 +156,8 @@ public final class SslContextFactory {
         if ("Need".equals(this.sslclientauth))
         	engine.setNeedClientAuth(true);
         
+        Hub.instance.harden(engine);
+        
 		return engine;
 	}
 }

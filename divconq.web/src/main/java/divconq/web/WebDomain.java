@@ -20,11 +20,9 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -83,9 +81,9 @@ import w3.html.U;
 import w3.html.Ul;
 import divconq.hub.Hub;
 import divconq.interchange.CommonPath;
+import divconq.io.ByteBufWriter;
 import divconq.io.FileStoreEvent;
 import divconq.lang.FuncResult;
-import divconq.lang.Memory;
 import divconq.lang.OperationResult;
 import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
@@ -321,7 +319,7 @@ public class WebDomain implements IWebDomain {
 		else {
 			System.out.println("Update: " + p);
 			
-			this.compileLocalView(p.subpathAbs(1).toString(), result.getFile());
+			this.compileLocalView(p.subpath(1).toString(), result.getFile());
 		}
 	}
 
@@ -456,7 +454,7 @@ public class WebDomain implements IWebDomain {
 		int pdepth = path.getNameCount() - 1;
 		
 		while (pdepth > 0) {
-			String fpath = path.subpathAbs(1, pdepth) + "." + type + ".xml";
+			String fpath = path.subpath(1, pdepth) + "." + type + ".xml";
 			
 			ViewInfo info = this.findView(fpath, ctx);
 			
@@ -504,6 +502,7 @@ public class WebDomain implements IWebDomain {
 		return res;
 	}
 
+	/*
 	public OperationResult executeAsset(WebContext ctx) {
 		OperationResult res = new OperationResult();
 		
@@ -575,6 +574,7 @@ public class WebDomain implements IWebDomain {
 		res.errorTr(150005);		
 		return res;
 	}
+	*/
 
 	protected void embellishDiskAsset(AssetInfo ai) {
 	}
@@ -668,7 +668,7 @@ public class WebDomain implements IWebDomain {
 								res.error("Unable to execute script!");
 							}
 							else {
-								Memory mem = new Memory();
+								ByteBufWriter mem = ByteBufWriter.createLargeHeap();
 								AssetInfo info = new AssetInfo(path, mem, System.currentTimeMillis());
 								info.setMime("text/html");
 								
@@ -717,12 +717,9 @@ public class WebDomain implements IWebDomain {
 	public OperationResult writeFile(WebContext ctx, AssetInfo asset) {
 		OperationResult res = new OperationResult();
 		
-		Memory content = asset.getContent();
-		content.setPosition(0);
-		
 		String fpath = asset.getPath().toString();
 		
-		if ((fpath == null) || (content == null)) {
+		if ((fpath == null) || (asset.getSize() == -1)) {
 			res.errorTr(150001);
 			return res;
 		}
@@ -763,9 +760,23 @@ public class WebDomain implements IWebDomain {
 			resp.setHeader("Content-Disposition", "attachment; filename=\"" + NetUtil.urlEncodeUTF8(attach) + "\"");
 		
 		// TODO send HttpResponse with content length...then push the file directly from here instead of setting body first and using memory 
-		ctx.getResponse().setBody(content);
+		//ctx.getResponse().setBody(content);
 		
-		ctx.send();
+		//System.out.println("Sending: " + fpath + " as: " + asset.getSize());
+		ctx.sendStart(asset.getSize());
+		
+		// TODO
+		if (asset.isRegion()) {
+			//System.out.println("Sending: " + fpath + " as chunks ");
+			ctx.send(asset.getChunks());
+		}
+		else {
+			//System.out.println("Sending: " + fpath + " as buffer ");
+			ctx.send(asset.getBuffer().getByteBuf());
+		}
+		
+		//System.out.println("Sending: " + fpath + " as end");
+		ctx.sendEnd();
 		
 		return res;
 		

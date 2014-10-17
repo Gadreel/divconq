@@ -48,4 +48,9 @@ public class StackCallEntry extends StackEntry {
         if (this.currEntry != null)
         	this.currEntry.debugStack(dumpList);
     }
+	
+	@Override
+	public StackEntry getExecutingStack() {
+		return (this.currEntry != null) ? this.currEntry : this;
+	}
 }

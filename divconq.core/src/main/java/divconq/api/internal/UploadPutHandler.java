@@ -25,15 +25,17 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import divconq.api.HyperSession;
+import divconq.hub.Hub;
 import divconq.lang.OperationCallback;
 import divconq.lang.OperationResult;
+import divconq.log.Logger;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
@@ -46,9 +48,11 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.HttpHeaders.Names;
-import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.codec.http.LastHttpContent;
+import divconq.net.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 
 public class UploadPutHandler extends SimpleChannelInboundHandler<HttpObject> { 
@@ -62,8 +66,9 @@ public class UploadPutHandler extends SimpleChannelInboundHandler<HttpObject> {
 		
         Bootstrap b = new Bootstrap();
         
-        b.group(parent.getClientGroup())
+        b.group(Hub.instance.getEventLoopGroup())
          .channel(NioSocketChannel.class)
+		 .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
          .handler(new ChannelInitializer<SocketChannel>() {
              @Override
              public void initChannel(SocketChannel ch) throws Exception {
@@ -123,7 +128,7 @@ public class UploadPutHandler extends SimpleChannelInboundHandler<HttpObject> {
     	this.dest = this.allocateChannel(parent, callback);
     	
     	if (this.callback.hasErrors()) {
-        	callback.completed();
+        	callback.complete();
         	return;
     	}
     	
@@ -146,7 +151,7 @@ public class UploadPutHandler extends SimpleChannelInboundHandler<HttpObject> {
 		ByteBuf bb = null;
 		
 		try {
-			bb = Unpooled.directBuffer(64 * 1024);
+			bb = Hub.instance.getBufferAllocator().directBuffer(64 * 1024);		// TODO review if direct is best here
 			
 			long toskip = offset;
 			
@@ -216,12 +221,17 @@ public class UploadPutHandler extends SimpleChannelInboundHandler<HttpObject> {
 		}
 		
 		this.closeDest();
-		this.callback.completed();
+		this.callback.complete();
 	}
 	
 	@Override
 	public void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
-		//System.out.println("upload client got object: " + msg.getClass().getName());
+		if (msg instanceof HttpResponse) {
+			if (((HttpResponse)msg).getStatus().code() != 200)
+				Logger.error("Upload Put Handler got unexpected read, non http response");
+		}
+		else if (msg != LastHttpContent.EMPTY_LAST_CONTENT)
+			Logger.error("Upload Put Handler got unexpected read, non http response");
 
 		this.finish();
 	}

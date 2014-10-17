@@ -20,13 +20,13 @@ import java.util.List;
 
 import divconq.lang.OperationContext;
 import divconq.log.Logger;
+import divconq.net.ByteToMessageDecoder;
 import divconq.struct.RecordStruct;
 import divconq.struct.builder.ObjectBuilder;
 import divconq.struct.serial.BufferToCompositeParser;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.EmptyByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
 
 public class StreamDecoder extends ByteToMessageDecoder {
     enum State {
@@ -90,7 +90,6 @@ public class StreamDecoder extends ByteToMessageDecoder {
             	ByteBuf bb = in.readSlice(this.size);
             	bb.retain();
             	msg.setData(bb);
-            	//msg.retain();		// yes, two retains
             }
             
             msg.copyFields((RecordStruct) this.builder.getRoot());

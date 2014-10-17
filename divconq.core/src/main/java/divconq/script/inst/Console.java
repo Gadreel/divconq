@@ -21,6 +21,7 @@ import java.util.List;
 import divconq.lang.OperationContext;
 import divconq.locale.LocaleUtil;
 import divconq.script.ExecuteState;
+import divconq.script.IDebugger;
 import divconq.script.Instruction;
 import divconq.script.StackEntry;
 import divconq.util.StringUtil;
@@ -50,6 +51,15 @@ public class Console extends Instruction {
 			System.out.println();
 		else
 			System.out.println(output);
+		
+		IDebugger dbg = stack.getActivity().getDebugger();
+		
+		if (dbg != null) {
+			if (output == null)
+				dbg.console("");
+			else
+				dbg.console(output);
+		}
 		
 		stack.setState(ExecuteState.Done);
 		

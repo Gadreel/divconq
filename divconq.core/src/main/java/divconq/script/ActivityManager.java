@@ -34,6 +34,8 @@ public class ActivityManager {
 	protected Map<String, Map<String, IOperator>> operationExtensions = new HashMap<String, Map<String,IOperator>>();
 	protected Map<String, IInstructionProvider> instProviders = new HashMap<String, IInstructionProvider>();
 	
+	protected IDebuggerHandler debugger = null;
+	
 	public void addTag(String name, IInstructionProvider cip) {
 		this.instProviders.put(name, cip);
 	}
@@ -98,6 +100,14 @@ public class ActivityManager {
 		target.operation(stack, code);
 	}
 	
+	public void registerDebugger(IDebuggerHandler v) {
+		this.debugger = v;
+	}
+	
+	public IDebuggerHandler getDebugger() {
+		return this.debugger;
+	}
+	
 	/*
 	 * goals
 	 * x		better compiler
@@ -113,6 +123,8 @@ public class ActivityManager {
 	 * 		freeze/thaw
 	 * 		create libraries (call by function)
 	 * 		create libraries (call by script)
+	 * 
+	 * 		repol
 	 * 
 	 * 		when a var goes out of scope, call dispose  (close streams, sources, dests, remove temp files, etc)
 	 * 

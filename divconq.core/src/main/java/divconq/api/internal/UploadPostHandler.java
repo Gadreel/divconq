@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import divconq.api.HyperSession;
+import divconq.hub.Hub;
 import divconq.lang.OperationCallback;
 import divconq.lang.OperationResult;
 import io.netty.bootstrap.Bootstrap;
@@ -30,6 +31,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
@@ -49,7 +51,7 @@ import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.HttpDataFactory;
 import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder;
 import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder.ErrorDataEncoderException;
-import io.netty.handler.ssl.SslHandler;
+import divconq.net.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.concurrent.Future;
 
@@ -64,8 +66,9 @@ public class UploadPostHandler extends SimpleChannelInboundHandler<HttpObject> {
 		
         Bootstrap b = new Bootstrap();
         
-        b.group(parent.getClientGroup())
+        b.group(Hub.instance.getEventLoopGroup())
          .channel(NioSocketChannel.class)
+		 .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
          .handler(new ChannelInitializer<SocketChannel>() {
              @Override
              public void initChannel(SocketChannel ch) throws Exception {
@@ -135,7 +138,7 @@ public class UploadPostHandler extends SimpleChannelInboundHandler<HttpObject> {
     	this.dest = this.allocateChannel(parent, callback);
     	
     	if (this.callback.hasErrors()) {
-        	callback.completed();
+        	callback.complete();
         	return;
     	}
 		
@@ -163,7 +166,7 @@ public class UploadPostHandler extends SimpleChannelInboundHandler<HttpObject> {
         } 
         catch (ErrorDataEncoderException x) {
         	callback.error(1, "Problem with send encoder: " + x);
-        	callback.completed();
+        	callback.complete();
         	return;
         }
 
@@ -177,7 +180,7 @@ public class UploadPostHandler extends SimpleChannelInboundHandler<HttpObject> {
 		} 
     	catch (InterruptedException x) {
     		callback.error(1, "Unable to write to socket: " + x);
-        	callback.completed();
+        	callback.complete();
 		}
 	}
 	
@@ -191,7 +194,7 @@ public class UploadPostHandler extends SimpleChannelInboundHandler<HttpObject> {
 		}
 		
 		this.closeDest();
-		this.callback.completed();
+		this.callback.complete();
 	}
 	
 	@Override

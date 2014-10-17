@@ -226,7 +226,7 @@ public class FileUtil {
     }
     
 	// TODO add secure delete option - JNA?
-	
+	// TODO add delete followup feature someday
     public static OperationResult deleteDirectory(Path directory) {
 		OperationResult or = new OperationResult();
 		
@@ -373,5 +373,23 @@ public class FileUtil {
 		}
         
         return or;
+    }
+    
+    static public long parseFileSize(String size) {
+		Long x = StringUtil.parseLeadingInt(size);
+		
+		if (x == null)
+			return 0;
+		
+		size = size.toLowerCase();
+		
+		if (size.endsWith("kb"))
+			x *= 1024;
+		else if (size.endsWith("mb"))
+			x *= 1024 * 1024;
+		else if (size.endsWith("gb"))
+			x *= 1024 * 1024 * 1024;
+		
+		return x;
     }
  }

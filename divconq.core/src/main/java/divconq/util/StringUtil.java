@@ -76,12 +76,39 @@ public class StringUtil {
 		public static Long parseInt(String value) {
 	        if (StringUtil.isEmpty(value)) 	        	
 	        	return null;
+
+			try {
+				return Long.parseLong(value);
+			}
+			catch (Exception x) {			  
+			}
 	        
-			  try {
-				  return Long.parseLong(value);
-			  }
-			  catch (Exception x) {			  
-			  }
+			return null;
+		}
+		
+		public static Long parseLeadingInt(String value) {
+	        if (StringUtil.isEmpty(value)) 	        	
+	        	return null;
+	        
+			int finalpos = 0;
+			
+			for (int i = 0; i < value.length(); i++) { 
+				char ch = value.charAt(i);
+				
+				if ((i==0) && ((ch != '-') && !Character.isDigit(ch)))
+					return null;
+				
+				if (!Character.isDigit(ch))
+					break;
+				
+				finalpos = i;
+			}
+
+			try {
+				return Long.parseLong(value.substring(0, finalpos + 1));
+			}
+			catch (Exception x) {			  
+			}
 	        
 			return null;
 		}

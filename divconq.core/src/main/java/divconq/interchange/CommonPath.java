@@ -20,20 +20,28 @@ import divconq.schema.IDataExposer;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
 
+// object is to immutable, keep it that way :)
 public class CommonPath implements IDataExposer {
+	static public CommonPath ROOT = new CommonPath("/");
+	
     // internal representation
     protected String pathparts[] = null;
     
     protected String path = null;
 
+    // paths must always start with /
     public CommonPath(String pathname) {
         if (StringUtil.isEmpty(pathname) || !pathname.startsWith("/"))
-        	throw new IllegalArgumentException("Path name not valid: " + pathname);
+        	throw new IllegalArgumentException("Path not valid content: " + pathname);
     	
         this.path = CommonPath.normalizeAndCheck(pathname);
         
         if (StringUtil.isEmpty(this.path))
-        	throw new IllegalArgumentException("Path name not valid: " + pathname);
+        	throw new IllegalArgumentException("Path not valid format: " + pathname);
+        
+        // TODO really we want the byte length, but this is something
+        if (this.path.length() > 32000)
+        	throw new IllegalArgumentException("Path to long: " + pathname);
 
         int count = 0;
         int index = 0;
@@ -147,14 +155,11 @@ public class CommonPath implements IDataExposer {
     }
 
     public boolean isRoot() {
-        return (this.pathparts == null) && this.isAbsolute();
+        return ((this.pathparts == null) || (this.pathparts.length == 0));
     }
 
     public String getFileName() {
-    	if ((this.pathparts == null) || (this.pathparts.length == 0))
-            return null;
-
-        return this.pathparts[this.pathparts.length - 1];
+    	return this.isRoot() ? null : this.pathparts[this.pathparts.length - 1];
     }
 
 	public boolean hasFileExtension() {
@@ -197,13 +202,7 @@ public class CommonPath implements IDataExposer {
 	}
 
     public CommonPath getParent() {
-    	if (this.pathparts == null)
-            return null;
-    	
-    	if (this.pathparts.length == 0) 
-    		return this.isAbsolute() ? new CommonPath("/") : null;
-
-    	return this.subpath(0, this.pathparts.length - 1);
+    	return this.isRoot() ? CommonPath.ROOT : this.subpath(0, this.pathparts.length - 1);
     }
 
     public int getNameCount() {
@@ -231,21 +230,16 @@ public class CommonPath implements IDataExposer {
      * @return
      */
     public CommonPath subpath(int beginIndex, int length) {
-    	if ((this.pathparts == null) || (this.pathparts.length == 0))
-    		if ((beginIndex == 0) && (length == 1))
-    			return this.isAbsolute() ? new CommonPath("/") : null;
-    		else
-    			return null;
+    	if ((this.pathparts == null) || (this.pathparts.length == 0)) 
+    		return CommonPath.ROOT;
     	
         if ((beginIndex < 0) || (beginIndex >= this.pathparts.length))
-			return null;
+        	return CommonPath.ROOT;
         
         if ((length < 1) || (beginIndex + length > this.pathparts.length))
-			return null;
+        	return CommonPath.ROOT;
 
-        String path = (this.isAbsolute() && (beginIndex == 0)) ? "/" : "";
-
-        return new CommonPath(path + StringUtil.join(this.pathparts, "/", beginIndex, beginIndex + length));
+        return new CommonPath("/" + StringUtil.join(this.pathparts, "/", beginIndex, beginIndex + length));
     }
 
     public CommonPath subpath(int beginIndex) {
@@ -254,41 +248,26 @@ public class CommonPath implements IDataExposer {
     	return this.subpath(beginIndex, length);
     }
 
-    public CommonPath subpathAbs(int beginIndex, int length) {
-    	if ((this.pathparts == null) || (this.pathparts.length == 0))
-    		if ((beginIndex == 0) && (length == 1))
-    			return new CommonPath("/");
-    		else
-    			return null;
-    	
-        if ((beginIndex < 0) || (beginIndex >= this.pathparts.length))
-			return null;
-        
-        if ((length < 1) || (beginIndex + length > this.pathparts.length))
-			return null;
+	public CommonPath subpath(CommonPath other) {
+		if (this.path.startsWith(other.path))
+			return other.isRoot() ? this : new CommonPath(this.path.substring(other.path.length()));
+		
+		return CommonPath.ROOT;
+	}
 
-        return new CommonPath("/" + StringUtil.join(this.pathparts, "/", beginIndex, beginIndex + length));
-    }
-
-    public CommonPath subpathAbs(int beginIndex) {
-    	int length = this.pathparts.length - beginIndex;
-    	
-    	return this.subpathAbs(beginIndex, length);
-    }
-
-    public boolean isAbsolute() {
-        return (this.path.charAt(0) == '/');
-    }
-
+    // provide other path starting with /
     public CommonPath resolve(String other) {
-        if (StringUtil.isNotEmpty(other) && other.startsWith("/"))
-            return new CommonPath(other);
-        
-        if (this.isRoot())
-            return new CommonPath(this.path + other);
-        
-        return new CommonPath(this.path + "/" + other);
+        return this.isRoot() ? new CommonPath(other) : new CommonPath(this.path + other);
     }
+    
+    public CommonPath resolve(CommonPath other) {
+        return this.isRoot() ? other : new CommonPath(this.path + other.path);
+    }
+    
+    public CommonPath resolvePeer(String other) {
+        return this.isRoot() ? new CommonPath(other) : this.getParent().resolve(other);
+    }
+    
 
     /*  TODO
     // Resolve child against given base

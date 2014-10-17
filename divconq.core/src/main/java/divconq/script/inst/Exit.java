@@ -50,15 +50,13 @@ public class Exit extends Instruction {
 		if ((result == null) && StringUtil.isNotEmpty(output))
 			result = new StringStruct(output);
 		
-		if (stack.codeHasAttribute("Code")) { 
+		if (stack.codeHasAttribute("Code"))  
 			stack.setLastResult(code, result);
-			stack.log().exit(code, (result != null) ? result.toString() : null);
-		}
-		else if (result != null) {
+		else if (result != null) 
 			stack.setLastResult(result);
-		}
 		
-		stack.setState(ExecuteState.Exit);
+		stack.getActivity().setExitFlag(true);
+		stack.setState(ExecuteState.Done);
 		stack.resume();
 	}
 	

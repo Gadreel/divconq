@@ -29,7 +29,7 @@ public class Until extends LogicBlockInstruction {
     	
     	// signal end if conditional logic fails after loop
     	if (bstack.getPosition() >= this.instructions.size()) 
-    		if (this.checkLogic(stack))
+    		if (!this.checkLogic(stack))
     			bstack.setPosition(0);
     		else
 	        	stack.setState(ExecuteState.Done);

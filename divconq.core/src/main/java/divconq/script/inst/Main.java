@@ -38,7 +38,7 @@ public class Main extends BlockInstruction {
 			@Override
 			public void resume() {
 				if (stack.getState() == ExecuteState.Done) 
-					stack.setState(ExecuteState.Exit);
+					stack.getActivity().setExitFlag(true);
 			}
 		});
 

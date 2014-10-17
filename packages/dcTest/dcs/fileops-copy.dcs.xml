@@ -1,0 +1,49 @@
+<dcScript Title="FileOps Copy Tests">
+<Main>
+	<LocalFileStore Name="fs0" RootFolder="c:/temp" RootPath="/test" />
+	<LocalFolder Name="fs1" Path="c:/temp/test" />
+	<LocalFolder Name="fs2" Path="c:/temp/testdest" />
+	<LocalFolder Name="fs3" Path="c:/temp/testtar" />
+	<LocalFile Name="fh0" Path="c:/temp/testtar/test-files-0.tar.gz" />
+	
+	<Folder Name="f1" Path="/source" In="$fs0" />
+	<Folder Name="f2" Path="/source" In="$fs3" />
+	
+	<TempFolder Name="t1" />
+	<TempFile Name="t2" />
+	
+	<Info>Exists fs2: {$fs2.Exists}</Info>
+	<Info>Size of t2: {$t2.Size}</Info>
+	
+	<FileOps>
+		<!-- a straght copy -->
+		<XCopy Source="$fs1" Dest="$fs2" />
+		
+		<!-- a straght copy -->
+		<XCopy Source="$fs1" Dest="$t1" />
+		
+		<!-- tar and save to file, use file name -->
+		<Tar Source="$fs0" Dest="$fh0" />
+		
+		<XCopy Source="$fh0" Dest="$t2" />
+		
+		<!-- tar and save to folder, use name hint -->
+		<Tar Source="$fs0" Dest="$fs3" NameHint="test-files-1" />
+		
+		<!-- tar, gz and then save -->
+		<Tar Name="tar1" Source="$fs1" NameHint="test-files-2" />
+		<Gzip Source="$tar1" Dest="$fs3" />
+		
+		<!-- tar, gz using the auto chaining and then save -->
+		<Tar Source="$fs1" NameHint="test-files-3" />
+		<Gzip Dest="$fs3" />
+		
+		<!-- a straght copy -->
+		<XCopy Source="$f1" Dest="$f2" />
+	</FileOps>
+	
+	<Info>Exists fs2: {$fs2.Exists}</Info>
+	<Info>Size of fh0: {$fh0.Size}</Info>
+	<Info>Size of t2: {$t2.Size}</Info>
+</Main>
+</dcScript>

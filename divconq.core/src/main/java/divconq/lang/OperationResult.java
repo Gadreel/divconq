@@ -214,6 +214,11 @@ public class OperationResult implements GroovyObject {
 		this.log(DebugLevel.Info, code, msg);
 	}
 	
+	public void clearExitCode() {
+		this.code = 0;
+		this.message = null;
+	}
+	
 	/**
 	 * @param code for message translation token
 	 * @param params for message translation
@@ -360,15 +365,16 @@ public class OperationResult implements GroovyObject {
 	/**
 	 * @param res take the result and combine its messages with this result
 	 */
-	public void copyMessages(OperationResult res) {		
-		for (RecordStruct msg :  res.messages) 
-			this.log(msg);
-		
+	public void copyMessages(OperationResult res) {
 		// if not in list, still copy top error message
+		// copy code must come first so that log observers can clear the code if need be
 		if (this.code == 0) {
 			this.code = res.code;
 			this.message = res.message;
 		}
+		
+		for (RecordStruct msg :  res.messages) 
+			this.log(msg);		
 	}
 
 	public void copyMessages(RecordStruct rmsg) {
@@ -448,7 +454,7 @@ public class OperationResult implements GroovyObject {
 	/**
 	 * @return units/percentage of task completed
 	 */
-	public long getAmountCompleted() {
+	public int getAmountCompleted() {
 		return this.progComplete; 
 	}
 	

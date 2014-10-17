@@ -97,6 +97,12 @@ abstract public class Struct {
 	 * @return true if contains no data or insufficient data to constitute a complete value
 	 */
 	abstract public boolean isEmpty();
+	
+	/**
+	 * 
+	 * @return true if it really is null (scalars only, composites are never null)
+	 */
+	abstract public boolean isNull();
 		
 	public void validate(OperationResult mr) {
 		this.validate(mr, this.explicitType);
@@ -125,17 +131,6 @@ abstract public class Struct {
 		OperationResult mr = new OperationResult();
 		this.validate(mr, Hub.instance.getSchema().getType(type));
 		return mr;
-	}
-	
-	/**
-	 * used in conjunction with ComponentStruct - used in scripting primarily
-	 * 
-	 * In scripting ComponentStruct must be executed on a variable (not as a part of a composite)
-	 * and, therefore, when the variable scope goes so must the component that is wrapped.
-	 * Otherwise dispose doesn't do much as we trust and prefer GC.
-	 */
-	public void dispose() {
-		
 	}
 	
 	// statics
@@ -488,7 +483,7 @@ abstract public class Struct {
 		
 		if (o instanceof CharSequence) {
 			try {
-				return new Boolean(o.toString().trim());
+				return new Boolean(o.toString().toLowerCase().trim());
 			}
 			catch (Exception x) {
 			}
@@ -1072,12 +1067,11 @@ abstract public class Struct {
 
 	public void operation(StackEntry stack, XElement code) {
 		if ("Validate".equals(code.getName())) {
-			stack.setLastResult(this.validate());
+			stack.log().copyMessages(this.validate());
 			stack.resume();
 		}
 		else {
-			// TODO log + error
-			System.out.println("operation failed");
+			stack.log().error("operation failed, op name not recoginized: " + code.getName());
 			stack.resume();
 		}
 	}

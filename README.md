@@ -21,7 +21,7 @@ Links
 Building
 --------
 
-No support for building yet, see downloads on web site for distributed files.
+No support for building yet, see downloads link for distributed files.
 
 Background
 ----------

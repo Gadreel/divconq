@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class CountDownCallback {
 	protected AtomicInteger count = null;
 	protected OperationCallback callback = null;
-	protected ReentrantLock cdlock = new ReentrantLock();
+	protected ReentrantLock cdlock = new ReentrantLock();		// TODO try StampedLock
 	
 	public CountDownCallback(int count, OperationCallback callback) {
 		this.count = new AtomicInteger(count);
@@ -40,7 +40,7 @@ public class CountDownCallback {
 				res = 0;
 			
 			if (res == 0)
-				this.callback.completed();
+				this.callback.complete();
 			
 			return res;
 		}

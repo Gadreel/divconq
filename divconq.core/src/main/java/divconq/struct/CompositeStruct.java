@@ -137,6 +137,11 @@ abstract public class CompositeStruct extends Struct implements ICompositeOutput
 		return null;
 	}
 	
+	@Override
+	public boolean isNull() {
+		return false;
+	}
+	
 	/**
 	 * Convert the structure to Json and return in Memory (think StringBuilder in this usage).
 	 *  

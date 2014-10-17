@@ -89,6 +89,9 @@ public class Scheduler {
 			// setup the provider of the work queue
 			String classname = config.getAttribute("InterfaceClass");
 			
+			if (StringUtil.isEmpty(classname))
+				classname = "divconq.scheduler.LocalSchedulerDriver";
+			
 			if (StringUtil.isNotEmpty(classname)) {
 				Object impl =  Hub.instance.getInstance(classname);		
 				

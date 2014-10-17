@@ -14,7 +14,7 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.script.inst;
+package divconq.script.inst.sql;
 
 import java.math.BigDecimal;
 import java.util.List;

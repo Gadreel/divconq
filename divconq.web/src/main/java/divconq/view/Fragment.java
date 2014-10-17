@@ -113,7 +113,7 @@ public class Fragment extends Element {
 			if (cnt == 0) {
 				if (this.callbacks != null) {
 					for (OperationCallback cb : this.callbacks)
-						cb.completed();
+						cb.complete();
 				}
 			}
 		}
@@ -124,13 +124,13 @@ public class Fragment extends Element {
 		// increment above)
 		// it is safe to callback immediately if there was no futures
 		if (this.hasfuture == null) {
-			cb.completed();
+			cb.complete();
 			return;
 		}
 
 		synchronized (this) {
 			if (this.hasfuture.get() == 0) {
-				cb.completed();
+				cb.complete();
 				return;
 			}
 

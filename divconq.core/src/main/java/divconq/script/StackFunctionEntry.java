@@ -16,23 +16,21 @@
 ************************************************************************ */
 package divconq.script;
 
-import org.joda.time.DateTime;
-
 import divconq.lang.FuncResult;
 import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
-import divconq.struct.scalar.BooleanStruct;
-import divconq.struct.scalar.DateTimeStruct;
 import divconq.struct.scalar.IntegerStruct;
 import divconq.util.StringUtil;
+import divconq.work.TaskRun;
 
 public class StackFunctionEntry extends StackBlockEntry {
 	// result/state about the last command executed
     protected Struct lastResult = null;		
     protected IntegerStruct lastCode = null;		
     
-    // parameter into function
+    // parameter into function, make sure this is not disposed directly as the caller
+    // does not want the param disposed
     protected Struct param = null;
     protected String pname = null;
 
@@ -51,6 +49,14 @@ public class StackFunctionEntry extends StackBlockEntry {
     @Override
     public void setLastResult(Struct v) {
 		this.lastResult = v;
+
+		// if this is the Main function then the last result is also the task result
+        if ((this.parent == null) && (this.activity != null)) {
+        	TaskRun run = this.activity.getTaskRun();
+        	
+        	if (run != null)
+        		run.setResult(v);
+        }
     }
     
     @Override
@@ -60,6 +66,10 @@ public class StackFunctionEntry extends StackBlockEntry {
     
     @Override
     public void setLastCode(Long v) {
+    	// won't overwrite the existing code with 1
+    	if ((v != null) && (v == 1) && (this.lastCode.getValue() > 1))
+    		return;
+    	
         this.lastCode.setValue(v); 
     }
     
@@ -83,10 +93,15 @@ public class StackFunctionEntry extends StackBlockEntry {
     public void collectDebugRecord(RecordStruct rec) {
 		super.collectDebugRecord(rec);
 		
-        if (StringUtil.isNotEmpty(this.pname)) {
-        	RecordStruct dumpVariables = rec.getFieldAsRecord("Variables");
+    	RecordStruct dumpVariables = rec.getFieldAsRecord("Variables");
+		
+        if (StringUtil.isNotEmpty(this.pname)) 
         	dumpVariables.setField(this.pname, (this.param != null) ? this.param : null);
-        }
+        else
+        	dumpVariables.setField("_Param", (this.param != null) ? this.param : null);
+        
+        dumpVariables.setField("_LastResult", this.lastResult);        
+        dumpVariables.setField("_LastCode", this.lastCode);        
     }	
 
 	@Override
@@ -94,26 +109,14 @@ public class StackFunctionEntry extends StackBlockEntry {
 		if (StringUtil.isEmpty(name))
 			return null;
 		
-		if (name.equals(this.pname))
-			return this.param;
+		//if (name.equals(this.pname) || "_Param".equals(this.pname))
+		//	return this.param;
 		
         if ("_LastResult".equals(name) || "_".equals(name)) 
         	return this.lastResult;
         
         if ("_LastCode".equals(name) || "__".equals(name)) 
         	return this.lastCode;
-        
-        if ("_Errored".equals(name)) 
-        	return new BooleanStruct(this.activity.getLog().hasErrors());
-        
-        if ("_FirstCode".equals(name)) 
-        	return new IntegerStruct(this.activity.getLog().getCode());
-        
-        if ("_Log".equals(name)) 
-        	return this.activity.getLog().getMessages();
-
-        if ("_Now".equals(name))
-        	return new DateTimeStruct(new DateTime());
         
         // needed to copy all of StackBlock here, except remove the query for parent vars - replace with check for global vars
 
@@ -125,7 +128,7 @@ public class StackFunctionEntry extends StackBlockEntry {
 
             Struct ov = null;
             
-    		if (oname.equals(this.pname))
+    		if (oname.equals(this.pname) || oname.equals("_Param"))
     			ov = this.param;
     		
     		if (ov == null)
@@ -162,15 +165,5 @@ public class StackFunctionEntry extends StackBlockEntry {
 	@Override
 	public StackFunctionEntry queryFunctionStack() {
 		return this;
-	}
-	
-	@Override
-	public void dispose() {
-		super.dispose();
-		
-		if (this.lastResult != null) 
-			this.lastResult.dispose();
-		
-		this.lastResult = null;
 	}
 }

@@ -29,14 +29,14 @@ public class HyperSessionFactory implements IApiSessionFactory {
 	@Override
 	public ApiSession create() {
 		HyperSession sess = new HyperSession();
-		sess.init(this, this.config);
+		sess.init(this.config);
 		return sess;
 	}
 
 	@Override
 	public ApiSession create(XElement config) {
 		HyperSession sess = new HyperSession();
-		sess.init(this, config);
+		sess.init(config);
 		return sess;
 	}
 

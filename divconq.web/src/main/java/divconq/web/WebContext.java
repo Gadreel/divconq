@@ -16,7 +16,10 @@
 ************************************************************************ */
 package divconq.web;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.Cookie;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.stream.ChunkedInput;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -310,6 +313,22 @@ public class WebContext {
 
 	public void send() {
 		this.innerctx.send();
+	}
+
+	public void sendStart(int contentLength) {
+		this.innerctx.sendStart(contentLength);
+	}
+
+	public void send(ByteBuf content) {
+		this.innerctx.send(content);
+	}
+
+	public void send(ChunkedInput<HttpContent> content) {
+		this.innerctx.send(content);
+	}
+
+	public void sendEnd() {
+		this.innerctx.sendEnd();
 	}
 	
 	public void closeChannel() {

@@ -16,8 +16,10 @@
 ************************************************************************ */
 package divconq.hub;
 
-import io.netty.util.internal.logging.InternalLogger;
-import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.io.File;
 import java.lang.management.ClassLoadingMXBean;
@@ -38,6 +40,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+
+import javax.net.ssl.SSLEngine;
 
 import divconq.api.ApiSession;
 import divconq.api.IApiSessionFactory;
@@ -92,6 +96,8 @@ public class Hub {
 	static {
 		// java 6 does not do TTL correctly, change it
 		java.security.Security.setProperty("networkaddress.cache.ttl" , "0");		
+		
+		//PooledByteBufAllocator.DEFAULT.
 	}
 	
 	// ============ INSTANCE ============	
@@ -122,6 +128,8 @@ public class Hub {
 	protected ConcurrentHashMap<Integer, Set<IEventSubscriber>> subscribers = new ConcurrentHashMap<>();
 	
 	protected ActivityManager actman = null;
+	protected ByteBufAllocator bufferAllocator = PooledByteBufAllocator.DEFAULT;
+	protected EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
 	
 	protected CountManager countman = new CountManager(); 
 	
@@ -347,6 +355,14 @@ public class Hub {
 	
 	public CountManager getCountManager() {
 		return this.countman;
+	}
+	
+	public ByteBufAllocator getBufferAllocator() {
+		return this.bufferAllocator;
+	}
+	
+	public EventLoopGroup getEventLoopGroup() {
+		return this.eventLoopGroup;
 	}
 	
 	/**
@@ -616,15 +632,6 @@ public class Hub {
 		}
 		
 		or.debug(0, "Initializing Bus");
-		
-		// From here on we can use netty and so we need the logger setup
-		
-		InternalLoggerFactory.setDefaultFactory(new InternalLoggerFactory() {			
-			@Override
-			protected InternalLogger newInstance(String arg0) {
-				return Logger.getNettyLogger();
-			}
-		});
 		
 		// setup our bus
 		this.bus.init(or, config.find("Bus"));
@@ -897,10 +904,7 @@ public class Hub {
 		
 		or.debug(0, "Stopping work pool");
 		
-		// quickly let everyone know it is time to stop
-		this.workpool.stopNice(or);
-		
-		// this spends much more time waiting on each pool
+		// let everyone know it is time to stop
 		this.workpool.stop(or);
 		
 		// give just a little time for everything to cleanup
@@ -913,6 +917,12 @@ public class Hub {
 		or.debug(0, "Stopping bus");
 		
 		this.bus.stopFinal(or);
+		
+		try {
+			this.eventLoopGroup.shutdownGracefully().await();
+		} 
+		catch (InterruptedException x) {
+		}
 		
 		or.debug(0, "Stopping clock");
 		
@@ -1129,6 +1139,9 @@ public class Hub {
 		return null;
 	}
 	
+	// TODO add hub info/detail collector service
+	// System.out.println("Boss Threads: " + this.getBossGroup().isShutdown() + " - " + this.getBossGroup().isShuttingDown() + " - " + this.getBossGroup().isTerminated());
+	
 	public Object getInstance(String cname) {
 		try {
 			return this.getClass(cname).newInstance();
@@ -1147,5 +1160,136 @@ public class Hub {
 		}
 		
 		return null;
+	}
+
+	public void harden(SSLEngine engine) {
+        if (this.resources == null)
+        	return;
+        
+        // default not using SSLv2Hello, SSLv3, TLSv1, TLSv1.1 - see issue #22
+        // also use only top of the line ciphers
+
+        //engine.setEnabledProtocols(new String[] { "SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2" });
+		
+		XElement tls = this.resources.getConfig().selectFirst("Harden/TLS");
+		
+		if ((tls == null) || "Strict".equals(tls.getAttribute("Mode", "Strict"))) {
+	        engine.setEnabledProtocols(new String[] { "TLSv1.2" });
+	        
+	        engine.setEnabledCipherSuites(new String[] {
+	        		// AES 256 GCM SHA 384
+	        		"TLS_RSA_WITH_AES_256_GCM_SHA384",
+	        		"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+	        		"TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
+	        		"TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
+	        		"TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
+	        		"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+	        		"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+	        		// AES 256 CBC SHA 384
+	        		"TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",
+	        		"TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",    		
+	        		"TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+	        		"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+	        		// AES 256 CBC SHA 256
+	        		"TLS_RSA_WITH_AES_256_CBC_SHA256",
+	        		"TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+	        		"TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
+	        		// AES 128 GCM SHA 256
+	        		"TLS_RSA_WITH_AES_128_GCM_SHA256",
+	        		"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+	        		"TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",        		
+	        		"TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
+	        		"TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
+	        		"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+	        		"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+	        		// SCSV
+	        		"TLS_EMPTY_RENEGOTIATION_INFO_SCSV" });
+		}
+		else if ("Loose".equals(tls.getAttribute("Mode"))) {
+	        engine.setEnabledProtocols(new String[] { "TLSv1", "TLSv1.1", "TLSv1.2" });
+	        
+	        engine.setEnabledCipherSuites(new String[] {
+	        		// AES 256 GCM SHA 384
+	        		"TLS_RSA_WITH_AES_256_GCM_SHA384",
+	        		"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+	        		"TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
+	        		"TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
+	        		"TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
+	        		"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+	        		"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+	        		// AES 256 CBC SHA 384
+	        		"TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",
+	        		"TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",    		
+	        		"TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+	        		"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+	        		// AES 256 CBC SHA 256
+	        		"TLS_RSA_WITH_AES_256_CBC_SHA256",
+	        		"TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+	        		"TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
+	        		// AES 128 GCM SHA 256
+	        		"TLS_RSA_WITH_AES_128_GCM_SHA256",
+	        		"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+	        		"TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",        		
+	        		"TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
+	        		"TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
+	        		"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+	        		"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+	        		// AES 128 CBC SHA 256
+	        		"TLS_RSA_WITH_AES_128_CBC_SHA256",
+	        		"TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+	        		"TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
+	        		"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+	        		"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+	        		"TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",
+	        		"TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",
+	        		// AES 128 CBC SHA 128
+	        		"TLS_RSA_WITH_AES_128_CBC_SHA",
+	        		"TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+	        		"TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
+	        		"TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
+	        		"TLS_ECDH_RSA_WITH_AES_128_CBC_SHA",
+	        		"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+	        		"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+	        		// SCSV
+	        		"TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
+	        		// RC4 128 SHA1
+	        		"TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
+	        		"TLS_ECDHE_RSA_WITH_RC4_128_SHA",
+	        		"TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
+	        		"TLS_ECDH_RSA_WITH_RC4_128_SHA"
+	       		});
+		}
+		// custom
+		else {
+	        engine.setEnabledProtocols(tls.getAttribute("Protocols", "").split(","));
+	        
+	        engine.setEnabledCipherSuites(tls.getAttribute("Suites", "").split(","));
+		}
+		
+		if (engine.getEnabledProtocols().length == 0)
+			Logger.warn("No Protocols are enabled!!");
+		
+		if (engine.getEnabledCipherSuites().length == 0)
+			Logger.warn("No Cipher are enabled!!");
+		
+		/*
+        System.out.println("Enabled");
+        
+        for (String p : engine.getEnabledProtocols())
+        	System.out.println("Proto: " + p);
+        
+        for (String p : engine.getEnabledCipherSuites())
+        	System.out.println("Suite: " + p);
+        
+        System.out.println();        
+        System.out.println("Supported");
+        System.out.println();        
+        
+        for (String p : engine.getSupportedProtocols())
+        	System.out.println("Proto: " + p);
+        
+        for (String p : engine.getSupportedCipherSuites())
+        	System.out.println("Suite: " + p);
+        */
 	}
 }

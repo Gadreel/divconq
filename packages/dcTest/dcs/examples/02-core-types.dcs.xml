@@ -1,0 +1,264 @@
+<dcScript Title="Core Data Types">
+<Main>
+	<!-- 
+		Declare a variable of type Decimal.  DivConq does not recoginze
+		float or doubles, it works only with Decimal and Integer.
+
+		Output will be:
+		
+		Initial price: 19.95
+	-->
+	<Var Name="price" Type="Decimal" SetTo="19.95" />
+	
+	<Console>Initial price: {$price}</Console>
+
+	<!-- 
+		Add a literal to price.  Note that <Add>X</Add>
+		is the same as <Add Value="X" />.
+		
+		Output will be:
+		
+		Add literal to price: 27.20
+	-->
+	<With Target="$price">
+		<Add>7.25</Add>
+	</With>
+	
+	<Console>Add literal to price: {$price}</Console>
+
+	<!-- 
+		Add a decimal to price.  Note that <Add>X</Add>
+		is the same as <Add Value="X" />.
+		
+		Output will be:
+		
+		Add decimal to price: 31.70
+	-->	
+	<Var Name="shipping" Type="Decimal" SetTo="4.50" />
+
+	<With Target="$price">
+		<Add Value="$shipping" />
+	</With>
+	
+	<Console>Add decimal to price: {$price}</Console>
+	
+	<!-- 
+		Add an integer to price.  Output will be:
+		
+		Add Integer to price: 33.70
+	-->	
+	<Var Name="handling" Type="Integer" SetTo="2" />
+
+	<With Target="$price">
+		<Add>$handling</Add>
+	</With>
+	
+	<Console>Add Integer to price: {$price}</Console>
+	
+	<!-- 
+		Format the price.  Why do we need the ` at
+		the start of the Pattern?  The ` indicates
+		this is a literal and not a variable.  
+		
+		We use DecimalFormat for decimal numbers.
+		Output will be:
+		
+		Formatted price: $33.70
+	-->	
+	<Var Name="prettyPrice" Type="String">
+		<Format Pattern="`$###,###.00" Value="$price" />
+	</Var>
+	
+	<Console>Formatted price: {$prettyPrice}</Console>
+	
+	<!-- 
+		Format the handling.  
+		
+		We use NumberFormat for integer numbers.
+		Output will be:
+		
+		Formatted handling: 00000002
+	-->	
+	<Var Name="prettyHandling" Type="String">
+		<Format Pattern="%08d" Value="$handling" />
+	</Var>
+	
+	<Console>Formatted handling: {$prettyHandling}</Console>
+	
+	<!-- 
+		Following are some of the operations of numbers,
+		the example uses integer but decimal would work too.  
+		
+		Add 12 to handling. Output will be:
+		
+		Updated handling 1: 14
+	-->	
+	<With Target="$handling">
+		<Add Value="12" />
+	</With>
+	
+	<Console>Updated handling 1: {$handling}</Console>
+	
+	<!-- 
+		Subtract 4 from handling. Output will be:
+		
+		Updated handling 2: 10
+	-->		
+	<With Target="$handling">
+		<Subtract Value="4" />
+	</With>
+	
+	<Console>Updated handling 2: {$handling}</Console>
+	
+	<!-- 
+		Multiply handling by 4. Output will be:
+		
+		Updated handling 3: 40
+	-->		
+	<With Target="$handling">
+		<Multiply Value="4" />
+	</With>
+	
+	<Console>Updated handling 3: {$handling}</Console>
+	
+	<!-- 
+		Divide handling by 10. Output will be:
+		
+		Updated handling 4: 4
+	-->		
+	<With Target="$handling">
+		<Divide Value="10" />
+	</With>
+	
+	<Console>Updated handling 4: {$handling}</Console>
+	
+	<!-- 
+		Minimum of handling or 2. Output will be:
+		
+		Updated handling 5: 2
+	-->		
+	<With Target="$handling">
+		<Min Value="2" />
+	</With>
+	
+	<Console>Updated handling 5: {$handling}</Console>
+	
+	<!-- 
+		Maximum of handling or 20. Output will be:
+		
+		Updated handling 6: 20
+	-->		
+	<With Target="$handling">
+		<Max Value="20" />
+	</With>
+	
+	<Console>Updated handling 6: {$handling}</Console>
+	
+	<!-- 
+		Random number between 1 and 12 inclusive. Example output will be:
+		
+		Updated handling 7: 9
+	-->			
+	<With Target="$handling">
+		<Random From="1" To="12" />
+	</With>
+	
+	<Console>Updated handling 7: {$handling}</Console>
+	
+	<!-- 
+		Use the Inc op. Example output will be:
+		
+		Updated handling 8: 10
+	-->			
+	<With Target="$handling">
+		<Inc />
+	</With>
+	
+	<Console>Updated handling 8: {$handling}</Console>
+	
+	<!-- 
+		Use the Dec op.  Show multiple ops. Example output will be:
+		
+		Updated handling 9: 19
+	-->			
+	<With Target="$handling">
+		<Dec />
+		<Multiply Value="2" />
+		<Inc />
+	</With>
+	
+	<Console>Updated handling 9: {$handling}</Console>
+	
+	<!-- 
+		Following are some of the operations of datetime,
+		and its formatting.  Starting with a value of "Now"
+		
+		DateTime and its formatting are currently handled
+		by Joda but may be switched to Java 8's new DateTime 
+		in the future.
+		
+		Output will be:
+		
+		Formatted date: 2014-10-08 15:37:44.064
+	-->	
+	<Var Name="now" Type="DateTime" />
+	
+	<Var Name="prettyDate" Type="String">
+		<Format Pattern="yyyy-MM-dd HH:mm:ss.SSS" Value="$now" />
+	</Var>
+	
+	<Console>Formatted date: {$prettyDate}</Console>
+	
+	<!-- 
+		Set a new variable, "future" to now then add 3 months.
+		
+		Output will be:
+		
+		Formatted future date 1: 2015-01-08 15:37:44.064
+	-->	
+	<Var Name="future" SetTo="$now">
+		<Add Months="3" />
+	</Var>
+	
+	<With Target="$prettyDate">
+		<Format Pattern="yyyy-MM-dd HH:mm:ss.SSS" Value="$future" />
+	</With>
+	
+	<Console>Formatted future date 1: {$prettyDate}</Console>
+	
+	<!-- 
+		Add 39 hours to "future".
+		
+		Output will be:
+		
+		Formatted future date 2: 2015-01-10 06:37:44.064
+	-->	
+	<With Target="$future">
+		<Add Hours="39" />
+	</With>
+	
+	<With Target="$prettyDate">
+		<Format Pattern="yyyy-MM-dd HH:mm:ss.SSS" Value="$future" />
+	</With>
+	
+	<Console>Formatted future date 2: {$prettyDate}</Console>
+	
+	<!-- 
+		Add a period (ISO 8601) to "future".
+		http://en.wikipedia.org/wiki/ISO_8601
+		
+		Output will be:
+		
+		Formatted future date 3: 2015-02-19 09:39:05.064
+	-->	
+	<With Target="$future">
+		<Add Period="P1M9DT3H1M21S" />
+	</With>
+	
+	<With Target="$prettyDate">
+		<Format Pattern="yyyy-MM-dd HH:mm:ss.SSS" Value="$future" />
+	</With>
+	
+	<Console>Formatted future date 3: {$prettyDate}</Console>
+</Main>
+</dcScript>

@@ -1,0 +1,34 @@
+<dcScript Name="dct99BottlesV2" Title="99 Bottles of Beer ver 2">
+<Main>
+	<For Name="bottles" From="99" To="0" Step="-1">
+		<Var Name="message" Type="String" />
+			
+		<Switch Target="$bottles">
+		<Case GreaterThan="2">
+			<With Target="$message" SetTo="{$bottles} bottles of beer on the wall, {$bottles} bottles of beer. " />
+		</Case>
+		<Case Equal="2">
+			<With Target="$message" SetTo="2 bottles of beer on the wall, 2 bottles of beer. Take one down and pass it around, one bottle of beer on the wall." />
+		</Case>
+		<Case Equal="1">
+			<With Target="$message" SetTo="One bottle of beer on the wall, one bottle of beer. Take one down and pass it around, no more bottles of beer on the wall." />
+		</Case>
+		<Case Equal="0">
+			<With Target="$message" SetTo="No more bottles of beer on the wall, no more bottles of beer. Go to the store and buy some more, 99 bottles of beer on the wall." />
+		</Case>
+		</Switch>
+			
+		<If Target="$bottles" GreaterThan="2">
+			<Var Name="bottlesleft" Type="Integer" SetTo="$bottles">
+				<Dec />
+			</Var>
+			
+			<With Target="$message">
+				<Append Value="Take one down and pass it around, {$bottlesleft} bottles of beer on the wall." />
+			</With>
+		</If>
+		
+		<Console>{$message}</Console>
+	</For>
+</Main>
+</dcScript>

@@ -17,7 +17,6 @@
 package divconq.api;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -45,7 +44,7 @@ public class LocalSession extends ApiSession {
 	protected Session session = null;
 	
 	@Override
-	public void init(IApiSessionFactory fac, XElement config) {
+	public void init(XElement config) {
 		this.init(Hub.instance.getSessions().create("hub:", config.getAttribute("Domain")), config);
 	}
 	
@@ -78,14 +77,11 @@ public class LocalSession extends ApiSession {
 		public void stop() {
 		}
 	}	
-
-	@Override
-	public void stop() {
-		Hub.instance.getSessions().terminate(this.session.getId());		
-	}	
 	
 	@Override
 	public void stopped() {
+		Hub.instance.getSessions().terminate(this.session.getId());		
+		
 		this.replies.forgetReplyAll();		
 	}
 	
@@ -123,7 +119,7 @@ public class LocalSession extends ApiSession {
 		
 		if (chan == null) {
 			callback.error(1, "Missing channel");
-			callback.completed();
+			callback.complete();
 			return;
 		}
 		
@@ -132,7 +128,7 @@ public class LocalSession extends ApiSession {
 			public void cancel() {
 				callback.error(1, "Transfer canceled");				
 				chan.complete();
-				callback.completed();
+				callback.complete();
 			}
 			
 			@Override
@@ -140,7 +136,7 @@ public class LocalSession extends ApiSession {
 				if (msg.isFinal()) {
 					System.out.println("Final on channel: " + channelid);
 					chan.complete();
-					callback.completed();
+					callback.complete();
 				}
 			}
 
@@ -159,7 +155,7 @@ public class LocalSession extends ApiSession {
 		}
 	
 		try {
-			ByteBuf bb = Unpooled.directBuffer(64 * 1024);
+			ByteBuf bb = Hub.instance.getBufferAllocator().directBuffer(64 * 1024);
 			
 			long toskip = offset;
 			
@@ -229,7 +225,7 @@ public class LocalSession extends ApiSession {
 			chan.send(MessageUtil.streamError(1, "Source read error: " + x));
 			chan.close();
 			
-			callback.completed();
+			callback.complete();
 		} 
 		finally {
 			try {
@@ -249,7 +245,7 @@ public class LocalSession extends ApiSession {
 		
 		if (chan == null) {
 			callback.error(1, "Missing channel");
-			callback.completed();
+			callback.complete();
 			return;
 		}
 		
@@ -313,7 +309,7 @@ public class LocalSession extends ApiSession {
 				catch (IOException x) {
 				}
 				
-				callback.completed();
+				callback.complete();
 			}
 
 			@Override
@@ -334,5 +330,10 @@ public class LocalSession extends ApiSession {
 	@Override
 	public void clearToGuest() {
 		this.session.clearToGuest();
+	}
+
+	public void startSessionAsRoot() {
+		this.session.setToRoot();
+		this.startSession();
 	}
 }

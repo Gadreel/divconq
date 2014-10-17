@@ -1,0 +1,232 @@
+<dcScript Title="Variable Basics">
+<!-- dcScript starts in Main -->
+<Main>
+	<!-- Declare a variable for a given type and value -->
+	<Var Name="bottles" Type="Integer" SetTo="99" />
+	
+	<!-- 
+		After declaring a variable, always access it with a $.
+		$bottles indicates that we use the variable declared above.
+		
+		To access a variable inside a string enclose it with curly
+		braces {}.
+		
+		Write the variable to the console, output will be:
+		
+		bottles = 99
+	-->
+	<Console>bottles = {$bottles}</Console>
+	
+	<!-- 
+		To operate on a variable directly, outside of a string, you 
+		use With.  Below we see With is used with the variable
+		bottles.  Inc is an operation for incrementing a numeric variable.
+	-->	
+	<With Target="$bottles">
+		<Inc />
+	</With>
+	
+	<!-- 
+		Write the variable to the console again, but this time put just
+		the value.  Output will be:
+		
+		100
+	-->
+	<Console>$bottles</Console>
+	
+	<!-- 
+		To force a string use the ` at the start.  Output will be:
+		
+		$bottles
+	-->
+	<Console>`$bottles</Console>
+	
+	<!-- 
+		To force a string and still use a variable in the string
+		use the braces, as above.  Output will be:
+		
+		$bottles = 100
+	-->
+	<Console>`$bottles = {$bottles}</Console>
+	
+	<!-- 
+		Decrement and print again.  Output will be:
+		
+		$bottles = 99
+	-->
+	
+	<With Target="$bottles">
+		<Dec />
+	</With>
+	
+	<Console>`$bottles = {$bottles}</Console>
+	
+	<!-- 
+		Create another integer.  Note: In DivConq integers are 64 bit.
+	-->
+	
+	<Var Name="morebottles" Type="Integer" SetTo="77" />
+	
+	<!-- 
+		Add the new integer to bottles. Output will be:
+		
+		$bottles = 176
+	-->
+	
+	<With Target="$bottles">
+		<Add Value="$morebottles" />
+	</With>
+	
+	<Console>`$bottles = {$bottles}</Console>
+	
+	<!-- 
+		Change the value of bottles. Output will be:
+		
+		$bottles = 59
+	-->
+	
+	<With Target="$bottles">
+		<Set Value="59" />
+	</With>
+	
+	<Console>`$bottles = {$bottles}</Console>
+	
+	<!-- 
+		Create a string variable.  Output:
+		
+		That ever famous:
+		$banner = Hello World
+	-->
+	
+	<Var Name="banner" Type="String" SetTo="Hello World" />
+	
+	<Console>That ever famous:
+$banner = {$banner}</Console>
+	
+	<!-- 
+		Create a second string variable with the same value as the
+		first.  Note that we did not have to give it a type,
+		it was implicit that the type is String.  Output:
+		
+		$banner2 = Hello World
+	-->
+	
+	<Var Name="banner2" SetTo="$banner" />
+	
+	<Console>`$banner2 = {$banner2}</Console>
+	
+	<!-- 
+		To operate on a string use the With instruction. Upper
+		converts the string to all upper case. Output:
+		
+		$banner = HELLO WORLD
+	-->
+	
+	<With Target="$banner">
+		<Upper />
+	</With>
+	
+	<Console>`$banner = {$banner}</Console>
+	
+	<!-- 
+		Lower converts the string to all lower case. Output:
+		
+		$banner = hello world
+	-->
+	
+	<With Target="$banner">
+		<Lower />
+	</With>
+	
+	<Console>`$banner = {$banner}</Console>
+	
+	<!-- 
+		Append adds to the end of the string. Output:
+		
+		$banner = hello world - here are 59 bottles of wine to enjoy!
+	-->
+	
+	<With Target="$banner">
+		<Append Value=" - here are " />
+		<Append Value="$bottles" />
+		<Append Value=" bottles of wine to enjoy!" />
+	</With>
+	
+	<Console>`$banner = {$banner}</Console>
+	
+	<!-- 
+		Change the value of banner. Output:
+		
+		$banner = Welcome to our server!
+	-->
+	
+	<With Target="$banner">
+		<Set Value="Welcome to our server!" />
+	</With>
+	
+	<Console>`$banner = {$banner}</Console>
+	
+	<!-- 
+		The Replace operation switches one string for another. Output:
+		
+		$banner = Welcome to your server!
+	-->
+	
+	<With Target="$banner">
+		<Replace Old="our" New="your" />
+	</With>
+	
+	<Console>`$banner = {$banner}</Console>
+	
+	<!-- 
+		The Substring reduces the string to just a subset. Output:
+		
+		$banner = to your
+	-->
+	
+	<With Target="$banner">
+		<Substring From="8" Length="7" />
+	</With>
+	
+	<Console>`$banner = {$banner}</Console>
+	
+	<!-- 
+		dcScript peserves spacing and new lines in strings. The Set
+		below adds a new line before "Welcome..." starts.
+		
+		Output:
+		
+		$banner = 
+		Welcome to our server!
+		We aim to please!
+	-->
+	
+	<With Target="$banner">
+		<Set>
+Welcome to our server!
+We aim to please!
+		</Set>
+	</With>
+	
+	<Console>`$banner = {$banner}</Console>
+	
+	<!-- 
+		If you remove the whitespace with Trim the output starts on same line as $banner.
+		Output:
+		
+		$banner = Welcome to our server!
+		We aim to please!
+	-->
+	
+	<With Target="$banner">
+		<Trim />
+	</With>
+	
+	<Console>`$banner = {$banner}</Console>
+	
+	<!-- 
+		So we have seen how to declare variables and perform operations on them.  Also
+		we have seen how to output values and access already declared variables.
+	-->
+</Main>
+</dcScript>

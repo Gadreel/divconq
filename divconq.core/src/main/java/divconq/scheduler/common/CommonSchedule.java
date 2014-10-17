@@ -23,7 +23,6 @@ import divconq.lang.OperationResult;
 import divconq.scheduler.ISchedule;
 import divconq.scheduler.limit.LimitHelper;
 import divconq.struct.RecordStruct;
-import divconq.util.StringUtil;
 import divconq.util.TimeUtil;
 import divconq.work.Task;
 import divconq.work.TaskRun;
@@ -160,10 +159,7 @@ public class CommonSchedule implements ISchedule {
 			this.limits.init(config.find("Limits"));
 			
 			// what method is used to calculate the run times
-			String meth = config.getAttribute("Method");
-			
-			if (StringUtil.isEmpty(meth))
-				meth = "Standard";
+			String meth = config.getAttribute("Method", "Standard");
 			
 			XElement helpel = null;
 			

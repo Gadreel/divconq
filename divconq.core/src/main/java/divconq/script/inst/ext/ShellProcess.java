@@ -14,7 +14,7 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.script.inst;
+package divconq.script.inst.ext;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -123,9 +123,7 @@ public class ShellProcess extends Instruction {
 	            stack.addVariable(handle, new IntegerStruct(ecode));
 		} 
 		catch (IOException x) {
-			// TODO 
-			stack.log().error(2, "IO Error " + x);
-			stack.setLastCode(1L);
+			stack.log().error("Shell IO Error " + x);
 		}
 		
 		stack.setState(ExecuteState.Done);

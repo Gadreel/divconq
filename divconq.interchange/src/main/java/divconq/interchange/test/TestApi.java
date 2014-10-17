@@ -33,6 +33,7 @@ import divconq.struct.RecordStruct;
 import divconq.util.StringUtil;
 
 public class TestApi {
+	@SuppressWarnings("resource")
 	public static void main(String[] args) {
 		HubResources resources = new HubResources();
 		resources.setDebugLevel(DebugLevel.Info);
@@ -44,30 +45,6 @@ public class TestApi {
 		}
 	
 		Hub.instance.start(resources);
-		
-		/*
-		final CountDownLatch online = new CountDownLatch(1);
-		
-		Hub.instance.listenOnline(new OperationCallback() {
-			@Override
-			public void callback() {
-				online.countDown();
-			}
-		} );
-		
-		try {
-			online.await(5, TimeUnit.SECONDS);
-			//online.await();
-		} 
-		catch (InterruptedException e) {
-		}
-		
-		if (online.getCount() > 0) {
-			Logger.error("Unable to continue, hub not online");
-			scan.close();
-			return;
-		}
-		*/
 		
 		final Scanner scan = new Scanner(System.in);
 		

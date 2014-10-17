@@ -41,6 +41,7 @@ public class WorkBucket {
 	protected Long loadsize = null;
 	protected boolean trace = false;
 	
+	// TODO don't like loadsize, even though it is evolved design
 	public void init(OperationResult or, XElement config, int defaultloadsize) {
 		if (config != null) {
 			this.maxsize = StringUtil.parseInt(config.getAttribute("MaxSize"));
@@ -299,6 +300,21 @@ public class WorkBucket {
 		finally {
 			this.bucketlock.unlock();
 		}
+		
+		for (TaskRun run : killlist) {
+			Logger.warn("Bucket " + this.name + " found hung: " + run.getTask().getId());
+			run.kill();
+		}
+	}
+	
+	public void stop() {
+		List<TaskRun> killlist = new ArrayList<>();
+		
+		for (TaskRun run : this.inprogress.values()) 
+			killlist.add(run);
+		
+		for (TaskRun run : this.backlogqueue) 
+			killlist.add(run);
 		
 		for (TaskRun run : killlist) {
 			Logger.warn("Bucket " + this.name + " found hung: " + run.getTask().getId());
