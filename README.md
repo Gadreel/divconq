@@ -21,7 +21,8 @@ Links
 Building
 --------
 
-No support for building yet, see downloads link for distributed files.
+Use Maven to build the project.  Use `mvn install` first on the `divconq.core` project,
+then repeat on the other projects.
 
 Background
 ----------
