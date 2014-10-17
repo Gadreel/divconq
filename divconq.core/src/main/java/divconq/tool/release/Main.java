@@ -66,6 +66,8 @@ public class Main implements ILocalCommandLine {
 				
 				System.out.println("2)  Build custom release package [under construction]");
 				
+				System.out.println("4)  Pack the .jar files");
+				
 				if (gitpath != null)
 					System.out.println("5)  Copy Source to GitHub folder");
 
@@ -537,6 +539,8 @@ public class Main implements ILocalCommandLine {
 						
 						Files.copy(relbin, packbin, StandardCopyOption.REPLACE_EXISTING);
 					}
+					
+					System.out.println("Done");
 					
 					break;
 				}

@@ -1,7 +1,14 @@
 *.class
 
-divconq.core\bin
-divconq.interchange\bin
-divconq.web\bin
+divconq.core/bin
+divconq.interchange/bin
+divconq.tasks/bin
+divconq.tasks.api/bin
+divconq.web/bin
 
-/.dcsettings.xml
+divconq.core/target
+divconq.interchange/target
+divconq.tasks/target
+divconq.tasks.api/target
+divconq.web/target
+

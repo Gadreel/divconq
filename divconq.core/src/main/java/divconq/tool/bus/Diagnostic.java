@@ -277,7 +277,7 @@ public class Diagnostic implements ILocalCommandLine {
 					System.out.println("Message: ");
 					String data = scan.nextLine();
 					
-					Message msg = new Message("Status", "Echo", "Test", data + " - avä73Dw??gT80Hgt");
+					Message msg = new Message("Status", "Echo", "Test", data + " - av×“73Dw??gT80Hgt");
 					msg.setToHub(to);
 					api.sendMessage(msg, new DumpCallback("Echo"));
 					break;
