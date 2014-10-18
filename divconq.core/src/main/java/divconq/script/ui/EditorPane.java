@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -113,8 +112,8 @@ public class EditorPane extends JRootPane implements SyntaxConstants, IDebugger 
 		
 		Gutter gutter = edscroll.getGutter();
 		gutter.setBookmarkingEnabled(true);
-		URL url = this.getClass().getClassLoader().getResource("bookmark.png");		// review/remove or import location TODO
-		gutter.setBookmarkIcon(new ImageIcon(url));
+		//URL url = this.getClass().getClassLoader().getResource("bookmark.png");		// review/remove or import location TODO
+		//gutter.setBookmarkIcon(new ImageIcon(url));
 		
 		edscroll.setMinimumSize(new Dimension(300, 250));
 		//edscroll.setPreferredSize(new Dimension(1000, 1000));

@@ -77,11 +77,11 @@ public class LocalFileStore {
 	}
 
 	public void start(OperationResult or) {
-		new File("./files").mkdirs(); 
+		new File("/Work/Temp/Watch").mkdirs(); 
 		
 		try {
 			this.watchID = JNotify.addWatch(
-					"./files", 
+					"/Work/Temp/Watch", 
 					JNotify.FILE_CREATED | JNotify.FILE_DELETED | JNotify.FILE_MODIFIED | JNotify.FILE_RENAMED, 
 					true, 
 					new JNotifyListener() {

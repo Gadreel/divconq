@@ -16,6 +16,8 @@
 		<Library File="java-ipv6-0.15.jar"/>
 		<Library File="joda-time-2.5.jar" />
 		<Library File="jnotify-0.94.jar"/>
+		<Library File="jna-4.1.0.jar" />
+		<Library File="jna-platform-4.1.0.jar" />
 		<Library File="netty-all-4.0.23.Final.jar" />
 		<Library File="jsch-0.1.51.jar" />
 		<Library File="mariadb-java-client-1.1.6.jar" />

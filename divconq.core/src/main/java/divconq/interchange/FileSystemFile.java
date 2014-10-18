@@ -400,7 +400,10 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 
 		if ("Delete".equals(code.getName())) {
 			try {
-				Files.deleteIfExists(this.localpath);
+				if (this.isFolder())
+					FileUtil.deleteDirectory(this.localpath);
+				else
+					Files.deleteIfExists(this.localpath);
 			} 
 			catch (IOException x) {
 				// TODO Auto-generated catch block
