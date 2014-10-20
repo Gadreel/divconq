@@ -224,6 +224,35 @@ public class FileUtil {
         
         return or;
     }
+	
+    public static OperationResult deleteDirectoryContent(Path directory, String... except) {
+		OperationResult or = new OperationResult();
+		
+		try {
+			if (Files.exists(directory) && Files.isDirectory(directory)) {
+				Files.list(directory).forEach(file -> {
+					for (String exception : except) {
+						if (!file.getFileName().toString().equals(exception)) {
+							if (Files.isDirectory(file))
+								deleteDirectory(or, file);
+							else
+								try {
+									Files.delete(file);
+								} 
+								catch (Exception x) {
+									or.error("Unable to delete file: " + x);
+								}
+						}
+					}
+				});
+			}
+		} 
+		catch (IOException x) {
+			or.error("Unable to list directory contents: " + x);
+		}
+			
+		return or;
+    }
     
 	// TODO add secure delete option - JNA?
 	// TODO add delete followup feature someday

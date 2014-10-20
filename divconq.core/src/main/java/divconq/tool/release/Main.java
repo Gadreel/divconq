@@ -43,12 +43,14 @@ public class Main implements ILocalCommandLine {
 	public void run(Scanner scan, ApiSession api) {
 		Path relpath = null;
 		Path gitpath = null;
+		Path wikigitpath = null;
 		
 		XElement fldset = Hub.instance.getConfig().selectFirst("CommandLine/Settings");
 		
 		if (fldset != null) {
 			relpath = Paths.get(fldset.getAttribute("ReleasePath"));			
 			gitpath = Paths.get(fldset.getAttribute("GitPath"));
+			wikigitpath = Paths.get(fldset.getAttribute("WikiGitPath"));
 		}
 		
 		boolean running = true;
@@ -546,6 +548,8 @@ public class Main implements ILocalCommandLine {
 				}
 				
 				case 5: {
+					System.out.println("Copying Source Files");
+					
 					System.out.println("Cleaning folders");
 					
 					OperationResult or = FileUtil.deleteDirectory(gitpath.resolve("divconq.core/src/main/java"));
@@ -594,6 +598,13 @@ public class Main implements ILocalCommandLine {
 					
 					if (or.hasErrors()) {
 						System.out.println("Error deleting files");
+						break;
+					}
+					
+					or = FileUtil.deleteDirectoryContent(wikigitpath, ".git");
+					
+					if (or.hasErrors()) {
+						System.out.println("Error deleting wiki files");
 						break;
 					}
 					
@@ -727,6 +738,15 @@ public class Main implements ILocalCommandLine {
 					System.out.println("Copy tree ./packages/dcWeb");
 					
 					or = FileUtil.copyFileTree(Paths.get("./packages/dcWeb"), gitpath.resolve("packages/dcWeb"));
+					
+					if (or.hasErrors()) {
+						System.out.println("Error copying files");
+						break;
+					}
+					
+					System.out.println("Copy tree ./divconq.wiki/public");
+					
+					or = FileUtil.copyFileTree(Paths.get("./divconq.wiki/public"), wikigitpath);
 					
 					if (or.hasErrors()) {
 						System.out.println("Error copying files");

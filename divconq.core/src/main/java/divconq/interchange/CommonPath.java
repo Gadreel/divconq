@@ -257,6 +257,12 @@ public class CommonPath implements IDataExposer {
 
     // provide other path starting with /
     public CommonPath resolve(String other) {
+    	if (StringUtil.isEmpty(other))
+    		return null;
+    	
+    	if (!other.startsWith("/"))
+    		other = "/" + other;
+    	
         return this.isRoot() ? new CommonPath(other) : new CommonPath(this.path + other);
     }
     
@@ -265,6 +271,12 @@ public class CommonPath implements IDataExposer {
     }
     
     public CommonPath resolvePeer(String other) {
+    	if (StringUtil.isEmpty(other))
+    		return null;
+    	
+    	if (!other.startsWith("/"))
+    		other = "/" + other;
+    	
         return this.isRoot() ? new CommonPath(other) : this.getParent().resolve(other);
     }
     
