@@ -180,7 +180,7 @@ public class Logger {
 		}
     }
     
-    /**
+    /*
      *  In a distributed setup, DivConq may route logging to certain Hubs and
      *  bypass the local log file.  During shutdown logging returns to local
      *  log file so that the dcBus can shutdown and stop routing the messages.
@@ -214,7 +214,7 @@ public class Logger {
     	return (setlevel.getCode() >= DebugLevel.Trace.getCode());
     }
     
-    /**
+    /*
      * Insert a (string) message into the log
      * 
      * @param message error text
@@ -224,7 +224,7 @@ public class Logger {
     	Logger.log(OperationContext.get(), DebugLevel.Error, message, tags);
     }
     
-    /**
+    /*
      * Insert a (string) message into the log
      * 
      * @param message warning text
@@ -234,7 +234,7 @@ public class Logger {
     	Logger.log(OperationContext.get(), DebugLevel.Warn, message, tags);
     }
     
-    /**
+    /*
      * Insert a (string) message into the log
      * 
      * @param message info text
@@ -244,7 +244,7 @@ public class Logger {
     	Logger.log(OperationContext.get(), DebugLevel.Info, message, tags);
     }
     
-    /**
+    /*
      * Insert a (string) message into the log
      * 
      * @param accessCode to translate
@@ -254,7 +254,7 @@ public class Logger {
     	Logger.log(OperationContext.get(), DebugLevel.Debug, message, tags);
     }
     
-    /**
+    /*
      * Insert a (string) message into the log
      * 
      * @param accessCode to translate
@@ -264,7 +264,7 @@ public class Logger {
     	Logger.log(OperationContext.get(), DebugLevel.Trace, message, tags);
     }
     
-    /**
+    /*
      * Insert a (string) message into the log
      * 
      * @param code to translate
@@ -274,7 +274,7 @@ public class Logger {
     	Logger.log(OperationContext.get(), DebugLevel.Error, code, params);
     }
     
-    /**
+    /*
      * Insert a (string) message into the log
      * 
      * @param code to translate
@@ -284,7 +284,7 @@ public class Logger {
     	Logger.log(OperationContext.get(), DebugLevel.Warn, code, params);
     }
     
-    /**
+    /*
      * Insert a (string) message into the log
      * 
      * @param code to translate
@@ -294,7 +294,7 @@ public class Logger {
     	Logger.log(OperationContext.get(), DebugLevel.Info, code, params);
     }
     
-    /**
+    /*
      * Insert a (string) message into the log
      * 
      * @param code to translate
@@ -304,7 +304,7 @@ public class Logger {
     	Logger.log(OperationContext.get(), DebugLevel.Trace, code, params);
     }
     
-    /**
+    /*
      * Insert a (string) translated message into the log
      * 
      * @param ctx context for log settings, null for none
@@ -316,7 +316,7 @@ public class Logger {
     	Logger.log(ctx, level, LocaleUtil.tr(Logger.locale, "_code_" + code, params), "Code", code + "");
     }
     
-    /**
+    /*
      * Insert a (string) message into the log
      * 
      * @param ctx context for log settings, null for none
@@ -334,7 +334,7 @@ public class Logger {
     	Logger.logWr((ctx != null) ? ctx.getOpId() : null, level, message, tags);
     }
     
-    /**
+    /*
      * Insert a (string) translated message into the log
      * 
      * @param ctx context for log settings, null for none
@@ -346,7 +346,7 @@ public class Logger {
     	Logger.logWr(taskid, level, LocaleUtil.tr(Logger.locale, "_code_" + code, params), "Code", code + "");
     }
     
-    /**
+    /*
      * don't check, just write
      *  
      * @param taskid
@@ -378,7 +378,7 @@ public class Logger {
     	}
     }
 
-    /**
+    /*
      * Insert a chunk of hex encoded memory into the log
      * 
      * @param ctx context for log settings, null for none
@@ -412,7 +412,7 @@ public class Logger {
 	        Logger.write((ctx != null) ? ctx.getOpId() : null, indicate, HexUtil.bufferToHex(data), tags);
     }
 
-    /**
+    /*
      * A boundary delineates in section of a task log from another, making it
      * easier for a log viewer to organize the content.  Boundary's are treated
      * like "info" messages, if only errors or warnings are being logged then 
@@ -431,7 +431,7 @@ public class Logger {
     	Logger.boundaryWr((ctx != null) ? ctx.getOpId() : null, tags);
     }
     
-    /**
+    /*
      * Don't check, just write 
      * 
      * @param taskid
@@ -502,7 +502,7 @@ public class Logger {
     }
     
     static public class NettyLogger extends AbstractInternalLogger {
-    	/**
+    	/*
 		 * 
 		 */
 		private static final long serialVersionUID = 8748850640482801893L;
@@ -512,7 +512,7 @@ public class Logger {
     	}
     	
 
-        /**
+        /*
          * Is this logger instance enabled for the FINEST level?
          *
          * @return True if this Logger is enabled for level FINEST, false otherwise.
@@ -522,7 +522,7 @@ public class Logger {
             return Logger.globalLevel.getCode() <= DebugLevel.Trace.getCode();
         }
 
-        /**
+        /*
          * Log a message object at level FINEST.
          *
          * @param msg
@@ -533,7 +533,7 @@ public class Logger {
         	Logger.trace(msg, "Netty");
         }
 
-        /**
+        /*
          * Log a message at level FINEST according to the specified format and
          * argument.
          *
@@ -553,7 +553,7 @@ public class Logger {
             	Logger.trace(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log a message at level FINEST according to the specified format and
          * arguments.
          *
@@ -575,7 +575,7 @@ public class Logger {
             	Logger.trace(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log a message at level FINEST according to the specified format and
          * arguments.
          *
@@ -595,7 +595,7 @@ public class Logger {
             	Logger.trace(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log an exception (throwable) at level FINEST with an accompanying message.
          *
          * @param msg
@@ -608,7 +608,7 @@ public class Logger {
         	Logger.trace(msg + " - " + t);
         }
 
-        /**
+        /*
          * Is this logger instance enabled for the FINE level?
          *
          * @return True if this Logger is enabled for level FINE, false otherwise.
@@ -618,7 +618,7 @@ public class Logger {
             return Logger.globalLevel.getCode() <= DebugLevel.Debug.getCode();
         }
 
-        /**
+        /*
          * Log a message object at level FINE.
          *
          * @param msg
@@ -629,7 +629,7 @@ public class Logger {
         	Logger.debug(msg, "Netty");
         }
 
-        /**
+        /*
          * Log a message at level FINE according to the specified format and argument.
          *
          * <p>
@@ -648,7 +648,7 @@ public class Logger {
                 this.debug(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log a message at level FINE according to the specified format and
          * arguments.
          *
@@ -670,7 +670,7 @@ public class Logger {
                 this.debug(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log a message at level FINE according to the specified format and
          * arguments.
          *
@@ -690,7 +690,7 @@ public class Logger {
                 this.debug(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log an exception (throwable) at level FINE with an accompanying message.
          *
          * @param msg
@@ -703,7 +703,7 @@ public class Logger {
         	this.debug(msg + " - " + t);
         }
 
-        /**
+        /*
          * Is this logger instance enabled for the INFO level?
          *
          * @return True if this Logger is enabled for the INFO level, false otherwise.
@@ -713,7 +713,7 @@ public class Logger {
             return Logger.globalLevel.getCode() <= DebugLevel.Info.getCode();
         }
 
-        /**
+        /*
          * Log a message object at the INFO level.
          *
          * @param msg
@@ -724,7 +724,7 @@ public class Logger {
         	Logger.info(msg, "Netty");
         }
 
-        /**
+        /*
          * Log a message at level INFO according to the specified format and argument.
          *
          * <p>
@@ -743,7 +743,7 @@ public class Logger {
                 this.info(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log a message at the INFO level according to the specified format and
          * arguments.
          *
@@ -765,7 +765,7 @@ public class Logger {
                 this.info(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log a message at level INFO according to the specified format and
          * arguments.
          *
@@ -785,7 +785,7 @@ public class Logger {
                 this.info(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log an exception (throwable) at the INFO level with an accompanying
          * message.
          *
@@ -799,7 +799,7 @@ public class Logger {
         	this.info(msg + " - " + t);
         }
 
-        /**
+        /*
          * Is this logger instance enabled for the WARNING level?
          *
          * @return True if this Logger is enabled for the WARNING level, false
@@ -810,7 +810,7 @@ public class Logger {
             return Logger.globalLevel.getCode() <= DebugLevel.Warn.getCode();
         }
 
-        /**
+        /*
          * Log a message object at the WARNING level.
          *
          * @param msg
@@ -823,7 +823,7 @@ public class Logger {
         	Logger.warn(msg, "Netty");
         }
 
-        /**
+        /*
          * Log a message at the WARNING level according to the specified format and
          * argument.
          *
@@ -843,7 +843,7 @@ public class Logger {
                 this.warn(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log a message at the WARNING level according to the specified format and
          * arguments.
          *
@@ -865,7 +865,7 @@ public class Logger {
                 this.warn(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log a message at level WARNING according to the specified format and
          * arguments.
          *
@@ -885,7 +885,7 @@ public class Logger {
                 this.warn(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log an exception (throwable) at the WARNING level with an accompanying
          * message.
          *
@@ -899,7 +899,7 @@ public class Logger {
         	this.warn(msg + " - " + t);
         }
 
-        /**
+        /*
          * Is this logger instance enabled for level SEVERE?
          *
          * @return True if this Logger is enabled for level SEVERE, false otherwise.
@@ -909,7 +909,7 @@ public class Logger {
             return Logger.globalLevel.getCode() <= DebugLevel.Error.getCode();
         }
 
-        /**
+        /*
          * Log a message object at the SEVERE level.
          *
          * @param msg
@@ -925,7 +925,7 @@ public class Logger {
         	Logger.error(msg, "Netty");
         }
 
-        /**
+        /*
          * Log a message at the SEVERE level according to the specified format and
          * argument.
          *
@@ -945,7 +945,7 @@ public class Logger {
             this.error(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log a message at the SEVERE level according to the specified format and
          * arguments.
          *
@@ -967,7 +967,7 @@ public class Logger {
             this.error(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log a message at level SEVERE according to the specified format and
          * arguments.
          *
@@ -987,7 +987,7 @@ public class Logger {
             this.error(ft.getMessage() + " - " + ft.getThrowable());
         }
 
-        /**
+        /*
          * Log an exception (throwable) at the SEVERE level with an accompanying
          * message.
          *

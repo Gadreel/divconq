@@ -454,7 +454,7 @@ public class Bus {
 	 * Unlike removeListener this does not remove any "binding"
 	 * just won't try connecting again anymore
 	 * 
-	 * @param info
+	 * @param info descriptor of connector to remove
 	 */
 	public void removeConnector(SocketInfo info) {
 		this.connectors.remove(info.getHubId());

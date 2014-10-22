@@ -470,7 +470,7 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 		this.items.remove(idx);
 	}
 
-	/**
+	/*
 	 * @param idx position in list of the item to remove from list
 	 */
 	public void removeItem(Struct itm) {

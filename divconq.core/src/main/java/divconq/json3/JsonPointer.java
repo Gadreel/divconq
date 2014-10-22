@@ -7,7 +7,7 @@ import divconq.json3.io.NumberInput;
  * <a href="http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-03">JSON Pointer</a>
  * specification.
  * Pointer instances can be used to locate logical JSON nodes for things like
- * tree traversal (see {@link TreeNode#at}).
+ * tree traversal (see TreeNode).
  * It may be used in future for filtering of streaming JSON content
  * as well (not implemented yet for 2.3).
  *<p>
@@ -48,7 +48,7 @@ public class JsonPointer
     /**********************************************************
      */
     
-    /**
+    /*
      * Constructor used for creating "empty" instance, used to represent
      * state that matches current node.
      */
@@ -59,7 +59,7 @@ public class JsonPointer
         _asString = "";
     }
 
-    /**
+    /*
      * Constructor used for creating non-empty Segments
      */
     protected JsonPointer(String fullString, String segment, JsonPointer next) {
@@ -76,7 +76,7 @@ public class JsonPointer
     /**********************************************************
      */
     
-    /**
+    /*
      * Factory method that parses given input and construct matching pointer
      * instance, if it represents a valid JSON Pointer: if not, a
      * {@link IllegalArgumentException} is thrown.
@@ -98,7 +98,7 @@ public class JsonPointer
         return _parseTail(input);
     }
 
-    /**
+    /*
      * Alias for {@link #compile}; added to make instances automatically
      * deserializable by Jackson databind.
      */
@@ -152,7 +152,7 @@ public class JsonPointer
         return _nextSegment;
     }
 
-    /**
+    /*
      * Accessor for getting a "sub-pointer", instance where current segment
      * has been removed and pointer includes rest of segments;
      */
@@ -225,7 +225,7 @@ public class JsonPointer
         return new JsonPointer(input, input.substring(1), EMPTY);
     }
 
-    /**
+    /*
      * Method called to parse tail of pointer path, when a potentially
      * escaped character has been seen.
      * 

@@ -18,7 +18,7 @@ public final class NumberInput
     final static String MIN_LONG_STR_NO_SIGN = String.valueOf(Long.MIN_VALUE).substring(1);
     final static String MAX_LONG_STR = String.valueOf(Long.MAX_VALUE);
 
-    /**
+    /*
      * Fast method for parsing integers that are known to fit into
      * regular 32-bit signed int type. This means that length is
      * between 1 and 9 digits (inclusive)
@@ -55,7 +55,7 @@ public final class NumberInput
         return num;
     }
 
-    /**
+    /*
      * Helper method to (more) efficiently parse integer numbers from
      * String values.
      */
@@ -133,7 +133,7 @@ public final class NumberInput
         return Long.parseLong(s);
     }
     
-    /**
+    /*
      * Helper method for determining if given String representation of
      * an integral number would fit in 64-bit Java long or not.
      * Note that input String must NOT contain leading minus sign (even
@@ -159,7 +159,7 @@ public final class NumberInput
         return true;
     }
 
-    /**
+    /*
      * Similar to {@link #inLongRange(char[],int,int,boolean)}, but
      * with String argument
      *

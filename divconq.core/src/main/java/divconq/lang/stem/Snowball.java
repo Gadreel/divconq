@@ -16,7 +16,7 @@ abstract public class Snowball {
 
 	public abstract boolean stem();
 
-	/**
+	/*
 	 * Set the current string.
 	 */
 	public void setCurrent(String value) {
@@ -28,7 +28,7 @@ abstract public class Snowball {
 		ket = limit;
 	}
 
-	/**
+	/*
 	 * Get the current string.
 	 */
 	public String getCurrent() {

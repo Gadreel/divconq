@@ -162,7 +162,7 @@ public class BigDateTime {
 	/**
 	 * @param year where 1 = 1 CE (AD), 0 = 1 BCE (BC)
 	 * @param month where 1 = Jan
-	 * @param day
+	 * @param day of month
 	 */
 	public BigDateTime(long year, int month, int day) {
 		this(year, month);
@@ -176,8 +176,8 @@ public class BigDateTime {
 	/**
 	 * @param year where 1 = 1 CE (AD), 0 = 1 BCE (BC)
 	 * @param month where 1 = Jan
-	 * @param day
-	 * @param hour
+	 * @param day of month
+	 * @param hour of day
 	 */
 	public BigDateTime(long year, int month, int day, int hour) {
 		this(year, month, day);
@@ -191,9 +191,9 @@ public class BigDateTime {
 	/**
 	 * @param year where 1 = 1 CE (AD), 0 = 1 BCE (BC)
 	 * @param month where 1 = Jan
-	 * @param day
-	 * @param hour
-	 * @param minute
+	 * @param day of month
+	 * @param hour of day
+	 * @param minute of hour
 	 */
 	public BigDateTime(long year, int month, int day, int hour, int minute) {
 		this(year, month, day, hour);
@@ -207,10 +207,10 @@ public class BigDateTime {
 	/**
 	 * @param year where 1 = 1 CE (AD), 0 = 1 BCE (BC)
 	 * @param month where 1 = Jan
-	 * @param day
-	 * @param hour
-	 * @param minute
-	 * @param second
+	 * @param day of month
+	 * @param hour of day
+	 * @param minute of hour
+	 * @param second of minute
 	 */
 	public BigDateTime(long year, int month, int day, int hour, int minute, int second) {
 		this(year, month, day, hour, minute);

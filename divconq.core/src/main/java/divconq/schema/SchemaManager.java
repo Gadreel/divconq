@@ -375,7 +375,7 @@ public class SchemaManager {
 		return dtype;
 	}
 
-	/**
+	/*
 	 * TODO 
 	 * 
 	 * @param name

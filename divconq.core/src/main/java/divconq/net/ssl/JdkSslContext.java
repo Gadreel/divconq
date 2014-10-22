@@ -116,12 +116,12 @@ public abstract class JdkSslContext extends SslContext {
         unmodifiableCipherSuites = Collections.unmodifiableList(Arrays.asList(cipherSuites));
     }
 
-    /**
+    /*
      * Returns the JDK {@link SSLContext} object held by this context.
      */
     public abstract SSLContext context();
 
-    /**
+    /*
      * Returns the JDK {@link SSLSessionContext} object held by this context.
      */
     public final SSLSessionContext sessionContext() {

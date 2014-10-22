@@ -536,7 +536,7 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 		return this.task.getTitle().hashCode();
 	}
 	
-	/**
+	/*
 	 * For scripting calls - set the return value (convert to struct if not already) then call complete all at once
 	 * @param v
 	 */

@@ -34,7 +34,7 @@ import divconq.lang.OperationResult;
 import divconq.util.StringUtil;
 
 public class XmlReader implements IParseHandler {
-	/**
+	/*
 	 * Read and parse xml that is held a string
 	 * 
 	 * @param xml the string that holds the Xml
@@ -44,7 +44,7 @@ public class XmlReader implements IParseHandler {
 		return new XmlReader(new CharSequenceReader(xml), keepwhitespace).parse();
 	}
 
-	/**
+	/*
 	 * Read and parse xml that is pointed to by a reader (utf-8)
 	 * 
 	 * @param in the reader that holds the Xml
@@ -54,7 +54,7 @@ public class XmlReader implements IParseHandler {
 		return new XmlReader(in, keepwhitespace).parse();
 	}
 
-	/**
+	/*
 	 * Read and parse xml that is pointed to by a stream (utf-8)
 	 * 
 	 * @param in the stream that holds the Xml
@@ -64,7 +64,7 @@ public class XmlReader implements IParseHandler {
 		return new XmlReader(new InputStreamReader(in), keepwhitespace).parse();
 	}
 
-	/**
+	/*
 	 * Read and parse xml that is held in memory (utf-8)
 	 * 
 	 * @param mem the memory that holds the Xml
@@ -74,7 +74,7 @@ public class XmlReader implements IParseHandler {
 	//	return new XmlReader(mem, keepwhitespace).parse();
 	//}
 
-	/**
+	/*
 	 * Read and parse an xml file
 	 * 
 	 * @param fullname the file name to read and parse
@@ -91,7 +91,7 @@ public class XmlReader implements IParseHandler {
 		}
 	}
 
-	/**
+	/*
 	 * Read and parse an xml file
 	 * 
 	 * @param fl the file to read and parse
@@ -108,7 +108,7 @@ public class XmlReader implements IParseHandler {
 		}
 	}
 
-	/**
+	/*
 	 * Read and parse an xml file
 	 * 
 	 * @param fl the file to read and parse
@@ -166,10 +166,6 @@ public class XmlReader implements IParseHandler {
 	 * will be missing, this is a really basic and lightweight XML utility.
 	 * 
 	 * @return the root XML element 
-	 * @throws XMLParseException
-	 *             if an error occurs when parsing the XML
-	 * @throws IOException
-	 *             if an error occurs when reading from the input source
 	 */
 	public FuncResult<XElement> parse() {
 		FuncResult<XElement> res = new FuncResult<XElement>();

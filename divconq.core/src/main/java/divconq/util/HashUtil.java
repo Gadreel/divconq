@@ -252,7 +252,7 @@ public class HashUtil {
 	 * which means it is less unique.
 	 * 
 	 * @param str source to hash
-	 * @param key 
+	 * @param key for hashing algorithm  
 	 * @return hex SHA value
 	 */
 	public static String getMacSha2(String str, byte[] key) {

@@ -20,7 +20,7 @@ import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 
 public class ArrayUtil {
-	/**
+	/*
 	 * verify an array copy before copying
 	 * 
 	 * @param source
@@ -48,7 +48,7 @@ public class ArrayUtil {
         return true;
 	}
 
-	/**
+	/*
 	 * verify and assist a byte buffer to byte array copy 
 	 * 
 	 * @param source
@@ -77,7 +77,7 @@ public class ArrayUtil {
         return true;
 	}
 
-	/**
+	/*
 	 * verify and assist a byte array to byte buffer copy 
 	 * 
 	 * @param source
@@ -106,7 +106,7 @@ public class ArrayUtil {
         return true;
 	}
 	
-	/**
+	/*
 	 * verify and assist a byte buffer to byte buffer copy 
 	 * 
 	 * @param source

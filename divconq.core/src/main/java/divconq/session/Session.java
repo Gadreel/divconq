@@ -370,7 +370,7 @@ Context: {
 		return rec;
 	}
 	
-	/**
+	/*
 	 * Typically called by Hyper RPC
 	 * 
 	 *	 we don't need a time out, it is up to the client to timeout
@@ -401,7 +401,7 @@ Context: {
 		this.sendMessage(msg);
 	}
 
-	/**
+	/*
 	 * Typically called by Web and Common RPC
 	 * 
 	 * @param msg

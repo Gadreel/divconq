@@ -48,7 +48,7 @@ public class LimitHelper {
 		return this.dailyWindow;
 	}
 	
-	/**
+	/*
 	 *			<Limits 
 	 *				LinkBatch="None,Small,Medium,Large"   - include limits defined at server level (batch processing)
 	 *				DefaultWindow="T/F"			- by default you have 24 hours enabled

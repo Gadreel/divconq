@@ -29,7 +29,7 @@ import divconq.lang.OperationResult;
  *
  */
 public interface IParseHandler {
-	/**
+	/*
 	 * Called to indicate the start of a tagged element
 	 * 
 	 * @param tag
@@ -45,7 +45,7 @@ public interface IParseHandler {
 	 */
 	public void startElement(OperationResult or, String tag, Map<String, String> attributes, int line, int col);
 
-	/**
+	/*
 	 * Called to indicate the end of a tagged element
 	 * 
 	 * @param tag
@@ -55,7 +55,7 @@ public interface IParseHandler {
 	 */
 	public void endElement(OperationResult or, String tag);
 	
-	/**
+	/*
 	 * Called to indicate a complete tagged element
 	 * 
 	 * @param tag
@@ -71,7 +71,7 @@ public interface IParseHandler {
 	 */
 	public void element(OperationResult or, String tag, Map<String, String> attributes, int line, int col);
 
-	/**
+	/*
 	 * Called to indicate the start of the XML document being read
 	 * 
 	 * @throws XMLParseException
@@ -79,7 +79,7 @@ public interface IParseHandler {
 	 */
 	public void startDocument(OperationResult or);
 
-	/**
+	/*
 	 * Called to indicate the end of the XML document being read
 	 * 
 	 * @throws XMLParseException
@@ -87,7 +87,7 @@ public interface IParseHandler {
 	 */
 	public void endDocument(OperationResult or);
 
-	/**
+	/*
 	 * Called to indicate that an untagged element has been read
 	 * 
 	 * @param str

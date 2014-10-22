@@ -221,8 +221,8 @@ public class Utf8Encoder {
 	/**
 	 * Blindly assumes content will fit in buffer, *you* have to be sure it will...
 	 * 
-	 * @param chars
-	 * @param buffer
+	 * @param chars source
+	 * @param buffer destination
 	 */
 	static public void encode(CharSequence chars, ByteBuf buffer) {
 		if ((chars == null) || (buffer == null))

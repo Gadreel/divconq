@@ -34,7 +34,7 @@ public abstract class CharacterEscapes
      */
     public final static int ESCAPE_CUSTOM = -2;
     
-    /**
+    /*
      * Method generators can call to get lookup table for determining
      * escape handling for first 128 characters of Unicode (ASCII
      * characters. Caller is not to modify contents of this array, since
@@ -48,7 +48,7 @@ public abstract class CharacterEscapes
      */
     public abstract int[] getEscapeCodesForAscii();
 
-    /**
+    /*
      * Method generators can call to get lookup table for determining
      * exact escape sequence to use for given character.
      * It can be called for any character, but typically is called for
@@ -57,7 +57,7 @@ public abstract class CharacterEscapes
      */
     public abstract SerializableString getEscapeSequence(int ch);
 
-    /**
+    /*
      * Helper method that can be used to get a copy of standard JSON
      * escape definitions; this is useful when just wanting to slightly
      * customize definitions. Caller can modify this array as it sees

@@ -63,7 +63,6 @@ abstract public class CompositeStruct extends Struct implements ICompositeOutput
 	 * 
 	 * Cannot go up levels, or back to root.  Do not start with a dot or slash as in ".People".
 	 * 
-	 * @param log collect messages about this call
 	 * @param path string holding the path to select
 	 * @return selected structure if any, otherwise null
 	 */
@@ -157,7 +156,7 @@ abstract public class CompositeStruct extends Struct implements ICompositeOutput
 	/**
 	 * Convert the structure to Json and return in Memory (think StringBuilder in this usage).
 	 *  
-	 * @return Memory holding JSON representation of this structure and all children
+	 * @param buf buffer to write into
 	 * @throws BuilderStateException if the structure is invalid then this exception arises
 	 */
 	public void toSerial(ByteBuf buf) throws BuilderStateException {		// TODO return funcresult

@@ -48,7 +48,7 @@ package divconq.www.http;
  *
  * @author Niall Gallagher
  *
- * @see org.simpleframework.http.parse.PathParser
+ * see org.simpleframework.http.parse.PathParser
  */
 public interface Path {
     

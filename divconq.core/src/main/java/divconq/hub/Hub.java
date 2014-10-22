@@ -81,10 +81,8 @@ import divconq.xml.XElement;
  * to call "stop".
  * 
  * There is only one Hub object per process (per JVM), the way to access the Hub object is through Hub.instance.
- * 
- *   @see divconq.test.TestDb for an example of how to start and stop the Hub
  *  
- * @author Andy
+ * @author Andy White
  *
  */
 public class Hub {

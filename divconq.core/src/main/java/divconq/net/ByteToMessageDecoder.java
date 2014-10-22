@@ -43,7 +43,7 @@ import java.util.List;
  * </pre>
  *
  * Be aware that sub-classes of {@link ByteToMessageDecoder} <strong>MUST NOT</strong>
- * annotated with {@link @Sharable}.
+ * annotated with Sharable.
  */
 public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter {
 
@@ -58,40 +58,48 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
         }
     }
 
-    /**
+    /*
      * If set then only one message is decoded on each {@link #channelRead(ChannelHandlerContext, Object)}
      * call. This may be useful if you need to do some protocol upgrade and want to make sure nothing is mixed up.
      *
      * Default is {@code false} as this has performance impacts.
+     * 
+     * @param v 	set to single decoder mode
      */
     public void setSingleDecode(boolean v) {
         this.singleDecode = v;
     }
 
-    /**
+    /*
      * If {@code true} then only one message is decoded on each
      * {@link #channelRead(ChannelHandlerContext, Object)} call.
      *
      * Default is {@code false} as this has performance impacts.
+     * 
+     * @return true if this is in single decoder mode
      */
     public boolean isSingleDecode() {
         return this.singleDecode;
     }
 
-    /**
+    /*
      * Returns the actual number of readable bytes in the internal cumulative
      * buffer of this decoder. You usually do not need to rely on this value
      * to write a decoder. Use it only when you must use it at your own risk.
      * This method is a shortcut to {@link #internalBuffer() internalBuffer().readableBytes()}.
+     * 
+     * @return readable bytes in the cumulative buffer 
      */
     protected int actualReadableBytes() {
         return this.internalBuffer().readableBytes();
     }
 
-    /**
+    /*
      * Returns the internal cumulative buffer of this decoder. You usually
      * do not need to access the internal buffer directly to write a decoder.
      * Use it only when you must use it at your own risk.
+     * 
+     * @return the cumulative buffer
      */
     protected ByteBuf internalBuffer() {
         if (this.cumulation != null) {
@@ -118,9 +126,12 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
         this.handlerRemoved0(ctx);
     }
 
-    /**
+    /*
      * Gets called after the {@link ByteToMessageDecoder} was removed from the actual context and it doesn't handle
      * events anymore.
+     * 
+     * @param ctx           the {@link ChannelHandlerContext} which this {@link ByteToMessageDecoder} belongs to
+     * @throws Exception    is thrown if an error accour
      */
     protected void handlerRemoved0(ChannelHandlerContext ctx) throws Exception { }
 
@@ -244,7 +255,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
         }
     }
 
-    /**
+    /*
      * Called once data should be decoded from the given {@link ByteBuf}. This method will call
      * {@link #decode(ChannelHandlerContext, ByteBuf, List)} as long as decoding should take place.
      *
@@ -293,7 +304,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
         }
     }
 
-    /**
+    /*
      * Decode the from one {@link ByteBuf} to an other. This method will be called till either the input
      * {@link ByteBuf} has nothing to read when return from this method or till nothing was read from the input
      * {@link ByteBuf}.
@@ -301,16 +312,21 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
      * @param ctx           the {@link ChannelHandlerContext} which this {@link ByteToMessageDecoder} belongs to
      * @param in            the {@link ByteBuf} from which to read data
      * @param out           the {@link List} to which decoded messages should be added
-     * @throws Exception    is thrown if an error accour
+     * @throws Exception    is thrown if an error occur
      */
     protected abstract void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception;
 
-    /**
+    /*
      * Is called one last time when the {@link ChannelHandlerContext} goes in-active. Which means the
      * {@link #channelInactive(ChannelHandlerContext)} was triggered.
      *
      * By default this will just call {@link #decode(ChannelHandlerContext, ByteBuf, List)} but sub-classes may
      * override this for some special cleanup operation.
+     * 
+     * @param ctx           the {@link ChannelHandlerContext} which this {@link ByteToMessageDecoder} belongs to
+     * @param in            the {@link ByteBuf} from which to read data
+     * @param out           the {@link List} to which decoded messages should be added
+     * @throws Exception    is thrown if an error occur
      */
     protected void decodeLast(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         this.decode(ctx, in, out);

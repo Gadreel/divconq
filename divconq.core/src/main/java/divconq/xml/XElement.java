@@ -504,7 +504,7 @@ public class XElement extends XNode {
 	 * Cannot select values or attributes, just elements.  * is supported to match
 	 * all elements at a given level.
 	 * 
-	 * For example: "Toys/Toy" called on "<Person>" means select all Toy elements
+	 * For example: "Toys/Toy" called on "&lt;Person&gt;" means select all Toy elements
 	 * inside of the Toys child element (child of Person).
 	 * 
 	 * Cannot go up levels, or back to root.  Do not start with a slash as in "/People".
@@ -564,7 +564,7 @@ public class XElement extends XNode {
 	 * '*' is supported to match
 	 * all elements at a given level.  Returns only the first match.
 	 * 
-	 * For example: "Toys/Toy" called on "<Person>" means return the text of first Toy element
+	 * For example: "Toys/Toy" called on "&lt;Person&gt;" means return the text of first Toy element
 	 * inside of the Toys child element (child of Person).
 	 * 
 	 * Cannot go up levels, or back to root.  Do not start with a slash as in "/People".
@@ -586,12 +586,13 @@ public class XElement extends XNode {
 	 * '*' is supported to match
 	 * all elements at a given level.  Returns only the first match.
 	 * 
-	 * For example: "Toys/Toy" called on "<Person>" means return the text of first Toy element
+	 * For example: "Toys/Toy" called on "&lt;Person&gt;" means return the text of first Toy element
 	 * inside of the Toys child element (child of Person).
 	 * 
 	 * Cannot go up levels, or back to root.  Do not start with a slash as in "/People".
 	 * 
 	 * @param path a backslash delimited string
+	 * @param def default text if none found
 	 * @return text of first matching element, or null if no match
 	 */
 	public String selectFirstText(String path, String def) {
@@ -612,12 +613,13 @@ public class XElement extends XNode {
 	 * '*' is supported to match
 	 * all elements at a given level.  Returns only the first match.
 	 * 
-	 * For example: "Toys/Toy" called on "<Person>" means return the text of first Toy element
+	 * For example: "Toys/Toy" called on "&lt;Person&gt;" means return the text of first Toy element
 	 * inside of the Toys child element (child of Person).
 	 * 
 	 * Cannot go up levels, or back to root.  Do not start with a slash as in "/People".
 	 * 
 	 * @param path a backslash delimited string
+	 * @param def default object to return if path not found
 	 * @return text of first matching element, or null if no match
 	 */
 	public Object selectFirstValue(String path, Object def) {
@@ -638,7 +640,7 @@ public class XElement extends XNode {
 	 * Cannot select values or attributes, just elements.  * is supported to match
 	 * all elements at a given level.  Returns only the first match.
 	 * 
-	 * For example: "Toys/Toy" called on "<Person>" means return first Toy element
+	 * For example: "Toys/Toy" called on "&lt;Person&gt;" means return first Toy element
 	 * inside of the Toys child element (child of Person).
 	 * 
 	 * Cannot go up levels, or back to root.  Do not start with a slash as in "/People".
@@ -819,6 +821,7 @@ public class XElement extends XNode {
 	 * reads and parses the text content and returns the root element
 	 * from that content
 	 * 
+	 * @param keepwhitespace don't strip white space when parsing the content of element
 	 * @return root xml element for parsed content or null
 	 */
 	public FuncResult<XElement> toXml(boolean keepwhitespace) {

@@ -45,6 +45,7 @@ public class PigLatin {
 	 * Translate test in English to Pig Latin  
 	 * 
 	 * @param sText text to translate
+	 * @param bLearnMode show home the word was parsed in output
 	 * @return translated text
 	 */
 	public static String translate(String sText, boolean bLearnMode) {

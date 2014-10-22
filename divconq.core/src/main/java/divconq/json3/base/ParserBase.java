@@ -23,13 +23,13 @@ public abstract class ParserBase extends ParserMinimalBase
     /**********************************************************
      */
 
-    /**
+    /*
      * I/O context for this reader. It handles buffer allocation
      * for the reader.
      */
     final protected IOContext _ioContext;
 
-    /**
+    /*
      * Flag that indicates whether parser is closed or not. Gets
      * set when parser is either closed by explicit call
      * ({@link #close}) or when end-of-input is reached.
@@ -44,12 +44,12 @@ public abstract class ParserBase extends ParserMinimalBase
 
     // Note: type of actual buffer depends on sub-class, can't include
 
-    /**
+    /*
      * Pointer to next available character in buffer
      */
     protected int _inputPtr = 0;
 
-    /**
+    /*
      * Index of character after last available one in the buffer.
      */
     protected int _inputEnd = 0;
@@ -60,19 +60,19 @@ public abstract class ParserBase extends ParserMinimalBase
     /**********************************************************
      */
 
-    /**
+    /*
      * Number of characters/bytes that were contained in previous blocks
      * (blocks that were already processed prior to the current buffer).
      */
     protected long _currInputProcessed = 0L;
 
-    /**
+    /*
      * Current row location of current point in input buffer, starting
      * from 1, if available.
      */
     protected int _currInputRow = 1;
 
-    /**
+    /*
      * Current index of the first character of the current row in input
      * buffer. Needed to calculate column position, if necessary; benefit
      * of not having column itself is that this only has to be updated
@@ -89,19 +89,19 @@ public abstract class ParserBase extends ParserMinimalBase
 
     // // // Location info at point when current token was started
 
-    /**
+    /*
      * Total number of bytes/characters read before start of current token.
      * For big (gigabyte-sized) sizes are possible, needs to be long,
      * unlike pointers and sizes related to in-memory buffers.
      */
     protected long _tokenInputTotal = 0; 
 
-    /**
+    /*
      * Input row on which current token starts, 1-based
      */
     protected int _tokenInputRow = 1;
 
-    /**
+    /*
      * Column on input row that current token starts; 0-based (although
      * in the end it'll be converted to 1-based)
      */
@@ -113,13 +113,13 @@ public abstract class ParserBase extends ParserMinimalBase
     /**********************************************************
      */
 
-    /**
+    /*
      * Information about parser context, context in which
      * the next token is to be parsed (root, array, object).
      */
     protected JsonReadContext _parsingContext;
     
-    /**
+    /*
      * Secondary token related to the next token after current one;
      * used if its type is known. This may be value token that
      * follows FIELD_NAME, for example.
@@ -132,34 +132,34 @@ public abstract class ParserBase extends ParserMinimalBase
     /**********************************************************
      */
 
-    /**
+    /*
      * Buffer that contains contents of String values, including
      * field names if necessary (name split across boundary,
      * contains escape sequence, or access needed to char array)
      */
     protected final TextBuffer _textBuffer;
 
-    /**
+    /*
      * Temporary buffer that is needed if field name is accessed
      * using {@link #getTextCharacters} method (instead of String
      * returning alternatives)
      */
     protected char[] _nameCopyBuffer = null;
 
-    /**
+    /*
      * Flag set to indicate whether the field name is available
      * from the name copy buffer or not (in addition to its String
      * representation  being available via read context)
      */
     protected boolean _nameCopied = false;
 
-    /**
+    /*
      * ByteArrayBuilder is needed if 'getBinaryValue' is called. If so,
      * we better reuse it for remainder of content.
      */
     protected ByteArrayBuilder _byteArrayBuilder = null;
 
-    /**
+    /*
      * We will hold on to decoded binary data, for duration of
      * current event, so that multiple calls to
      * {@link #getBinaryValue} will not need to decode data more
@@ -290,7 +290,7 @@ public abstract class ParserBase extends ParserMinimalBase
     /**********************************************************
      */
     
-    /**
+    /*
      * Method that can be called to get the name associated with
      * the current event.
      */
@@ -335,7 +335,7 @@ public abstract class ParserBase extends ParserMinimalBase
     @Override public boolean isClosed() { return _closed; }
     @Override public JsonReadContext getParsingContext() { return _parsingContext; }
 
-    /**
+    /*
      * Method that return the <b>starting</b> location of the current
      * token; that is, position of the first character from input
      * that starts the current token.
@@ -348,7 +348,7 @@ public abstract class ParserBase extends ParserMinimalBase
                 getTokenColumnNr());
     }
 
-    /**
+    /*
      * Method that returns location of the last processed character;
      * usually for error reporting purposes
      */
@@ -416,7 +416,7 @@ public abstract class ParserBase extends ParserMinimalBase
     /**********************************************************
      */
 
-    /**
+    /*
      * Method called to release internal buffers owned by the base
      * reader. This may be called along with {@link #_closeInput} (for
      * example, when explicitly closing this reader instance), or
@@ -431,7 +431,7 @@ public abstract class ParserBase extends ParserMinimalBase
         }
     }
     
-    /**
+    /*
      * Method called when an EOF is encountered between tokens.
      * If so, it may be a legitimate EOF, but only iff there
      * is no open non-root context.
@@ -443,7 +443,7 @@ public abstract class ParserBase extends ParserMinimalBase
         }
     }
 
-    /**
+    /*
      * @since 2.4
      */
     protected final int _eofAsNextChar() throws JsonParseException {
@@ -680,7 +680,7 @@ public abstract class ParserBase extends ParserMinimalBase
     /**********************************************************
      */
     
-    /**
+    /*
      * Method that will parse actual numeric value out of a syntactically
      * valid number value. Type it will parse into depends on whether
      * it is a floating point number, as well as its magnitude: smallest
@@ -949,7 +949,7 @@ public abstract class ParserBase extends ParserMinimalBase
     /**********************************************************
      */
 
-    /**
+    /*
      * Method that sub-classes must implement to support escaped sequences
      * in base64-encoded sections.
      * Sub-classes that do not need base64 support can leave this as is
@@ -1004,10 +1004,8 @@ public abstract class ParserBase extends ParserMinimalBase
         return reportInvalidBase64Char(b64variant, ch, bindex, null);
     }
 
-    /**
-     * @param bindex Relative index within base64 character unit; between 0
-     *   and 3 (as unit has exactly 4 characters)
-     */
+    // @param bindex Relative index within base64 character unit; between 0
+    //   and 3 (as unit has exactly 4 characters)
     protected IllegalArgumentException reportInvalidBase64Char(Base64Variant b64variant, int ch, int bindex, String msg) throws IllegalArgumentException {
         String base;
         if (ch <= INT_SPACE) {

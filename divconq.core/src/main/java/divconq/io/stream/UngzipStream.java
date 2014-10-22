@@ -72,9 +72,6 @@ public class UngzipStream extends BaseStream implements IStreamSource {
     
     protected ByteBuf remnant = null;
 
-    /**
-     * Creates a new instance with the default wrapper ({@link ZlibWrapper#ZLIB}).
-     */
     public UngzipStream() {
         this.inflater = new Inflater(true);
         this.crc = new CRC32();

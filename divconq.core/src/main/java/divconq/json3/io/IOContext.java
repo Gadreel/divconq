@@ -129,7 +129,7 @@ public class IOContext
         return new TextBuffer(_bufferRecycler);
     }
 
-    /**
+    /*
      *<p>
      * Note: the method can only be called once during its life cycle.
      * This is to protect against accidental sharing.
@@ -139,7 +139,7 @@ public class IOContext
         return (_readIOBuffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_READ_IO_BUFFER));
     }
 
-    /**
+    /*
      * @since 2.4
      */
     public byte[] allocReadIOBuffer(int minSize) {
@@ -152,7 +152,7 @@ public class IOContext
         return (_writeEncodingBuffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_WRITE_ENCODING_BUFFER));
     }
 
-    /**
+    /*
      * @since 2.4
      */
     public byte[] allocWriteEncodingBuffer(int minSize) {
@@ -160,7 +160,7 @@ public class IOContext
         return (_writeEncodingBuffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_WRITE_ENCODING_BUFFER, minSize));
     }
     
-    /**
+    /*
      * @since 2.1
      */
     public byte[] allocBase64Buffer() {
@@ -173,7 +173,7 @@ public class IOContext
         return (_tokenCBuffer = _bufferRecycler.allocCharBuffer(BufferRecycler.CHAR_TOKEN_BUFFER));
     }
 
-    /**
+    /*
      * @since 2.4
      */
     public char[] allocTokenBuffer(int minSize) {
@@ -191,7 +191,7 @@ public class IOContext
         return (_nameCopyBuffer = _bufferRecycler.allocCharBuffer(BufferRecycler.CHAR_NAME_COPY_BUFFER, minSize));
     }
 
-    /**
+    /*
      * Method to call when all the processing buffers can be safely
      * recycled.
      */

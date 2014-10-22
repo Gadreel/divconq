@@ -17,7 +17,7 @@ import divconq.json3.util.BufferRecycler;
 /**
  * Base class that defines public API for reading JSON content.
  * Instances are created using factory methods of
- * a {@link JsonFactory} instance.
+ * a instance.
  *
  * @author Tatu Saloranta
  */
@@ -218,7 +218,7 @@ public abstract class JsonParser implements Closeable
 
         private final int _mask;
         
-        /**
+        /*
          * Method that calculates bit set (flags) of all features that
          * are enabled by default.
          */
@@ -240,7 +240,7 @@ public abstract class JsonParser implements Closeable
         
         public boolean enabledByDefault() { return _defaultState; }
         
-        /**
+        /*
          * @since 2.3
          */
         public boolean enabledIn(int flags) { return (flags & _mask) != 0; }
@@ -262,7 +262,7 @@ public abstract class JsonParser implements Closeable
 
     protected JsonParser() { }
 
-    /**
+    /*
      * Method that can be used to get access to object that is used
      * to access input being parsed; this is usually either
      * {@link InputStream} or {@link Reader}, depending on what
@@ -292,7 +292,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
     
-    /**
+    /*
      * Method that can be called to determine if a custom
      * {@link ObjectCodec} is needed for binding data parsed
      * using {@link JsonParser} constructed by this factory
@@ -313,7 +313,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
 
-    /**
+    /*
      * Closes the parser so that no further iteration or data access
      * can be made; will also close the underlying input source
      * if parser either <b>owns</b> the input source, or feature
@@ -337,7 +337,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
 
-    /**
+    /*
      * Method that can be called to push back any content that
      * has been read but not consumed by the parser. This is usually
      * done after reading all content of interest using parser.
@@ -355,7 +355,7 @@ public abstract class JsonParser implements Closeable
         return -1;
     }
 
-    /**
+    /*
      * Method that can be called to push back any content that
      * has been read but not consumed by the parser.
      * This is usually
@@ -384,7 +384,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
 
-    /**
+    /*
      * Main iteration method, which will advance stream enough
      * to determine type of the next token, if any. If none
      * remaining (stream has no content other than possible
@@ -395,7 +395,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract JsonToken nextToken() throws IOException, JsonParseException;
 
-    /**
+    /*
      * Iteration method that will advance stream enough
      * to determine type of the next token that is a value type
      * (including JSON Array and Object start/end markers).
@@ -414,7 +414,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract JsonToken nextValue() throws IOException, JsonParseException;
 
-    /**
+    /*
      * Method that fetches next token (as if calling {@link #nextToken}) and
      * verifies whether it is {@link JsonToken#FIELD_NAME} with specified name
      * and returns result of that comparison.
@@ -431,7 +431,7 @@ public abstract class JsonParser implements Closeable
         return (nextToken() == JsonToken.FIELD_NAME) && str.getValue().equals(getCurrentName());
     }
 
-    /**
+    /*
      * Method that fetches next token (as if calling {@link #nextToken}) and
      * if it is {@link JsonToken#VALUE_STRING} returns contained String value;
      * otherwise returns null.
@@ -446,7 +446,7 @@ public abstract class JsonParser implements Closeable
         return (nextToken() == JsonToken.VALUE_STRING) ? getText() : null;
     }
 
-    /**
+    /*
      * Method that fetches next token (as if calling {@link #nextToken}) and
      * if it is {@link JsonToken#VALUE_NUMBER_INT} returns 32-bit int value;
      * otherwise returns specified default value
@@ -461,7 +461,7 @@ public abstract class JsonParser implements Closeable
         return (nextToken() == JsonToken.VALUE_NUMBER_INT) ? getIntValue() : defaultValue;
     }
 
-    /**
+    /*
      * Method that fetches next token (as if calling {@link #nextToken}) and
      * if it is {@link JsonToken#VALUE_NUMBER_INT} returns 64-bit long value;
      * otherwise returns specified default value
@@ -476,7 +476,7 @@ public abstract class JsonParser implements Closeable
         return (nextToken() == JsonToken.VALUE_NUMBER_INT) ? getLongValue() : defaultValue;
     }
 
-    /**
+    /*
      * Method that fetches next token (as if calling {@link #nextToken}) and
      * if it is {@link JsonToken#VALUE_TRUE} or {@link JsonToken#VALUE_FALSE}
      * returns matching Boolean value; otherwise return null.
@@ -497,7 +497,7 @@ public abstract class JsonParser implements Closeable
         return null;
     }
     
-    /**
+    /*
      * Method that will skip all child tokens of an array or
      * object token that the parser currently points to,
      * iff stream points to 
@@ -513,7 +513,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract JsonParser skipChildren() throws IOException, JsonParseException;
     
-    /**
+    /*
      * Method that can be called to determine whether this parser
      * is closed or not. If it is closed, no new tokens can be
      * retrieved by calling {@link #nextToken} (and the underlying
@@ -529,7 +529,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
 
-    /**
+    /*
      * Accessor to find which token parser currently points to, if any;
      * null will be returned if none.
      * If return value is non-null, data associated with the token
@@ -542,7 +542,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract JsonToken getCurrentToken();
 
-    /**
+    /*
      * Method similar to {@link #getCurrentToken()} but that returns an
      * <code>int</code> instead of {@link JsonToken} (enum value).
      *<p>
@@ -557,7 +557,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract int getCurrentTokenId();
     
-    /**
+    /*
      * Method for checking whether parser currently points to
      * a token (and data for that token is available).
      * Equivalent to check for <code>parser.getCurrentToken() != null</code>.
@@ -570,7 +570,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract boolean hasCurrentToken();
 
-    /**
+    /*
      * Method that can be called to get the name associated with
      * the current token: for {@link JsonToken#FIELD_NAME}s it will
      * be the same as what {@link #getText} returns;
@@ -579,7 +579,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract String getCurrentName() throws IOException;
 
-    /**
+    /*
      * Method that can be used to access current parsing context reader
      * is in. There are 3 different types: root, array and object contexts,
      * with slightly different available information. Contexts are
@@ -591,20 +591,20 @@ public abstract class JsonParser implements Closeable
      */
     public abstract JsonStreamContext getParsingContext();
 
-    /**
+    /*
      * Method that return the <b>starting</b> location of the current
      * token; that is, position of the first character from input
      * that starts the current token.
      */
     public abstract JsonLocation getTokenLocation();
 
-    /**
+    /*
      * Method that returns location of the last processed character;
      * usually for error reporting purposes.
      */
     public abstract JsonLocation getCurrentLocation();
 
-    /**
+    /*
      * Specialized accessor that can be used to verify that the current
      * token indicates start array (usually meaning that current token
      * is {@link JsonToken#START_ARRAY}) when start array is expected.
@@ -629,7 +629,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
 
-    /**
+    /*
      * Method called to "consume" the current token by effectively
      * removing it so that {@link #hasCurrentToken} returns false, and
      * {@link #getCurrentToken} null).
@@ -643,7 +643,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract void clearCurrentToken();
 
-    /**
+    /*
      * Method that can be called to get the last token that was
      * cleared using {@link #clearCurrentToken}. This is not necessarily
      * the latest token read.
@@ -652,7 +652,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract JsonToken getLastClearedToken();
     
-    /**
+    /*
      * Method that can be used to change what is considered to be
      * the current (field) name.
      * May be needed to support non-JSON data formats or unusual binding
@@ -671,7 +671,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
 
-    /**
+    /*
      * Method for accessing textual representation of the current token;
      * if no current token (before first call to {@link #nextToken}, or
      * after encountering end-of-input), returns null.
@@ -679,7 +679,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract String getText() throws IOException;
 
-    /**
+    /*
      * Method similar to {@link #getText}, but that will return
      * underlying (unmodifiable) character array that contains
      * textual value, instead of constructing a String object
@@ -706,7 +706,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract char[] getTextCharacters() throws IOException;
 
-    /**
+    /*
      * Accessor used with {@link #getTextCharacters}, to know length
      * of String stored in returned buffer.
      *
@@ -716,7 +716,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract int getTextLength() throws IOException;
 
-    /**
+    /*
      * Accessor used with {@link #getTextCharacters}, to know offset
      * of the first text content character within buffer.
      *
@@ -726,7 +726,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract int getTextOffset() throws IOException;
 
-    /**
+    /*
      * Method that can be used to determine whether calling of
      * {@link #getTextCharacters} would be the most efficient
      * way to access textual content for the event parser currently
@@ -751,7 +751,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
 
-    /**
+    /*
      * Generic number value accessor method that will work for
      * all kinds of numeric values. It will return the optimal
      * (simplest/smallest possible) wrapper object that can
@@ -759,7 +759,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract Number getNumberValue() throws IOException;
 
-    /**
+    /*
      * If current token is of type 
      * {@link JsonToken#VALUE_NUMBER_INT} or
      * {@link JsonToken#VALUE_NUMBER_FLOAT}, returns
@@ -767,7 +767,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract NumberType getNumberType() throws IOException;
 
-    /**
+    /*
      * Numeric accessor that can be called when the current
      * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
      * it can be expressed as a value of Java byte primitive type.
@@ -791,7 +791,7 @@ public abstract class JsonParser implements Closeable
         return (byte) value;
     }
 
-    /**
+    /*
      * Numeric accessor that can be called when the current
      * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
      * it can be expressed as a value of Java short primitive type.
@@ -813,7 +813,7 @@ public abstract class JsonParser implements Closeable
         return (short) value;
     }
 
-    /**
+    /*
      * Numeric accessor that can be called when the current
      * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
      * it can be expressed as a value of Java int primitive type.
@@ -828,7 +828,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract int getIntValue() throws IOException;
 
-    /**
+    /*
      * Numeric accessor that can be called when the current
      * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
      * it can be expressed as a Java long primitive type.
@@ -843,7 +843,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract long getLongValue() throws IOException;
 
-    /**
+    /*
      * Numeric accessor that can be called when the current
      * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
      * it can not be used as a Java long primitive type due to its
@@ -854,7 +854,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract BigInteger getBigIntegerValue() throws IOException;
 
-    /**
+    /*
      * Numeric accessor that can be called when the current
      * token is of type {@link JsonToken#VALUE_NUMBER_FLOAT} and
      * it can be expressed as a Java float primitive type.
@@ -869,7 +869,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract float getFloatValue() throws IOException;
 
-    /**
+    /*
      * Numeric accessor that can be called when the current
      * token is of type {@link JsonToken#VALUE_NUMBER_FLOAT} and
      * it can be expressed as a Java double primitive type.
@@ -884,7 +884,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract double getDoubleValue() throws IOException;
 
-    /**
+    /*
      * Numeric accessor that can be called when the current
      * token is of type {@link JsonToken#VALUE_NUMBER_FLOAT} or
      * {@link JsonToken#VALUE_NUMBER_INT}. No under/overflow exceptions
@@ -898,7 +898,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
     
-    /**
+    /*
      * Convenience accessor that can be called when the current
      * token is {@link JsonToken#VALUE_TRUE} or
      * {@link JsonToken#VALUE_FALSE}.
@@ -915,7 +915,7 @@ public abstract class JsonParser implements Closeable
         throw new JsonParseException("Current token ("+t+") not of boolean type", getCurrentLocation());
     }
 
-    /**
+    /*
      * Accessor that can be called if (and only if) the current token
      * is {@link JsonToken#VALUE_EMBEDDED_OBJECT}. For other token types,
      * null is returned.
@@ -932,7 +932,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
 
-    /**
+    /*
      * Method that can be used to read (and consume -- results
      * may not be accessible using other methods after the call)
      * base64-encoded binary data
@@ -956,7 +956,7 @@ public abstract class JsonParser implements Closeable
      */
     public abstract byte[] getBinaryValue(Base64Variant bv) throws IOException;
 
-    /**
+    /*
      * Convenience alternative to {@link #getBinaryValue(Base64Variant)}
      * that defaults to using
      * {@link Base64Variants#getDefaultVariant} as the default encoding.
@@ -965,7 +965,7 @@ public abstract class JsonParser implements Closeable
         return getBinaryValue(Base64Variants.getDefaultVariant());
     }
 
-    /**
+    /*
      * Method that can be used as an alternative to {@link #getBigIntegerValue()},
      * especially when value can be large. The main difference (beyond method
      * of returning content using {@link OutputStream} instead of as byte array)
@@ -983,7 +983,7 @@ public abstract class JsonParser implements Closeable
         return readBinaryValue(Base64Variants.getDefaultVariant(), out);
     }
 
-    /**
+    /*
      * Similar to {@link #readBinaryValue(OutputStream)} but allows explicitly
      * specifying base64 variant to use.
      * 
@@ -1005,7 +1005,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
     
-    /**
+    /*
      * Method that will try to convert value of current token to a
      * <b>int</b>.
      * Numbers are coerced using default Java rules; booleans convert to 0 (false)
@@ -1020,7 +1020,7 @@ public abstract class JsonParser implements Closeable
         return getValueAsInt(0);
     }
     
-    /**
+    /*
      * Method that will try to convert value of current token to a
      * <b>int</b>.
      * Numbers are coerced using default Java rules; booleans convert to 0 (false)
@@ -1033,7 +1033,7 @@ public abstract class JsonParser implements Closeable
      */
     public int getValueAsInt(int def) throws IOException { return def; }
 
-    /**
+    /*
      * Method that will try to convert value of current token to a
      * <b>long</b>.
      * Numbers are coerced using default Java rules; booleans convert to 0 (false)
@@ -1048,7 +1048,7 @@ public abstract class JsonParser implements Closeable
         return getValueAsLong(0);
     }
     
-    /**
+    /*
      * Method that will try to convert value of current token to a
      * <b>long</b>.
      * Numbers are coerced using default Java rules; booleans convert to 0 (false)
@@ -1063,7 +1063,7 @@ public abstract class JsonParser implements Closeable
         return def;
     }
     
-    /**
+    /*
      * Method that will try to convert value of current token to a Java
      * <b>double</b>.
      * Numbers are coerced using default Java rules; booleans convert to 0.0 (false)
@@ -1078,7 +1078,7 @@ public abstract class JsonParser implements Closeable
         return getValueAsDouble(0.0);
     }
     
-    /**
+    /*
      * Method that will try to convert value of current token to a
      * Java <b>double</b>.
      * Numbers are coerced using default Java rules; booleans convert to 0.0 (false)
@@ -1093,7 +1093,7 @@ public abstract class JsonParser implements Closeable
         return def;
     }
 
-    /**
+    /*
      * Method that will try to convert value of current token to a
      * <b>boolean</b>.
      * JSON booleans map naturally; integer numbers other than 0 map to true, and
@@ -1108,7 +1108,7 @@ public abstract class JsonParser implements Closeable
         return getValueAsBoolean(false);
     }
 
-    /**
+    /*
      * Method that will try to convert value of current token to a
      * <b>boolean</b>.
      * JSON booleans map naturally; integer numbers other than 0 map to true, and
@@ -1123,7 +1123,7 @@ public abstract class JsonParser implements Closeable
         return def;
     }
 
-    /**
+    /*
      * Method that will try to convert value of current token to a
      * {@link java.lang.String}.
      * JSON Strings map naturally; scalar values get converted to
@@ -1138,7 +1138,7 @@ public abstract class JsonParser implements Closeable
         return getValueAsString(null);
     }
     
-    /**
+    /*
      * Method that will try to convert value of current token to a
      * {@link java.lang.String}.
      * JSON Strings map naturally; scalar values get converted to
@@ -1157,7 +1157,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
 
-    /**
+    /*
      * Introspection method that may be called to see if the underlying
      * data format supports some kind of Object Ids natively (many do not;
      * for example, JSON doesn't).
@@ -1171,7 +1171,7 @@ public abstract class JsonParser implements Closeable
      */
     public boolean canReadObjectId() { return false; }
 
-    /**
+    /*
      * Introspection method that may be called to see if the underlying
      * data format supports some kind of Type Ids natively (many do not;
      * for example, JSON doesn't).
@@ -1185,7 +1185,7 @@ public abstract class JsonParser implements Closeable
      */
     public boolean canReadTypeId() { return false; }
 
-    /**
+    /*
      * Method that can be called to check whether current token
      * (one that was just read) has an associated Object id, and if
      * so, return it.
@@ -1200,7 +1200,7 @@ public abstract class JsonParser implements Closeable
      */
     public Object getObjectId() throws IOException { return null; }
 
-    /**
+    /*
      * Method that can be called to check whether current token
      * (one that was just read) has an associated type id, and if
      * so, return it.
@@ -1221,7 +1221,7 @@ public abstract class JsonParser implements Closeable
     /**********************************************************
      */
 
-    /**
+    /*
      * Helper method for constructing {@link JsonParseException}s
      * based on current state of the parser
      */
@@ -1229,7 +1229,7 @@ public abstract class JsonParser implements Closeable
         return new JsonParseException(msg, getCurrentLocation());
     }
 
-    /**
+    /*
      * Helper method to call for operations that are not supported by
      * parser implementation.
      *

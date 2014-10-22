@@ -122,7 +122,7 @@ public final class TextBuffer
         _allocator = allocator;
     }
 
-    /**
+    /*
      * Method called to indicate that the underlying buffers should now
      * be recycled if they haven't yet been recycled. Although caller
      * can still use this text buffer, it is not advisable to call this
@@ -147,7 +147,7 @@ public final class TextBuffer
         }
     }
 
-    /**
+    /*
      * Method called to clear out any content text buffer may have, and
      * initializes buffer to use non-shared data.
      */
@@ -167,7 +167,7 @@ public final class TextBuffer
         }
     }
 
-    /**
+    /*
      * Method called to initialize the buffer with a shared copy of data;
      * this means that buffer will just have pointers to actual data. It
      * also means that if anything is to be appended to the buffer, it
@@ -225,7 +225,7 @@ public final class TextBuffer
         
     }
     
-    /**
+    /*
      * Helper method used to find a buffer to use, ideally one
      * recycled earlier.
      */
@@ -257,7 +257,7 @@ public final class TextBuffer
     /**********************************************************
      */
 
-    /**
+    /*
      * @return Number of characters currently stored by this collector
      */
     public int size() {
@@ -282,7 +282,7 @@ public final class TextBuffer
         return (_inputStart >= 0) ? _inputStart : 0;
     }
 
-    /**
+    /*
      * Method that can be used to check whether textual contents can
      * be efficiently accessed using {@link #getTextBuffer}.
      */
@@ -362,7 +362,7 @@ public final class TextBuffer
         return result;
     }
 
-    /**
+    /*
      * Convenience method for converting contents of the buffer
      * into a {@link BigDecimal}.
      */
@@ -384,7 +384,7 @@ public final class TextBuffer
         return NumberInput.parseBigDecimal(contentsAsArray());
     }
 
-    /**
+    /*
      * Convenience method for converting contents of the buffer
      * into a Double value.
      */
@@ -398,7 +398,7 @@ public final class TextBuffer
     /**********************************************************
      */
 
-    /**
+    /*
      * Method called to make sure that buffer is not using shared input
      * buffer; if it is, it will copy such contents to private buffer.
      */
@@ -572,7 +572,7 @@ public final class TextBuffer
         return curr;
     }
 
-    /**
+    /*
      * Method called to expand size of the current segment, to
      * accommodate for more contiguous content. Usually only
      * used when parsing tokens like names if even then.
@@ -587,7 +587,7 @@ public final class TextBuffer
         return (_currentSegment = Arrays.copyOf(curr, newLen));
     }
 
-    /**
+    /*
      * Method called to expand size of the current segment, to
      * accommodate for more contiguous content. Usually only
      * used when parsing tokens like names if even then.
@@ -609,7 +609,7 @@ public final class TextBuffer
     /**********************************************************
      */
 
-    /**
+    /*
      * Note: calling this method may not be as efficient as calling
      * {@link #contentsAsString}, since it's not guaranteed that resulting
      * String is cached.
@@ -622,7 +622,7 @@ public final class TextBuffer
     /**********************************************************
      */
 
-    /**
+    /*
      * Method called if/when we need to append content when we have been
      * initialized to use shared buffer.
      */
@@ -647,7 +647,7 @@ public final class TextBuffer
         _currentSize = sharedLen;
     }
 
-    /**
+    /*
      * Method called when current segment is full, to allocate new
      * segment.
      */

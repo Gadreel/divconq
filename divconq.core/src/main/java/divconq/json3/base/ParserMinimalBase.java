@@ -131,7 +131,7 @@ public abstract class ParserMinimalBase extends JsonParser
         }
     }
 
-    /**
+    /*
      * Method sub-classes need to implement
      */
     protected abstract void _handleEOF() throws JsonParseException;
@@ -336,7 +336,7 @@ public abstract class ParserMinimalBase extends JsonParser
     /**********************************************************
      */
 
-    /**
+    /*
      * Helper method that can be used for base64 decoding in cases where
      * encoded content has already been read as a String.
      */
@@ -350,7 +350,7 @@ public abstract class ParserMinimalBase extends JsonParser
         }
     }
 
-    /**
+    /*
      * @param bindex Relative index within base64 character unit; between 0
      *   and 3 (as unit has exactly 4 characters)
      *   
@@ -377,7 +377,7 @@ public abstract class ParserMinimalBase extends JsonParser
         throw _constructError(base);
     }
 
-    /**
+    /*
      *   
      * @deprecated in 2.2.3; should migrate away
      */
@@ -392,7 +392,7 @@ public abstract class ParserMinimalBase extends JsonParser
     /**********************************************************
      */
     
-    /**
+    /*
      * Helper method used to determine whether we are currently pointing to
      * a String value of "null" (NOT a null token); and, if so, that parser
      * is to recognize and return it similar to if it was real null token.
@@ -441,7 +441,7 @@ public abstract class ParserMinimalBase extends JsonParser
         _reportError(msg);
     }
 
-    /**
+    /*
      * Method called to report a problem with unquoted control character.
      * Note: starting with version 1.4, it is possible to suppress
      * exception by enabling {@link Feature#ALLOW_UNQUOTED_CONTROL_CHARS}.

@@ -53,7 +53,7 @@ public class JsonProcessingException extends java.io.IOException
     /**********************************************************
      */
 
-    /**
+    /*
      * Method that allows accessing the original "message" argument,
      * without additional decorations (like location information)
      * that overridden {@link #getMessage} adds.
@@ -68,7 +68,7 @@ public class JsonProcessingException extends java.io.IOException
     /**********************************************************
      */
     
-    /**
+    /*
      * Accessor that sub-classes can override to append additional
      * information right after the main message, but before
      * source location information.
@@ -81,7 +81,7 @@ public class JsonProcessingException extends java.io.IOException
     /**********************************************************
      */
     
-    /**
+    /*
      * Default method overridden so that we can add location information
      */
     @Override public String getMessage() {

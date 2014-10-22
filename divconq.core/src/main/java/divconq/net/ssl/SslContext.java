@@ -52,7 +52,7 @@ import java.util.List;
  */
 public abstract class SslContext {
 
-    /**
+    /*
      * Returns the default server-side implementation provider currently in use.
      *
      * @return {@link SslProvider#OPENSSL} if OpenSSL is available. {@link SslProvider#JDK} otherwise.
@@ -61,7 +61,7 @@ public abstract class SslContext {
         return SslProvider.JDK;
     }
 
-    /**
+    /*
      * Returns the default client-side implementation provider currently in use.
      *
      * @return {@link SslProvider#JDK}, because it is the only implementation at the moment
@@ -70,7 +70,7 @@ public abstract class SslContext {
         return SslProvider.JDK;
     }
 
-    /**
+    /*
      * Creates a new server-side {@link SslContext}.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format
@@ -81,7 +81,7 @@ public abstract class SslContext {
         return newServerContext(null, certChainFile, keyFile, null, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new server-side {@link SslContext}.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format
@@ -95,7 +95,7 @@ public abstract class SslContext {
         return newServerContext(null, certChainFile, keyFile, keyPassword, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new server-side {@link SslContext}.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format
@@ -121,7 +121,7 @@ public abstract class SslContext {
                 ciphers, nextProtocols, sessionCacheSize, sessionTimeout);
     }
 
-    /**
+    /*
      * Creates a new server-side {@link SslContext}.
      *
      * @param provider the {@link SslContext} implementation to use.
@@ -135,7 +135,7 @@ public abstract class SslContext {
         return newServerContext(provider, certChainFile, keyFile, null, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new server-side {@link SslContext}.
      *
      * @param provider the {@link SslContext} implementation to use.
@@ -151,7 +151,7 @@ public abstract class SslContext {
         return newServerContext(provider, certChainFile, keyFile, keyPassword, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new server-side {@link SslContext}.
      *
      * @param provider the {@link SslContext} implementation to use.
@@ -190,7 +190,7 @@ public abstract class SslContext {
         }
     }
 
-    /**
+    /*
      * Creates a new client-side {@link SslContext}.
      *
      * @return a new client-side {@link SslContext}
@@ -199,7 +199,7 @@ public abstract class SslContext {
         return newClientContext(null, null, null, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new client-side {@link SslContext}.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format
@@ -210,7 +210,7 @@ public abstract class SslContext {
         return newClientContext(null, certChainFile, null, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new client-side {@link SslContext}.
      *
      * @param trustManagerFactory the {@link TrustManagerFactory} that provides the {@link TrustManager}s
@@ -223,7 +223,7 @@ public abstract class SslContext {
         return newClientContext(null, null, trustManagerFactory, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new client-side {@link SslContext}.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format.
@@ -239,7 +239,7 @@ public abstract class SslContext {
         return newClientContext(null, certChainFile, trustManagerFactory, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new client-side {@link SslContext}.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format.
@@ -267,7 +267,7 @@ public abstract class SslContext {
                 ciphers, nextProtocols, sessionCacheSize, sessionTimeout);
     }
 
-    /**
+    /*
      * Creates a new client-side {@link SslContext}.
      *
      * @param provider the {@link SslContext} implementation to use.
@@ -279,7 +279,7 @@ public abstract class SslContext {
         return newClientContext(provider, null, null, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new client-side {@link SslContext}.
      *
      * @param provider the {@link SslContext} implementation to use.
@@ -293,7 +293,7 @@ public abstract class SslContext {
         return newClientContext(provider, certChainFile, null, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new client-side {@link SslContext}.
      *
      * @param provider the {@link SslContext} implementation to use.
@@ -309,7 +309,7 @@ public abstract class SslContext {
         return newClientContext(provider, null, trustManagerFactory, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new client-side {@link SslContext}.
      *
      * @param provider the {@link SslContext} implementation to use.
@@ -327,7 +327,7 @@ public abstract class SslContext {
         return newClientContext(provider, certChainFile, trustManagerFactory, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new client-side {@link SslContext}.
      *
      * @param provider the {@link SslContext} implementation to use.
@@ -365,34 +365,34 @@ public abstract class SslContext {
 
     SslContext() { }
 
-    /**
+    /*
      * Returns {@code true} if and only if this context is for server-side.
      */
     public final boolean isServer() {
         return !isClient();
     }
 
-    /**
+    /*
      * Returns the {@code true} if and only if this context is for client-side.
      */
     public abstract boolean isClient();
 
-    /**
+    /*
      * Returns the list of enabled cipher suites, in the order of preference.
      */
     public abstract List<String> cipherSuites();
 
-    /**
+    /*
      * Returns the size of the cache used for storing SSL session objects.
      */
     public abstract long sessionCacheSize();
 
-    /**
+    /*
      * Returns the timeout for the cached SSL session objects, in seconds.
      */
     public abstract long sessionTimeout();
 
-    /**
+    /*
      * Returns the list of application layer protocols for the TLS NPN/ALPN extension, in the order of preference.
      *
      * @return the list of application layer protocols.
@@ -400,14 +400,14 @@ public abstract class SslContext {
      */
     public abstract List<String> nextProtocols();
 
-    /**
+    /*
      * Creates a new {@link SSLEngine}.
      *
      * @return a new {@link SSLEngine}
      */
     public abstract SSLEngine newEngine(ByteBufAllocator alloc);
 
-    /**
+    /*
      * Creates a new {@link SSLEngine} using advisory peer information.
      *
      * @param peerHost the non-authoritative name of the host
@@ -417,7 +417,7 @@ public abstract class SslContext {
      */
     public abstract SSLEngine newEngine(ByteBufAllocator alloc, String peerHost, int peerPort);
 
-    /**
+    /*
      * Creates a new {@link SslHandler}.
      *
      * @return a new {@link SslHandler}
@@ -426,7 +426,7 @@ public abstract class SslContext {
         return newHandler(newEngine(alloc));
     }
 
-    /**
+    /*
      * Creates a new {@link SslHandler} with advisory peer information.
      *
      * @param peerHost the non-authoritative name of the host

@@ -54,7 +54,7 @@ public class BufferRecycler
     /**********************************************************
      */
     
-    /**
+    /*
      * Default constructor used for creating instances of this default
      * implementation.
      */
@@ -62,7 +62,7 @@ public class BufferRecycler
         this(4, 4);
     }
 
-    /**
+    /*
      * Alternate constructor to be used by sub-classes, to allow customization
      * of number of low-level buffers in use.
      * 
@@ -79,7 +79,7 @@ public class BufferRecycler
     /**********************************************************
      */
     
-    /**
+    /*
      * @param ix One of <code>READ_IO_BUFFER</code> constants.
      */
     public final byte[] allocByteBuffer(int ix) {

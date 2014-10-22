@@ -12,7 +12,7 @@ public final class JsonReadContext extends JsonStreamContext
 {
     // // // Configuration
 
-    /**
+    /*
      * Parent context for this context; null for root context.
      */
     protected final JsonReadContext _parent;
@@ -109,7 +109,8 @@ public final class JsonReadContext extends JsonStreamContext
     /**********************************************************
      */
 
-    /**
+    /*
+     * @param srcRef source object
      * @return Location pointing to the point where the context
      *   start marker was found
      */
@@ -144,7 +145,7 @@ public final class JsonReadContext extends JsonStreamContext
     /**********************************************************
      */
 
-    /**
+    /*
      * Overridden to provide developer readable "JsonPath" representation
      * of the context.
      */

@@ -110,9 +110,6 @@ public class HyperSession extends ApiSession {
         return or;
     }
 	
-	/**
-	 * 
-	 */
 	public Channel allocateHttpChannel(final ChannelHandler handler, OperationResult or) {
 		final AtomicReference<Future<Channel>> sslready = new AtomicReference<>();
 		

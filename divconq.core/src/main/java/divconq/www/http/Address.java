@@ -44,16 +44,14 @@ import divconq.www.util.KeyMap;
  * uniform resource identifier syntax is represented in RFC 2616 
  * section 3.2.2 for the HTTP protocol, this allows similar URI's
  * for example ftp, http, https, tftp. The syntax is
- * <code><pre>
- *
+ * 
  *    URI = [scheme "://"] host [ ":" port ] [ path [ "?" query ]]
  *
- * </pre></code>
  * This interface represents the host, port, path and query part
  * of the uniform resource identifier. The parameters are also 
  * represented by the URI. The parameters in a URI consist of name 
  * and value pairs in the path segment of the URI.
- * <p>
+ * 
  * This will normalize the path part of the uniform resource
  * identifier. A normalized path is one that contains no back
  * references like "./" and "../". The normalized path will not

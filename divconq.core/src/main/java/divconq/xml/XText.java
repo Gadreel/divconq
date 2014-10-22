@@ -69,7 +69,7 @@ public class XText extends XNode implements Cloneable {
 		this.cdata = false;
 	}
 	
-	/**
+	/*
 	 * Sets the value of this node
 	 * 
 	 * @param value the value to store 

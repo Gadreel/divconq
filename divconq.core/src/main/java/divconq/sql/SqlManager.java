@@ -263,7 +263,7 @@ public class SqlManager {
 			return null;
 		}
 		
-		/**
+		/*
 		 * We should always talk in UTC...
 		 *  
 		 * @return

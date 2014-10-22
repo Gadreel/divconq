@@ -114,7 +114,7 @@ public class MonthWindow {
 		}
 	}
 	
-	/**
+	/*
 	 * search to see if there are any minutes open for this date after or at the current minute
 	 *  
 	 * @param si

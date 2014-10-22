@@ -33,8 +33,6 @@ import java.nio.charset.Charset;
 
 import divconq.lang.OperationResult;
 
-/**
- */
 public class UploadStream extends AbstractHttpData implements FileUpload {
     public static final String CONTENT_DISPOSITION = "Content-Disposition";
     public static final String NAME = "name";

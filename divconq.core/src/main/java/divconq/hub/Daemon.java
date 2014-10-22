@@ -46,11 +46,11 @@ public class Daemon implements org.apache.commons.daemon.Daemon {
 	}
 	
 	public static void startService(String[] args) {
-		String deployment = (args.length > 0) ? args[0] : "default";
-		String squadid = (args.length > 1) ? args[1] : "default";
-		String hubid = (args.length > 2) ? args[2] : "00100";
+		String deployment = (args.length > 0) ? args[0] : null;
+		String squadid = (args.length > 1) ? args[1] : null;
+		String hubid = (args.length > 2) ? args[2] : null;
 		
-		HubResources resources = new HubResources(deployment, hubid, squadid);
+		HubResources resources = new HubResources(deployment, squadid, null, hubid);
 
 		resources.setDebugLevel(DebugLevel.Info);
 		OperationResult or = resources.init();

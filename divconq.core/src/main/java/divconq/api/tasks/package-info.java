@@ -4,8 +4,8 @@
  * 
  * TODO
  * 
- * @see ncc.uploader.Main Class that processes Uploader Web service requests. 
- * @see ncc.uploader.AuthService Class that processes admin login requests. 
+ * see ncc.uploader.Main Class that processes Uploader Web service requests. 
+ * see ncc.uploader.AuthService Class that processes admin login requests. 
  * 
  * 
  * How uploads work:

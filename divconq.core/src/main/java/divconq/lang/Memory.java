@@ -417,6 +417,8 @@ public class Memory implements IReader {
      * 
      * @param s stream to read from
      * @return number of bytes written
+     * 
+     * @throws IOException if stream is bad
      */
     public int copyFromStream(InputStream s) throws IOException {
     	return this.copyFromStream(s, Integer.MAX_VALUE);  // read any amount
@@ -428,6 +430,8 @@ public class Memory implements IReader {
      * @param s stream to read from
      * @param count number of bytes to read from stream
      * @return number of bytes written
+     * 
+     * @throws IOException if stream is bad
      */
     public int copyFromStream(InputStream s, int count) throws IOException {
         if ((s == null) || (count <= 0)) 

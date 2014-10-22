@@ -61,7 +61,7 @@ public final class ByteArrayBuilder extends OutputStream
         }
     }
 
-    /**
+    /*
      * Clean up method to call to release all buffers this object may be
      * using. After calling the method, no other accessors can be used (and
      * attempt to do so may result in an exception)
@@ -103,7 +103,7 @@ public final class ByteArrayBuilder extends OutputStream
         }
     }
 
-    /**
+    /*
      * Method called when results are finalized and we can get the
      * full aggregated result buffer to return to the caller
      */
@@ -141,7 +141,7 @@ public final class ByteArrayBuilder extends OutputStream
     /**********************************************************
      */
 
-    /**
+    /*
      * Method called when starting "manual" output: will clear out
      * current state and return the first segment buffer to fill
      */
@@ -150,7 +150,7 @@ public final class ByteArrayBuilder extends OutputStream
         return _currBlock;
     }
 
-    /**
+    /*
      * Method called when the current segment buffer is full; will
      * append to current contents, allocate a new segment buffer
      * and return it
@@ -160,7 +160,7 @@ public final class ByteArrayBuilder extends OutputStream
         return _currBlock;
     }
 
-    /**
+    /*
      * Method that will complete "manual" output process, coalesce
      * content (if necessary) and return results as a contiguous buffer.
      * 

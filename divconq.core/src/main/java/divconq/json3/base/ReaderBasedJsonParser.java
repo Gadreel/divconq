@@ -11,7 +11,7 @@ import divconq.json3.util.TextBuffer;
 import static divconq.json3.JsonTokenId.*;
 
 /**
- * This is a concrete implementation of {@link JsonParser}, which is
+ * This is a concrete implementation of JsonParser, which is
  * based on a {@link java.io.Reader} to handle low-level character
  * conversion tasks.
  */
@@ -60,7 +60,7 @@ public class ReaderBasedJsonParser extends ParserBase
     /**********************************************************
      */
 
-    /**
+    /*
      * Method called when input comes as a {@link java.io.Reader}, and buffer allocation
      * can be done using default mechanism.
      */
@@ -138,7 +138,7 @@ public class ReaderBasedJsonParser extends ParserBase
     /**********************************************************
      */
     
-    /**
+    /*
      * Method for accessing textual representation of the current event;
      * if no current event (before first call to {@link #nextToken}, or
      * after encountering end-of-input), returns null.
@@ -469,7 +469,7 @@ public class ReaderBasedJsonParser extends ParserBase
    /**********************************************************
     */
 
-    /**
+    /*
      * @return Next token from the stream, if any found, or null
      *   to indicate end-of-input
      */
@@ -742,7 +742,7 @@ public class ReaderBasedJsonParser extends ParserBase
     /**********************************************************
      */
 
-    /**
+    /*
      * Initial parsing method for number values. It needs to be able
      * to parse enough input to be able to determine whether the
      * value is to be considered a simple integer value, or a more
@@ -922,7 +922,7 @@ public class ReaderBasedJsonParser extends ParserBase
         return resetInt(true, intLen);
     }
 
-    /**
+    /*
      * Method called to parse a number, when the primary parse
      * method has failed to parse it, due to it being split on
      * buffer boundary. As a result code is very similar, except
@@ -1052,7 +1052,7 @@ public class ReaderBasedJsonParser extends ParserBase
         return reset(neg, intLen, fractLen, expLen);
     }
 
-    /**
+    /*
      * Method called when we have seen one zero, and want to ensure
      * it is not followed by another
      */
@@ -1099,7 +1099,7 @@ public class ReaderBasedJsonParser extends ParserBase
         return ch;
     }
 
-    /**
+    /*
      * Method called if expected numeric value (due to leading sign) does not
      * look like a number
      */
@@ -1126,7 +1126,7 @@ public class ReaderBasedJsonParser extends ParserBase
         return null;
     }
 
-    /**
+    /*
      * Method called to ensure that a root-value is followed by a space
      * token.
      *<p>
@@ -1238,7 +1238,7 @@ public class ReaderBasedJsonParser extends ParserBase
         }
     }
 
-    /**
+    /*
      * Method called when we see non-white space character other
      * than double quote, when expecting a field name.
      * In standard mode will just throw an expection; but
@@ -1323,7 +1323,7 @@ public class ReaderBasedJsonParser extends ParserBase
         return _parseName2(start, '\'');
     }
 
-    /**
+    /*
      * Method for handling cases where first non-space character
      * of an expected value token is not legal for standard JSON content.
      */
@@ -1537,7 +1537,7 @@ public class ReaderBasedJsonParser extends ParserBase
         _textBuffer.setCurrentLength(outPtr);
     }
 
-    /**
+    /*
      * Method called to skim through rest of unparsed String value,
      * if it is not needed. This can be done bit faster if contents
      * need not be stored for future access.
@@ -1591,7 +1591,7 @@ public class ReaderBasedJsonParser extends ParserBase
     /**********************************************************
      */
     
-    /**
+    /*
      * We actually need to check the character value here
      * (to see if we have \n following \r).
      */
@@ -2019,7 +2019,7 @@ public class ReaderBasedJsonParser extends ParserBase
         _matchToken("null", 1);
     }
 
-    /**
+    /*
      * Helper method for checking whether input matches expected token
      */
     protected final void _matchToken(String matchStr, int i) throws IOException
@@ -2061,7 +2061,7 @@ public class ReaderBasedJsonParser extends ParserBase
     /**********************************************************
      */
 
-    /**
+    /*
      * Efficient handling for incremental parsing of base64-encoded
      * textual content.
      */

@@ -267,13 +267,23 @@ public class HubResources {
 	 * Manage the resources for this Hub by indicating which hub this is and whether to run 
 	 * in developer mode.  See class, HubId and DevMode comments for details.
 	 * 
+	 * @param deployment project name for the servers (one or more squads)
+	 * @param squad the group of servers that forms a local operating group (one or more teams)
+	 * @param team the team of servers within the squad (one or more hubs)
 	 * @param hubid Hub Id
-	 * @param devmode Development Mode
 	 */
-	public HubResources(String deployment, String hubid, String squad) {
-		this.deployment = deployment;
-		this.setHubId(hubid);
-		this.squad = squad;
+	public HubResources(String deployment, String squad, String team, String hubid) {
+		if (StringUtil.isNotEmpty(deployment))
+			this.deployment = deployment;
+		
+		if (StringUtil.isNotEmpty(squad))
+			this.squad = squad;
+		
+		if (StringUtil.isNotEmpty(team))
+			this.team = team;
+		
+		if (StringUtil.isNotEmpty(hubid))
+			this.setHubId(hubid);
 	}
 	
 	/**
@@ -438,7 +448,7 @@ public class HubResources {
 	 * Get a reference to a package's resource file for this Project.
 	 *  
 	 * @param pkg name of the package the resource resides in
-	 * @param filename name of the file, path relative to the pkgresource/[pkg name]/ folder
+	 * @param path of the file
 	 * @return File reference if found, if not error messages in FuncResult
 	 */
 	public File getPackageResource(String pkg, CommonPath path) {		// TODO support ZIP packagse

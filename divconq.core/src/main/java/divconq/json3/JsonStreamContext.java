@@ -48,35 +48,45 @@ public abstract class JsonStreamContext
     /**********************************************************
      */
 
-    /**
+    /*
      * Accessor for finding parent context of this context; will
      * return null for root context.
+     * 
+     * @return	parent context
      */
     public abstract JsonStreamContext getParent();
 
-    /**
+    /*
      * Method that returns true if this context is an Array context;
      * that is, content is being read from or written to a Json Array.
+     * 
+     * @return true if were are in the process of filling in an array
      */
     public final boolean inArray() { return _type == TYPE_ARRAY; }
 
-    /**
+    /*
      * Method that returns true if this context is a Root context;
      * that is, content is being read from or written to without
      * enclosing array or object structure.
+     * 
+     * @return true if this context is a Root context
      */
     public final boolean inRoot() { return _type == TYPE_ROOT; }
 
-    /**
+    /*
      * Method that returns true if this context is an Object context;
      * that is, content is being read from or written to a Json Object.
+     * 
+     * @return true if this context is an Object context
      */
     public final boolean inObject() { return _type == TYPE_OBJECT; }
 
-    /**
+    /*
      * Method for accessing simple type description of current context;
      * either ROOT (for root-level values), OBJECT (for field names and
      * values of JSON Objects) or ARRAY (for values of JSON Arrays)
+     * 
+     * @return type of the current parsing context
      */
     public final String getTypeDesc() {
         switch (_type) {
@@ -87,20 +97,22 @@ public abstract class JsonStreamContext
         return "?";
     }
 
-    /**
+    /*
      * @return Number of entries that are complete and started.
      */
     public final int getEntryCount() { return _index + 1; }
 
-    /**
+    /*
      * @return Index of the currently processed entry, if any
      */
     public final int getCurrentIndex() { return (_index < 0) ? 0 : _index; }
 
-    /**
+    /*
      * Method for accessing name associated with the current location.
      * Non-null for <code>FIELD_NAME</code> and value events that directly
      * follow field names; null for root level and array values.
+     * 
+     * @return field name when building objects
      */
     public abstract String getCurrentName();
 }

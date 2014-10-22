@@ -13,7 +13,7 @@ public abstract class InputDecorator
 {
     private static final long serialVersionUID = 1L;
     
-    /**
+    /*
      * Method called by {@link com.fasterxml.jackson.core.JsonFactory} instance when
      * creating parser given an {@link InputStream}, when this decorator
      * has been registered.
@@ -30,7 +30,7 @@ public abstract class InputDecorator
     public abstract InputStream decorate(IOContext ctxt, InputStream in)
         throws IOException;
 
-    /**
+    /*
      * Method called by {@link com.fasterxml.jackson.core.JsonFactory} instance when
      * creating parser on given "raw" byte source.
      * Method can either construct a {@link InputStream} for reading; or return
@@ -50,7 +50,7 @@ public abstract class InputDecorator
     public abstract InputStream decorate(IOContext ctxt, byte[] src, int offset, int length)
         throws IOException;
     
-    /**
+    /*
      * Method called by {@link com.fasterxml.jackson.core.JsonFactory} instance when
      * creating parser given an {@link Reader}, when this decorator
      * has been registered.

@@ -755,7 +755,7 @@ public class StringUtil {
 			return randomChars(12, "ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789").toString();
 		}
 		
-		/**
+		/*
 		 * generate a user friendly security code - for user confirmation, password resets and the like
 		 * 
 		 * @return security code
@@ -850,7 +850,7 @@ public class StringUtil {
 			return val;
 		}	
 
-	    /**
+	    /*
 	     */
 	    public static String join(String[] strings, String separator) {
 	        if ((strings == null) || (strings.length == 0)) 
@@ -899,7 +899,7 @@ public class StringUtil {
 	        return buf.toString();
 	    }
 	    
-	    /**
+	    /*
 	     */
 	    public static String join(Iterator<String> strings, String separator) {
 	        if (strings == null) 
@@ -931,7 +931,7 @@ public class StringUtil {
 	        return buf.toString();
 	    }
 
-	    /**
+	    /*
 	     */
 	    public static String join(Iterable<String> strings, String separator) {
 	    	if (strings == null)

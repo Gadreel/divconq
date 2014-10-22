@@ -181,7 +181,7 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 	/**
 	 * Adds or replaces a list of fields within the record.
 	 * 
-	 * @param fields
+	 * @param fields to add or replace
 	 * @return a log of messages about success of the call
 	 */
 	public OperationResult setField(FieldStruct... fields) {
@@ -276,8 +276,8 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 	
 	/**
 	 * 
-	 * @param name of the field desired
-	 * @return the struct for that field
+	 * @param from original name of the field 
+	 * @param to new name for field
 	 */
 	public void renameField(String from, String to) {
 		FieldStruct f = this.fields.remove(from);

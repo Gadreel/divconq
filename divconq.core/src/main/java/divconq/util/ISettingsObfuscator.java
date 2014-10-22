@@ -25,13 +25,13 @@ import divconq.xml.XElement;
  * Applications wanting higher protection will want to use their own home-made
  * settings obfuscator - after all DivConq is open source so anyone reading this
  * source code will know how to decrypt your settings.  Unless you roll your own
- * obsuscator.
+ * obfuscator.
  * 
  *  The way to support this is to make your own class implementing ISettingObfuscator.
  *  Place the qualified class name in the "TimerClass" attribute of the "Clock"
  *  element in the config file:
  *  
- *  	<Clock TimerClass="divconq.util.BasicSettingsObfuscator" ... />
+ *  	&lt;Clock TimerClass="divconq.util.BasicSettingsObfuscator" ... /&gt;
  *  
  *  If there is no TimerClass listed then the default - BasicSettingsObfuscator - is used.
  * 

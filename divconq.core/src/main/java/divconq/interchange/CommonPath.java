@@ -225,9 +225,9 @@ public class CommonPath implements IDataExposer {
     /**
      * If begin is 0 then we keep "absolute" 
      * 
-     * @param beginIndex
-     * @param length
-     * @return
+     * @param beginIndex starting path part
+     * @param length number of path parts
+     * @return the sub path
      */
     public CommonPath subpath(int beginIndex, int length) {
     	if ((this.pathparts == null) || (this.pathparts.length == 0)) 

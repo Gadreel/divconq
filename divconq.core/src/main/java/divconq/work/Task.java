@@ -487,7 +487,7 @@ public class Task {
 		return this.info.getFieldAsRecord("Extra");
 	}
 	
-	/**
+	/*
 	 * Timeout is when nothing happens for v minutes...see Overdue also
 	 * 
 	 * @param v
@@ -511,7 +511,7 @@ public class Task {
 		return (int) this.info.getFieldAsInteger("Timeout", 1)  * 60 * 1000; // convert to ms	
 	}
 	
-	/**
+	/*
 	 * Deadline is v minutes until the task must complete, see Timeout also
 	 * 
 	 * @param v

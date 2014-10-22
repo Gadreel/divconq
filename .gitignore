@@ -12,3 +12,5 @@ divconq.tasks/target
 divconq.tasks.api/target
 divconq.web/target
 
+divconq.core/pom.xml.releaseBackup
+divconq.core/release.properties

@@ -210,7 +210,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
     private final LazyChannelPromise handshakePromise = new LazyChannelPromise();
     private final LazyChannelPromise sslCloseFuture = new LazyChannelPromise();
 
-    /**
+    /*
      * Set by wrap*() methods when something is produced.
      * {@link #channelReadComplete(ChannelHandlerContext)} will check this flag, clear it, and call ctx.flush().
      */
@@ -221,7 +221,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
     private volatile long handshakeTimeoutMillis = 10000;
     private volatile long closeNotifyTimeoutMillis = 3000;
 
-    /**
+    /*
      * Creates a new instance.
      *
      * @param engine  the {@link SSLEngine} this handler will use
@@ -230,7 +230,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         this(engine, false);
     }
 
-    /**
+    /*
      * Creates a new instance.
      *
      * @param engine    the {@link SSLEngine} this handler will use
@@ -241,7 +241,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         this(engine, startTls, ImmediateExecutor.INSTANCE);
     }
 
-    /**
+    /*
      * @deprecated Use {@link #SslHandler(SSLEngine)} instead.
      */
     @Deprecated
@@ -249,7 +249,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         this(engine, false, delegatedTaskExecutor);
     }
 
-    /**
+    /*
      * @deprecated Use {@link #SslHandler(SSLEngine, boolean)} instead.
      */
     @Deprecated
@@ -309,21 +309,21 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         this.closeNotifyTimeoutMillis = closeNotifyTimeoutMillis;
     }
 
-    /**
+    /*
      * Returns the {@link SSLEngine} which is used by this handler.
      */
     public SSLEngine engine() {
         return engine;
     }
 
-    /**
+    /*
      * Returns a {@link Future} that will get notified once the handshake completes.
      */
     public Future<Channel> handshakeFuture() {
         return handshakePromise;
     }
 
-    /**
+    /*
      * Sends an SSL {@code close_notify} message to the specified channel and
      * destroys the underlying {@link SSLEngine}.
      */
@@ -331,7 +331,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         return close(ctx.newPromise());
     }
 
-    /**
+    /*
      * See {@link #close()}
      */
     public ChannelFuture close(final ChannelPromise future) {
@@ -354,7 +354,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         return future;
     }
 
-    /**
+    /*
      * Return the {@link ChannelFuture} that will get notified if the inbound of the {@link SSLEngine} will get closed.
      *
      * This method will return the same {@link ChannelFuture} all the time.
@@ -626,7 +626,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         }
     }
 
-    /**
+    /*
      * Checks if the given {@link Throwable} can be ignore and just "swallowed"
      *
      * When an ssl connection is closed a close_notify message is sent.
@@ -692,7 +692,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         return false;
     }
 
-    /**
+    /*
      * Returns {@code true} if the given {@link ByteBuf} is encrypted. Be aware that this method
      * will not increase the readerIndex of the given {@link ByteBuf}.
      *
@@ -711,7 +711,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         return getEncryptedPacketLength(buffer, buffer.readerIndex()) != -1;
     }
 
-    /**
+    /*
      * Return how much bytes can be read out of the encrypted data. Be aware that this method will not increase
      * the readerIndex of the given {@link ByteBuf}.
      *
@@ -879,14 +879,14 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         super.channelReadComplete(ctx);
     }
 
-    /**
+    /*
      * Calls {@link SSLEngine#unwrap(ByteBuffer, ByteBuffer)} with an empty buffer to handle handshakes, etc.
      */
     private void unwrapNonAppData(ChannelHandlerContext ctx) throws SSLException {
         unwrap(ctx, Unpooled.EMPTY_BUFFER.nioBuffer(), 0);
     }
 
-    /**
+    /*
      * Unwraps inbound SSL records.
      */
     private void unwrap(
@@ -1003,7 +1003,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         }
     }
 
-    /**
+    /*
      * Fetches all delegated tasks from the {@link SSLEngine} and runs them via the {@link #delegatedTaskExecutor}.
      * If the {@link #delegatedTaskExecutor} is {@link ImmediateExecutor}, just call {@link Runnable#run()} directly
      * instead of using {@link Executor#execute(Runnable)}.  Otherwise, run the tasks via
@@ -1066,7 +1066,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         }
     }
 
-    /**
+    /*
      * Works around some Android {@link SSLEngine} implementations that skip {@link HandshakeStatus#FINISHED} and
      * go straight into {@link HandshakeStatus#NOT_HANDSHAKING} when handshake is finished.
      *
@@ -1081,7 +1081,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         return false;
     }
 
-    /**
+    /*
      * Notify all the handshake futures about the successfully handshake
      */
     private void setHandshakeSuccess() {
@@ -1099,7 +1099,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         }
     }
 
-    /**
+    /*
      * Notify all the handshake futures about the failure during the handshake.
      */
     private void setHandshakeFailure(Throwable cause) {
@@ -1198,7 +1198,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         return handshakePromise;
     }
 
-    /**
+    /*
      * Issues a SSL handshake once connected when used in client-mode
      */
     @Override
@@ -1258,7 +1258,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         });
     }
 
-    /**
+    /*
      * Always prefer a direct buffer when it's pooled, so that we reduce the number of memory copies
      * in {@link OpenSslEngine}.
      */
@@ -1271,7 +1271,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         }
     }
 
-    /**
+    /*
      * Allocates an outbound network buffer for {@link SSLEngine#wrap(ByteBuffer, ByteBuffer)} which can encrypt
      * the specified amount of pending bytes.
      */

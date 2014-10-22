@@ -385,7 +385,7 @@ public abstract class ListParser<T> extends Parser {
       }
    }
    
-   /**
+   /*
     * This creates an value object using the range of characters 
     * that have been parsed as an item within the list of values. It
     * is up to the implementation to create a value to insert in to

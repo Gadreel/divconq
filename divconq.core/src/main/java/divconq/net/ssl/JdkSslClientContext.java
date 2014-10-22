@@ -40,14 +40,14 @@ public final class JdkSslClientContext extends JdkSslContext {
     private final SSLContext ctx;
     private final List<String> nextProtocols;
 
-    /**
+    /*
      * Creates a new instance.
      */
     public JdkSslClientContext() throws SSLException {
         this(null, null, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new instance.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format.
@@ -57,7 +57,7 @@ public final class JdkSslClientContext extends JdkSslContext {
         this(certChainFile, null);
     }
 
-    /**
+    /*
      * Creates a new instance.
      *
      * @param trustManagerFactory the {@link TrustManagerFactory} that provides the {@link TrustManager}s
@@ -68,7 +68,7 @@ public final class JdkSslClientContext extends JdkSslContext {
         this(null, trustManagerFactory);
     }
 
-    /**
+    /*
      * Creates a new instance.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format.
@@ -81,7 +81,7 @@ public final class JdkSslClientContext extends JdkSslContext {
         this(certChainFile, trustManagerFactory, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new instance.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format.

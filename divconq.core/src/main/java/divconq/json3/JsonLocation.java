@@ -54,7 +54,7 @@ public class JsonLocation
         _columnNr = columnNr;
     }
 
-    /**
+    /*
      * Reference to the original resource being read, if one available.
      * For example, when a parser has been constructed by passing
      * a {@link java.io.File} instance, this method would return
@@ -64,23 +64,23 @@ public class JsonLocation
      */
     public Object getSourceRef() { return _sourceRef; }
 
-    /**
+    /*
      * @return Line number of the location (1-based)
      */
     public int getLineNr() { return _lineNr; }
 
-    /**
+    /*
      * @return Column number of the location (1-based)
      */
     public int getColumnNr() { return _columnNr; }
 
-    /**
+    /*
      * @return Character offset within underlying stream, reader or writer,
      *   if available; -1 if not.
      */
     public long getCharOffset() { return _totalChars; }
 
-    /**
+    /*
      * @return Byte offset within underlying stream, reader or writer,
      *   if available; -1 if not.
      */

@@ -44,7 +44,7 @@ public class XmlParser {
 			COMMENT = 13, IGNORE = 14, PRE = 15, CDATA = 16,
 			OPEN_INSTRUCTION = 17;
 
-	/**
+	/*
 	 * Parses XML from a reader and returns a data structure containing the
 	 * parsed XML.
 	 * 

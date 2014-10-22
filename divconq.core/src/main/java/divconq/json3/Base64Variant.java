@@ -90,7 +90,7 @@ public final class Base64Variant
      */
     protected final transient char _paddingChar;
     
-    /**
+    /*
      * Maximum number of encoded base64 characters to output during encoding
      * before adding a linefeed, if line length is to be limited
      * ({@link java.lang.Integer#MAX_VALUE} if not limited).
@@ -136,7 +136,7 @@ public final class Base64Variant
         }
     }
 
-    /**
+    /*
      * "Copy constructor" that can be used when the base alphabet is identical
      * to one used by another variant except for the maximum line length
      * (and obviously, name).
@@ -146,7 +146,7 @@ public final class Base64Variant
         this(base, name, base._usesPadding, base._paddingChar, maxLineLength);
     }
 
-    /**
+    /*
      * "Copy constructor" that can be used when the base alphabet is identical
      * to one used by another variant, but other details (padding, maximum
      * line length) differ
@@ -172,7 +172,7 @@ public final class Base64Variant
     /**********************************************************
      */
 
-    /**
+    /*
      * Method used to "demote" deserialized instances back to 
      * canonical ones
      */
@@ -202,7 +202,7 @@ public final class Base64Variant
     /**********************************************************
      */
 
-    /**
+    /*
      * @return 6-bit decoded value, if valid character; 
      */
     public int decodeBase64Char(char c)
@@ -236,7 +236,7 @@ public final class Base64Variant
         return _base64ToAsciiC[value];
     }
 
-    /**
+    /*
      * Method that encodes given right-aligned (LSB) 24-bit value
      * into 4 base64 characters, stored in given result buffer.
      */
@@ -257,7 +257,7 @@ public final class Base64Variant
         sb.append(_base64ToAsciiC[b24 & 0x3F]);
     }
 
-    /**
+    /*
      * Method that outputs partial chunk (which only encodes one
      * or two bytes of data). Data given is still aligned same as if
      * it as full data; that is, missing data is at the "right end"
@@ -302,7 +302,7 @@ public final class Base64Variant
         return _base64ToAsciiB[value];
     }
 
-    /**
+    /*
      * Method that encodes given right-aligned (LSB) 24-bit value
      * into 4 base64 bytes (ascii), stored in given result buffer.
      */
@@ -315,7 +315,7 @@ public final class Base64Variant
         return ptr;
     }
 
-    /**
+    /*
      * Method that outputs partial chunk (which only encodes one
      * or two bytes of data). Data given is still aligned same as if
      * it as full data; that is, missing data is at the "right end"
@@ -347,7 +347,7 @@ public final class Base64Variant
     /**********************************************************
      */
     
-    /**
+    /*
      * Convenience method for converting given byte array as base64 encoded
      * String using this variant's settings.
      * Resulting value is "raw", that is, not enclosed in double-quotes.
@@ -359,7 +359,7 @@ public final class Base64Variant
         return encode(input, false);
     }
 
-    /**
+    /*
      * Convenience method for converting given byte array as base64 encoded String
      * using this variant's settings,
      * optionally enclosed in double-quotes.
@@ -416,7 +416,7 @@ public final class Base64Variant
         return sb.toString();
     }
 
-    /**
+    /*
      * Convenience method for decoding contents of a Base64-encoded String,
      * using this variant's settings.
      * 
@@ -433,7 +433,7 @@ public final class Base64Variant
         return b.toByteArray();
     }
 
-    /**
+    /*
      * Convenience method for decoding contents of a Base64-encoded String,
      * using this variant's settings
      * and appending decoded binary data using provided {@link ByteArrayBuilder}.
@@ -561,7 +561,7 @@ public final class Base64Variant
     /**********************************************************
      */
     
-    /**
+    /*
      * @param bindex Relative index within base64 character unit; between 0
      *   and 3 (as unit has exactly 4 characters)
      */

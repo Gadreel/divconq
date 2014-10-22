@@ -110,7 +110,7 @@ public class LocalSession extends ApiSession {
 			chan.abort();
 	}
 	
-	/**
+	/*
 	 * Upload and close the stream
 	 */
 	@Override
@@ -236,7 +236,7 @@ public class LocalSession extends ApiSession {
 		}
 	}
 
-	/**
+	/*
 	 * download and close the stream
 	 */
 	@Override

@@ -332,13 +332,13 @@ public class CompositeParser {
 			this.input = input;
 		}
 
-		/**
+		/* TODO wrong comments
 		 * Parses the XML and returns the root element.  Comments and PI
 		 * will be missing, this is a really basic and lightweight XML utility.
 		 * 
 		 * @return the root XML element 
 		 * @throws XMLParseException
-		 *             if an error occurs when parsing the XML
+		 *             if an error occurs when parsing the XML 
 		 * @throws IOException
 		 *             if an error occurs when reading from the input source
 		 */

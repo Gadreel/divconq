@@ -86,7 +86,7 @@ public class SerializedString
     @Override
     public final String getValue() { return _value; }
     
-    /**
+    /*
      * Returns length of the String as characters
      */
     @Override
@@ -102,7 +102,7 @@ public class SerializedString
         return result;
     }
 
-    /**
+    /*
      * Accessor for accessing value that has been quoted using JSON
      * quoting rules, and encoded using UTF-8 encoding.
      */
@@ -116,7 +116,7 @@ public class SerializedString
         return result;
     }
 
-    /**
+    /*
      * Accessor for accessing value as is (without JSON quoting)
      * encoded using UTF-8 encoding.
      */

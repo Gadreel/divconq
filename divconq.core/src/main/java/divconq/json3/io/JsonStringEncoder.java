@@ -67,7 +67,7 @@ public final class JsonStringEncoder
         _qbuf[3] = '0';
     }
     
-    /**
+    /*
      * Factory method for getting an instance; this is either recycled per-thread instance,
      * or a newly constructed one.
      */
@@ -88,7 +88,7 @@ public final class JsonStringEncoder
     /**********************************************************
      */
 
-    /**
+    /*
      * Method that will quote text contents using JSON standard quoting,
      * and return results as a character array
      */
@@ -148,7 +148,7 @@ public final class JsonStringEncoder
         return textBuffer.contentsAsArray();
     }
 
-    /**
+    /*
      * Will quote given JSON String value using standard quoting, encode
      * results as UTF-8, and return result as a byte array.
      */
@@ -244,7 +244,7 @@ public final class JsonStringEncoder
         return _bytes.completeAndCoalesce(outputPtr);
     }
     
-    /**
+    /*
      * Will encode given String as UTF-8 (without any quoting), return
      * resulting byte array.
      */

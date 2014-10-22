@@ -26,7 +26,7 @@ public class ByteBufferInputStream extends InputStream {
 	/**
 	 * be aware this resets the position to 0
 	 * 
-	 * @param buf
+	 * @param buf source for the stream
 	 */
 	public ByteBufferInputStream(ByteBuffer buf) {
 		buf.position(0);

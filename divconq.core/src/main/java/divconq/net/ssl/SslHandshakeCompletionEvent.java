@@ -26,14 +26,14 @@ public final class SslHandshakeCompletionEvent {
 
     private final Throwable cause;
 
-    /**
+    /*
      * Creates a new event that indicates a successful handshake.
      */
     private SslHandshakeCompletionEvent() {
         cause = null;
     }
 
-    /**
+    /*
      * Creates a new event that indicates an unsuccessful handshake.
      * Use {@link #SUCCESS} to indicate a successful handshake.
      */
@@ -44,14 +44,14 @@ public final class SslHandshakeCompletionEvent {
         this.cause = cause;
     }
 
-    /**
+    /*
      * Return {@code true} if the handshake was successful
      */
     public boolean isSuccess() {
         return cause == null;
     }
 
-    /**
+    /*
      * Return the {@link Throwable} if {@link #isSuccess()} returns {@code false}
      * and so the handshake failed.
      */

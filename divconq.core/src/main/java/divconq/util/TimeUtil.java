@@ -90,8 +90,8 @@ public class TimeUtil {
 	 * try to supply a time for a date, if it fails it may be because of DST and that time (hour) is skipped on that date.
 	 * So try again to supply a time +1 hour to see if it helps.
 	 * 
-	 * @param d date to set time into
-	 * @param t time to set to
+	 * @param dt date to set time into
+	 * @param clt time to set to
 	 * @return datetime with the supplied time (maybe +1 hour) or null
 	 */
 	static public DateTime withTime(DateTime dt, CoreLocalTime clt) {
@@ -342,7 +342,7 @@ public class TimeUtil {
 	}
 	
 	/**
-	 * Parse string to CoreLocalTime - a flexible format that allows hours > 23, useful for some settings.
+	 * Parse string to CoreLocalTime - a flexible format that allows hours &gt; 23, useful for some settings.
 	 * 
 	 * @param t string holding hours:minutes:seconds
 	 * @return time object

@@ -56,7 +56,7 @@ public class BufferToCompositeParser {
 		this.builder = builder;
 	}
 	
-	/**
+	/*
 	 * @param input buffer to read and parse
 	 */
 	

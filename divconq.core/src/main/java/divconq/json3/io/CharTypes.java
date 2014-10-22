@@ -201,7 +201,7 @@ public final class CharTypes
     public static int[] getInputCodeComment() { return sInputCodesComment; }
     public static int[] getInputCodeWS() { return sInputCodesWS; }
 
-    /**
+    /*
      * Accessor for getting a read-only encoding table for first 128 Unicode
      * code points (single-byte UTF-8 characters).
      * Value of 0 means "no escaping"; other positive values that value is character

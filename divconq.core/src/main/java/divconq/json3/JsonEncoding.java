@@ -36,14 +36,14 @@ public enum JsonEncoding {
         _bits = bits;
     }
 
-    /**
+    /*
      * Method for accessing encoding name that JDK will support.
      *
      * @return Matching encoding name that JDK will support.
      */
     public String getJavaName() { return _javaName; }
 
-    /**
+    /*
      * Whether encoding is big-endian (if encoding supports such
      * notion). If no such distinction is made (as is the case for
      * {@link #UTF8}), return value is undefined.

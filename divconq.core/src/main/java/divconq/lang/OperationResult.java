@@ -325,6 +325,7 @@ public class OperationResult implements GroovyObject {
 	/**
 	 * @param lvl level of message
 	 * @param code for message
+	 * @param params parameters to the message string
 	 */
 	public void logTr(DebugLevel lvl, long code, Object... params) {
 		// pass the code to logger 
@@ -436,6 +437,7 @@ public class OperationResult implements GroovyObject {
 	}
 
 	/**
+	 * @param code to search for
 	 * @return true if an error code is present
 	 */
 	public boolean hasCode(long code) {
@@ -488,7 +490,8 @@ public class OperationResult implements GroovyObject {
 	}
 	
 	/**
-	 * @param v status message about task progress
+	 * @param code message translation code
+	 * @param params for the message string
 	 */
 	public void setProgressMessageTr(int code, Object... params) { 
 		String v = (this.opcontext != null) 
@@ -526,7 +529,8 @@ public class OperationResult implements GroovyObject {
 	/**
 	 * Set step name first, this triggers observers
 	 * 
-	 * @param v current step within this specific task
+	 * @param step current step number within this specific task
+	 * @param name current step name within this specific task
 	 */
 	public void setCurrentStep(int step, String name) { 
 		this.progCurrStep = step; 
@@ -540,7 +544,7 @@ public class OperationResult implements GroovyObject {
 	/**
 	 * Set step name first, this triggers observers
 	 * 
-	 * @param v current step within this specific task
+	 * @param name current step name within this specific task
 	 */
 	public void nextStep(String name) { 
 		this.progCurrStep++; 
@@ -559,7 +563,9 @@ public class OperationResult implements GroovyObject {
 	}
 	
 	/**
-	 * @param v name of current step
+	 * @param step number of current step
+	 * @param code message translation code
+	 * @param params for the message string
 	 */
 	public void setCurrentStepNameTr(int step, int code, Object... params) {
 		String name = (this.opcontext != null) 
@@ -575,7 +581,8 @@ public class OperationResult implements GroovyObject {
 	}    
 	
 	/**
-	 * @param v name of current step
+	 * @param code message translation code
+	 * @param params for the message string
 	 */
 	public void nextStepTr(int code, Object... params) {
 		String name = (this.opcontext != null) 

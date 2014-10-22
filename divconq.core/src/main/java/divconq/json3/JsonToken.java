@@ -171,7 +171,7 @@ public enum JsonToken
 
     public final boolean isNumeric() { return _isNumber; }
 
-    /**
+    /*
      * Accessor that is functionally equivalent to:
      * <code>
      *    this == JsonToken.START_OBJECT || this == JsonToken.START_ARRAY
@@ -181,7 +181,7 @@ public enum JsonToken
      */
     public final boolean isStructStart() { return _isStructStart; }
 
-    /**
+    /*
      * Accessor that is functionally equivalent to:
      * <code>
      *    this == JsonToken.END_OBJECT || this == JsonToken.END_ARRAY
@@ -191,7 +191,7 @@ public enum JsonToken
      */
     public final boolean isStructEnd() { return _isStructEnd; }
 
-    /**
+    /*
      * Method that can be used to check whether this token represents
      * a valid non-structured value. This means all tokens other than
      * Object/Array start/end markers all field names.

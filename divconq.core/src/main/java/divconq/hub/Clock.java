@@ -126,8 +126,8 @@ public class Clock {
 	
     /**
      * Called from Hub.start this method configures the clock features.
-     * @param or 
      * 
+     * @param or logger for the initialize
      * @param config xml holding the configuration
      */
 	public void init(OperationResult or, XElement config) {
@@ -169,7 +169,8 @@ public class Clock {
 	/**
 	 * If the framework time is configured to use an accelerated clock, this method gets 
 	 * that accelerated clock going.
-	 * @param or 
+	 * 
+	 * @param or logger for the start up
 	 */
 	public void start(OperationResult or) {		
 		// we check our app schedule ever 1 (or so) system seconds
@@ -269,7 +270,8 @@ public class Clock {
 	/**
 	 * Terminate tasks being run on the Clock's scheduler.  Called by
 	 * Hub.stop during the final steps of shutdown.
-	 * @param or 
+	 * 
+	 * @param or logger for the shutdown 
 	 */
 	public void stop(OperationResult or) {
 		if (this.slowclock != null)
@@ -307,6 +309,8 @@ public class Clock {
 	 * However, when a task should run on the system clock rather than the 
 	 * app clock, these methods may be used.  Use sparingly as these are run on
 	 * a single threaded pool.  These methods also do not preserve the TaskContext.
+	 * 
+	 * @param v new work for the fast thread
 	 */	
 	// your period must be 300 or less or it will never occur
 	// you must be very careful with this, problems in your sysworker will lock down the whole hub process 
@@ -383,7 +387,7 @@ public class Clock {
 	 * a single threaded pool.  These methods also do not preserve the TaskContext.
 	 * 
 	 * @param command the code for the task to run
-	 * @param initialSecs how many "units" until the task is first run
+	 * @param initialDelay how many "units" until the task is first run
 	 * @param period how many "units" between task runs, after first run
 	 * @param unit time unit used with delay and period
 	 * @return the token for canceling the task 

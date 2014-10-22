@@ -210,7 +210,7 @@ public class OperationContext {
 		return tc;
 	}
 	
-	/**
+	/*
 	 * Sets the current thread to use a new context
 	 * 
 	 * @return create a new context
@@ -227,7 +227,7 @@ public class OperationContext {
 		return tc;
 	}
 	
-	/**
+	/*
 	 * @param m create a task context from a message (RPC calls to dcBus), keep in mind
 	 * this is info gathering only, message must not be allowed to force an 
 	 * authenticated/elevated state inappropriately - from RPC clear "Elevated"
@@ -273,7 +273,7 @@ public class OperationContext {
 			+ "_" + StringUtil.leftPad(num + "", 15, '0');
 	}
 	
-	/**
+	/*
 	 * set current thread context to null 
 	 */
 	static public void clear() {
@@ -284,7 +284,7 @@ public class OperationContext {
 		OperationContext.isGuest(OperationContext.get(), cb);
 	}
 	
-	/**
+	/*
 	 * @return check to see if the task is really no more than a guest access.  does not change task context
 	 */
 	static public void isGuest(OperationContext ctx, final FuncCallback<Boolean> cb) {
@@ -319,7 +319,7 @@ public class OperationContext {
 	// once elevated we can call any service we want, but first we must
 	// call a service we are allowed to call
 	
-	/**
+	/*
 	 * Elevated tasks have been a) authenticated and b) passed successfully into
 	 * a service.  Once elevated all subsequent calls with the task no longer need
 	 * to be authenticated or authorized by DivConq framework (individual services/modules
@@ -402,7 +402,7 @@ public class OperationContext {
 	}
 	
 	/**
-	 * @param m create a task context from a RecordStruct, keep in mind
+	 * @param ctx create a task context from a RecordStruct, keep in mind
 	 * this is info gathering only, call must set 
 	 * authenticated/elevated state inappropriately
 	 */

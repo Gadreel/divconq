@@ -54,7 +54,7 @@ public final class JdkSslServerContext extends JdkSslContext {
     private final SSLContext ctx;
     private final List<String> nextProtocols;
 
-    /**
+    /*
      * Creates a new instance.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format
@@ -64,7 +64,7 @@ public final class JdkSslServerContext extends JdkSslContext {
         this(certChainFile, keyFile, null);
     }
 
-    /**
+    /*
      * Creates a new instance.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format
@@ -76,7 +76,7 @@ public final class JdkSslServerContext extends JdkSslContext {
         this(certChainFile, keyFile, keyPassword, null, null, 0, 0);
     }
 
-    /**
+    /*
      * Creates a new instance.
      *
      * @param certChainFile an X.509 certificate chain file in PEM format
@@ -191,7 +191,7 @@ public final class JdkSslServerContext extends JdkSslContext {
         return ctx;
     }
 
-    /**
+    /*
      * Generates a key specification for an (encrypted) private key.
      *
      * @param password characters, if {@code null} or empty an unencrypted key is assumed

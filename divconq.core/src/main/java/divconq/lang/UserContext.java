@@ -53,6 +53,7 @@ public class UserContext {
 	 * this is info gathering only, message must not be allowed to force an 
 	 * authenticated/elevated state inappropriately - from RPC clear "Elevated"
 	 * field before calling this
+	 * @return user context from the record
 	 */
 	static public UserContext allocate(RecordStruct m) {
 		return new UserContext(m);
