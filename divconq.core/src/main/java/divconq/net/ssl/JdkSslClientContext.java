@@ -22,7 +22,6 @@ import io.netty.buffer.ByteBufInputStream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSessionContext;
-import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.x500.X500Principal;
 import java.io.File;

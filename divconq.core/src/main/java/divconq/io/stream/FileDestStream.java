@@ -96,24 +96,25 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 			return HandleReturn.DONE;
 		}
 		
-		if (this.out == null)
-			try {
-				Path dpath = this.file.localPath();
-				
-				Files.createDirectories(dpath.getParent());
-				
-				this.out = FileChannel.open(dpath, 
-						StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.SYNC);
-			} 
-			catch (IOException x) {
-				if (data != null)
-					data.release();
-				
-				cb.kill("Problem opening destination file: " + x);
-				return HandleReturn.DONE;
-			}
-		
 		if (data != null) {
+			if (this.out == null) {
+				try {
+					Path dpath = this.file.localPath();
+					
+					Files.createDirectories(dpath.getParent());
+					
+					this.out = FileChannel.open(dpath, 
+							StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.SYNC);
+				} 
+				catch (IOException x) {
+					if (data != null)
+						data.release();
+					
+					cb.kill("Problem opening destination file: " + x);
+					return HandleReturn.DONE;
+				}
+			}
+			
 			for (ByteBuffer buff : data.nioBuffers()) {
 				try {
 					this.out.write(buff);
@@ -130,8 +131,10 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 		
 		if (msg.isEof()) {
 			try {
-				this.out.close();
-				this.out = null;
+				if (this.out != null) {
+					this.out.close();
+					this.out = null;
+				}
 				
 				this.file.refreshProps();
 			} 

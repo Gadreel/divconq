@@ -153,6 +153,21 @@ public class HexUtil {
 
         return out;
     }	
+    
+	static public void hexDump(byte[] array, int offset, int length) {
+		int d = 0;
+		
+		for (int i = 0; i < length; i++) {
+			System.out.print(HexUtil.charToHex(array[offset + i]) + " ");
+			
+			d++;
+			
+			if (d == 32) {
+				System.out.println();
+				d = 0;
+			}
+		}
+	}
 		
     public static final char HexChars[] = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
 }

@@ -16,6 +16,7 @@
 ************************************************************************ */
 package divconq.service.simple;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -26,18 +27,24 @@ import divconq.hub.Hub;
 import divconq.interchange.CommonPath;
 import divconq.interchange.FileSystemDriver;
 import divconq.interchange.IFileStoreFile;
+import divconq.lang.FuncResult;
 import divconq.lang.OperationContext;
 import divconq.lang.OperationResult;
 import divconq.lang.WrappedFuncCallback;
 import divconq.lang.WrappedOperationCallback;
+import divconq.log.Logger;
 import divconq.mod.ExtensionBase;
 import divconq.session.Session;
 import divconq.session.DataStreamChannel;
+import divconq.struct.CompositeParser;
+import divconq.struct.CompositeStruct;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.MimeUtil;
 import divconq.util.StringUtil;
+import divconq.work.ScriptWork;
+import divconq.work.Task;
 import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
@@ -404,6 +411,8 @@ public class FileServerService extends ExtensionBase implements IService {
 
 				final String selEvidenceType = evidenceType;
 				
+				IFileStoreFile fresult =  this.getResult();
+				
 				final Consumer<Boolean> afterVerify = (pass) -> {
 					if (pass) {
 						if (FileServerService.this.isSufficentEvidence(FileServerService.this.bestEvidence, selEvidenceType))
@@ -417,6 +426,9 @@ public class FileServerService extends ExtensionBase implements IService {
 						request.error("File upload incomplete or corrupt: " + path);
 					}
 					
+					if (!request.hasErrors())
+						FileServerService.this.watch("Upload", fresult);
+					
 					if (!rec.isFieldEmpty("Note"))
 						request.info("File upload note: " + rec.getFieldAsString("Note"));
 					
@@ -426,7 +438,7 @@ public class FileServerService extends ExtensionBase implements IService {
 				// TODO wait for file to flush out?
 				if ("Size".equals(selEvidenceType)) {
 					Long src = evidinfo.getFieldAsInteger("Size");
-					long dest = this.getResult().getSize();
+					long dest = fresult.getSize();
 					boolean match = (src == dest);
 					
 					if (match)
@@ -437,7 +449,7 @@ public class FileServerService extends ExtensionBase implements IService {
 					afterVerify.accept(match);
 				}
 				else if (StringUtil.isNotEmpty(selEvidenceType)) {
-					this.getResult().hash(selEvidenceType, new WrappedFuncCallback<String>(request) {						
+					fresult.hash(selEvidenceType, new WrappedFuncCallback<String>(request) {						
 						@Override
 						public void callback() {
 							if (request.hasErrors()) {
@@ -659,5 +671,65 @@ public class FileServerService extends ExtensionBase implements IService {
 			return rhs;
 		
 		return lhs;
+	}
+	
+	public void watch(String op, IFileStoreFile file) {
+		XElement settings = this.getLoader().getSettings();
+		
+		if (settings != null) {
+	        for (XElement watch : settings.selectAll("Watch")) {
+	        	String wpath = watch.getAttribute("FilePath");
+	        	
+	        	// if we are filtering on path make sure the path is a parent of the triggered path
+	        	if (StringUtil.isNotEmpty(wpath)) {
+	        		CommonPath wp = new CommonPath(wpath);
+	        		
+	        		if (!wp.isParent(file.path()))
+	        			continue;
+	        	}
+        	
+                String tasktag = op + "Task";
+                
+    			for (XElement task : watch.selectAll(tasktag)) {
+    				String id = task.getAttribute("Id");
+    				
+    				if (StringUtil.isEmpty(id))
+    					id = Session.nextTaskId();
+    				
+    				String title = task.getAttribute("Title");			        				
+    				String script = task.getAttribute("Script");			        				
+    				String params = task.selectFirstText("Params");
+    				RecordStruct prec = null;
+    				
+    				if (StringUtil.isNotEmpty(params)) {
+    					FuncResult<CompositeStruct> pres = CompositeParser.parseJson(params);
+    					
+    					if (pres.isNotEmptyResult())
+    						prec = (RecordStruct) pres.getResult();
+    				}
+    				
+    				if (prec == null) 
+    					prec = new RecordStruct();
+    				
+			        prec.setField("File", file);
+    				
+    				if (script.startsWith("$"))
+    					script = script.substring(1);
+    				
+    				Task t = new Task()
+    					.withId(id)
+    					.withTitle(title)
+    					.withParams(prec)
+    					.withRootContext();
+    				
+    				if (!ScriptWork.addScript(t, Paths.get(script))) {
+    					Logger.error("Unable to run script for file watcher: " + watch.getAttribute("FilePath"));
+    					continue;
+    				}
+    				
+    				Hub.instance.getWorkPool().submit(t);
+    			}
+	        }
+		}
 	}
 }

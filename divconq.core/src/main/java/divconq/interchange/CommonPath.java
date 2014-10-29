@@ -280,6 +280,20 @@ public class CommonPath implements IDataExposer {
         return this.isRoot() ? new CommonPath(other) : this.getParent().resolve(other);
     }
     
+    public boolean isParent(CommonPath other) {
+    	if (this.isRoot())
+    		return true;
+    	
+    	if (this.pathparts.length >= other.pathparts.length)
+    		return false;
+    	
+    	for (int i = 0; i < this.pathparts.length; i++) {
+    		if (!this.pathparts[i].equals(other.pathparts[i]))
+    			return false;
+    	}
+    	
+		return true;
+    }
 
     /*  TODO
     // Resolve child against given base

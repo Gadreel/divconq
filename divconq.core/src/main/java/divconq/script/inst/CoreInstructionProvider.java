@@ -19,8 +19,10 @@ package divconq.script.inst;
 import divconq.script.ActivityManager;
 import divconq.script.IInstructionProvider;
 import divconq.script.Instruction;
-import divconq.script.inst.ctp.CtpSend;
+import divconq.script.inst.ctp.CtpCall;
+import divconq.script.inst.ctp.CtpDownload;
 import divconq.script.inst.ctp.CtpSession;
+import divconq.script.inst.ctp.CtpUpload;
 import divconq.script.inst.ext.SendEmail;
 import divconq.script.inst.ext.ShellProcess;
 import divconq.script.inst.file.File;
@@ -186,11 +188,17 @@ public class CoreInstructionProvider implements IInstructionProvider {
 		if ("CtpSession".equals(tag))
 			return new CtpSession();
 		
-		if ("CtpSend".equals(tag))
-			return new CtpSend();
+		if ("CtpCall".equals(tag))
+			return new CtpCall();
 		
-		if ("CtpSendForget".equals(tag))
-			return new CtpSend();
+		if ("CtpCallForget".equals(tag))
+			return new CtpCall();
+		
+		if ("CtpUpload".equals(tag))
+			return new CtpUpload();
+		
+		if ("CtpDownload".equals(tag))
+			return new CtpDownload();
 		
 		return null;
 	}
@@ -242,8 +250,10 @@ public class CoreInstructionProvider implements IInstructionProvider {
 		man.addTag("ShellProcess", cip);
 		man.addTag("SendEmail", cip);
 		man.addTag("CtpSession", cip);
-		man.addTag("CtpSend", cip);
-		man.addTag("CtpSendForget", cip);
+		man.addTag("CtpCall", cip);
+		man.addTag("CtpCallForget", cip);
+		man.addTag("CtpUpload", cip);
+		man.addTag("CtpDownload", cip);
 		
 		// TODO these are not core probably
 		man.addTag("FileOps", cip);

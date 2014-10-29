@@ -1,12 +1,13 @@
 <dcScript Title="FileOps Copy Tests">
 <Main>
-	<LocalFolder Name="fs0" Path="/Work/Temp/Source" />
-	<LocalFolder Name="fs1" Path="/Work/Temp/Dest" />
+	<CtpSession Name="MySession" Host="localhost" />
 	
-	<FileOps>
-		<Tar Source="$fs0" NameHint="test-files-3" />
-		<Gzip Dest="NULL" />
-	</FileOps>
+	<CtpUpload Session="$MySession" Service="dcTestFileServer" 
+		Source="/Work/Temp/Source/deploy2.png" Dest="/dest3/deploy2.png" />
 	
+	<!--
+	<CtpDownload Session="$MySession" Service="dcTestFileServer" 
+		Dest="/Work/Temp/Dest/smallish.tgz" Source="/dest2/brake/small.tgz" />
+	-->
 </Main>
 </dcScript>

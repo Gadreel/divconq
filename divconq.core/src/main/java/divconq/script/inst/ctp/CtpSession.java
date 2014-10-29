@@ -28,7 +28,6 @@ import divconq.session.Session;
 import divconq.util.StringUtil;
 
 public class CtpSession extends With {
-	@SuppressWarnings("resource")
 	@Override
 	public void prepTarget(StackEntry stack) {
         String name = stack.stringFromSource("Name");            
@@ -65,6 +64,8 @@ public class CtpSession extends With {
         		((LocalSession)sess).startSessionAsRoot();
         	}
         	else if (!sess.startSession(user, pwd)) {
+        		sess.close();
+        		
 				stack.setState(ExecuteState.Done);
 				stack.log().errorTr(530);
 				stack.resume();
@@ -84,12 +85,16 @@ public class CtpSession extends With {
     		((WebSession)sess).init(stack.getInstruction().getXml());
     		
             if (!sess.startSession(user, pwd)) {
+            	sess.close();
+            	
 				stack.setState(ExecuteState.Done);
 				stack.log().errorTr(530);
 				stack.resume();
 				return;
             }
         }
+        
+        stack.getActivity().getTaskRun().addCloseable(sess);
 		
         stack.addVariable(name, sess);
         this.setTarget(stack, sess);

@@ -1,0 +1,10 @@
+<dcScript Title="Watch Upload Test">
+<Main>
+	<Info>Upload Watch Work Started with {$_Param.val} on {$_Param.File.Path} 
+	aka {$_Param.File.FullPath} which is {$_Param.File.Size} bytes</Info>
+	
+	<Sleep Seconds="3" />
+	
+	<Info>Upload Watch Work Finished</Info>
+</Main>
+</dcScript>

@@ -47,6 +47,10 @@ public class UploadFile implements ISmartWork {
 	protected ApiSession session = null;
 	protected TransferContext xferctx = null;
 	protected UploadState uploadstate = UploadState.REQUEST_UPLOAD;
+	
+	public void setSession(ApiSession v) {
+		this.session = v;
+	}
 
 	@Override
 	public void run(TaskRun run) {

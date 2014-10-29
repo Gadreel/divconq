@@ -75,7 +75,7 @@ public class Foreground {
 		Hub.instance.getActivityManager().registerDebugger(new IDebuggerHandler() {				
 			@Override
 			public void startDebugger(TaskRun run) {
-				if (!GraphicsEnvironment.isHeadless()) {
+				if (!GraphicsEnvironment.isHeadless() && !"true".equals(resources.getConfig().getAttribute("Headless", "true").toLowerCase())) {
 					ScriptUtility.goSwing(run);
 				}
 				else {

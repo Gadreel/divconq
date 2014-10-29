@@ -151,7 +151,7 @@ public class XmlReader implements IParseHandler {
 	
 	protected boolean keepwhitespace = false;
 	
-	/**
+	/*
 	 * Set XML source to be a Reader 
 	 * 
 	 * @param input the XML source to be parsed

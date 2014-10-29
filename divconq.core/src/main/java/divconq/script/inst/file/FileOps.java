@@ -27,6 +27,7 @@ import divconq.io.stream.IStreamDest;
 import divconq.io.stream.IStreamSource;
 import divconq.io.stream.JoinStream;
 import divconq.io.stream.NullStream;
+import divconq.io.stream.PgpEncryptStream;
 import divconq.io.stream.SplitStream;
 import divconq.io.stream.StreamWork;
 import divconq.io.stream.TarStream;
@@ -70,6 +71,8 @@ public class FileOps extends Ops {
 			this.injectStream(stack, op, new SplitStream());
 		else if ("Join".equals(op.getName())) 
 			this.injectStream(stack, op, new JoinStream());
+		else if ("PGPEncrypt".equals(op.getName())) 
+			this.injectStream(stack, op, new PgpEncryptStream());
 		else {
 			stack.log().error("Unknown FileOp: " + op.getName());
 			this.nextOpResume(stack);

@@ -28,13 +28,13 @@ import divconq.struct.Struct;
 import divconq.struct.scalar.NullStruct;
 import divconq.util.StringUtil;
 
-public class CtpSend extends Instruction {
+public class CtpCall extends Instruction {
 	@Override
 	public void run(final StackEntry stack) {
         String name = stack.stringFromSource("Name");
         
         if (StringUtil.isEmpty(name))
-        	name = "CtpSend_" + stack.getActivity().tempVarName();
+        	name = "CtpCall_" + stack.getActivity().tempVarName();
         
         String vname = name;
         
@@ -84,7 +84,7 @@ public class CtpSend extends Instruction {
         	return;        	
         }
         
-        if (stack.getInstruction().getXml().getName().equals("CtpSendForget")) {
+        if (stack.getInstruction().getXml().getName().equals("CtpCallForget")) {
         	sess.sendForgetMessage(msg);
 			stack.setState(ExecuteState.Done);
 			stack.resume();

@@ -2,11 +2,11 @@
 <Main>
 	<CtpSession Name="MySession" Host="localhost" />
 	
-	<CtpSend Name="TheResponse" Session="$MySession" Service="Status" Feature="Echo" Op="Test" Data="Hello Buddy!" />
+	<CtpCall Name="TheResponse" Session="$MySession" Service="Status" Feature="Echo" Op="Test" Data="Hello Buddy!" />
 	<ExitIfErrored Code="1" Result="Cannot continue, there was an error calling the Status service" />
 	<Info>Here is the response we got: {$TheResponse}</Info>
 	
-	<CtpSendForget Session="$MySession" Service="Status" Feature="Tickle" Op="Test" Data="Hello Buddy!" />
+	<CtpCallForget Session="$MySession" Service="Status" Feature="Tickle" Op="Test" Data="Hello Buddy!" />
 	
 	<With Target="$MySession">
 		<Stop />

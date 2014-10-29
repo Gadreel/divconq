@@ -48,6 +48,10 @@ public class DownloadFile implements ISmartWork {
 	protected TransferContext xferctx = null;
 	protected DownloadState downloadstate = DownloadState.REQUEST_DOWNLOAD;
 
+	public void setSession(ApiSession v) {
+		this.session = v;
+	}
+	
 	@Override
 	public void run(TaskRun run) {
 		if (this.xferctx == null) {

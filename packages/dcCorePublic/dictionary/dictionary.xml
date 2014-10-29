@@ -274,9 +274,9 @@
 		<Entry Token="_code_528" Value="Missing Host for CtpSession" />
 		<Entry Token="_code_529" Value="CtpSession requires User for authentication" />
 		<Entry Token="_code_530" Value="CtpSession failed to connect or to sign in" />
-		<Entry Token="_code_531" Value="CtpSend is missing send" />
-		<Entry Token="_code_532" Value="CtpSend has an invalid request Message reference" />
-		<Entry Token="_code_533" Value="CtpSend missing values to form a request Message" />
+		<Entry Token="_code_531" Value="CtpCall is missing send" />
+		<Entry Token="_code_532" Value="CtpCall has an invalid request Message reference" />
+		<Entry Token="_code_533" Value="CtpCall missing values to form a request Message" />
 		<Entry Token="_code_534" Value="Missing root folder for LocalFileStore" />
 		<Entry Token="_code_535" Value="Invalid path for LocalFileStore: {$1}" />
 		<Entry Token="_code_536" Value="Folder has an invalid In reference" />

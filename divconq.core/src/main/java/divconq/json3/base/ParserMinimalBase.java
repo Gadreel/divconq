@@ -3,7 +3,6 @@ package divconq.json3.base;
 import java.io.IOException;
 
 import divconq.json3.*;
-import divconq.json3.JsonParser.Feature;
 import divconq.json3.io.NumberInput;
 import divconq.json3.util.ByteArrayBuilder;
 

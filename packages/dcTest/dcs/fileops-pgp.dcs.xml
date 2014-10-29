@@ -1,0 +1,28 @@
+<dcScript Title="FileOps PGP Encrypt Test">
+<Main>
+	<LocalFile Name="fh0" Path="/Work/Temp/Dest/karabiner.bin" />
+	<LocalFile Name="fh1" Path="/Work/Temp/Dest/karabiner.bin.gpg" />
+	
+	<FileOps>
+		<!-- a straght encrypt -->
+		<PGPEncrypt Source="$fh0" Dest="$fh1" Keyring="/Users/Owner/.gnupg/pubring.gpg" />
+		
+		<!-- tar, gz, pgp using the auto chaining and then save -->
+		<!--
+		<Tar Source="$fh0" />
+		<Gzip />
+		<PGPEncrypt Dest="$fh1" Keyring="/Users/Owner/.gnupg/pubring.gpg" />
+		-->
+	</FileOps>
+	
+	<LocalFolder Name="fh2" Path="/Work/Temp/Dest/karabiner" />
+	
+	<FileOps>
+		<!-- tar, gz, pgp using the auto chaining and then save -->
+		<Tar Source="$fh0" />
+		<Gzip />
+		<PGPEncrypt Keyring="/Users/Owner/.gnupg/pubring.gpg" />
+		<Split Dest="$fh2" Size="512KB" Template="karabiner_%seq%.bin.tgz.gpg" />
+	</FileOps>
+</Main>
+</dcScript>

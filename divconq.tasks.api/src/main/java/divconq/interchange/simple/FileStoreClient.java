@@ -21,8 +21,6 @@
  */
 package divconq.interchange.simple;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,9 +31,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-
 import divconq.api.ApiSession;
 import divconq.api.DumpCallback;
 import divconq.api.ServiceResult;
@@ -45,7 +40,7 @@ import divconq.hub.Foreground;
 import divconq.hub.Hub;
 import divconq.hub.ILocalCommandLine;
 import divconq.interchange.CommonPath;
-import divconq.io.test.LocalEcho;
+import divconq.lang.FuncResult;
 import divconq.lang.OperationResult;
 import divconq.lang.TimeoutPlan;
 import divconq.script.Activity;
@@ -55,8 +50,6 @@ import divconq.struct.RecordStruct;
 import divconq.util.FileUtil;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
-import divconq.work.IWork;
-import divconq.work.ScriptWork;
 import divconq.work.Task;
 import divconq.work.TaskObserver;
 import divconq.work.TaskRun;
@@ -94,11 +87,11 @@ public class FileStoreClient implements ILocalCommandLine {
 				System.out.println("10) Generate Test Files");
 				System.out.println("11) Test Uploads");
 				System.out.println("12) Test Downloads");
-				System.out.println("100) dcScript Debugger");
-				System.out.println("101) dcScript Invoke Debugger");
-				System.out.println("102) Test Throttle and Quick Resume");
-				System.out.println("104) Start Test dcBus");
-				System.out.println("105) Send Test dcBus");
+				System.out.println("100) dcScript GUI Debugger");
+				System.out.println("101) dcScript Run Script");
+				//System.out.println("102) Test Throttle and Quick Resume");
+				//System.out.println("104) Start Test dcBus");
+				//System.out.println("105) Send Test dcBus");
 				System.out.println("200) Local Utilities");
 
 				String opt = scan.nextLine();
@@ -595,9 +588,27 @@ public class FileStoreClient implements ILocalCommandLine {
 				}
 				
 				case 101: {
+					System.out.println("*** Run A dcScript ***");
+					System.out.println("If you are looking for something to try, consider one of these:");
+					System.out.println("  ./packages/dcTest/dcs/examples/99-bottles.dcs.xml");
+					System.out.println("  ./packages/dcTest/dcs/examples/99-bottles-debug.dcs.xml");
+					
+					System.out.println();
+					System.out.println("Path to script to run: ");
+					String spath = scan.nextLine();
+			    	
+					System.out.println();
+					
+					FuncResult<CharSequence> rres = IOUtil.readEntireFile(Paths.get(spath));
+					
+					if (rres.hasErrors()) {
+						System.out.println("Error reading script: " + rres.getMessage());
+						break;
+					}
+					
 					Activity act = new Activity();
 					
-					OperationResult compilelog = act.compile(IOUtil.readEntireFile(new File("./packages/dcTest/dcs/debugger-1.dcs.xml")));
+					OperationResult compilelog = act.compile(rres.getResult().toString());
 					
 					if (compilelog.hasErrors()) {
 						System.out.println("Error compiling script: " + compilelog.getMessage());
@@ -615,6 +626,7 @@ public class FileStoreClient implements ILocalCommandLine {
 					break;
 				}
 				
+				/*
 				case 102: {
 					IWork w = new IWork() {
 						int x = 0;
@@ -720,6 +732,14 @@ public class FileStoreClient implements ILocalCommandLine {
 					
 					break;
 				}
+				
+				case 109: {
+					//PGPUtil.encryptFile("/Work/Temp/Dest/karabiner2.bin.gpg", "/Work/Temp/Dest/karabiner.bin", "/Users/Owner/.gnupg/pubring.gpg");
+					PGPUtil.encryptFile("/Work/Temp/Dest/long score 2.txt.gpg", "/Work/Temp/Dest/long score.txt", "/Users/Owner/.gnupg/pubring.gpg");
+					
+					break;
+				}
+				*/
 				
 				case 200: {
 					Foreground.utilityMenu(scan);					
