@@ -3,7 +3,7 @@
 
   <groupId>com.divconq</groupId>
   <artifactId>divconq-core</artifactId>
-  <version>0.9.4-SNAPSHOT</version>
+  <version>0.9.4</version>
   <packaging>jar</packaging>
 
   <name>DivConq Core</name>
@@ -30,7 +30,7 @@
     <url>https://github.com/Gadreel/divconq</url>
     <connection>scm:git:git://github.com/Gadreel/divconq.git</connection>
     <developerConnection>scm:git:git@github.com:Gadreel/divconq.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>divconq-core-0.9.4</tag>
   </scm>
 	
   <properties>
