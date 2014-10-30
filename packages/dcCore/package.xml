@@ -18,7 +18,7 @@
 		<Library File="jnotify-0.94.jar"/>
 		<Library File="jna-4.1.0.jar" />
 		<Library File="jna-platform-4.1.0.jar" />
-		<Library File="netty-all-4.0.23.Final.jar" />
+		<Library File="netty-all-4.0.24.Final.jar" />
 		<Library File="jsch-0.1.51.jar" />
 		<Library File="mariadb-java-client-1.1.6.jar" />
 		<Library File="h2-1.4.182.jar" />
@@ -70,6 +70,7 @@
 		<Library File="bcpg-jdk15on-150.jar"/>
 		<Library File="bcpkix-jdk15on-150.jar"/>
 		<Library File="bcprov-ext-jdk15on-150.jar"/>
+		<Library File="netty-all-4.0.23.Final.jar" />
 		
 		<Library File="csv4180-0.2.3.jar"/>
 		<Library File="jackson-core-2.3.1.jar"/>

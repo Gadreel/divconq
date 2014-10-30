@@ -10,6 +10,9 @@ DivConq MFT is currently in beta.  The following features are functional:
 
 * File transfers to and from our server with external entities via HTTP(S).
 * File transfers through the DMZ using a Gateway
+* File Task (script) trigged on successful upload
+* File Task (script) scheduler
+* File Task (script) triggered by file system events (Windows, Linux and OS X)
 
 Links
 -----
