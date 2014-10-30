@@ -121,7 +121,7 @@ public class PGPWriter {
     
     protected List<ByteBuf> readyBuffers = new ArrayList<>();
     
-    /**
+    /*
      * Create a stream representing a general packet.
      * 
      * @param out buffer to write to
@@ -138,7 +138,7 @@ public class PGPWriter {
         this.writeNewPacketLength(length);
     }
     
-    /**
+    /*
      * Create a new style partial input stream buffered into chunks.
      * 
      * @param out buffer to write to
