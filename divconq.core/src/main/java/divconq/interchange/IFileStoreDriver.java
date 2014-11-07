@@ -18,8 +18,8 @@ package divconq.interchange;
 
 import java.util.List;
 
-import divconq.lang.FuncCallback;
-import divconq.lang.OperationCallback;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationCallback;
 import divconq.script.StackEntry;
 import divconq.struct.RecordStruct;
 import divconq.xml.XElement;

@@ -20,7 +20,7 @@ import w3.html.Div;
 import w3.html.FieldSet;
 import w3.html.Label;
 import w3.html.Legend;
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationContext;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.StringUtil;

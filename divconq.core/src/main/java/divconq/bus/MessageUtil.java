@@ -18,7 +18,7 @@ package divconq.bus;
 
 import divconq.bus.Message;
 import divconq.bus.net.StreamMessage;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;

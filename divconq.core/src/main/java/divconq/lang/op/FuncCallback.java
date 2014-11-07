@@ -14,34 +14,30 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.lang;
+package divconq.lang.op;
 
 import divconq.bus.Message;
-import divconq.log.DebugLevel;
+import divconq.lang.TimeoutPlan;
 import divconq.struct.Struct;
 
 /**
- * Provides the same function support as @see OperationResult, however allows for more
- * than a true/false return type.  A specific return type may be provided using generics.
+ * Provides the same function support as @see OperationCallback, however allows for more
+ * than a true/false result type.  A specific return type may be provided using generics.
  * 
  * @author Andy
  *
  * @param <T> the return type
  */
-public class FuncResult<T> extends OperationResult {
-	  protected T value = null;
+abstract public class FuncCallback<T> extends OperationCallback {
+	protected T value = null;
 		 
-	  public FuncResult(DebugLevel loglevel) {
-		  super(loglevel);
-	  }
-	
-	public FuncResult(OperationContext ctx) {
-		super(ctx);
+	public FuncCallback() {
+		super();
 	}
-	 
-	  public FuncResult() {
-		  super();
-	  }
+		
+	public FuncCallback(TimeoutPlan plan) {
+		super(plan);
+	}
 	  
 	  /**
 	 * @return function result if call was a success

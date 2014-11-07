@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.web;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.mod.Bundle;
 import divconq.mod.IExtension;
 import divconq.session.Session;

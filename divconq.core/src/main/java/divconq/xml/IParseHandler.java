@@ -18,7 +18,7 @@ package divconq.xml;
 
 import java.util.Map;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 
 /**
  * Use to create a custom Xml parser for use with XmlParser.  SAX like

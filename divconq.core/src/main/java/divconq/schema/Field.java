@@ -19,7 +19,8 @@ package divconq.schema;
 import java.util.ArrayList;
 import java.util.List;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -166,11 +167,11 @@ public class Field {
 		return null;
 	}
 	
-	public Struct create(OperationResult mr) {
+	public FuncResult<Struct> create() {
 		if (this.options.size() == 0) 
 			return null;
 		
-		return this.options.get(0).create(mr);
+		return this.options.get(0).create();
 	}
 	
 	public DataType getPrimaryType() {

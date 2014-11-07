@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import divconq.api.HyperSession;
 import divconq.hub.Hub;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationResult;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;

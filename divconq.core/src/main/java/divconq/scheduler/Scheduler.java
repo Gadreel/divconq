@@ -30,9 +30,9 @@ import org.joda.time.ReadableInstant;
 import divconq.hub.Hub;
 import divconq.hub.ISystemWork;
 import divconq.hub.SysReporter;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.scheduler.common.CommonSchedule;
 import divconq.scheduler.limit.LimitHelper;
@@ -136,8 +136,6 @@ public class Scheduler {
 		if (this.driver != null) {
 			FuncResult<ListStruct> loadres = this.driver.loadSchedule();
 			
-			or.copyMessages(loadres);
-			
 			if (loadres.isNotEmptyResult()) {				
 				loadres.getResult().recordStream().forEach(rec -> {
 					XElement schedule = rec.getFieldAsXml("Schedule");
@@ -152,8 +150,6 @@ public class Scheduler {
 						.withRootContext()
 						.withWork(trun -> {
 								FuncResult<ScheduleEntry> loadres2 = Scheduler.this.driver.loadEntry(rec.getFieldAsString("Id"));
-
-								trun.copyMessages(loadres2);
 								
 								if (loadres2.isNotEmptyResult()) {
 									ScheduleEntry entry = loadres2.getResult();

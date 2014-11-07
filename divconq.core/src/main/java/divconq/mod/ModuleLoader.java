@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import divconq.lang.OperationResult;
 import divconq.mod.Bundle;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
@@ -60,7 +59,7 @@ public class ModuleLoader extends Bundle {
 		super(cloader);
 	}
 	
-	public void init(OperationResult or, XElement config) {
+	public void init(XElement config) {
 		try {
 			this.config = config;		// TODO 
 			this.name = config.getAttribute("Name");
@@ -77,11 +76,11 @@ public class ModuleLoader extends Bundle {
 			
 			this.module = (IModule) this.getInstance(runclass);
 			this.module.setLoader(this);
-			this.module.init(or, this.setting);
+			this.module.init(this.setting);
 			
 			for (XElement bel : config.selectAll("Extension")) {
 				ExtensionLoader eloader = new ExtensionLoader(this.module, this);
-				eloader.init(or, bel);
+				eloader.init(bel);
 				this.extensions.put(eloader.getName(), eloader);
 				this.orderedExts.add(eloader);
 			}
@@ -91,19 +90,19 @@ public class ModuleLoader extends Bundle {
 		}
 	}
 
-	public void start(OperationResult or) {
+	public void start() {
 		for (ExtensionLoader el : this.orderedExts) 
-			el.start(or);
+			el.start();
 		
 		if (this.module != null)
-			this.module.start(or);
+			this.module.start();
 	}
 	
-	public void stop(OperationResult or) {
+	public void stop() {
 		for (int i = this.orderedExts.size() - 1; i >= 0; i--) 
-			this.orderedExts.get(i).stop(or);
+			this.orderedExts.get(i).stop();
 		
 		if (this.module != null)
-			this.module.stop(or);
+			this.module.stop();
 	}
 }

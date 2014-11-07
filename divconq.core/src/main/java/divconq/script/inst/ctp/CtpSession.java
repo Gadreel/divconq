@@ -21,6 +21,7 @@ import divconq.api.LocalSession;
 import divconq.api.WebSession;
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
 import divconq.script.ExecuteState;
 import divconq.script.StackEntry;
 import divconq.script.inst.With;
@@ -37,14 +38,14 @@ public class CtpSession extends With {
         
         if (StringUtil.isEmpty(name)) {
 			stack.setState(ExecuteState.Done);
-			stack.log().errorTr(527);
+			OperationContext.get().errorTr(527);
 			stack.resume();
 			return;
         }
         
         if (StringUtil.isEmpty(host)) {
 			stack.setState(ExecuteState.Done);
-			stack.log().errorTr(528);
+			OperationContext.get().errorTr(528);
 			stack.resume();
 			return;
         }
@@ -67,7 +68,7 @@ public class CtpSession extends With {
         		sess.close();
         		
 				stack.setState(ExecuteState.Done);
-				stack.log().errorTr(530);
+				OperationContext.get().errorTr(530);
 				stack.resume();
 				return;            		
         	}
@@ -75,7 +76,7 @@ public class CtpSession extends With {
         else {
         	if (StringUtil.isEmpty(user)) {
 				stack.setState(ExecuteState.Done);
-				stack.log().errorTr(529);
+				OperationContext.get().errorTr(529);
 				stack.resume();
 				return;
         	}
@@ -88,13 +89,13 @@ public class CtpSession extends With {
             	sess.close();
             	
 				stack.setState(ExecuteState.Done);
-				stack.log().errorTr(530);
+				OperationContext.get().errorTr(530);
 				stack.resume();
 				return;
             }
         }
         
-        stack.getActivity().getTaskRun().addCloseable(sess);
+        OperationContext.get().getTaskRun().addCloseable(sess);
 		
         stack.addVariable(name, sess);
         this.setTarget(stack, sess);
@@ -113,14 +114,14 @@ public class CtpSession extends With {
             
             if (StringUtil.isEmpty(name)) {
 				stack.setState(ExecuteState.Exit);
-				stack.log().errorTr(527);
+				OperationContext.get().errorTr(527);
 				stack.resume();
 				return;
             }
             
             if (StringUtil.isEmpty(host)) {
 				stack.setState(ExecuteState.Exit);
-				stack.log().errorTr(528);
+				OperationContext.get().errorTr(528);
 				stack.resume();
 				return;
             }
@@ -141,7 +142,7 @@ public class CtpSession extends With {
             	}
             	else if (!sess.startSession(user, pwd)) {
     				stack.setState(ExecuteState.Exit);
-    				stack.log().errorTr(530);
+    				OperationContext.get().errorTr(530);
     				stack.resume();
     				return;            		
             	}
@@ -149,7 +150,7 @@ public class CtpSession extends With {
             else {
             	if (StringUtil.isEmpty(user)) {
     				stack.setState(ExecuteState.Exit);
-    				stack.log().errorTr(529);
+    				OperationContext.get().errorTr(529);
     				stack.resume();
     				return;
             	}
@@ -160,7 +161,7 @@ public class CtpSession extends With {
         		
                 if (!sess.startSession(user, pwd)) {
     				stack.setState(ExecuteState.Exit);
-    				stack.log().errorTr(530);
+    				OperationContext.get().errorTr(530);
     				stack.resume();
     				return;
                 }

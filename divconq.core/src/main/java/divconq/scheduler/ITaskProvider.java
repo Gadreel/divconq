@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.scheduler;
 
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
 import divconq.work.Task;
 
 public interface ITaskProvider {

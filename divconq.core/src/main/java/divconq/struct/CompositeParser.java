@@ -39,13 +39,15 @@ import org.yaml.snakeyaml.events.SequenceStartEvent;
 
 
 
+
+
 import divconq.io.InputWrapper;
 import divconq.io.UnicodeReader;
 import divconq.json3.JsonParser;
 import divconq.json3.JsonToken;
-import divconq.lang.FuncResult;
 import divconq.lang.Memory;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.struct.builder.BuilderStateException;
 import divconq.struct.builder.ObjectBuilder;
 import divconq.util.StringUtil;

@@ -16,6 +16,7 @@
 ************************************************************************ */
 package divconq.script.inst;
 
+import divconq.lang.op.OperationContext;
 import divconq.script.Activity;
 import divconq.script.ExecuteState;
 import divconq.script.IInstructionCallback;
@@ -45,14 +46,14 @@ public class CallFunction extends Instruction {
 			Instruction func = stack.getActivity().queryFunction(name);
 
 			if (func == null) {
-				stack.log().errorTr(517, name);
+				OperationContext.get().errorTr(517, name);
 	        	stack.setState(ExecuteState.Done); 
 			}
 			else {
 				StackEntry sfunc = func.createStack(stack.getActivity(), stack);
 				
 				if ((sfunc == null) || !(sfunc instanceof StackFunctionEntry)) {
-					stack.log().errorTr(518, name);
+					OperationContext.get().errorTr(518, name);
 		        	stack.setState(ExecuteState.Done); 
 				}
 				else {
@@ -77,7 +78,7 @@ public class CallFunction extends Instruction {
         final StackFunctionEntry child = (StackFunctionEntry)cstack.getChild();
         
         if (child == null) {
-			stack.log().errorTr(519);
+        	OperationContext.get().errorTr(519);
         	stack.setState(ExecuteState.Done); 
         	stack.resume();
         	return;

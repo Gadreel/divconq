@@ -80,7 +80,7 @@
 		<AnyType Id="Any" />
 		
 		<StringType Id="ResultLevel">
-			<StringRestriction Enum="Error,Warn,Info,Trace,Exit" />
+			<StringRestriction Enum="Error,Warn,Info,Debug,Trace,Exit" />
 		</StringType>
 		
 		<!-- common scalar types -->

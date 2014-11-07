@@ -25,10 +25,10 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
 import divconq.hub.Hub;
 import divconq.io.CyclingByteBufferOutputStream;
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
 import divconq.util.FileUtil;
 import divconq.util.StringUtil;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class TarStream extends BaseStream implements IStreamSource {
@@ -71,10 +71,10 @@ public class TarStream extends BaseStream implements IStreamSource {
     
 	// make sure we don't return without first releasing the file reference content
     @Override
-    public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+    public HandleReturn handle(StreamMessage msg) {
     	if (msg == StreamMessage.FINAL) {
     		if (this.tstream == null) 
-        		return this.downstream.handle(cb, msg);
+        		return this.downstream.handle(msg);
     			
     		this.finalflag = true;
     	}
@@ -134,7 +134,7 @@ public class TarStream extends BaseStream implements IStreamSource {
     				in.release();
     			
 				out.release();
-				cb.kill("Problem writing tar entry: " + x);
+				OperationContext.get().getTaskRun().kill("Problem writing tar entry: " + x);
 				return HandleReturn.DONE;
 			}
     		
@@ -148,7 +148,7 @@ public class TarStream extends BaseStream implements IStreamSource {
 			catch (IOException x) {
 				in.release();
 				out.release();
-				cb.kill("Problem writing tar body: " + x);
+				OperationContext.get().getTaskRun().kill("Problem writing tar body: " + x);
 				return HandleReturn.DONE;
 			}
 
@@ -161,7 +161,7 @@ public class TarStream extends BaseStream implements IStreamSource {
     				in.release();
     			
 				out.release();
-				cb.kill("Problem closing tar entry: " + x);
+				OperationContext.get().getTaskRun().kill("Problem closing tar entry: " + x);
 				return HandleReturn.DONE;
 			}
     		
@@ -180,7 +180,7 @@ public class TarStream extends BaseStream implements IStreamSource {
 			catch (IOException x) {
 				//in.release();
 				out.release();
-				cb.kill("Problem closing tar stream: " + x);
+				OperationContext.get().getTaskRun().kill("Problem closing tar stream: " + x);
 				return HandleReturn.DONE;
 			}
         	
@@ -194,24 +194,24 @@ public class TarStream extends BaseStream implements IStreamSource {
 		
 		System.out.println("tar sending: " + out.readableBytes());
 		
-       	HandleReturn v = this.downstream.handle(cb, blk);
+       	HandleReturn v = this.downstream.handle(blk);
        	
        	if (!this.finalflag)
        		return v;
        	
        	if (v == HandleReturn.CONTINUE)
-    		return this.downstream.handle(cb, StreamMessage.FINAL);
+    		return this.downstream.handle(StreamMessage.FINAL);
        		
        	return HandleReturn.DONE;
     }
     
     @Override
-    public void request(TaskRun cb) {
+    public void request() {
     	if (this.finalflag) {
-    		this.downstream.handle(cb, StreamMessage.FINAL);
+    		this.downstream.handle(StreamMessage.FINAL);
     		return;
     	}
     	
-    	this.upstream.request(cb);
+    	this.upstream.request();
     }
 }

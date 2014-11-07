@@ -36,6 +36,7 @@ public class TaskFactory {
 		return new Task()
 			.withTitle("Upload file " + local)
 			.withWork(work)
+			.withSubContext()
 			.withParams(new RecordStruct(
 					new FieldStruct("LocalPath", local),
 					new FieldStruct("RemotePath", remote),
@@ -71,6 +72,7 @@ public class TaskFactory {
 		return new Task()
 			.withTitle("Download file " + local)
 			.withWork(work)
+			.withSubContext()
 			.withParams(params)
 			.withTimeout(1)
 			.withDeadline(0);

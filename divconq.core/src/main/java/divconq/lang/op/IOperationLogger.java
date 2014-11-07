@@ -14,13 +14,8 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.lang;
+package divconq.lang.op;
 
-public class CallbackObserver extends OperationObserver implements ICallbackObserver {
-
-	@Override
-	public void completed(OperationCallback or) {
-		
-	}
-
+public interface IOperationLogger {
+	String logToString();
 }

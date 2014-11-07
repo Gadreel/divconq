@@ -18,16 +18,17 @@ package divconq.tasks.test;
 
 import java.nio.file.Paths;
 
+import divconq.lang.op.OperationLogger;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
 import divconq.work.ScriptWork;
 import divconq.work.Task;
-import divconq.work.TaskLogger;
 
 public class ScriptFactory {
 	static public Task createGreetTask(String greet) {
 		Task task = new Task()
 			.withTitle("Greetings for: " + greet)
+			.withSubContext()
 			.withParams(new RecordStruct(
 					new FieldStruct("Greet", greet)
 				)
@@ -42,6 +43,7 @@ public class ScriptFactory {
 		Task task = new Task()
 			.withTitle("Greetings for: " + greet)
 			.withDefaultLogger()
+			.withSubContext()
 			.withParams(new RecordStruct(
 					new FieldStruct("Greet", greet)
 				)
@@ -56,11 +58,12 @@ public class ScriptFactory {
 		// id is good for local or queue use 
 		String tid = divconq.session.Session.nextTaskId("12BottlesSong");
 
-		TaskLogger logger = new TaskLogger();
+		OperationLogger logger = new OperationLogger();
 		
 		Task task = new Task()
 			.withId(tid)
 			.withTitle("Singing 12 Bottles of Beer for: " + dedicated)
+			.withSubContext()
 			.withObserver(logger)
 			.withUsesTempFolder(true)
 			.withTimeout(30)

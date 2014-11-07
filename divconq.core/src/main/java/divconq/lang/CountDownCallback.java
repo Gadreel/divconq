@@ -19,6 +19,9 @@ package divconq.lang;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationResult;
+
 
 public class CountDownCallback {
 	protected AtomicInteger count = null;
@@ -53,7 +56,8 @@ public class CountDownCallback {
 		this.cdlock.lock();
 		
 		try {
-			this.callback.copyMessages(res);
+			// we should use the SubContext approach to capture messages
+			//this.callback.copyMessages(res);
 			
 			return this.countDown();
 		}
@@ -66,9 +70,11 @@ public class CountDownCallback {
 		return this.count.incrementAndGet();
 	}
 
+	/* TODO remove if possible
 	public void setContext(OperationContext taskContext) {
 		this.callback.setContext(taskContext);
 	}
+	*/
 
 	public int value() {
 		return this.count.intValue();

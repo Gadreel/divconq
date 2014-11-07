@@ -47,9 +47,10 @@ import divconq.io.stream.StreamMessage;
 import divconq.io.stream.StreamUtil;
 import divconq.io.stream.TarStream;
 import divconq.lang.chars.Utf8Encoder;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
 import divconq.util.StringUtil;
 import divconq.work.Task;
-import divconq.work.TaskObserver;
 import divconq.work.TaskRun;
 
 public final class LocalEcho {
@@ -163,18 +164,18 @@ public final class LocalEcho {
 			.withTitle("Streaming Out Test")
 			.withTimeout(0);
 		
+		t.withObserver(new OperationObserver() {
+			@Override
+			public void completed(OperationContext or) {
+				System.out.println("Transfer Out is complete!!");
+			}
+		});
+		
 		@SuppressWarnings("resource")
 		TaskRun trun = StreamUtil.composeStream(t, 
 				src.allocSrc(), 
 				new TarStream().withNameHint("test-files-9"), 
 				new CtpStreamDest(LocalEcho.chan));
-		
-		trun.addObserver(new TaskObserver() {
-			@Override
-			public void completed(TaskRun or) {
-				System.out.println("Transfer Out is complete!!");
-			}
-		});
 		
 		Hub.instance.getWorkPool().submit(trun);
 	}

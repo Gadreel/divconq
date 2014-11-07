@@ -21,8 +21,8 @@ import divconq.bus.Message;
 import divconq.bus.ServiceResult;
 import divconq.hub.Hub;
 import divconq.lang.CountDownCallback;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
 import divconq.schema.Schema;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
@@ -93,7 +93,7 @@ public class TestBusErrors implements IWork {
 		
 		int runcnt = 3;
 		
-		final CountDownCallback countdown = new CountDownCallback(runcnt, new OperationCallback(testrun) {			
+		final CountDownCallback countdown = new CountDownCallback(runcnt, new OperationCallback() {			
 			@Override
 			public void callback() {
 				testrun.info("TestBusErrors finishing up.");
@@ -130,7 +130,7 @@ public class TestBusErrors implements IWork {
 		{
 			Message msg = new Message("TestBusServiceXXX", "Test", "NoOp");
 			
-			Hub.instance.getBus().sendMessage(msg, new ServiceResult(testrun) {
+			Hub.instance.getBus().sendMessage(msg, new ServiceResult() {
 				@Override
 				public void callback() {
 					testrun.info("Back from bad service call");
@@ -147,7 +147,7 @@ public class TestBusErrors implements IWork {
 		{
 			Message msg = new Message("TestBusService", "Test", "NoOp", new RecordStruct(new FieldStruct("Color", "Green")));
 			
-			Hub.instance.getBus().sendMessage(msg, new ServiceResult(testrun) {
+			Hub.instance.getBus().sendMessage(msg, new ServiceResult() {
 				@Override
 				public void callback() {
 					testrun.info("Back from bad body call");
@@ -164,7 +164,7 @@ public class TestBusErrors implements IWork {
 		{
 			Message msg = new Message("TestBusService", "Test", "NoOp");
 			
-			Hub.instance.getBus().sendMessage(msg, new ServiceResult(testrun) {
+			Hub.instance.getBus().sendMessage(msg, new ServiceResult() {
 				@Override
 				public void callback() {
 					testrun.info("Back from timeout call");

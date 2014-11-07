@@ -18,6 +18,8 @@ package divconq.lang;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import divconq.lang.op.FuncCallback;
+
 public class CallbackQueue<T> {
 	protected ConcurrentLinkedQueue<T> resources = new ConcurrentLinkedQueue<T>();	
 	protected ConcurrentLinkedQueue<FuncCallback<T>> callbacks = new ConcurrentLinkedQueue<FuncCallback<T>>();

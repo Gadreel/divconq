@@ -21,9 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import divconq.interchange.CommonPath;
-import divconq.lang.FuncCallback;
-import divconq.lang.OperationResult;
-
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationResult;
 import net.contentobjects.jnotify.JNotify;
 import net.contentobjects.jnotify.JNotifyListener;
 

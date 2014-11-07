@@ -29,8 +29,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import divconq.hub.DomainInfo;
-import divconq.lang.OperationContext;
-import divconq.lang.UserContext;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.UserContext;
 import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
 import divconq.session.Session;

@@ -30,7 +30,7 @@ import java.util.zip.Adler32;
 import javax.tools.JavaFileObject;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
 

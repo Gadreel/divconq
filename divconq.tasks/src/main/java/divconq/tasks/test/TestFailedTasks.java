@@ -19,8 +19,8 @@ package divconq.tasks.test;
 import java.util.concurrent.atomic.AtomicReference;
 
 import divconq.hub.Hub;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
 import divconq.scheduler.ISchedule;
 import divconq.work.ISynchronousWork;
 import divconq.work.IWork;
@@ -130,6 +130,7 @@ public class TestFailedTasks implements IWork {
 		
 		// create a task that shows the TEST bucket status every second 
 		Task reporttask = new Task()
+			.withSubContext()
 			.withWork(new ISynchronousWork() {
 				@Override
 				public void run(TaskRun run) {

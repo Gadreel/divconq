@@ -20,7 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import divconq.lang.OperationResult;
+import divconq.hub.Hub;
+import divconq.lang.op.OperationResult;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
@@ -28,13 +29,11 @@ public class Script {
 	static public final Pattern includepattern = Pattern.compile("(\\s*<\\?include\\s+\\/[A-Za-z0-9-_\\/]+\\.dcsl\\.xml\\s+\\?>\\s*\r?\n)", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 	
 	protected XElement xml = null;
-    protected ActivityManager manager = null;
 	protected Map<String,Instruction> functions = new HashMap<String,Instruction>();
 	protected Instruction main = null;
 	protected String source = null;
 
-    public Script(ActivityManager man) {
-    	this.manager = man;
+    public Script() {
     }
 
     public XElement getXml() {
@@ -75,15 +74,17 @@ public class Script {
         	return log;
         }
         
+        ActivityManager manager = Hub.instance.getActivityManager();
+        
         for (XElement func : doc.selectAll("Function")) {
         	String fname = func.getAttribute("Name");
         	
         	if (StringUtil.isEmpty(fname))
         		continue;
         	
-	        Instruction ni = this.manager.createInstruction(func);
+	        Instruction ni = manager.createInstruction(func);
 	        ni.setXml(func);
-	        ni.compile(this.manager, log);
+	        ni.compile(manager, log);
 	        
 	        this.functions.put(fname, ni);
         }
@@ -94,9 +95,9 @@ public class Script {
         	log.errorTr(506);
         }
         else {
-	        Instruction ni = this.manager.createInstruction(node);
+	        Instruction ni = manager.createInstruction(node);
 	        ni.setXml(node);
-	        ni.compile(this.manager, log);
+	        ni.compile(manager, log);
 	
 	        this.main = ni; 
         }

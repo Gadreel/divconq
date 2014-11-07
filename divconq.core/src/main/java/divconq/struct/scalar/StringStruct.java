@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 import org.joda.time.format.DateTimeFormat;
 
 import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
 import divconq.script.StackEntry;
@@ -119,7 +120,7 @@ public class StringStruct extends ScalarStruct {
 					this.value = String.format(pat, ((ScalarStruct)sref).getGenericValue());			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();

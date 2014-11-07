@@ -23,8 +23,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
@@ -159,10 +159,8 @@ public class Localization {
 		
 		FuncResult<XElement> xres3 = XmlReader.loadFile(fl, false);
 		
-		if (xres3.hasErrors()) {
-			or.copyMessages(xres3);
+		if (xres3.hasErrors()) 
 			return;
-		}
 		
 		this.load(or, xres3.getResult());
 	}
@@ -175,10 +173,8 @@ public class Localization {
 		
 		FuncResult<XElement> xres3 = XmlReader.parse(fl, false);
 		
-		if (xres3.hasErrors()) {
-			or.copyMessages(xres3);
+		if (xres3.hasErrors()) 
 			return;
-		}
 		
 		this.load(or, xres3.getResult());
 	}

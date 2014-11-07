@@ -25,8 +25,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncCallback;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationResult;
 import divconq.struct.Struct;
 
 /**

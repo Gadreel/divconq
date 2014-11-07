@@ -25,7 +25,7 @@ import divconq.net.ssl.SslHandler;
 import divconq.bus.Message;
 import divconq.bus.HubRouter;
 import divconq.hub.Hub;
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationContext;
 import divconq.log.Logger;
 import divconq.util.KeyUtil;
 import divconq.util.StringUtil;

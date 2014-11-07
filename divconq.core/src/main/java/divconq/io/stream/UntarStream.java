@@ -27,8 +27,8 @@ import org.apache.commons.compress.archivers.zip.ZipEncoding;
 import org.apache.commons.compress.archivers.zip.ZipEncodingHelper;
 import org.apache.commons.compress.utils.ArchiveUtils;
 
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class UntarStream extends BaseStream implements IStreamSource {
@@ -74,9 +74,9 @@ public class UntarStream extends BaseStream implements IStreamSource {
     
 	// make sure we don't return without first releasing the file reference content
     @Override
-    public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+    public HandleReturn handle(StreamMessage msg) {
     	if (msg == StreamMessage.FINAL) 
-    		return this.downstream.handle(cb, msg);
+    		return this.downstream.handle(msg);
 
     	ByteBuf in = msg.getPayload();
 
@@ -113,7 +113,7 @@ public class UntarStream extends BaseStream implements IStreamSource {
 		            	this.currEntry = new TarArchiveEntry(this.header_buffer, this.encoding);
 		            } 
 		            catch (Exception x) {
-		                cb.kill("Error detected parsing the header: " + x);
+		            	OperationContext.get().getTaskRun().kill("Error detected parsing the header: " + x);
 		                in.release();
 		                return HandleReturn.DONE;
 		            }
@@ -136,7 +136,7 @@ public class UntarStream extends BaseStream implements IStreamSource {
 			            currEntry.setLinkName(encoding.decode(longLinkData));
 			            */
 			        	
-			        	cb.kill("long link currently not supported");
+			        	OperationContext.get().getTaskRun().kill("long link currently not supported");
 		                in.release();
 			        	return HandleReturn.DONE;
 			        }
@@ -153,7 +153,7 @@ public class UntarStream extends BaseStream implements IStreamSource {
 			            currEntry.setName(encoding.decode(longNameData));
 			            */
 			        	
-			        	cb.kill("long name currently not supported");
+			        	OperationContext.get().getTaskRun().kill("long name currently not supported");
 		                in.release();
 			        	return HandleReturn.DONE;
 			        }
@@ -164,7 +164,7 @@ public class UntarStream extends BaseStream implements IStreamSource {
 			            paxHeaders();
 			            */
 			        	
-			        	cb.kill("pax currently not supported");
+			        	OperationContext.get().getTaskRun().kill("pax currently not supported");
 		                in.release();
 			        	return HandleReturn.DONE;
 			        }
@@ -175,7 +175,7 @@ public class UntarStream extends BaseStream implements IStreamSource {
 			            readGNUSparse();
 			            */
 			        	
-			        	cb.kill("sparse currently not supported");
+			        	OperationContext.get().getTaskRun().kill("sparse currently not supported");
 		                in.release();
 			        	return HandleReturn.DONE;
 			        }
@@ -276,7 +276,7 @@ public class UntarStream extends BaseStream implements IStreamSource {
     	
 		// write all messages in the queue
 		while (this.outlist.size() > 0) {
-			HandleReturn ret = this.downstream.handle(cb, this.outlist.remove(0));
+			HandleReturn ret = this.downstream.handle(this.outlist.remove(0));
 			
 			if (ret != HandleReturn.CONTINUE)
 				return ret;
@@ -303,15 +303,15 @@ public class UntarStream extends BaseStream implements IStreamSource {
     }
     
     @Override
-    public void request(TaskRun cb) {
+    public void request() {
 		// write all messages in the queue
 		while (this.outlist.size() > 0) {
-			HandleReturn ret = this.downstream.handle(cb, this.outlist.remove(0));
+			HandleReturn ret = this.downstream.handle(this.outlist.remove(0));
 			
 			if (ret != HandleReturn.CONTINUE)
 				return;
 		}
 		
-    	this.upstream.request(cb);
+    	this.upstream.request();
     }
 }

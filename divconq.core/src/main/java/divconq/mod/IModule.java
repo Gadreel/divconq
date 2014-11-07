@@ -16,14 +16,13 @@
 ************************************************************************ */
 package divconq.mod;
 
-import divconq.lang.OperationResult;
 import divconq.xml.XElement;
 
 public interface IModule {
 	void setLoader(ModuleLoader v);	
 	ModuleLoader getLoader();
-	void init(OperationResult log, XElement config);
+	void init(XElement config);
 	long startTime();
-	void start(OperationResult log);
-	void stop(OperationResult log); 
+	void start();
+	void stop(); 
 }

@@ -40,9 +40,11 @@ import divconq.hub.Foreground;
 import divconq.hub.Hub;
 import divconq.hub.ILocalCommandLine;
 import divconq.interchange.CommonPath;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
 import divconq.lang.TimeoutPlan;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
+import divconq.lang.op.OperationResult;
 import divconq.script.Activity;
 import divconq.script.ui.ScriptUtility;
 import divconq.struct.FieldStruct;
@@ -51,7 +53,6 @@ import divconq.util.FileUtil;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
 import divconq.work.Task;
-import divconq.work.TaskObserver;
 import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
@@ -157,9 +158,9 @@ public class FileStoreClient implements ILocalCommandLine {
 			    	
 			    	Task uploadtask = TaskFactory.createUploadTask(api, fsService, src, dest, null, true);
 			    	
-			    	Hub.instance.getWorkPool().submit(uploadtask, new TaskObserver() {
+			    	Hub.instance.getWorkPool().submit(uploadtask, new OperationObserver() {
 						@Override
-						public void completed(TaskRun or) {
+						public void completed(OperationContext or) {
 							if (or.hasErrors())
 								System.out.println("Upload failed!");
 							else
@@ -183,9 +184,9 @@ public class FileStoreClient implements ILocalCommandLine {
 			    	
 			    	Task downloadtask = TaskFactory.createDownloadTask(api, fsService, dest, src, null, true);
 			    	
-			    	Hub.instance.getWorkPool().submit(downloadtask, new TaskObserver() {
+			    	Hub.instance.getWorkPool().submit(downloadtask, new OperationObserver() {
 						@Override
-						public void completed(TaskRun or) {
+						public void completed(OperationContext or) {
 							if (or.hasErrors())
 								System.out.println("Download failed!");
 							else
@@ -340,14 +341,14 @@ public class FileStoreClient implements ILocalCommandLine {
 							
 							Task uploadtask = TaskFactory.createUploadTask(api, finfsService, local, dest.resolve(local.getFileName().toString()), null, resume);
 					    	
-							final TaskRun run = new TaskRun(uploadtask);
+							TaskRun run = new TaskRun(uploadtask);
 
-					    	run.addObserver(new TaskObserver() {
+							uploadtask.withObserver(new OperationObserver() {
 					    		protected boolean failTry1 = false;
 					    		protected boolean failTry2 = false;
 					    		
 								@Override
-								public void completed(TaskRun or) {
+								public void completed(OperationContext or) {
 									if (or.hasErrors()) {
 										failcnt.incrementAndGet();
 										System.out.println("Upload failed: " + local);
@@ -368,22 +369,22 @@ public class FileStoreClient implements ILocalCommandLine {
 								}
 					    		
 								@Override
-					    		public void step(OperationResult or, int num, int of, String name) {
+					    		public void step(OperationContext or, int num, int of, String name) {
 									System.out.println("Step: " + num + "/" + of + " - " + name);
 					    		}
 					    		
 								@Override
-								public void progress(OperationResult or, String msg) {
+								public void progress(OperationContext or, String msg) {
 									System.out.println("Progress: " + msg);
 								}
 
 								@Override
-								public void amount(OperationResult or, int v) {
-									System.out.println("Amount: " + run.getAmountCompleted());
+								public void amount(OperationContext or, int v) {
+									System.out.println("Amount: " + run.getContext().getAmountCompleted());
 									
 									// if we are streaming try 2 times to abort
-									if ((run.getCurrentStep() == 2) && resumetest) {
-										if (!this.failTry1 && (run.getAmountCompleted() > 40) &&  (run.getAmountCompleted() < 42)) {
+									if ((run.getContext().getCurrentStep() == 2) && resumetest) {
+										if (!this.failTry1 && (run.getContext().getAmountCompleted() > 40) &&  (run.getContext().getAmountCompleted() < 42)) {
 											// 25% chance of a failure
 											if (FileUtil.testrnd.nextInt(4) == 0) {
 												System.out.println("attempting to abort stream ##################################");
@@ -397,7 +398,7 @@ public class FileStoreClient implements ILocalCommandLine {
 											this.failTry1 = true;
 										}
 										
-										if (!this.failTry2 && (run.getAmountCompleted() > 80) &&  (run.getAmountCompleted() < 82)) {
+										if (!this.failTry2 && (run.getContext().getAmountCompleted() > 80) &&  (run.getContext().getAmountCompleted() < 82)) {
 											// 25% chance of a failure
 											if (FileUtil.testrnd.nextInt(4) == 0) {
 												System.out.println("attempting to abort stream ##################################");
@@ -496,14 +497,14 @@ public class FileStoreClient implements ILocalCommandLine {
 										
 										Task downloadtask = TaskFactory.createDownloadTask(api, finfsService, local, remote, null, resume);
 								    	
-										final TaskRun run = new TaskRun(downloadtask);
+										TaskRun run = new TaskRun(downloadtask);
 			
-								    	run.addObserver(new TaskObserver() {
+										downloadtask.withObserver(new OperationObserver() {
 								    		protected boolean failTry1 = false;
 								    		protected boolean failTry2 = false;
 								    		
 											@Override
-											public void completed(TaskRun or) {
+											public void completed(OperationContext or) {
 												if (or.hasErrors()) {
 													failcnt.incrementAndGet();
 													System.out.println("Download failed: " + remote);
@@ -524,22 +525,22 @@ public class FileStoreClient implements ILocalCommandLine {
 											}
 								    		
 											@Override
-								    		public void step(OperationResult or, int num, int of, String name) {
+								    		public void step(OperationContext or, int num, int of, String name) {
 												System.out.println("Step: " + num + "/" + of + " - " + name);
 								    		}
 								    		
 											@Override
-											public void progress(OperationResult or, String msg) {
+											public void progress(OperationContext or, String msg) {
 												System.out.println("Progress: " + msg);
 											}
 			
 											@Override
-											public void amount(OperationResult or, int v) {
-												System.out.println("Amount: " + run.getAmountCompleted());
+											public void amount(OperationContext or, int v) {
+												System.out.println("Amount: " + run.getContext().getAmountCompleted());
 												
 												// if we are streaming try 2 times to abort
-												if ((run.getCurrentStep() == 2) && resumetest) {
-													if (!this.failTry1 && (run.getAmountCompleted() > 40) &&  (run.getAmountCompleted() < 42)) {
+												if ((run.getContext().getCurrentStep() == 2) && resumetest) {
+													if (!this.failTry1 && (run.getContext().getAmountCompleted() > 40) &&  (run.getContext().getAmountCompleted() < 42)) {
 														// 25% chance of a failure
 														if (FileUtil.testrnd.nextInt(4) == 0) {
 															System.out.println("attempting to abort stream ##################################");
@@ -553,7 +554,7 @@ public class FileStoreClient implements ILocalCommandLine {
 														this.failTry1 = true;
 													}
 													
-													if (!this.failTry2 && (run.getAmountCompleted() > 80) &&  (run.getAmountCompleted() < 82)) {
+													if (!this.failTry2 && (run.getContext().getAmountCompleted() > 80) &&  (run.getContext().getAmountCompleted() < 82)) {
 														// 25% chance of a failure
 														if (FileUtil.testrnd.nextInt(4) == 0) {
 															System.out.println("attempting to abort stream ##################################");

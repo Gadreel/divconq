@@ -25,7 +25,8 @@ import divconq.bus.Message;
 import divconq.hub.Foreground;
 import divconq.hub.Hub;
 import divconq.hub.ILocalCommandLine;
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
+import divconq.script.ui.ScriptUtility;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
@@ -57,6 +58,7 @@ public class Client implements ILocalCommandLine {
 				System.out.println("0)  Exit");
 				System.out.println("1)  Check AuthToken");
 				System.out.println("3)  Local Utilities [ignore if not running WF foreground]");
+				System.out.println("100) dcScript GUI Debugger");
 
 				String opt = scan.nextLine();
 				
@@ -118,6 +120,7 @@ public class Client implements ILocalCommandLine {
 					Task task = new Task()
 						.withId("carl1")
 						.withTitle("Greeting Carl")
+						.withRootContext()
 						.withParams(new RecordStruct(new FieldStruct("Greet", "Carl")))
 						.withWork("divconq.tasks.test.GreetTask");
 					
@@ -229,6 +232,11 @@ public class Client implements ILocalCommandLine {
 					Hub.instance.getWorkPool().submit(task);
 					*/
 					
+					break;
+				}
+				
+				case 100: {
+					ScriptUtility.goSwing(null);					
 					break;
 				}
 				

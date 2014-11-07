@@ -39,11 +39,11 @@ import divconq.io.stream.FileDestStream;
 import divconq.io.stream.FileSourceStream;
 import divconq.io.stream.IStreamDest;
 import divconq.io.stream.IStreamSource;
-import divconq.lang.FuncCallback;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.script.StackEntry;
 import divconq.session.DataStreamChannel;
@@ -316,7 +316,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 				return;
 			}
 			else {
-				stack.log().error(1, "Invalid hash target!");
+				OperationContext.get().error(1, "Invalid hash target!");
 			}
 			
 			stack.resume();
@@ -359,10 +359,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	        		: stack.refFromElement(code, "Target");
 	        
 	        if (content != null) {
-	        	OperationResult or = IOUtil.saveEntireFile(this.localpath, Struct.objectToString(content));
-	        	
-	        	stack.log().copyMessages(or);
-	        	
+	        	IOUtil.saveEntireFile(this.localpath, Struct.objectToString(content));
 	        	this.refreshProps();
 	        }
 		
@@ -486,8 +483,6 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 			
 			OperationResult mdres = FileUtil.confirmOrCreateDir(this.file.getParent());
 			
-			or.copyMessages(mdres);
-			
 			if (mdres.hasErrors()) {
 	        	or.error("FS failed to open file: " + this.file);
 	        	or.complete();				
@@ -565,7 +560,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 						this.writtensize += this.fchannel.write(bb.nioBuffers());
 
 						if (this.expectedsize > 0)
-							this.channel.setAmountCompleted((int)(this.writtensize * 100 / this.expectedsize));
+							this.channel.getContext().setAmountCompleted((int)(this.writtensize * 100 / this.expectedsize));
 					} 
 	    			catch (IOException x) {
 	    	    		this.channel.error(1, "Error writing file");
@@ -709,7 +704,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 							return;
 						}
 				    	
-						SourceDriver.this.channel.setAmountCompleted((int)((fsize - amtleft.get()) * 100 / fsize));
+						SourceDriver.this.channel.getContext().setAmountCompleted((int)((fsize - amtleft.get()) * 100 / fsize));
 
 						if (result > 0) {
 							this.pos += result;
@@ -790,8 +785,6 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 		d.init(channel, new OperationCallback() {			
 			@Override
 			public void callback() {
-				callback.copyMessages(this);
-				
 				if (!this.hasErrors()) {
 					channel.setDriver(d);
 					
@@ -825,8 +818,6 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 		d.init(channel, new OperationCallback() {			
 			@Override
 			public void callback() {
-				callback.copyMessages(this);
-				
 				// we cannot get reliable size info this way because windows is sometimes too slow
 				// about reporting file size.  we need to get file size instead by allowing dest driver 
 				// to set size for us
@@ -853,7 +844,6 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	public void hash(String method, FuncCallback<String> callback) {
 		try {
 			FuncResult<String> res = HashUtil.hash(method, Files.newInputStream(this.localpath));
-			callback.copyMessages(res); 
 			
 			if (!res.hasErrors())
 				callback.setResult(res.getResult());

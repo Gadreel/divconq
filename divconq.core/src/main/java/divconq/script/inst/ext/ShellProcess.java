@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import divconq.lang.op.OperationContext;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
 import divconq.script.StackEntry;
@@ -55,7 +56,7 @@ public class ShellProcess extends Instruction {
 			String v = stack.stringFromElement(params.get(i), "Value");
 			
 			if (StringUtil.isEmpty(v)) {
-				stack.log().error("Missing value for parameter: " + (i + 1));
+				OperationContext.get().error("Missing value for parameter: " + (i + 1));
 				// TODO error code and set last
 				stack.setState(ExecuteState.Done);		// done is fine, the script should decide what to do with the rrror
 				stack.resume();
@@ -96,11 +97,11 @@ public class ShellProcess extends Instruction {
 				}
 				
 				if (code < 300)
-					stack.log().info(0, line);
+					OperationContext.get().info(0, line);
 				else if (code < 500)
-					stack.log().warn(0, line);
+					OperationContext.get().warn(0, line);
 				else
-					stack.log().error(400000 + code, line);		// TODO configure error start code
+					OperationContext.get().error(400000 + code, line);		// TODO configure error start code
 			}
 			
 			input.close();
@@ -123,7 +124,7 @@ public class ShellProcess extends Instruction {
 	            stack.addVariable(handle, new IntegerStruct(ecode));
 		} 
 		catch (IOException x) {
-			stack.log().error("Shell IO Error " + x);
+			OperationContext.get().error("Shell IO Error " + x);
 		}
 		
 		stack.setState(ExecuteState.Done);

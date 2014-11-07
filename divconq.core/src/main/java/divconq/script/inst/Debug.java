@@ -18,7 +18,7 @@ package divconq.script.inst;
 
 import java.util.List;
 
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleUtil;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
@@ -46,7 +46,7 @@ public class Debug extends Instruction {
 					: LocaleUtil.tr(LocaleUtil.getDefaultLocale(), "_code_" + code, oparams);
 		}		
 		
-		stack.log().debug(code, output);
+		OperationContext.get().debug(code, output);
 		
 		//System.out.println(output);
 		stack.setState(ExecuteState.Done);

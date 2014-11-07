@@ -18,7 +18,7 @@ package divconq.view.xml;
 
 import java.io.IOException;
 
-import divconq.lang.OperationCallback;
+import divconq.lang.op.OperationCallback;
 import divconq.view.Fragment;
 import divconq.web.IViewBuilder;
 import divconq.web.WebContext;

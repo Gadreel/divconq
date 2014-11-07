@@ -25,9 +25,9 @@ import divconq.api.ApiSession;
 import divconq.api.ServiceResult;
 import divconq.bus.Message;
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.WrappedFuncCallback;
-import divconq.lang.WrappedOperationCallback;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationCallback;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.HashUtil;
@@ -92,8 +92,8 @@ public class DownloadFile implements ISmartWork {
 	
 	
 	public void requestDownload() {
-		this.xferctx.run.nextStep("Request Download");
-		this.xferctx.run.setProgressMessage("Sending start download request");		
+		this.xferctx.run.getContext().nextStep("Request Download");
+		this.xferctx.run.getContext().setProgressMessage("Sending start download request");		
     	
 		RecordStruct rec = new RecordStruct();
 		
@@ -103,10 +103,10 @@ public class DownloadFile implements ISmartWork {
 		
 		Message msg = new Message(this.xferctx.servicename, "FileStore", "StartDownload", rec);
 		
-		this.session.establishDataStream("Downloading " + this.xferctx.remote.getFileName(), "Download", msg, new WrappedFuncCallback<RecordStruct>(this.xferctx.run) {
+		this.session.establishDataStream("Downloading " + this.xferctx.remote.getFileName(), "Download", msg, new FuncCallback<RecordStruct>() {
 			@Override
 			public void callback() {
-				if (this.run.hasErrors()) { 
+				if (DownloadFile.this.xferctx.run.hasErrors()) { 
 		    		DownloadFile.this.transition(DownloadState.FREE_LOCAL_CHANNEL);
 				}
 				else {
@@ -120,8 +120,8 @@ public class DownloadFile implements ISmartWork {
 	public void sendStream() {		
 		final TaskRun xferrun =  this.xferctx.run;
 		
-		xferrun.nextStep("Download File");
-		xferrun.setProgressMessage("Downloading File");		
+		xferrun.getContext().nextStep("Download File");
+		xferrun.getContext().setProgressMessage("Downloading File");		
     	
 		try {
 			Path local = this.xferctx.local;
@@ -130,11 +130,11 @@ public class DownloadFile implements ISmartWork {
 					? FileChannel.open(local, StandardOpenOption.WRITE, StandardOpenOption.APPEND, StandardOpenOption.SYNC) 
 					: FileChannel.open(local, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.SYNC);
 			
-			this.session.receiveStream(chn, this.xferctx.streaminfo.getFieldAsInteger("Size", 0), this.xferctx.offset, this.xferctx.channelid, new WrappedOperationCallback(xferrun) {						
+			this.session.receiveStream(chn, this.xferctx.streaminfo.getFieldAsInteger("Size", 0), this.xferctx.offset, this.xferctx.channelid, new OperationCallback() {						
 				@Override
 				public void callback() {
 			    	if (!xferrun.hasErrors()) 
-			    		xferrun.setProgressMessage("File Download Complete");		
+			    		xferrun.getContext().setProgressMessage("File Download Complete");		
 			    	else
 			    		xferrun.error("Receive Stream Error: " + xferrun.getMessage());
 			    	
@@ -150,7 +150,7 @@ public class DownloadFile implements ISmartWork {
     }
 	
 	public void recordOutcome() {
-		this.xferctx.run.nextStep("Record File Outcome");		
+		this.xferctx.run.getContext().nextStep("Record File Outcome");		
 		
     	String status = "Failure";    	
 		RecordStruct evidence = new RecordStruct();
@@ -166,7 +166,6 @@ public class DownloadFile implements ISmartWork {
 			if (!"Size".equals(hashMethod)) {
 				try {
 					FuncResult<String> res = HashUtil.hash(hashMethod, Files.newInputStream(local));
-					this.xferctx.run.copyMessages(res); 
 					
 					if (!res.hasErrors())
 						evidence.setField(hashMethod, res.getResult());
@@ -181,10 +180,10 @@ public class DownloadFile implements ISmartWork {
 		}
 		
 		if (this.xferctx.run.hasErrors()) {
-			this.xferctx.run.setProgressMessage("Download failed");
+			this.xferctx.run.getContext().setProgressMessage("Download failed");
 		}
 		else {
-			this.xferctx.run.setProgressMessage("Integrity good, approving!");
+			this.xferctx.run.getContext().setProgressMessage("Integrity good, approving!");
 			status = "Success";
 		}
 		
@@ -196,20 +195,19 @@ public class DownloadFile implements ISmartWork {
 						new FieldStruct("Params", this.xferctx.xferparams)
 				));
 		
-		DownloadFile.this.session.sendMessage(msg, new ServiceResult(this.xferctx.run) {							
+		DownloadFile.this.session.sendMessage(msg, new ServiceResult() {							
 			@Override
 			public void callback() {
-				DownloadFile.this.xferctx.run.copyMessages(this);					
 				DownloadFile.this.transition(DownloadState.FREE_LOCAL_CHANNEL);
 			}
 		});
 	}
 
 	public void freeLocalChannel() {
-		this.xferctx.run.nextStep("Cleanup");
-		this.xferctx.run.setProgressMessage("Freeing channel");		
+		this.xferctx.run.getContext().nextStep("Cleanup");
+		this.xferctx.run.getContext().setProgressMessage("Freeing channel");		
 		
-		this.session.freeDataChannel(this.xferctx.channelid, new WrappedOperationCallback(this.xferctx.run) {							
+		this.session.freeDataChannel(this.xferctx.channelid, new OperationCallback() {							
 			@Override
 			public void callback() {
 				DownloadFile.this.transition(DownloadState.DOWNLOAD_DONE);

@@ -29,8 +29,8 @@ import java.util.Map;
 import java.util.Stack;
 
 import divconq.io.CharSequenceReader;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.util.StringUtil;
 
 public class XmlReader implements IParseHandler {
@@ -179,9 +179,7 @@ public class XmlReader implements IParseHandler {
 		if (this.top == null)
 			res.errorTr(247);
 		
-		if (or.hasErrors())
-			res.copyMessages(or);
-		else
+		if (!or.hasErrors())
 			res.setResult(this.top);
 		
 		return res;

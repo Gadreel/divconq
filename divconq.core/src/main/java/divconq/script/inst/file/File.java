@@ -19,7 +19,8 @@ package divconq.script.inst.file;
 import divconq.interchange.CommonPath;
 import divconq.interchange.IFileStoreDriver;
 import divconq.interchange.IFileStoreFile;
-import divconq.lang.FuncCallback;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
 import divconq.script.inst.With;
 import divconq.struct.Struct;
@@ -38,7 +39,7 @@ public class File extends With {
         Struct ss = stack.refFromSource("In");
         
         if ((ss == null) || (!(ss instanceof IFileStoreDriver) && !(ss instanceof IFileStoreFile))) {
-        	stack.log().errorTr(536);
+        	OperationContext.get().errorTr(536);
     		this.nextOpResume(stack);
         	return;
         }
@@ -49,7 +50,7 @@ public class File extends With {
             path = new CommonPath(stack.stringFromSource("Path", "/"));
         }
         catch (Exception x) {
-			stack.log().errorTr(537);
+        	OperationContext.get().errorTr(537);
 			this.nextOpResume(stack);
 			return;
         }
@@ -67,10 +68,8 @@ public class File extends With {
         drv.getFileDetail(path, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {
-				stack.log().copyMessages(this);
-				
 				if (this.hasErrors()) {
-					stack.log().errorTr(538);
+					OperationContext.get().errorTr(538);
 					File.this.nextOpResume(stack);
 					return;
 				}

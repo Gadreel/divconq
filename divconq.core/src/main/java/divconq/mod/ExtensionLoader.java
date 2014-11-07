@@ -16,7 +16,6 @@
 ************************************************************************ */
 package divconq.mod;
 
-import divconq.lang.OperationResult;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
@@ -57,7 +56,7 @@ public class ExtensionLoader extends Bundle {
 		this.module = module;
 	}
 	
-	public void init(OperationResult log, XElement config) {
+	public void init(XElement config) {
 		try {
 			this.config = config;
 			this.name = config.getAttribute("Name");
@@ -77,7 +76,7 @@ public class ExtensionLoader extends Bundle {
 					// TODO if (this.extension == null) 
 					
 					this.extension.setLoader(this);
-					this.extension.init(log, this.setting);
+					this.extension.init(this.setting);
 				}
 			}
 		} 
@@ -87,13 +86,13 @@ public class ExtensionLoader extends Bundle {
 		}
 	}
 
-	public void start(OperationResult log) {
+	public void start() {
 		if (this.extension != null)
-			this.extension.start(log);
+			this.extension.start();
 	}
 	
-	public void stop(OperationResult log) {
+	public void stop() {
 		if (this.extension != null)
-			this.extension.stop(log);
+			this.extension.stop();
 	}
 }

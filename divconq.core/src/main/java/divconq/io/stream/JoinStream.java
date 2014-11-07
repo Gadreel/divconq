@@ -19,7 +19,6 @@ package divconq.io.stream;
 import io.netty.buffer.ByteBuf;
 
 import divconq.script.StackEntry;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class JoinStream extends BaseStream implements IStreamSource {
@@ -32,13 +31,13 @@ public class JoinStream extends BaseStream implements IStreamSource {
     
 	// make sure we don't return without first releasing the file reference content
     @Override
-    public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+    public HandleReturn handle(StreamMessage msg) {
     	if (msg == StreamMessage.FINAL) 
-    		return this.downstream.handle(cb, msg);
+    		return this.downstream.handle(msg);
 
     	ByteBuf in = msg.getPayload();
 
-		return this.downstream.handle(cb, this.nextMessage(in, msg));
+		return this.downstream.handle(this.nextMessage(in, msg));
     }
     
     public StreamMessage nextMessage(ByteBuf out, StreamMessage curr) {
@@ -56,7 +55,7 @@ public class JoinStream extends BaseStream implements IStreamSource {
     }
     
     @Override
-    public void request(TaskRun cb) {
-    	this.upstream.request(cb);
+    public void request() {
+    	this.upstream.request();
     }
 }

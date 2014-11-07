@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
 
 public class KeyUtil {
 	static public class CertSummary {

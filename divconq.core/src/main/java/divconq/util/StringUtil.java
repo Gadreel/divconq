@@ -19,7 +19,7 @@ package divconq.util;
 import java.util.Iterator;
 
 import divconq.lang.Memory;
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationContext;
 import divconq.struct.builder.JsonMemoryBuilder;
 
 public class StringUtil {

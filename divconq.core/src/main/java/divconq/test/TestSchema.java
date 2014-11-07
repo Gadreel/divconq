@@ -17,8 +17,9 @@
 package divconq.test;
 
 import divconq.hub.HubResources;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
 import divconq.schema.SchemaManager;
@@ -29,6 +30,8 @@ import divconq.struct.Struct;
 public class TestSchema {
 	public static void main(String[] args) {
 		try {
+			OperationContext.useHubContext();
+			
 			HubResources resources = new HubResources();
 			resources.setDebugLevel(DebugLevel.Trace);
 			OperationResult or = resources.init();

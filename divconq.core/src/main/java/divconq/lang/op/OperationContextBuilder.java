@@ -14,7 +14,7 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.lang;
+package divconq.lang.op;
 
 import org.joda.time.DateTimeZone;
 
@@ -22,6 +22,100 @@ import divconq.locale.LocaleUtil;
 import divconq.log.DebugLevel;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+
+/*
+		<Record Id="UserCredentials">
+			<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+			<Field Name="Password" Type="dcUser:dcPassword" />
+			<Field Name="ConfirmationCode" Type="dcUser:dcConfirmCode" />
+			<Field Name="ThumbPrint" Type="dcTinyString" />
+			<Field Name="PublicKey" Type="String" />
+		</Record>
+		
+		<Record Id="UserContext">
+			<Field Name="UserId" Type="Id" />
+			<Field Name="UserName" Type="dcUser:dcUserName" />
+			<Field Name="FullName" Type="dcSmallString" />
+			<Field Name="Email" Type="dcUser:dcEmail" />
+			<Field Name="Credentials" Type="UserCredentials" />
+			<Field Name="AuthToken" Type="dcAuthToken" />
+			<Field Name="Verified" Type="Boolean" />
+			<Field Name="Locale" Type="dcSmallString" />
+			<Field Name="Chronology" Type="dcSmallString" />
+			<Field Name="DomainId" Type="Id" />
+			<Field Name="AuthTags">
+				<List Type="dcTinyString" />
+			</Field>
+		</Record>
+		
+		<Record Id="OpContext" Inherits="UserContext">
+			<Field Name="OpId" Type="dcTinyString" />
+			<Field Name="SessionId" Type="dcTinyString" />
+			<Field Name="Origin" Type="dcSmallString" />
+			<Field Name="DebugLevel" Type="dcTinyString" />
+			<Field Name="Elevated" Type="Boolean" />
+		</Record>
+
+		
+		
+		
+		<Table Id="dcDomain">
+			<Field Name="dcTitle" Type="dcSmallString" Required="True" />
+			<Field Name="dcName" Type="dcSmallString" Required="True" List="True" />
+			<Field Name="dcDescription" Type="String" />
+			
+			<!-- crypto support -->
+			<Field Name="dcObscureClass" Type="dcSmallString" />
+			<Field Name="dcObscureSeed" Type="dcSmallString" />
+			
+			<!-- used by root domain only, index of all domains -->
+			<Field Name="dcDomainIndex" Type="Id" List="True" />
+		</Table>
+		
+		<!--
+			guest user = 00000_000000000000000
+			root user  = 00000_000000000000001
+			
+			root user is in ^dcRecord("dcUser","00000_000000000000001" 
+			
+			but users may be in more than on domain - a user id only appears once in entire database.  the same user id in more than
+			one domain denotes that the SAME user belongs to more than one domain.
+			
+			so root user in domain 00975_000000123000001 is ^dcRecord("dcUser#00975_000000123000001","00000_000000000000001"
+			and user 00975_000000123000999 is ^dcRecord("dcUser#00975_000000123000001","00975_000000123000999"
+			but this user may also appear in another domain, such as ^dcRecord("dcUser#00100_000000000000001","00975_000000123000999"
+		-->
+		<Table Id="dcUser">
+			<Field Name="dcUserName" Type="dcUserName" Required="True" Indexed="True" Dynamic="True" />
+			<Field Name="dcFirstName" Type="dcTinyString" Indexed="True" Dynamic="True" />
+			<Field Name="dcLastName" Type="dcTinyString" Indexed="True" Dynamic="True" />
+			
+			<Field Name="dcEmail" Type="dcSmallString" Indexed="True" Dynamic="True" />
+			<!-- dcEmail should be email within the domain, backup applies if within domain is bad, missing or user account is disabled TODO -->
+			<Field Name="dcBackupEmail" Type="dcSmallString" Indexed="True" Dynamic="True" />
+			<Field Name="dcPassword" Type="dcSmallString" Dynamic="True" />
+			<Field Name="dcLocale" Type="dcSmallString" />
+			<Field Name="dcChronology" Type="dcSmallString" />
+			<Field Name="dcDescription" Type="String" />
+			
+			<Field Name="dcLastLogin" Type="DateTime" />
+			<Field Name="dcConfirmed" Type="Boolean" />
+			<Field Name="dcConfirmCode" Type="dcTinyString" />
+			<Field Name="dcRecoverAt" Type="DateTime" />
+			
+			<Field Name="dcAuthorizationTag" Type="dcTinyString" List="True" />
+			
+			<Field Name="dcGroup" ForeignKey="dcGroup" List="True" /> 
+		</Table>
+		
+		<Table Id="dcGroup">
+			<Field Name="dcName" Type="dcSmallString" Required="True" Indexed="True" Dynamic="True" />
+			<Field Name="dcAuthorizationTag" Type="dcTinyString" List="True" />
+			<Field Name="dcDescription" Type="String" />
+		</Table>
+		
+ * 
+ */
 
 // can be used to build task context or user context
 public class OperationContextBuilder {
@@ -74,6 +168,7 @@ public class OperationContextBuilder {
 			.withChronology("/" + DateTimeZone.getDefault().getID());		// ISOChronology w/ default zone
 	}
 	
+	// take existing context and elevate, but do not change locale or chrono
 	public OperationContextBuilder elevateToRootTask() {
 		return this
 			.withElevated(true)

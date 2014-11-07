@@ -50,9 +50,9 @@ import divconq.api.internal.DownloadHandler;
 import divconq.api.internal.UploadPutHandler;
 import divconq.bus.Message;
 import divconq.hub.Hub;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationResult;
-import divconq.lang.UserContext;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationResult;
+import divconq.lang.op.UserContext;
 import divconq.work.ISynchronousWork;
 import divconq.work.TaskRun;
 import divconq.xml.XElement;
@@ -299,9 +299,7 @@ public class HyperSession extends ApiSession {
 	public void sendMessage(final Message msg, final ServiceResult callback) {
 		OperationResult or = this.connect();
 		
-		callback.copyMessages(or);;
-		
-		if (callback.hasErrors()) {
+		if (or.hasErrors()) {
 			callback.complete();
 			return;
 		}

@@ -34,7 +34,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import divconq.hub.Hub;
 import divconq.hub.HubEvents;
-import divconq.lang.OperationResult;
 import divconq.log.Logger;
 import divconq.mod.ModuleBase;
 import divconq.util.StringUtil;
@@ -49,7 +48,7 @@ public class WebModule extends ModuleBase {
     protected ReentrantLock listenlock = new ReentrantLock();
 
 	@Override
-	public void start(OperationResult log) {
+	public void start() {
 		// prepare the web site manager from settings in module config
 		WebSiteManager.instance.start(this, this.config.find("ViewSettings"));
 		
@@ -174,7 +173,7 @@ public class WebModule extends ModuleBase {
 	}
 
 	@Override
-	public void stop(OperationResult log) {
+	public void stop() {
 		this.goOffline();
 	}
 }

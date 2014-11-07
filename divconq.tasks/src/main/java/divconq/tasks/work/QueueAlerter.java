@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.tasks.work;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.work.IQueueAlerter;
 import divconq.xml.XElement;
 

@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.schema;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.xml.XElement;
 
 public class Schema {

@@ -30,10 +30,10 @@ import divconq.hub.Foreground;
 import divconq.hub.Hub;
 import divconq.hub.ILocalCommandLine;
 import divconq.interchange.CommonPath;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
 import divconq.util.StringUtil;
 import divconq.work.Task;
-import divconq.work.TaskObserver;
-import divconq.work.TaskRun;
 
 /**
  *  ONLY works with local session, does not work with remote sessions
@@ -207,9 +207,9 @@ public class Backend implements ILocalCommandLine {
 			    	// TODO name
 			    	Task uploadtask = TaskFactory.createUploadTask(api, "x", src, dest, null, true);
 			    	
-			    	Hub.instance.getWorkPool().submit(uploadtask, new TaskObserver() {
+			    	Hub.instance.getWorkPool().submit(uploadtask, new OperationObserver() {
 						@Override
-						public void completed(TaskRun or) {
+						public void completed(OperationContext or) {
 							if (or.hasErrors())
 								System.out.println("Upload failed!");
 							else

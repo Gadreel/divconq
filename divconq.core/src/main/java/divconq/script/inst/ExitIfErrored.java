@@ -18,6 +18,7 @@ package divconq.script.inst;
 
 import java.util.List;
 
+import divconq.lang.op.OperationContext;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
 import divconq.script.StackEntry;
@@ -40,7 +41,7 @@ public class ExitIfErrored extends Instruction {
 		Struct result = stack.codeHasAttribute("Result") ? stack.refFromSource("Result") : null;
 		
 		if (StringUtil.isNotEmpty(output))
-			stack.log().exit(code, output);
+			OperationContext.get().exit(code, output);
 		else if (code > 1) {
 			List<XElement> params = this.source.selectAll("Param");
 			Object[] oparams = new Object[params.size()];
@@ -48,17 +49,17 @@ public class ExitIfErrored extends Instruction {
 			for (int i = 0; i < params.size(); i++) 
 				oparams[i] = stack.refFromElement(params.get(i), "Value").toString();
 
-			stack.log().exitTr(code, oparams);
+			OperationContext.get().exitTr(code, oparams);
 		}
 		
-		//System.out.println(stack.log().getMessage());
+		//System.out.println(OperationContext.get().getMessage());
 		
 		if ((result == null) && StringUtil.isNotEmpty(output))
 			result = new StringStruct(output);
 		
 		if (stack.codeHasAttribute("Code")) { 
 			stack.setLastResult(code, result);
-			stack.log().exit(code, (result != null) ? result.toString() : null);
+			OperationContext.get().exit(code, (result != null) ? result.toString() : null);
 		}
 		else if (result != null) {
 			stack.setLastResult(result);

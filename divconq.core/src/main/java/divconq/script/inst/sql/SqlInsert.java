@@ -22,8 +22,9 @@ import java.util.List;
 import org.joda.time.DateTime;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
 import divconq.lang.StringBuilder32;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
 import divconq.script.StackEntry;
@@ -38,13 +39,13 @@ import divconq.xml.XElement;
 public class SqlInsert extends Instruction {
 	@Override
 	public void run(StackEntry stack) {
-		//stack.log().info("Doing a SQL INSERT on thread " + Thread.currentThread().getName());
+		//OperationContext.get().info("Doing a SQL INSERT on thread " + Thread.currentThread().getName());
 		
 		String dbname = stack.stringFromSource("Database", "default");
 		String table = stack.stringFromSource("Table");
 
 		if (StringUtil.isEmpty(dbname) || StringUtil.isEmpty(table)) {
-			stack.log().error("Missing table for insert");
+			OperationContext.get().error("Missing table for insert");
 			stack.setState(ExecuteState.Done);
 			stack.resume();
 			return;
@@ -93,7 +94,7 @@ public class SqlInsert extends Instruction {
 		SqlDatabase db = Hub.instance.getSQLDatabase(dbname);
 		
 		if (db == null) {
-			stack.log().errorTr(185, dbname);
+			OperationContext.get().errorTr(185, dbname);
 			stack.setState(ExecuteState.Done);
 			stack.resume();
 			return;
@@ -101,10 +102,8 @@ public class SqlInsert extends Instruction {
         
 		FuncResult<Integer> rsres = db.executeInsert(sql, vals);
 		
-		stack.log().copyMessages(rsres);
-		
 		if (rsres.getResult() != 1) 
-			stack.log().error("INSERT failed, expected 1 row result count");		
+			OperationContext.get().error("INSERT failed, expected 1 row result count");		
 		
 		stack.setState(ExecuteState.Done);
 		stack.resume();

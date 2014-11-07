@@ -27,13 +27,11 @@ import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.util.CharsetUtil;
-
 import divconq.bus.MessageUtil;
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
 import divconq.struct.CompositeParser;
 import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
-
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 
 /**

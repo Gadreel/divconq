@@ -24,9 +24,9 @@ import divconq.bus.net.StreamMessage;
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
 import divconq.hub.HubState;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.net.NetUtil;
 import divconq.session.DataStreamChannel;
@@ -80,6 +80,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 	static protected final String DOWNLOAD_PATH = "download";
 	static protected final String UPLOAD_PATH = "upload";
 
+	// this is the context used until we figure out if we have a session or not
+	static protected OperationContext defaultOpContext = OperationContext.useNewGuest();  
+	
     protected HttpContext context = null; 
     protected WebSocketServerHandshaker handshaker = null;		// TODO when handshaker completes then set context.session to a different session adaptor (direct messages to client instead of queue)
     
@@ -98,6 +101,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
     	//System.out.println("server got object: " + msg.getClass().getName());
+    	OperationContext.set(ServerHandler.defaultOpContext);
     	
     	if (this.context.getChannel() == null)
     		this.context.setChannel(ctx.channel());
@@ -407,7 +411,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		
 		sess.touch();
 		
-		OperationContext tc = sess.setTaskContext(origin);
+		OperationContext tc = sess.setContext(origin);
 
 		tc.info("Web request for host: " + req.getHeader("Host") +  " url: " + req.getPath() + " by: " + origin + " session: " + sess.getId());
 		

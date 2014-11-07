@@ -16,6 +16,7 @@
 ************************************************************************ */
 package divconq.script.inst;
 
+import divconq.lang.op.OperationContext;
 import divconq.script.Activity;
 import divconq.script.BlockInstruction;
 import divconq.script.ExecuteState;
@@ -30,7 +31,7 @@ public class Main extends BlockInstruction {
 		
 		// first time through init steps
 		if (stack.getState() == ExecuteState.Ready) {
-			stack.log().setSteps((int)stack.intFromSource("Steps", 0));			
+			OperationContext.get().setSteps((int)stack.intFromSource("Steps", 0));			
 			fstack.setParameterName(stack.stringFromSource("Parameter"));
 		}
 		

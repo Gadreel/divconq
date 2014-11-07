@@ -25,11 +25,11 @@ import java.util.concurrent.CountDownLatch;
 import divconq.bus.Message;
 import divconq.bus.MessageUtil;
 import divconq.hub.Hub;
-import divconq.lang.FuncCallback;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationContext;
 import divconq.lang.TimeoutPlan;
-import divconq.lang.UserContext;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.UserContext;
 import divconq.script.StackEntry;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
@@ -131,8 +131,6 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 		this.sendMessage(msg, new ServiceResult() {
 			@Override
 			public void callback() {
-				callback.copyMessages(this);				
-				
 				if (!this.hasErrors())
 					callback.setResult(this.getBodyAsRec().getFieldAsString("ChannelId"));
 				
@@ -147,7 +145,6 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 		this.sendMessage(msg, new ServiceResult() {
 			@Override
 			public void callback() {
-				callback.copyMessages(this);				
 				callback.complete();				
 			}
 		});			
@@ -163,8 +160,6 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 		this.sendMessage(msg, new ServiceResult() {
 			@Override
 			public void callback() {
-				callback.copyMessages(this);				
-				
 				if (!this.hasErrors())
 					callback.setResult(this.getBodyAsRec());
 				
@@ -189,7 +184,6 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 		this.sendMessage(msg, new ServiceResult() {
 			@Override
 			public void callback() {
-				callback.copyMessages(this);				
 				callback.complete();				
 			}
 		});			
@@ -211,7 +205,6 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 		this.sendMessage(msg, new ServiceResult() {
 			@Override
 			public void callback() {
-				callback.copyMessages(this);				
 				callback.complete();				
 			}
 		});			

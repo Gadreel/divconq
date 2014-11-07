@@ -19,9 +19,10 @@ package divconq.web;
 import divconq.bus.Message;
 import divconq.bus.MessageUtil;
 import divconq.bus.ServiceResult;
-import divconq.lang.FuncResult;
 import divconq.lang.Memory;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
+import divconq.log.DebugLevel;
 import divconq.log.Logger;
 import divconq.struct.CompositeParser;
 import divconq.struct.CompositeStruct;
@@ -91,7 +92,7 @@ public class RpcHandler implements IBodyCallback {
 					// if we did not get an official reply to the request then
 					// it may have been a timeout.  regardless, collect messages
 					// and prepare to return any payload
-					Message rmsg = this.toLogMessage();
+					Message rmsg = this.isLevel(DebugLevel.Debug) ? this.toLogMessage() : this.toBasicLogMessage();
 					
 					// add the body (payload) if any
 					Message reply = this.getResult();

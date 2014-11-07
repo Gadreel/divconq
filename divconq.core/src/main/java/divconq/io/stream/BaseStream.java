@@ -1,7 +1,6 @@
 package divconq.io.stream;
 
 import divconq.struct.RecordStruct;
-import divconq.work.TaskRun;
 
 abstract public class BaseStream extends RecordStruct implements IStream {
 	protected IStream upstream = null;
@@ -23,7 +22,7 @@ abstract public class BaseStream extends RecordStruct implements IStream {
 	 * @param msg data to process
 	 * @return AWAIT if you are processing this async
 	 */
-	abstract public HandleReturn handle(TaskRun cb, StreamMessage msg);
+	abstract public HandleReturn handle(StreamMessage msg);
 	
 	/**
 	 * A cancel was sent from upstream to me.
@@ -38,7 +37,7 @@ abstract public class BaseStream extends RecordStruct implements IStream {
 	/**
 	 * downstream is requesting that you send more messages
 	 */
-	abstract public void request(TaskRun cb);
+	abstract public void request();
 	
 	public IStreamSource getOrigin() {
 		if (this instanceof IStreamSource)
@@ -50,11 +49,11 @@ abstract public class BaseStream extends RecordStruct implements IStream {
 		return null;
 	}
 	
-	public void cleanup(TaskRun cb) {
+	public void cleanup() {
 		IStream up = this.upstream;
 		
 		if (up != null)
-			up.cleanup(cb);
+			up.cleanup();
 		
 		this.close();
 	}

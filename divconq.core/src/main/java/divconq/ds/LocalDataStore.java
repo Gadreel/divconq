@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import divconq.hub.Hub;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.scheduler.ISchedule;
 import divconq.struct.CompositeParser;

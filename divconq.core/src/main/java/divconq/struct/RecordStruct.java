@@ -36,9 +36,10 @@ import org.joda.time.LocalTime;
 
 import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
-import divconq.lang.FuncResult;
 import divconq.lang.Memory;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.schema.DataType;
 import divconq.schema.Field;
 import divconq.script.ExecuteState;
@@ -108,7 +109,9 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 	 * @param fields initial pairs
 	 */
 	public RecordStruct(FieldStruct... fields) {
-		this.setField(fields);
+		// this is necessary so that Hub can start an initial context (setField causes a allocate guest)
+		if (fields.length > 0)
+			this.setField(fields);
 	}
 	
 	/* (non-Javadoc)
@@ -352,8 +355,9 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 				Field fld = this.explicitType.getField(name);
 				
 				if (fld != null) 
-					value = fld.create(fr);
-				else if (this.explicitType.isAnyRecord()) 
+					return fld.create();
+				
+				if (this.explicitType.isAnyRecord()) 
 					value = NullStruct.instance;
 			}
 			else
@@ -762,7 +766,7 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
             
 			if (var == null) {
 				stack.setState(ExecuteState.Done);
-				stack.log().errorTr(520);
+				OperationContext.get().errorTr(520);
 				stack.resume();
 				return;
 			}

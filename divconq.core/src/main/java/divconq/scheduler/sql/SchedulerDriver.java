@@ -17,8 +17,8 @@
 package divconq.scheduler.sql;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.scheduler.ISchedulerDriver;
 import divconq.scheduler.ScheduleEntry;
 import divconq.scheduler.ScheduleEntry.ScheduleArea;
@@ -93,8 +93,6 @@ public class SchedulerDriver implements ISchedulerDriver {
 				"Id = ? AND Active = 1",	// where
 				StringUtil.parseInt(id, 0)	// param 1 - dcSchedule record id
 		);	
-		
-		res.copyMessages(rsres);
 		
 		if (rsres.hasErrors())
 			return res;

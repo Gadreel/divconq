@@ -26,8 +26,8 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import divconq.lang.FuncResult;
 import divconq.lang.Memory;
+import divconq.lang.op.FuncResult;
 import divconq.struct.CompositeStruct;
 import divconq.struct.CompositeParser;
 import divconq.util.StringUtil;

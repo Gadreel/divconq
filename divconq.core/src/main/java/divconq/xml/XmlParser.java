@@ -23,7 +23,7 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Stack;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.util.IOUtil;
 
 /**

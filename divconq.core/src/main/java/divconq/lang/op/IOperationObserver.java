@@ -14,8 +14,10 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.lang;
+package divconq.lang.op;
 
-public interface IOperationLogger {
-	String logToString();
+
+// if you are listening to work, your efforts in "completed" will be in the work context, not yours - be sure to respect that
+public interface IOperationObserver {
+	void fireEvent(OperationEvent event, OperationContext target, Object detail);
 }

@@ -21,8 +21,8 @@ import java.util.Scanner;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
 
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
 
@@ -49,6 +49,8 @@ public class Daemon implements org.apache.commons.daemon.Daemon {
 		String deployment = (args.length > 0) ? args[0] : null;
 		String squadid = (args.length > 1) ? args[1] : null;
 		String hubid = (args.length > 2) ? args[2] : null;
+		
+		OperationContext.useHubContext();
 		
 		HubResources resources = new HubResources(deployment, squadid, null, hubid);
 

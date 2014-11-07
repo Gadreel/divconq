@@ -20,6 +20,7 @@ import divconq.api.ApiSession;
 import divconq.api.ServiceResult;
 import divconq.bus.Message;
 import divconq.bus.MessageUtil;
+import divconq.lang.op.OperationContext;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
 import divconq.script.StackEntry;
@@ -42,7 +43,7 @@ public class CtpCall extends Instruction {
         
         if ((ss == null) || !(ss instanceof ApiSession)) {
 			stack.setState(ExecuteState.Done);
-        	stack.log().errorTr(531);
+			OperationContext.get().errorTr(531);
         	stack.resume();
         	return;
         }
@@ -63,7 +64,7 @@ public class CtpCall extends Instruction {
         	} 
         	else {
     			stack.setState(ExecuteState.Done);
-            	stack.log().errorTr(532);
+    			OperationContext.get().errorTr(532);
             	stack.resume();
             	return;
         	}
@@ -79,7 +80,7 @@ public class CtpCall extends Instruction {
         
         if ((msg == null)) {
 			stack.setState(ExecuteState.Done);
-        	stack.log().errorTr(533);
+			OperationContext.get().errorTr(533);
         	stack.resume();
         	return;        	
         }
@@ -93,8 +94,6 @@ public class CtpCall extends Instruction {
         	sess.sendMessage(msg, new ServiceResult() {				
 				@Override
 				public void callback() {
-					stack.log().copyMessages(this);
-					
 					Message resp = this.getResult();
 					Struct rdata = NullStruct.instance;
 					

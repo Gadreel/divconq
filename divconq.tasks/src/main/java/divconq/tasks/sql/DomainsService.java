@@ -19,7 +19,7 @@ package divconq.tasks.sql;
 import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
 import divconq.mod.ExtensionBase;
 import divconq.sql.SqlManager.SqlDatabase;
 import divconq.sql.SqlSelect;
@@ -63,8 +63,6 @@ public class DomainsService extends ExtensionBase implements IService {
 						null, 
 						"Id"
 				);
-			
-				request.copyMessages(rsres);
 				
 				ListStruct rs = rsres.getResult();
 				

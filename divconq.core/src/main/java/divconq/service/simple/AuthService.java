@@ -17,15 +17,21 @@
 package divconq.service.simple;
 
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import org.joda.time.DateTimeZone;
 
 import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.hub.Hub;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
-import divconq.lang.UserContext;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationContextBuilder;
+import divconq.lang.op.UserContext;
+import divconq.locale.LocaleUtil;
 import divconq.mod.ExtensionBase;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
@@ -39,12 +45,31 @@ public class AuthService extends ExtensionBase implements IService {
 	protected SecureRandom random = new SecureRandom();
 	protected String authpass = null;
 	
+	protected boolean xmlMode = false;
+	protected Map<String, DomainUsers> xmlData = null;
+	
 	@Override
-	public void init(OperationResult log, XElement config) {
-		super.init(log, config);
+	public void init(XElement config) {
+		super.init(config);
 		
 		if (config != null) 
-			this.authpass = config.getAttribute("Password");			
+			this.authpass = config.getAttribute("Password");
+		
+		XElement mdomains = Hub.instance.getConfig().selectFirst("Domains");
+		
+		if (mdomains != null) {
+			this.xmlData = new HashMap<>();
+			this.xmlMode = true;
+			
+			for (XElement mdomain : mdomains.selectAll("Domain")) {
+				String id = mdomain.getAttribute("Id");
+				
+				DomainUsers du = new DomainUsers();
+				du.load(id, mdomain);
+				
+				this.xmlData.put(id, du);
+			}
+		}
 	}
 	
 	@Override
@@ -66,13 +91,37 @@ public class AuthService extends ExtensionBase implements IService {
 		
 		if ("Authentication".equals(feature)) {
 			if ("SignIn".equals(op)) {
-							
-				request.setResult(new RecordStruct(
-						new FieldStruct("UserName", "root"),
-						new FieldStruct("FirstName", "Root"),
-						new FieldStruct("LastName", "User"),
-						new FieldStruct("Email", "root@locahost")
-				));
+				
+				String uname = uc.getUserName();
+				
+				if (this.xmlMode) {
+					DomainUsers du = this.xmlData.get(uc.getDomainId());
+					
+					if (du == null) {
+						this.clearUserContext(request.getContext());
+						request.error("Domain not found");
+					}
+					else {
+						RecordStruct urec = du.info(uname);
+						
+						if (urec == null) {
+							this.clearUserContext(request.getContext());
+							request.error("User not found");
+						}
+						else {
+							request.setResult(urec);
+						}
+					}
+				}
+				else {
+					request.setResult(new RecordStruct(
+							new FieldStruct("UserName", "root"),
+							new FieldStruct("FirstName", "Root"),
+							new FieldStruct("LastName", "User"),
+							new FieldStruct("Email", "root@locahost")
+					));
+				}
+				
 				request.complete();
 				return;
 			}			
@@ -93,7 +142,7 @@ public class AuthService extends ExtensionBase implements IService {
 				RecordStruct creds = uc.getCredentials();  // msg.getFieldAsRecord("Credentials");
 				
 				if (creds == null) {
-					request.setContext(OperationContext.allocateGuest());
+					this.clearUserContext(request.getContext());
 					request.errorTr(442);
 					request.complete();
 					return;
@@ -102,11 +151,21 @@ public class AuthService extends ExtensionBase implements IService {
 				String uname = creds.getFieldAsString("UserName"); 
 				String passwd = creds.getFieldAsString("Password");
 				
-				if (StringUtil.isNotEmpty(this.authpass)) {
+				if (this.xmlMode) {
+					DomainUsers du = this.xmlData.get(uc.getDomainId());
+					
+					if ((du == null) || !du.verify(uname, passwd)) {
+						this.clearUserContext(request.getContext());
+						request.errorTr(442);
+						request.complete();
+						return;
+					}
+				}
+				else if (StringUtil.isNotEmpty(this.authpass)) {
 					passwd = Hub.instance.getClock().getObfuscator().hashStringToHex(passwd);
 					
 					if (!"root".equals(uname) || !this.authpass.equals(passwd)) {
-						request.setContext(OperationContext.allocateGuest());
+						this.clearUserContext(request.getContext());
 						request.errorTr(442);
 						request.complete();
 						return;
@@ -114,7 +173,7 @@ public class AuthService extends ExtensionBase implements IService {
 				}
 				else {
 					if (!"root".equals(uname) || !"A1s2d3f4".equals(passwd)) {
-						request.setContext(OperationContext.allocateGuest());
+						this.clearUserContext(request.getContext());
 						request.errorTr(442);
 						request.complete();
 						return;
@@ -127,7 +186,16 @@ public class AuthService extends ExtensionBase implements IService {
 
 				this.sessions.add(token);
 				
-				this.newContext(request, token);
+				// create the new context
+				if (this.xmlMode) 
+					uc = this.xmlData.get(uc.getDomainId()).context(uname, token);
+				else
+					uc = request.getContext().toBuilder().elevateToRootTask().withAuthToken(token).toUserContext();
+				
+				// make sure we use the new context in our return
+				OperationContext.switchUser(request.getContext(), uc);
+				
+				System.out.println("verify new");
 				
 				request.complete();
 				return;
@@ -139,7 +207,7 @@ public class AuthService extends ExtensionBase implements IService {
 				if (StringUtil.isNotEmpty(authToken)) 
 					this.sessions.remove(authToken);
 				
-				request.setContext(OperationContext.allocateGuest());
+				this.clearUserContext(request.getContext());
 				
 				request.complete();
 				return;
@@ -155,14 +223,89 @@ public class AuthService extends ExtensionBase implements IService {
 		request.errorTr(441, this.serviceName(), feature, op);
 		request.complete();
 	}
+	
+	// be sure we keep the domain id
+	public void clearUserContext(OperationContext ctx) {
+		UserContext uc = ctx.getUserContext();
+		
+		OperationContext.switchUser(ctx, new OperationContextBuilder()
+			.withGuestUserTemplate()
+			.withDomainId(uc.getDomainId())
+			.toUserContext());
+	}
+	
+	public class DomainUsers {
+		protected String did = null;
+		protected Map<String, XElement> cachedElement = new HashMap<>();
+		protected Map<String, XElement> cachedIndex = new HashMap<>();
+		protected Map<String, RecordStruct> cachedUserRecord = new HashMap<>();
+		protected Map<String, OperationContextBuilder> cachedUserContext = new HashMap<>();
+		
+		public boolean verify(String username, String password) {
+			XElement usr = this.cachedIndex.get(username);
+			
+			return ((usr != null) && password.equals(usr.getAttribute("Password")));
+		}
+		
+		public UserContext context(String username, String token) {
+			XElement usr = this.cachedIndex.get(username);
+			
+			if ((usr == null))
+				return null;
 
-	protected void newContext(TaskRun request, String token) {
-		// create the new context
-		OperationContext v = request.getContext().toBuilder().elevateToRootTask().withAuthToken(token).toOperationContext();
+			String uid = usr.getAttribute("Id");
+			
+			return this.cachedUserContext.get(uid).withAuthToken(token).toUserContext(); 
+		}
 		
-		// make sure we use the new context in our return
-		request.setContext(v);
+		public RecordStruct info(String username) {
+			XElement usr = this.cachedIndex.get(username);
+			
+			if (usr == null) 
+				return null;
+
+			String uid = usr.getAttribute("Id");
+			
+			return this.cachedUserRecord.get(uid);
+		}
 		
-		System.out.println("verify new");
+		public void load(String did, XElement domain) {
+			this.did = did;
+			
+			for (XElement usr : domain.selectAll("User")) {
+				String uid = usr.getAttribute("Id");
+				
+				this.cachedElement.put(uid, usr);
+				this.cachedIndex.put(usr.getAttribute("Username"), usr);
+				
+				this.cachedUserRecord.put(uid, new RecordStruct(
+					new FieldStruct("UserName", usr.getAttribute("Username")),
+					new FieldStruct("FirstName", usr.getAttribute("First")),
+					new FieldStruct("LastName", usr.getAttribute("Last")),
+					new FieldStruct("Email", usr.getAttribute("Email"))
+				));
+				
+				List<XElement> tags = usr.selectAll("AuthTag");
+				
+				String[] atags = new String[tags.size() + 1];
+				
+				atags[0] = "User";
+				
+				for (int i = 1; i < atags.length; i++) 
+					atags[i] = tags.get(i - 1).getText();
+				
+				this.cachedUserContext.put(uid, new OperationContextBuilder()
+						.withDomainId(did)
+						.withUserId(uid)
+						.withUserName(usr.getAttribute("Username"))
+						.withFullName(usr.getAttribute("First") + " " + usr.getAttribute("Last"))
+						.withEmail(usr.getAttribute("Email"))
+						.withVerified(true)
+						.withAuthTags(atags)
+						.withLocale(LocaleUtil.getDefaultLocale())
+						.withChronology("/" + DateTimeZone.getDefault().getID())	// ISOChronology w/ default zone
+				);		
+			}
+		}
 	}
 }

@@ -17,8 +17,8 @@
 package divconq.script.inst;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncCallback;
-import divconq.lang.OperationCallback;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationCallback;
 import divconq.script.BlockInstruction;
 import divconq.script.ExecuteState;
 import divconq.script.StackBlockEntry;

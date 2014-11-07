@@ -37,9 +37,8 @@ public enum DebugLevel {
     Error(1),
     Warn(2),
     Info(3),
-    Debug(4),
-    // use with very frequent messages (<5 sec repeat) or very detailed - use debug mostly
-    Trace(5);
+    Debug(4),    
+    Trace(5);		// use with very frequent messages (<5 sec repeat) or very detailed - use debug mostly
     
     private int code;
 

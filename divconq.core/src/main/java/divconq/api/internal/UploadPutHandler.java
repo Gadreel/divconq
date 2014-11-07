@@ -26,8 +26,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import divconq.api.HyperSession;
 import divconq.hub.Hub;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -146,7 +146,7 @@ public class UploadPutHandler extends SimpleChannelInboundHandler<HttpObject> {
 
         // now start sending the file
 		long sent = offset;
-		callback.setAmountCompleted((int)(sent * 100 / size));
+		callback.getContext().setAmountCompleted((int)(sent * 100 / size));
 			
 		ByteBuf bb = null;
 		
@@ -177,7 +177,7 @@ public class UploadPutHandler extends SimpleChannelInboundHandler<HttpObject> {
 				sent += amt;
 				
 				if (size > 0) 
-					callback.setAmountCompleted((int) (sent * 100 / size));
+					callback.getContext().setAmountCompleted((int) (sent * 100 / size));
 				
 				// by the time we get here, that buffer has been used up and we can use it for the next buffer
 				if (bb.refCnt() != 1) 

@@ -12,10 +12,10 @@ import java.nio.file.StandardOpenOption;
 import divconq.interchange.FileSystemFile;
 import divconq.interchange.IFileStoreDriver;
 import divconq.interchange.IFileStoreFile;
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
 import divconq.struct.Struct;
 import divconq.struct.scalar.NullStruct;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class FileDestStream extends BaseStream implements IStreamDest {
@@ -73,26 +73,26 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 	
 	// make sure we don't return without first releasing the file reference content
 	@Override
-	public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+	public HandleReturn handle(StreamMessage msg) {
 		if (msg == StreamMessage.FINAL) {
-			cb.complete();
+			OperationContext.get().getTaskRun().complete();
 			return HandleReturn.DONE;
 		}
 		
 		if (this.file.isFolder())
-			return this.handleLocalFolder(cb, msg);
+			return this.handleLocalFolder(msg);
 		
-		return this.handleLocalFile(cb, msg);
+		return this.handleLocalFile(msg);
 	}
 	
-	public HandleReturn handleLocalFile(TaskRun cb, StreamMessage msg) {
+	public HandleReturn handleLocalFile(StreamMessage msg) {
 		ByteBuf data = msg.getPayload();
 		
 		if (msg.isFolder()) {
 			if (data != null)
 				data.release();
 			
-			cb.kill("Folder cannot be stored into a file");
+			OperationContext.get().getTaskRun().kill("Folder cannot be stored into a file");
 			return HandleReturn.DONE;
 		}
 		
@@ -110,7 +110,7 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 					if (data != null)
 						data.release();
 					
-					cb.kill("Problem opening destination file: " + x);
+					OperationContext.get().getTaskRun().kill("Problem opening destination file: " + x);
 					return HandleReturn.DONE;
 				}
 			}
@@ -121,7 +121,7 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 				} 
 				catch (IOException x) {
 					data.release();
-					cb.kill("Problem writing destination file: " + x);
+					OperationContext.get().getTaskRun().kill("Problem writing destination file: " + x);
 					return HandleReturn.DONE;
 				}
 			}
@@ -139,7 +139,7 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 				this.file.refreshProps();
 			} 
 			catch (IOException x) {
-				cb.kill("Problem closing destination file: " + x);
+				OperationContext.get().getTaskRun().kill("Problem closing destination file: " + x);
 				return HandleReturn.DONE;
 			}
 		}
@@ -147,7 +147,7 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 		return HandleReturn.CONTINUE;
 	}
 	
-	public HandleReturn handleLocalFolder(TaskRun cb, StreamMessage msg) {
+	public HandleReturn handleLocalFolder(StreamMessage msg) {
 		ByteBuf data = msg.getPayload();
 		
 		Path folder = this.file.localPath();
@@ -160,7 +160,7 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 				if (data != null)
 					data.release();
 				
-				cb.kill("Problem making destination top folder: " + x);
+				OperationContext.get().getTaskRun().kill("Problem making destination top folder: " + x);
 				return HandleReturn.DONE;
 			}
 		
@@ -174,7 +174,7 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 				if (data != null)
 					data.release();
 				
-				cb.kill("Problem making destination folder: " + x);
+				OperationContext.get().getTaskRun().kill("Problem making destination folder: " + x);
 				return HandleReturn.DONE;
 			}
 			
@@ -194,7 +194,7 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 				if (data != null)
 					data.release();
 				
-				cb.kill("Problem opening destination file: " + x);
+				OperationContext.get().getTaskRun().kill("Problem opening destination file: " + x);
 				return HandleReturn.DONE;
 			}
 		
@@ -205,7 +205,7 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 				} 
 				catch (IOException x) {
 					data.release();
-					cb.kill("Problem writing destination file: " + x);
+					OperationContext.get().getTaskRun().kill("Problem writing destination file: " + x);
 					return HandleReturn.DONE;
 				}
 			}
@@ -221,7 +221,7 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 				this.file.refreshProps();
 			} 
 			catch (IOException x) {
-				cb.kill("Problem closing destination file: " + x);
+				OperationContext.get().getTaskRun().kill("Problem closing destination file: " + x);
 				return HandleReturn.DONE;
 			}
 		}
@@ -230,15 +230,15 @@ public class FileDestStream extends BaseStream implements IStreamDest {
 	}
 
 	@Override
-	public void request(TaskRun cb) {
+	public void request() {
 		// we are terminal, no downstream should call us
-		cb.kill("File destination cannot be a source");
+		OperationContext.get().getTaskRun().kill("File destination cannot be a source");
 	}
 
 	@Override
-	public void execute(TaskRun cb) {
+	public void execute() {
 		// TODO optimize if upstream is local file also
 		
-		this.upstream.request(cb);
+		this.upstream.request();
 	}
 }

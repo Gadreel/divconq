@@ -16,8 +16,8 @@
 ************************************************************************ */
 package divconq.scheduler;
 
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.struct.ListStruct;
 import divconq.xml.XElement;
 

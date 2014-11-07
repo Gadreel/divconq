@@ -18,7 +18,7 @@ package divconq.util;
 
 import java.util.Iterator;
 
-import divconq.lang.FuncCallback;
+import divconq.lang.op.FuncCallback;
 
 public class ClassicIteratorAdapter<T> implements IAsyncIterator<T> {
 	protected Iterator<T> classic = null;

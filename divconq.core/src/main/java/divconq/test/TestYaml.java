@@ -46,10 +46,12 @@ import org.joda.time.DateTime;
 import divconq.interchange.CommonPath;
 import divconq.io.OutputWrapper;
 import divconq.io.test.LocalEcho;
-import divconq.lang.FuncResult;
 import divconq.lang.Memory;
 import divconq.lang.chars.Utf8Decoder;
 import divconq.lang.chars.Utf8Encoder;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
 import divconq.service.plugin.Operation;
 import divconq.struct.CompositeParser;
 import divconq.struct.CompositeStruct;
@@ -60,7 +62,6 @@ import divconq.struct.builder.JsonMemoryBuilder;
 import divconq.struct.builder.YamlStreamBuilder;
 import divconq.struct.serial.CompositeToBufferBuilder;
 import divconq.util.HexUtil;
-import divconq.work.TaskObserver;
 import divconq.work.TaskRun;
 import static divconq.struct.StructUtil.*;
 
@@ -196,10 +197,11 @@ public class TestYaml {
 		*/
 		
 		TaskRun run = new TaskRun();
-		run.addObserver(new TaskObserver() {
+		
+		run.getTask().withObserver(new OperationObserver() {
 			@Override
-			public void completed(TaskRun or) {
-				System.out.println("Result of run: " + or.getResult());
+			public void completed(OperationContext or) {
+				System.out.println("Result of run: " + or.getTaskRun().getResult());
 			}
 		});
 		

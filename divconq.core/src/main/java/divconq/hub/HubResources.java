@@ -27,9 +27,9 @@ import java.util.Collection;
 import java.util.List;
 
 import divconq.interchange.CommonPath;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.locale.Localization;
 import divconq.log.DebugLevel;
 import divconq.schema.SchemaManager;
@@ -299,7 +299,7 @@ public class HubResources {
 	public OperationResult init() {
 		// do not run init twice (not thread safe, should be called by main thread only)
 		if (this.initialized) {
-			OperationResult or = new OperationResult(OperationContext.getHubContext());
+			OperationResult or = new OperationResult();
 			
 			if (!this.initsuccess)
 				or.error(112, "Hub resources already loaded, but contained errors");
@@ -315,7 +315,7 @@ public class HubResources {
 		
 		// use the startup debug level until we init Logger settings
 		
-		OperationResult or = new OperationResult(this.startuplevel);
+		OperationResult or = new OperationResult();
 		
 		or.info(0, "Loading hub resources");
 
@@ -326,7 +326,6 @@ public class HubResources {
 		FuncResult<XElement> xres = XmlReader.loadFile(fshared, false); 
 		
 		if (xres.hasErrors()) {
-			or.copyMessages(xres);
 			or.error(100, "Unable to load _shared.xml file, expected: " + fshared.getAbsolutePath());
 			return or;
 		}
@@ -364,7 +363,6 @@ public class HubResources {
 		FuncResult<XElement> xres2 = XmlReader.loadFile(f, false);
 		
 		if (xres2.hasErrors()) {
-			or.copyMessages(xres2);
 			or.error(102, "Unable to load config file, expected: " + f.getAbsolutePath());
 			return or;
 		}
@@ -428,7 +426,7 @@ public class HubResources {
 	 * @return messages logged while reloading dictionary
 	 */
 	public OperationResult reloadDictionary() {
-		OperationResult or = new OperationResult(OperationContext.getHubContext());
+		OperationResult or = new OperationResult();
 		
 		or.trace(0, "Loading Dictionary");
 		

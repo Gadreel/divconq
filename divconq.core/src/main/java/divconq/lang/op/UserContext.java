@@ -14,7 +14,7 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.lang;
+package divconq.lang.op;
 
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
@@ -38,7 +38,13 @@ public class UserContext {
 	 * @return create a new guest context
 	 */
 	static public UserContext allocateGuest() {
-		return new OperationContextBuilder().withGuestUserTemplate().toUserContext();
+		OperationContext currcon = OperationContext.getOrHub();
+		
+		// keep the domain id if we can
+		return new OperationContextBuilder()
+			.withGuestUserTemplate()
+			.withDomainId(currcon.getUserContext().getDomainId())
+			.toUserContext();
 	}
 	
 	/**
@@ -152,6 +158,11 @@ public class UserContext {
 
 	public DomainInfo getDomain() {
 		return Hub.instance.getDomainInfo(this.getDomainId());
+	}
+	
+	// only use during booting
+	protected UserContext() {
+		this.context = new RecordStruct();
 	}
 	
 	/**

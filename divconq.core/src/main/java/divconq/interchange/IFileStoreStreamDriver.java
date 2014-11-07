@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.interchange;
 
-import divconq.lang.OperationCallback;
+import divconq.lang.op.OperationCallback;
 import divconq.session.DataStreamChannel;
 import divconq.session.IStreamDriver;
 

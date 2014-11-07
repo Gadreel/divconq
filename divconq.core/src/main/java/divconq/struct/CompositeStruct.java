@@ -21,9 +21,9 @@ import io.netty.buffer.ByteBuf;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import divconq.lang.FuncResult;
 import divconq.lang.Memory;
 import divconq.lang.chars.Special;
+import divconq.lang.op.FuncResult;
 import divconq.schema.DataType;
 import divconq.script.StackEntry;
 import divconq.struct.builder.BuilderStateException;

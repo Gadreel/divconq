@@ -33,8 +33,8 @@ import org.joda.time.format.DateTimeFormat;
 
 import divconq.hub.Hub;
 import divconq.lang.Memory;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.locale.LocaleUtil;
 import divconq.util.HexUtil;
 import divconq.xml.XElement;

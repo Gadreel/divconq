@@ -18,11 +18,10 @@ package divconq.service;
 
 import divconq.bus.IService;
 import divconq.bus.Message;
-import divconq.lang.FuncCallback;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
-import divconq.lang.UserContext;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.UserContext;
 import divconq.log.Logger;
 import divconq.mod.ExtensionBase;
 import divconq.session.Session;
@@ -39,15 +38,15 @@ public class Status extends ExtensionBase implements IService {
 	protected String app = null;
 	
 	@Override
-	public void start(OperationResult log) {
-		super.start(log);
+	public void start() {
+		super.start();
 		
 		OperationContext.useNewRoot();
 		
 		FuncResult<RecordStruct> ldres = Updater.loadDeployed();
 		
 		if (ldres.hasErrors()) {
-			log.error("Error reading deployed.json file: " + ldres.getMessage());
+			OperationContext.get().error("Error reading deployed.json file: " + ldres.getMessage());
 			return;
 		}
 		
@@ -74,6 +73,8 @@ public class Status extends ExtensionBase implements IService {
 				catch (InterruptedException x) {
 				}
 				*/
+				
+				request.debug("Echo got: " + msg.getField("Body"));
 				
 				request.setResult(msg.getField("Body"));
 				request.complete();

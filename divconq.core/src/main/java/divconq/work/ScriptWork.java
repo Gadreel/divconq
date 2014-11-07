@@ -19,7 +19,7 @@ package divconq.work;
 import java.nio.file.Path;
 
 import divconq.hub.Hub;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.script.Activity;
 import divconq.struct.RecordStruct;
 import divconq.util.IOUtil;

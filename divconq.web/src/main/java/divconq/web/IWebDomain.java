@@ -18,8 +18,8 @@ package divconq.web;
 
 import divconq.interchange.CommonPath;
 import divconq.io.FileStoreEvent;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.view.Nodes;
 import divconq.xml.XElement;
 

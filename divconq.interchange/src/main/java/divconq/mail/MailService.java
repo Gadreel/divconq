@@ -19,8 +19,7 @@ package divconq.mail;
 import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
 import divconq.mod.ExtensionBase;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
@@ -39,16 +38,12 @@ public class MailService extends ExtensionBase implements IService, IMailProcess
 		if ("Queue".equals(this.procmode)) {
 			FuncResult<String> ares = Hub.instance.getWorkQueue().submit(mail);
 			
-			or.copyMessages(ares);
-			
 			if (!or.hasErrors())
 				or.setResult(new RecordStruct(new FieldStruct("WorkId", ares.getResult()), new FieldStruct("TaskId", mail.getId())));
 		}
 		// run the message in local pool, don't wait
 		else { 
-			TaskRun run = Hub.instance.getWorkPool().submit(mail);
-			
-			or.copyMessages(run);
+			Hub.instance.getWorkPool().submit(mail);
 			
 			if (!or.hasErrors())
 				or.setResult(new RecordStruct(new FieldStruct("TaskId", mail.getId())));
@@ -63,8 +58,8 @@ public class MailService extends ExtensionBase implements IService, IMailProcess
 	}
 	
 	@Override
-	public void start(OperationResult log) {
-		super.start(log);
+	public void start() {
+		super.start();
 
 		RecordStruct servicesettings = new RecordStruct();
 		
@@ -99,8 +94,6 @@ public class MailService extends ExtensionBase implements IService, IMailProcess
 				Task task = MailTaskFactory.createSendEmailTask(msg.getFieldAsRecord("Body"));
 				
 				FuncResult<RecordStruct> ares = this.submit(task);
-				
-				request.copyMessages(ares);
 				
 				if (!ares.hasErrors()) 
 					request.setResult(ares.getResult());

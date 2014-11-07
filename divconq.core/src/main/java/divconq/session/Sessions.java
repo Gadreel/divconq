@@ -24,21 +24,19 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.joda.time.DateTime;
-
 import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.count.CountManager;
 import divconq.hub.Hub;
 import divconq.hub.ISystemWork;
 import divconq.hub.SysReporter;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
-import divconq.lang.OperationContextBuilder;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationContextBuilder;
+import divconq.lang.op.OperationObserver;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.struct.RecordStruct;
 import divconq.util.StringUtil;
-import divconq.work.TaskObserver;
 import divconq.work.TaskRun;
 import divconq.work.Task;
 import divconq.xml.XElement;
@@ -61,14 +59,16 @@ public class Sessions implements IService {
 				reporter.setStatus("Reviewing session plans");
 				
 				if (!Hub.instance.isStopping()) {
-					long clear = new DateTime().minusMinutes(30).getMillis();		// TODO configure
+					// sessions only last 1 minute
+					long clearGuest = System.currentTimeMillis() - (65 * 1000);		// TODO configure
+					//long clearUser = new DateTime().minusSeconds(301).getMillis();		// TODO maybe user can last longer?
 					
 					for (Session sess : Sessions.this.sessions.values()) {
 						sess.reviewPlan();
 						
 						// TODO add isLongRunnning check into the mix...
 						// TODO add plans into mix - check both tasks and channels for completeness (terminate only on complete, vs on timeout, vs never)
-						if ((sess.lastAccess < clear) && !sess.keep) {
+						if ((sess.lastAccess < clearGuest) && !sess.keep) {
 							Logger.info("Killing inactive session: " + sess.getId());
 							Sessions.this.terminate(sess.getId());
 							//System.out.println("cleanup");
@@ -297,9 +297,9 @@ public class Sessions implements IService {
 		
 		sessref.set(session);
 		
-		TaskObserver listener = new TaskObserver() {			
+		OperationObserver listener = new OperationObserver() {			
 			@Override
-			public void completed(TaskRun or) {
+			public void completed(OperationContext or) {
 				Session session = sessref.get();
 				
 				if (session != null) {
@@ -324,9 +324,9 @@ public class Sessions implements IService {
 		if (session == null)
 			return null;
 		
-		TaskObserver listener = new TaskObserver() {			
+		OperationObserver listener = new OperationObserver() {			
 			@Override
-			public void completed(TaskRun or) {
+			public void completed(OperationContext or) {
 				session.touch();		// keep alive relative to end time
 			}
 		};

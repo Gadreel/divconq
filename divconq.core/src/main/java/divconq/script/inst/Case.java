@@ -16,7 +16,8 @@
 ************************************************************************ */
 package divconq.script.inst;
 
-import divconq.lang.OperationCallback;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
 import divconq.script.ExecuteState;
 import divconq.script.LogicBlockInstruction;
 import divconq.script.StackBlockEntry;
@@ -50,9 +51,9 @@ public class Case extends LogicBlockInstruction {
 					: stack.getParent().refFromSource("Target");
 	        
 	        if (var == null) 
-	        	stack.log().trace(1, "Case has no variable to compare with, missing Target");	        
+	        	OperationContext.get().trace(0, "Case has no variable to compare with, missing Target");	        
 	        else if (!(var instanceof ScalarStruct)) {
-	        	stack.log().trace(1, "Case has no variable to compare with, Target is not a scalar");
+	        	OperationContext.get().trace(0, "Case has no variable to compare with, Target is not a scalar");
 	        	var = null;
 	        }
 	        

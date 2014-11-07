@@ -29,12 +29,10 @@ import divconq.bus.net.SocketInfo;
 import divconq.hub.Hub;
 import divconq.hub.ILocalCommandLine;
 import divconq.interchange.CommonPath;
-import divconq.lang.OperationObserver;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
 import divconq.util.StringUtil;
 import divconq.work.Task;
-import divconq.work.TaskObserver;
-import divconq.work.TaskRun;
 
 /**
  *  ONLY works with local session, does not work with remote sessions
@@ -152,21 +150,21 @@ public class Gateway implements ILocalCommandLine {
 			    	
 			    	// TODO name
 			    	Task uploadtask = TaskFactory.createUploadTask(api, "x", src, dest, null, true);
+
+			    	uploadtask.withObserver(new OperationObserver() {			
+			    		@Override
+			    		public void amount(OperationContext or, int v) {
+							// TODO output upload progress
+						}
+					});
 			    	
-			    	TaskRun run = Hub.instance.getWorkPool().submit(uploadtask, new TaskObserver() {						
+			    	Hub.instance.getWorkPool().submit(uploadtask, new OperationObserver() {						
 						@Override
-						public void completed(TaskRun or) {
+						public void completed(OperationContext or) {
 							if (or.hasErrors())
 								System.out.println("Upload failed!");
 							else
 								System.out.println("Upload worked!");
-						}
-					});
-
-			    	run.addObserver(new OperationObserver() {			
-			    		@Override
-			    		public void amount(OperationResult or, int v) {
-							// TODO output upload progress
 						}
 					});
 			    	

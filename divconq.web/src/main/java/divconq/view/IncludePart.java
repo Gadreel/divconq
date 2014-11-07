@@ -20,8 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import divconq.interchange.CommonPath;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationCallback;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationCallback;
 import divconq.web.IWebExtension;
 import divconq.web.ViewInfo;
 import divconq.web.WebSiteManager;

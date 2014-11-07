@@ -24,7 +24,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 
 public class XmlStreamer {
 	static public OperationResult parseStream(String path, int level, IPartHandler handler, boolean keepwhitespace) {

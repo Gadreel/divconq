@@ -55,8 +55,11 @@ import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import divconq.hub.Hub;
-import divconq.lang.OperationObserver;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationLogger;
+import divconq.lang.op.OperationObserver;
+import divconq.lang.op.OperationResult;
+import divconq.log.DebugLevel;
 import divconq.script.Activity;
 import divconq.script.IDebugger;
 import divconq.session.Session;
@@ -68,7 +71,6 @@ import divconq.struct.Struct;
 import divconq.struct.builder.JsonStreamBuilder;
 import divconq.util.IOUtil;
 import divconq.work.Task;
-import divconq.work.TaskLogger;
 import divconq.work.TaskRun;
 
 @SuppressWarnings("rawtypes")
@@ -97,7 +99,7 @@ public class EditorPane extends JRootPane implements SyntaxConstants, IDebugger 
 	protected Timer uitimer = null;
 	protected long lastinstrun = 0;
 	
-	protected TaskLogger logfmt = new TaskLogger();
+	protected OperationLogger logfmt = new OperationLogger();
 	
 	@SuppressWarnings("unchecked")
 	public EditorPane() {
@@ -339,24 +341,24 @@ public class EditorPane extends JRootPane implements SyntaxConstants, IDebugger 
 			
 			this.lastinstrun = act.getRunCount();
 			
-			r.addObserver(new OperationObserver() {
+			r.getContext().addObserver(new OperationObserver() {
 				@Override
-				public void log(OperationResult or, RecordStruct entry) {
+				public void log(OperationContext or, RecordStruct entry) {
 					EditorPane.this.log(entry);
 				}
 				
 				@Override
-				public void step(OperationResult or, int num, int of, String name) {
+				public void step(OperationContext or, int num, int of, String name) {
 					EditorPane.this.console.append("##### Step " + num + " of " + of + ": " + name + " #####\n");
 				}
 				
 				@Override
-				public void progress(OperationResult or, String msg) {
+				public void progress(OperationContext or, String msg) {
 					EditorPane.this.console.append("***** " + msg + " *****\n");
 				}
 				
 				@Override
-				public void amount(OperationResult or, int v) {
+				public void amount(OperationContext or, int v) {
 					EditorPane.this.console.append(">>>>> " + v + "% <<<<<\n");
 				}
 			});
@@ -406,32 +408,38 @@ public class EditorPane extends JRootPane implements SyntaxConstants, IDebugger 
 			.withTimeout(0)							// no timeout in editor mode
 			.withWork(act);
 		
-		this.currrun = new TaskRun(task);
-				
-		this.currrun.addObserver(new OperationObserver() {
+		task.withObserver(new OperationObserver() {
 			@Override
-			public void log(OperationResult or, RecordStruct entry) {
+			public void log(OperationContext or, RecordStruct entry) {
 				EditorPane.this.log(entry);
 			}
 			
 			@Override
-			public void step(OperationResult or, int num, int of, String name) {
+			public void step(OperationContext or, int num, int of, String name) {
 				EditorPane.this.console.append("##### Step " + num + " of " + of + ": " + name + " #####\n");
 			}
 			
 			@Override
-			public void progress(OperationResult or, String msg) {
+			public void progress(OperationContext or, String msg) {
 				EditorPane.this.console.append("***** " + msg + " *****\n");
 			}
 			
 			@Override
-			public void amount(OperationResult or, int v) {
+			public void amount(OperationContext or, int v) {
 				EditorPane.this.console.append(">>>>> " + v + "% <<<<<\n");
 			}
 		});
+
+		this.currrun = new TaskRun(task);
 	}
 	
 	public void log(RecordStruct entry) {
+		String lvl = entry.getFieldAsString("Level");
+		
+		// TODO add an option to see Trace as well
+		if (DebugLevel.Trace.getCode() == DebugLevel.valueOf(lvl).getCode()) 
+			return;
+		
 		this.console.append(this.logfmt.formatLogEntry(entry) + "\n");
 	}
 	

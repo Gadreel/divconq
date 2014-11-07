@@ -31,7 +31,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import divconq.hub.Hub;
 import divconq.hub.ISystemWork;
 import divconq.hub.SysReporter;
-import divconq.lang.OperationResult;
+import divconq.lang.op.IOperationObserver;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
@@ -135,6 +136,7 @@ public class WorkPool implements ExecutorService {
 			this.submit((TaskRun)command);		// useful for resume
 		else {
 			Task builder = new Task()
+				.withSubContext()
 				.withWork(command);
 			
 			this.submit(builder, null);
@@ -143,6 +145,7 @@ public class WorkPool implements ExecutorService {
 	
 	public TaskRun submit(IWork work) {
 		Task task = new Task()
+			.withSubContext()
 			.withWork(work);
 	
 		return this.submit(task);
@@ -156,18 +159,19 @@ public class WorkPool implements ExecutorService {
 		return run;
 	}
 	
-	public TaskRun submit(IWork work, ITaskObserver observer) {
+	public TaskRun submit(IWork work, IOperationObserver observer) {
 		Task task = new Task()
+			.withSubContext()
 			.withWork(work);
 	
 		return this.submit(task, observer);
 	}
 	
-	public TaskRun submit(Task task, ITaskObserver observer) {
+	public TaskRun submit(Task task, IOperationObserver observer) {
 		TaskRun run = new TaskRun(task);
 		
 		if (observer != null)
-			run.addObserver(observer);
+			task.withObserver(observer);
 		
 		this.submit(run);
 		

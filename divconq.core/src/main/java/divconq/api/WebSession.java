@@ -20,7 +20,7 @@ import io.netty.handler.codec.http.Cookie;
 import io.netty.handler.codec.http.DefaultCookie;
 import divconq.api.ClientInfo.ConnectorKind;
 import divconq.bus.Message;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
@@ -34,9 +34,7 @@ public class WebSession extends HyperSession {
 	public void sendMessage(Message msg, ServiceResult callback) {
 		OperationResult or = this.connect();
 		
-		callback.copyMessages(or);
-		
-		if (callback.hasErrors()) {
+		if (or.hasErrors()) {
 			callback.complete();
 			return;
 		}

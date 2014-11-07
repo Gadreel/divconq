@@ -19,7 +19,7 @@ package divconq.interchange;
 import java.util.ArrayList;
 import java.util.List;
 
-import divconq.lang.FuncCallback;
+import divconq.lang.op.FuncCallback;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 

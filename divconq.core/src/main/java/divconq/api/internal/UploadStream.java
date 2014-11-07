@@ -31,7 +31,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 
 public class UploadStream extends AbstractHttpData implements FileUpload {
     public static final String CONTENT_DISPOSITION = "Content-Disposition";

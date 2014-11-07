@@ -23,7 +23,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
 import divconq.hub.Hub;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
  
 // a possible enhancement is to always prefer a local hub if present
 public class ServiceRouter {

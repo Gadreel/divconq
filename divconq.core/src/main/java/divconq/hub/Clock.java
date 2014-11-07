@@ -28,8 +28,8 @@ import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;
 import org.joda.time.ReadableInstant;
 
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.util.BasicSettingsObfuscator;
 import divconq.util.ISettingsObfuscator;

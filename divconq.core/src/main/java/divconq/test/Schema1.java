@@ -21,7 +21,8 @@ import org.joda.time.DateTimeZone;
 
 import divconq.hub.Hub;
 import divconq.hub.HubResources;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
 import divconq.struct.FieldStruct;
@@ -146,6 +147,8 @@ public class Schema1 {
 			*/
 			
 			System.exit(0);
+			
+			OperationContext.useHubContext();
 			
 			HubResources resources = new HubResources();
 			resources.setDebugLevel(DebugLevel.Info);

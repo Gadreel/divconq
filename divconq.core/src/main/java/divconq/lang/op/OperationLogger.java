@@ -14,7 +14,7 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.work;
+package divconq.lang.op;
 
 import java.io.BufferedWriter;
 import java.nio.charset.Charset;
@@ -27,16 +27,16 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 
-import divconq.lang.IOperationLogger;
-import divconq.lang.OperationResult;
 import divconq.lang.StringBuilder32;
+import divconq.log.DebugLevel;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.util.StringUtil;
+import divconq.work.TaskRun;
 
-public class TaskLogger extends RecordStruct implements IOperationLogger, ITaskObserver {
+public class OperationLogger extends OperationObserver implements IOperationLogger {
 	protected ListStruct entries = new ListStruct();
 	protected ListStruct replaces = new ListStruct();
 	protected Path logfile = null;
@@ -47,7 +47,7 @@ public class TaskLogger extends RecordStruct implements IOperationLogger, ITaskO
 		this.setField("LogFile", v);
 	}
 	
-	public TaskLogger() {
+	public OperationLogger() {
 		this.setField("Entries", this.entries);
 		this.setField("Replaces", this.replaces);
 	}
@@ -63,7 +63,7 @@ public class TaskLogger extends RecordStruct implements IOperationLogger, ITaskO
 	
 	@Override
 	public Struct deepCopy() {
-		TaskLogger cp = new TaskLogger();
+		OperationLogger cp = new OperationLogger();
 		this.doCopy(cp);
 		return cp;
 	}
@@ -109,7 +109,13 @@ public class TaskLogger extends RecordStruct implements IOperationLogger, ITaskO
 	}
 	
 	@Override
-	public void log(OperationResult or, RecordStruct entry) {
+	public void log(OperationContext ctx, RecordStruct entry) {
+		String lvl = entry.getFieldAsString("Level");
+		
+		// only log the correct level, unlike context which keeps them all
+		if (ctx.getLevel().getCode() < DebugLevel.valueOf(lvl).getCode()) 
+			return;
+		
 		this.entries.addItem(entry);
 		
 		if (this.bw == null)
@@ -131,33 +137,14 @@ public class TaskLogger extends RecordStruct implements IOperationLogger, ITaskO
 	}
 
 	@Override
-	public void boundary(OperationResult or, String... tags) {
-	}
-
-	@Override
-	public void step(OperationResult or, int num, int of, String name) {
-	}
-
-	@Override
-	public void progress(OperationResult or, String msg) {
-	}
-
-	@Override
-	public void amount(OperationResult or, int v) {
-	}
-
-	@Override
-	public void prep(TaskRun or) {
-		// don't open login file til start		
-	}
-
-	@Override
-	public void start(TaskRun run) {
+	public void start(OperationContext ctx) {
 		// super class might already set logfile, but if not see if we need to
 		if ((this.logfile == null) && !this.isFieldEmpty("LogFile")) 
 			this.logfile = Paths.get(this.getFieldAsString("LogFile"));
 		
-		RecordStruct params = run.getTask().getParams();
+		TaskRun run = ctx.getTaskRun();
+		
+		RecordStruct params = (run != null) ? run.getTask().getParams() : null;
 		
 		// if temp folder is set then we will log into there
 		String tempfolder = ((params != null) && !params.isFieldEmpty("_TempFolder"))  
@@ -180,7 +167,7 @@ public class TaskLogger extends RecordStruct implements IOperationLogger, ITaskO
 				this.bw = Files.newBufferedWriter(this.logfile, Charset.forName("UTF-8"));
 			}
 			catch (Exception x) {
-				run.errorTr(181, x);
+				ctx.errorTr(181, x);
 			}
 		}
 		
@@ -192,11 +179,7 @@ public class TaskLogger extends RecordStruct implements IOperationLogger, ITaskO
 	}
 
 	@Override
-	public void completed(TaskRun or) {
-	}
-
-	@Override
-	public void stop(TaskRun or) {
+	public void stop(OperationContext ctx) {
 		if (this.bw == null)
 			return;
 		

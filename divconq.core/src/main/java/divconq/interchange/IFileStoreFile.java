@@ -20,8 +20,8 @@ import org.joda.time.DateTime;
 
 import divconq.io.stream.IStreamDest;
 import divconq.io.stream.IStreamSource;
-import divconq.lang.FuncCallback;
-import divconq.lang.OperationCallback;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationCallback;
 import divconq.script.StackEntry;
 import divconq.session.DataStreamChannel;
 import divconq.struct.RecordStruct;

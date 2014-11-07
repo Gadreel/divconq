@@ -17,9 +17,8 @@
 package divconq.io.stream;
 
 import io.netty.buffer.ByteBuf;
-
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class NullStream extends BaseStream implements IStreamDest {
@@ -32,11 +31,11 @@ public class NullStream extends BaseStream implements IStreamDest {
     
 	// make sure we don't return without first releasing the file reference content
     @Override
-    public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+    public HandleReturn handle(StreamMessage msg) {
     	if (msg == StreamMessage.FINAL) {
-    		cb.info("Null got " + this.bytes + " bytes and " + this.files + " files/folders.");
+    		OperationContext.get().info("Null got " + this.bytes + " bytes and " + this.files + " files/folders.");
     		
-    		cb.complete();
+    		OperationContext.get().getTaskRun().complete();
            	return HandleReturn.DONE;
     	}
        	
@@ -54,12 +53,12 @@ public class NullStream extends BaseStream implements IStreamDest {
     }
     
     @Override
-    public void request(TaskRun cb) {
-    	this.upstream.request(cb);
+    public void request() {
+    	this.upstream.request();
     }
 
 	@Override
-	public void execute(TaskRun cb) {
-		this.upstream.request(cb);
+	public void execute() {
+		this.upstream.request();
 	}
 }

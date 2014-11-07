@@ -23,9 +23,9 @@
 package divconq.work.sql;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.sql.SqlEngine;
 import divconq.sql.SqlManager.SqlDatabase;
 import divconq.sql.SqlNull;
@@ -103,8 +103,6 @@ public class QueueDriver implements IQueueDriver {
 				Hub.instance.getResources().getHubId()			// param 3  - hub id
 		);	
 		
-		res.copyMessages(rsres);
-		
 		ListStruct rs = rsres.getResult();
 		
 		res.setResult(rs);
@@ -142,8 +140,6 @@ public class QueueDriver implements IQueueDriver {
 				oldstamp										// param 3 - time stamp we had when last we heard about this task - if we are out of date then we don't earn the task
 		);
 		
-		res.copyMessages(ures);
-		
 		if (ures.getResult() != 1) {
 			res.errorTr(162, taskidentity);
 			Hub.instance.getCountManager().countObjects("dcWorkQueueClaimFails", info);			
@@ -162,8 +158,6 @@ public class QueueDriver implements IQueueDriver {
 				Hub.instance.getResources().getHubId(),			// param 1  - hub id
 				taskidentity 									// param 2 - task to claim
 		);	
-		
-		res.copyMessages(rsres);
 		
 		info.setField("ClaimedStamp", Struct.objectToString(rsres.getResult()));
 		
@@ -199,8 +193,6 @@ public class QueueDriver implements IQueueDriver {
 				oldstamp		// param 2 - time stamp we had when last we heard about this task - if we are out of date then we don't keep the task
 		);
 		
-		res.copyMessages(ures);
-		
 		if (ures.getResult() != 1) {
 			res.errorTr(188, taskidentity);
 			Hub.instance.getCountManager().countObjects("dcWorkQueueClaimUpdateFails", info);		
@@ -219,8 +211,6 @@ public class QueueDriver implements IQueueDriver {
 				Hub.instance.getResources().getHubId(),			// param 1  - hub id
 				taskidentity 									// param 2 - task to claim
 		);	
-		
-		res.copyMessages(rsres);
 		
 		Struct rs = rsres.getResult();
 		
@@ -249,8 +239,6 @@ public class QueueDriver implements IQueueDriver {
 					claimstamp		// param 2 - lock it with a future stamp
 		);
 		
-		res.copyMessages(ires);
-		
 		if (ires.getCode() == 194) {
 			res.infoTr(162, taskidentity);
 			return res;
@@ -272,8 +260,6 @@ public class QueueDriver implements IQueueDriver {
 				taskidentity 									// param 1 - task to claim
 		);	 
 		
-		res.copyMessages(rsres);
-		
 		if (rsres.isEmptyResult()) {
 			res.setResult(claimstamp);
 			return res;
@@ -286,11 +272,7 @@ public class QueueDriver implements IQueueDriver {
 		// therefore we remove any claim we might have
         sql = "DELETE FROM dcWorkQueue WHERE dcTaskIdentity = ?";
         
-		FuncResult<Integer> dres = db.executeUpdate(sql, 
-				taskidentity
-		);
-		
-		res.copyMessages(dres);
+		db.executeUpdate(sql, taskidentity);
 		
 		return res;
 	}
@@ -314,8 +296,6 @@ public class QueueDriver implements IQueueDriver {
 					taskidentity, 	// param 1 - task we are reserving
 					claimstamp		// param 2 - lock it with a future stamp
 		);
-		
-		res.copyMessages(ires);
 		
 		if (ires.getCode() == 194) {
 			res.infoTr(162, taskidentity);
@@ -369,8 +349,6 @@ public class QueueDriver implements IQueueDriver {
 				info.getMaxTries()
 		);
 		
-		res.copyMessages(ires);
-		
 		long workid = ires.getResult();   
 		
 		if (workid == 0) {
@@ -392,8 +370,6 @@ public class QueueDriver implements IQueueDriver {
 					StringUtil.isNotEmpty(forhub) ? forhub : SqlNull.VarChar,
 					info.getTimeout()
 			);
-	        
-			res.copyMessages(ires2);
 			
 			cnt = ires2.getResult();
 		}
@@ -411,8 +387,6 @@ public class QueueDriver implements IQueueDriver {
 					taskidentity, 
 					reservedclaim
 			);
-	        
-			res.copyMessages(ires2);
 			
 			cnt = ires2.getResult();
 		}
@@ -455,8 +429,6 @@ public class QueueDriver implements IQueueDriver {
 				null, 						// order by
 				workid						// param 1 - dcWork record id
 		);	
-		
-		res.copyMessages(rsres);
 		
 		ListStruct rs = rsres.getResult();
 		
@@ -502,8 +474,6 @@ public class QueueDriver implements IQueueDriver {
 				StringUtil.parseInt(workid)						// param 1
 		);
 		
-		res.copyMessages(rsres);
-		
 		ListStruct rs = rsres.getResult();
 		
 		if (rs.isEmpty()) {
@@ -530,8 +500,6 @@ public class QueueDriver implements IQueueDriver {
 	        
 			FuncResult<Integer> ires2 = db.executeUpdate(sql, "Failed", workid);
 	        
-			res.copyMessages(ires2);
-	        
 			if (ires2.getResult() != 1) 
 				res.errorTr(164, taskidentity);
 
@@ -539,8 +507,6 @@ public class QueueDriver implements IQueueDriver {
 			sql = "DELETE FROM dcWorkQueue WHERE dcTaskIdentity = ?";
 	        
 			ires2 = db.executeUpdate(sql, taskidentity);
-	        
-			res.copyMessages(ires2);
 			
 			if (ires2.getResult() != 1) 
 				res.warnTr(165, taskidentity);		// warning only because at least we know there is no entry in the queue
@@ -556,8 +522,6 @@ public class QueueDriver implements IQueueDriver {
         int ftrynum = trynum;
         
 		FuncResult<Long> ires2 = db.executeInsertReturnId(sql, workid, ftrynum, OperationContext.getHubId());
-        
-		res.copyMessages(ires2);
 		
 		if (ires2.getResult() == 0) {
 			res.errorTr(170, taskidentity);
@@ -567,8 +531,6 @@ public class QueueDriver implements IQueueDriver {
         sql = "UPDATE dcWork SET dcCurrentTry = ?, dcLastAudit = ?, dcStatus = ? WHERE Id = ?";
         
         FuncResult<Integer> ires3 = db.executeUpdate(sql, ftrynum, ires2.getResult(), "Running", workid);
-        
-		res.copyMessages(ires3);
 		
 		if (ires3.getResult() != 1) {
 			res.errorTr(164, taskidentity);
@@ -594,7 +556,7 @@ public class QueueDriver implements IQueueDriver {
 		Long workid = StringUtil.parseInt(info.getWorkId());
 		
 		String msg = task.getMessage(); 
-		String log = task.getLog(); 
+		String log = task.getContext().getLog(); 
 		
 		SqlDatabase db = Hub.instance.getSQLDatabase();
 		
@@ -607,8 +569,6 @@ public class QueueDriver implements IQueueDriver {
 				auditid
 		);
         
-		res.copyMessages(ires2);
-        
 		if (ires2.getResult() != 1) 
 			res.errorTr(163, task.getTask().getId());
 
@@ -618,8 +578,6 @@ public class QueueDriver implements IQueueDriver {
         
 		ires2 = db.executeUpdate(sql, info.getStatus(), workid);
         
-		res.copyMessages(ires2);
-        
 		if (ires2.getResult() != 1) 
 			res.errorTr(164, task.getTask().getId());
         
@@ -627,8 +585,6 @@ public class QueueDriver implements IQueueDriver {
 			sql = "DELETE FROM dcWorkQueue WHERE dcTaskIdentity = ?";
 	        
 			ires2 = db.executeUpdate(sql, task.getTask().getId());
-	        
-			res.copyMessages(ires2);
 	        
 			if (ires2.getResult() != 1) 
 				res.warnTr(165, task.getTask().getId());		// warning only because at least we know there is no entry in the queue
@@ -647,13 +603,13 @@ public class QueueDriver implements IQueueDriver {
 		Long auditid = StringUtil.parseInt(info.getAuditId());
 		
 		String msg = task.getMessage(); 
-		String log = task.getLog(); 
+		String log = task.getContext().getLog(); 
 		
-		String progress = task.getProgressMessage();
-		long completed = task.getAmountCompleted();
-		long steps = task.getSteps();
-		long step = task.getCurrentStep();
-		String sname = task.getCurrentStepName();
+		String progress = task.getContext().getProgressMessage();
+		long completed = task.getContext().getAmountCompleted();
+		long steps = task.getContext().getSteps();
+		long step = task.getContext().getCurrentStep();
+		String sname = task.getContext().getCurrentStepName();
     	
 		SqlDatabase db = Hub.instance.getSQLDatabase();
 		
@@ -671,8 +627,6 @@ public class QueueDriver implements IQueueDriver {
 				auditid
 		);
         
-		res.copyMessages(ires2);
-        
 		if (ires2.getResult() != 1) 
 			res.errorTr(163, task.getTask().getId());
 		
@@ -680,9 +634,7 @@ public class QueueDriver implements IQueueDriver {
 		if (ended) {
 	        sql = "UPDATE dcWorkAudit SET dcEndStamp = " + db.nowFunc() + " WHERE Id = ?";
 	        
-			ires2 = db.executeUpdate(sql, auditid);
-	        
-			res.copyMessages(ires2);
+			db.executeUpdate(sql, auditid);
 		}
 		
 		return res;

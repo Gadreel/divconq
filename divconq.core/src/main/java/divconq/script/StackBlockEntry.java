@@ -21,7 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
 import divconq.struct.CompositeStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.Struct;
@@ -71,10 +72,11 @@ public class StackBlockEntry extends StackEntry {
     public void addVariable(String name, Struct var) {
     	this.variables.put(name, var);
     	
-    	if ((var instanceof AutoCloseable) && (this.activity != null)) {
-    		TaskRun run = this.activity.getTaskRun();
+    	if (var instanceof AutoCloseable) {
+    		TaskRun run = OperationContext.get().getTaskRun();
     		
-    		run.addCloseable((AutoCloseable) var);
+    		if (run != null)
+    			run.addCloseable((AutoCloseable) var);
     	}
     }
 
@@ -101,18 +103,16 @@ public class StackBlockEntry extends StackEntry {
             	ov = super.queryVariable(oname);
 
             if (ov == null) {
-            	this.log().errorTr(510, oname);
+            	OperationContext.get().errorTr(510, oname);
             	return null;
             }
             
             if (!(ov instanceof CompositeStruct)){
-            	this.log().errorTr(511, oname);
+            	OperationContext.get().errorTr(511, oname);
             	return null;
             }
             
             FuncResult<Struct> sres = ((CompositeStruct)ov).select(name.substring(dotpos + 1)); 
-
-            this.log().copyMessages(sres);
             
             return sres.getResult();
         }

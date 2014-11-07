@@ -4,7 +4,7 @@
 	<LocalFile Name="fh1" Path="/Work/Temp/Dest/karabiner.bin.gpg" />
 	
 	<FileOps>
-		<!-- a straght encrypt -->
+		<!-- a straight encrypt -->
 		<PGPEncrypt Source="$fh0" Dest="$fh1" Keyring="/Users/Owner/.gnupg/pubring.gpg" />
 		
 		<!-- tar, gz, pgp using the auto chaining and then save -->

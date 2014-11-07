@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import divconq.lang.OperationCallback;
+import divconq.lang.op.OperationCallback;
 import divconq.web.ViewInfo;
 
 public class Fragment extends Element {

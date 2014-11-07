@@ -19,7 +19,7 @@ package divconq.script.inst;
 import java.util.concurrent.ScheduledFuture;
 
 import divconq.hub.Hub;
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationContext;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
 import divconq.script.StackEntry;
@@ -34,7 +34,7 @@ public class Sleep extends Instruction {
 		int secs = (int) stack.intFromSource("Seconds");
 		OperationContext ctx = OperationContext.get();
 		
-		TaskRun srun = stack.getActivity().getTaskRun();
+		TaskRun srun = OperationContext.get().getTaskRun();
 		int omin2 = 0;
 		
 		// if we are inside a task we have only 1 minute, what if sleep is longer?

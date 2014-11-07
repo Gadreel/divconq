@@ -31,12 +31,13 @@ import divconq.bus.Message;
 import divconq.bus.MessageUtil;
 import divconq.bus.ServiceResult;
 import divconq.hub.Hub;
-import divconq.lang.FuncCallback;
-import divconq.lang.IOperationObserver;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationContextBuilder;
-import divconq.lang.OperationResult;
-import divconq.lang.UserContext;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.IOperationObserver;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationContextBuilder;
+import divconq.lang.op.OperationObserver;
+import divconq.lang.op.OperationResult;
+import divconq.lang.op.UserContext;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
 import divconq.struct.FieldStruct;
@@ -46,7 +47,6 @@ import divconq.struct.Struct;
 import divconq.util.StringUtil;
 import divconq.util.TimeUtil;
 import divconq.work.ISynchronousWork;
-import divconq.work.TaskObserver;
 import divconq.work.TaskRun;
 import divconq.work.Task;
 
@@ -204,9 +204,7 @@ Context: {
 			Message msg = new Message("dcAuth", "Authentication", "SignOut");				
 			Hub.instance.getBus().sendMessage(msg);	
 			
-			// reset the creds and the verification
-			//this.user = UserContext.checkCredentials(this.user, null).toUserContext();
-			this.user = UserContext.allocateGuest();
+			this.clearToGuest();
 		}
 		
 		Logger.info("Ending session: " + this.id);
@@ -214,11 +212,11 @@ Context: {
 		// TODO consider clearing adapter and reply handler too
 	}
 	
-	public OperationContext allocateTaskContext() {
-		return this.allocateTaskContext(this.originalOrigin);
+	public OperationContext allocateContext() {
+		return this.allocateContext(this.originalOrigin);
 	}
 	
-	public OperationContext allocateTaskContext(String origin) {
+	public OperationContext allocateContext(String origin) {
 		return OperationContext.allocate(this.user, 
 				new OperationContextBuilder()
 					.withOrigin(origin)
@@ -226,26 +224,26 @@ Context: {
 					.withSessionId(this.id));
 	}
 	
-	public OperationContext setTaskContext(String origin) {
-		OperationContext tc = this.allocateTaskContext(origin);
+	public OperationContext setContext(String origin) {
+		OperationContext tc = this.allocateContext(origin);
 		OperationContext.set(tc);
 		return tc;
 	}
 	
-	public OperationContext setTaskContext() {
-		OperationContext tc = this.allocateTaskContext(this.originalOrigin);
+	public OperationContext setContext() {
+		OperationContext tc = this.allocateContext(this.originalOrigin);
 		OperationContext.set(tc);
 		return tc;
 	}
 
 	public Task allocateTaskBuilder() {
 		return new Task()
-			.withContext(this.allocateTaskContext(this.originalOrigin));
+			.withContext(this.allocateContext(this.originalOrigin));
 	}
 
 	public Task allocateTaskBuilder(String origin) {
 		return new Task()
-			.withContext(this.allocateTaskContext(origin));
+			.withContext(this.allocateContext(origin));
 	}
 	
 	public TaskRun submitTask(Task task, IOperationObserver... observers) {
@@ -270,11 +268,11 @@ Context: {
 		this.tasks.put(id, run);
 		
 		for (IOperationObserver observer: observers)
-			run.addObserver(observer);
+			task.withObserver(observer);
 		
-		run.addObserver(new TaskObserver() {			
+		task.withObserver(new OperationObserver() {			
 			@Override
-			public void completed(TaskRun or) {
+			public void completed(OperationContext or) {
 				// TODO review that this is working correctly and does not consume memory
 				// otherwise TaskRun complete can lookup session and remove via there - might be better
 				Session.this.tasks.remove(id);
@@ -409,7 +407,7 @@ Context: {
 	public void sendMessage(final Message msg) {
 		// be sure we are using a proper context
 		if (!OperationContext.hasContext()) 
-			this.setTaskContext();
+			this.setContext();
 		
 		// note that session has been used
 		this.touch();		
@@ -456,8 +454,8 @@ Context: {
 							
 							Session.this.user.freezeRpc(body);
 							
-							body.setField("SessionId", Session.this.id);		// TODO probably not
-							body.setField("SessionKey", Session.this.key);		// TODO probably not
+							body.setField("SessionId", Session.this.id);		
+							body.setField("SessionKey", Session.this.key);		
 							
 							Session.this.reply(rmsg, msg);
 						}
@@ -478,66 +476,56 @@ Context: {
 		}
 		
 		// if the caller skips Session Start that is fine - but if they pass creds we verify anyway before processing the message 		
-		this.verifySession(new FuncCallback<Message>() {				
-			@Override
-			public void callback() {
-				Message rmsg = this.getResult();
-				
-				if (rmsg.hasErrors())
-					Session.this.reply(rmsg, msg);
-				else
-					Session.this.sendMessageThru(msg);
-			}
-		});
+		if (!this.user.isVerified()) {
+			this.verifySession(new FuncCallback<Message>() {				
+				@Override
+				public void callback() {
+					Message rmsg = this.getResult();
+					
+					if (rmsg.hasErrors())
+						Session.this.reply(rmsg, msg);
+					else
+						Session.this.sendMessageThru(msg);
+				}
+			});
+		}
+		else {
+			Session.this.sendMessageThru(msg);
+		}
 	}
 
 	// if session has an unverified user, verify it
-	public void verifySession(final FuncCallback<Message> cb) {
-		if (!this.user.isVerified()) {
-			final boolean waslikequest = this.user.looksLikeGuest();
-			
-			OperationContext tc = OperationContext.get();
-			
-			tc.verify(new FuncCallback<UserContext>() {				
-				@Override
-				public void callback() {
-					UserContext uc = this.getResult();
-					
-					if (uc != null) {
-						// TODO if the user context changed, then update the operation context
-						//if (!uc.equals(this.getContext().getUserContext()))
-						
-						// update the operation context
-						OperationContext.use(uc, OperationContext.get().toBuilder());
-						
-						// it would not be ok to store TaskContext here because of elavation
-						// but user context can be
-						Session.this.user = uc;
-						
-						boolean nowlikeguest = Session.this.user.looksLikeGuest();
-						
-						if (nowlikeguest && !waslikequest)
-							cb.error(1, "User not authenticated!");
-						
-						// although we typically do not change the context of a callback, in this case we should
-						// so the user verify will travel along with the request message 
-						cb.setContext(OperationContext.get());
-					}
-					
-					if (cb != null) {
-						cb.setResult(this.toMessage());
-						cb.complete();
-					}
-				}
-			});
-			
-			return;
-		}
+	public void verifySession(FuncCallback<Message> cb) {
+		boolean waslikequest = this.user.looksLikeGuest();
 		
-		if (cb != null) {
-			cb.setResult(MessageUtil.success());
-			cb.complete();
-		}
+		OperationContext tc = OperationContext.get();
+		
+		tc.verify(new FuncCallback<UserContext>() {				
+			@Override
+			public void callback() {
+				UserContext uc = this.getResult();
+				
+				if (uc != null) {
+					// it would not be ok to store TaskContext here because of elevation
+					// but user context can be stored
+					Session.this.user = uc;
+					
+					// although we typically do not change the context of a callback, in this case we should
+					// so the user verify will travel along with the request message 
+					OperationContext.switchUser(this.getContext(), uc);
+					
+					boolean nowlikeguest = Session.this.user.looksLikeGuest();
+					
+					if (nowlikeguest && !waslikequest)
+						cb.error(1, "User not authenticated!");
+				}
+				
+				if (cb != null) {
+					cb.setResult(this.toLogMessage());
+					cb.complete();
+				}
+			}
+		});
 	}
 	
 	private void sendMessageThru(final Message msg) {		
@@ -571,11 +559,11 @@ Context: {
 						
 						reply.setField("Body",
 								new RecordStruct(
-										new FieldStruct("AmountCompleted", info.getAmountCompleted()),
-										new FieldStruct("Steps", info.getSteps()),
-										new FieldStruct("CurrentStep", info.getCurrentStep()),
-										new FieldStruct("CurrentStepName", info.getCurrentStepName()),
-										new FieldStruct("ProgressMessage", info.getProgressMessage()),
+										new FieldStruct("AmountCompleted", info.getContext().getAmountCompleted()),
+										new FieldStruct("Steps", info.getContext().getSteps()),
+										new FieldStruct("CurrentStep", info.getContext().getCurrentStep()),
+										new FieldStruct("CurrentStepName", info.getContext().getCurrentStepName()),
+										new FieldStruct("ProgressMessage", info.getContext().getProgressMessage()),
 										new FieldStruct("Result", res)
 								)
 						);
@@ -855,7 +843,10 @@ Context: {
 	}
 
 	public void clearToGuest() {
-		this.user = UserContext.allocateGuest();
+		this.user = new OperationContextBuilder()
+			.withGuestUserTemplate()
+			.withDomainId(this.user.getDomainId())
+			.toUserContext();
 	}
 
 	public void setToRoot() {
@@ -865,25 +856,35 @@ Context: {
 	public void reviewPlan() {
 		// TODO add session plan features
 		
-		// cleannup expired channels
-		List<DataStreamChannel> killlist = new ArrayList<>();
-		
-		this.channellock.lock();
-		
-		try {
-			for (DataStreamChannel chan : this.channels.values()) {
-				if (chan.isHung()) 
-					killlist.add(chan);
+		// review get called often - optimize so that as few objects as possible are 
+		// created each time this is called
+		if (this.channels.size() > 0) {
+			// cleannup expired channels
+			List<DataStreamChannel> killlist = null;
+			
+			this.channellock.lock();
+			
+			try {
+				for (DataStreamChannel chan : this.channels.values()) {
+					if (chan.isHung()) {
+						if (killlist == null)
+							killlist = new ArrayList<>();
+						
+						killlist.add(chan);
+					}
+				}
+			}
+			finally {
+				this.channellock.unlock();
+			}
+			
+			if (killlist != null) {
+				for (DataStreamChannel chan : killlist) {
+					Logger.warn("Session " + this.id + " found hung transfer: " + chan);
+					chan.abort();
+				}		
 			}
 		}
-		finally {
-			this.channellock.unlock();
-		}
-		
-		for (DataStreamChannel chan : killlist) {
-			Logger.warn("Session " + this.id + " found hung transfer: " + chan);
-			chan.abort();
-		}		
 	}
 
 	public Collection<DataStreamChannel> channels() {

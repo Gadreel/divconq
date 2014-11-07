@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import divconq.lang.OperationCallback;
+import divconq.lang.op.OperationCallback;
 
 public class ContentPlaceholder extends Element {
 	protected List<Object> held = new ArrayList<Object>();

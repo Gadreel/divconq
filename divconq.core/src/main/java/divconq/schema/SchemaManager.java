@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 import divconq.bus.Message;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.schema.DataType.DataKind;
 import divconq.schema.ServiceSchema.Op;
 import divconq.struct.CompositeStruct;
@@ -274,7 +274,7 @@ public class SchemaManager {
 	 * @return log of compilation activity 
 	 */
 	public OperationResult compile() {
-		OperationResult mr = new OperationResult(OperationContext.getHubContext());
+		OperationResult mr = new OperationResult();
 		
 		// compiling not thread safe, do it once at start
 		for (DataType dt : this.knownTypes.values()) 
@@ -294,7 +294,7 @@ public class SchemaManager {
 	 * @return log of the load attempt
 	 */
 	public OperationResult loadSchema(File fl) {
-		OperationResult or = new OperationResult(OperationContext.getHubContext());
+		OperationResult or = new OperationResult();
 		
 		if (fl == null) {
 			or.error(108, "Unable to apply schema file, file null");
@@ -309,7 +309,6 @@ public class SchemaManager {
 		FuncResult<XElement> xres3 = XmlReader.loadFile(fl, false);
 		
 		if (xres3.hasErrors()) {
-			or.copyMessages(xres3);
 			or.error(110, "Unable to apply schema file, missing xml");
 			return or;
 		}
@@ -331,7 +330,7 @@ public class SchemaManager {
 	 * @return log of the load attempt
 	 */
 	public OperationResult loadSchema(InputStream fl) {
-		OperationResult or = new OperationResult(OperationContext.getHubContext());
+		OperationResult or = new OperationResult();
 		
 		if (fl == null) {
 			or.error(108, "Unable to apply schema file, file null");
@@ -341,7 +340,6 @@ public class SchemaManager {
 		FuncResult<XElement> xres3 = XmlReader.parse(fl, false);
 		
 		if (xres3.hasErrors()) {
-			or.copyMessages(xres3);
 			or.error(110, "Unable to apply schema file, missing xml");
 			return or;
 		}

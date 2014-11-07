@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.script.inst;
 
-import divconq.lang.OperationCallback;
+import divconq.lang.op.OperationCallback;
 import divconq.script.ExecuteState;
 import divconq.script.LogicBlockInstruction;
 import divconq.script.StackBlockEntry;

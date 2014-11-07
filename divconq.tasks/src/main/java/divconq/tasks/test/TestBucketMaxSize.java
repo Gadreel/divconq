@@ -19,8 +19,9 @@ package divconq.tasks.test;
 import java.util.concurrent.atomic.AtomicReference;
 
 import divconq.hub.Hub;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
 import divconq.scheduler.ISchedule;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
@@ -28,7 +29,6 @@ import divconq.work.ISynchronousWork;
 import divconq.work.IWork;
 import divconq.work.Task;
 import divconq.work.TaskCountDownCallback;
-import divconq.work.TaskObserver;
 import divconq.work.TaskRun;
 import divconq.work.WorkBucket;
 import divconq.work.WorkPool;
@@ -97,9 +97,9 @@ public class TestBucketMaxSize implements IWork {
 				.withBucket(bucket.getName())
 				.withWork(SlowGreetWork.class);
 	
-			Hub.instance.getWorkPool().submit(task, new TaskObserver() {				
+			Hub.instance.getWorkPool().submit(task, new OperationObserver() {				
 				@Override
-				public void completed(TaskRun or) {
+				public void completed(OperationContext or) {
 					int left = cntdwn.countDown();
 					
 					// the message, when printed, should be in the context of the greeter task, not in our task

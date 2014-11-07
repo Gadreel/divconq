@@ -31,8 +31,8 @@ import java.util.Set;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.struct.CompositeParser;
 import divconq.struct.CompositeStruct;
 import divconq.struct.ListStruct;
@@ -64,8 +64,6 @@ public class Updater {
 		
 		FuncResult<CompositeStruct> pres = CompositeParser.parseJson(DEPLOYED_PATH);
 		
-		res.copyMessages(pres);
-		
 		if (!pres.hasErrors())
 			res.setResult((RecordStruct) pres.getResult());
 		
@@ -74,7 +72,7 @@ public class Updater {
 	
 	static public OperationResult saveDeployed(RecordStruct deployed) {
 		OperationResult res = new OperationResult();
-		res.copyMessages(IOUtil.saveEntireFile(Updater.DEPLOYED_PATH, deployed.toPrettyString())); 
+		IOUtil.saveEntireFile(Updater.DEPLOYED_PATH, deployed.toPrettyString()); 
 		return res;
 	}
 	

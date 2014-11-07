@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import divconq.hub.Hub;
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationContext;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.HexUtil;
@@ -82,7 +82,8 @@ public class AsyncHashWork implements IWork {
 			public void completed(Integer result, AsynchronousFileChannel sbc) {
 				run.info(0, "A) AsyncHashTask completed after read in context: " + OperationContext.get().getOpId());
 				
-	        	run.thawContext();
+				// TODO review what is intended and rework
+	        	//run.thawContext();
 	        	
 				run.info(0, "B) AsyncHashTask completed after read in context: " + OperationContext.get().getOpId());
 				run.info(0, "C) AsyncHashTask completed after read in thread: " + Thread.currentThread().getName());
@@ -140,7 +141,8 @@ public class AsyncHashWork implements IWork {
 			public void failed(Throwable x, AsynchronousFileChannel sbc) {
 				run.info(0, "A) AsyncHashTask failed after read in context: " + OperationContext.get().getOpId());
 				
-	        	run.thawContext();
+				// TODO review what is intended and rework
+	        	//run.thawContext();
 	        	
 				run.info(0, "B) AsyncHashTask failed after read in context: " + OperationContext.get().getOpId());
 				run.info(0, "C) AsyncHashTask failed after read in thread: " + Thread.currentThread().getName());

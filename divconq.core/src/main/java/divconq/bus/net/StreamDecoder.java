@@ -18,7 +18,7 @@ package divconq.bus.net;
 
 import java.util.List;
 
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationContext;
 import divconq.log.Logger;
 import divconq.net.ByteToMessageDecoder;
 import divconq.struct.RecordStruct;

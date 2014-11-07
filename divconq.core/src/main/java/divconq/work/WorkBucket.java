@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.struct.RecordStruct;
 import divconq.util.StringUtil;

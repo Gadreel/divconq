@@ -15,7 +15,7 @@ public class StreamWork implements ISmartWork {
 		IStreamDest d = this.dest;
 		
 		if (d != null)
-			d.execute(trun);
+			d.execute();
 		else 
 			trun.kill("Attempted to run StreamWork but missing dest.");
 	}
@@ -31,7 +31,7 @@ public class StreamWork implements ISmartWork {
 		IStreamDest d = this.dest;
 		
 		if (d != null)
-			d.cleanup(run);
+			d.cleanup();
 		
 		this.dest = null;
 		

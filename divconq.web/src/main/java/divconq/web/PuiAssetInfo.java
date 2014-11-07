@@ -21,7 +21,7 @@ import java.util.Map.Entry;
 
 import divconq.interchange.CommonPath;
 import divconq.io.ByteBufWriter;
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;

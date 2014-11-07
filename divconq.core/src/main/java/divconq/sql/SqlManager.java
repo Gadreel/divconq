@@ -36,9 +36,9 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -360,8 +360,6 @@ public class SqlManager {
 		    try {					
 			    FuncResult<PreparedStatement> psres = this.prepStatement(conn, sql, params);
 			    
-			    res.copyMessages(psres);
-			    
 			    if (res.hasErrors())
 			    	return res;
 			    
@@ -405,8 +403,6 @@ public class SqlManager {
 		    
 		    try {					
 			    FuncResult<PreparedStatement> psres = this.prepStatement(conn, sql, params);
-			    
-			    res.copyMessages(psres);
 			    
 			    if (res.hasErrors())
 			    	return res;
@@ -469,17 +465,13 @@ public class SqlManager {
 			// prepare
 		    FuncResult<PreparedStatement> psres = this.prepPage(conn, select, from, where, groupby, orderby, offset, pagesize, params);
 		    
-		    res.copyMessages(psres);
-		    
 		    if (res.hasErrors())
 		    	return res;
 		    
 		    PreparedStatement pstmt = psres.getResult();
 		    
 		    // execute
-	    	FuncResult<ListStruct> res2 = callAndFormat(select, pstmt);
-	    	res2.copyMessages(res);		    	
-	    	res = res2;
+	    	res = callAndFormat(select, pstmt);
 
 	    	try {
 	    		if (pstmt != null)
@@ -510,17 +502,13 @@ public class SqlManager {
 			// prepare
 		    FuncResult<PreparedStatement> psres = this.prepLimit(conn, select, from, where, groupby, orderby, limit, distinct, params);
 		    
-		    res.copyMessages(psres);
-		    
 		    if (res.hasErrors())
 		    	return res;
 		    
 		    PreparedStatement pstmt = psres.getResult();
 		    
 		    // execute
-	    	FuncResult<ListStruct> res2 = callAndFormat(select, pstmt);
-	    	res2.copyMessages(res);		    	
-	    	res = res2;
+	    	res = callAndFormat(select, pstmt);
 
 	    	try {
 	    		if (pstmt != null)
@@ -551,17 +539,13 @@ public class SqlManager {
 			// prepare
 		    FuncResult<PreparedStatement> psres = this.prep(conn, select, from, where, groupby, orderby, params);
 		    
-		    res.copyMessages(psres);
-		    
 		    if (res.hasErrors())
 		    	return res;
 		    
 		    PreparedStatement pstmt = psres.getResult();
 		    
 		    // execute
-	    	FuncResult<ListStruct> res2 = this.callAndFormat(select, pstmt);
-	    	res2.copyMessages(res);		    	
-	    	res = res2;
+	    	res = this.callAndFormat(select, pstmt);
 
 	    	try {
 	    		if (pstmt != null)
@@ -595,8 +579,6 @@ public class SqlManager {
 			// prepare
 		    FuncResult<PreparedStatement> psres = this.prep(conn, selects, from, where, null, orderby, params);
 		    
-		    res.copyMessages(psres);
-		    
 		    if (res.hasErrors())
 		    	return res;
 		    
@@ -604,7 +586,6 @@ public class SqlManager {
 		    
 		    // execute
 	    	FuncResult<ListStruct> res2 = this.callAndFormat(selects, pstmt);
-	    	res.copyMessages(res2);
 	    	
 	    	ListStruct lrs = res2.getResult();
 	    	
@@ -628,10 +609,8 @@ public class SqlManager {
 		}
 		
 		// return a single String value (row/column) from table 
-		public String executeQueryString(OperationResult log, String col, String from, String where, String orderby, Object... params) {
+		public String executeQueryString(String col, String from, String where, String orderby, Object... params) {
 			FuncResult<Struct> rsres = this.executeQueryScalar(new SqlSelectString(col), from, where, orderby, params);
-			
-			log.copyMessages(rsres);
 			
 			if (rsres.hasErrors() || rsres.isEmptyResult()) 
 				return null;
@@ -640,10 +619,8 @@ public class SqlManager {
 		}
 		
 		// return a single Integer value (row/column) from table 
-		public Long executeQueryInteger(OperationResult log, String col, String from, String where, String orderby, Object... params) {
+		public Long executeQueryInteger(String col, String from, String where, String orderby, Object... params) {
 			FuncResult<Struct> rsres = this.executeQueryScalar(new SqlSelectInteger(col), from, where, orderby, params);
-			
-			log.copyMessages(rsres);
 			
 			if (rsres.hasErrors() || rsres.isEmptyResult()) 
 				return null;
@@ -652,10 +629,8 @@ public class SqlManager {
 		}
 		
 		// return a single Boolean value (row/column) from table 
-		public Boolean executeQueryBoolean(OperationResult log, String col, String from, String where, String orderby, Object... params) {
+		public Boolean executeQueryBoolean(String col, String from, String where, String orderby, Object... params) {
 			FuncResult<Struct> rsres = this.executeQueryScalar(new SqlSelectBoolean(col), from, where, orderby, params);
-			
-			log.copyMessages(rsres);
 			
 			if (rsres.hasErrors() || rsres.isEmptyResult()) 
 				return null;
@@ -679,8 +654,6 @@ public class SqlManager {
 			// prepare
 		    FuncResult<PreparedStatement> psres = this.prep(conn, selects, from, where, null, null, params);
 		    
-		    res.copyMessages(psres);
-		    
 		    if (res.hasErrors())
 		    	return res;
 		    
@@ -688,7 +661,6 @@ public class SqlManager {
 		    
 		    // execute
 	    	FuncResult<ListStruct> res2 = this.callAndFormat(selects, pstmt);
-	    	res2.copyMessages(res);
 	    	
 	    	ListStruct lrs = res2.getResult();
 	    	
@@ -726,8 +698,6 @@ public class SqlManager {
 			// prepare
 		    FuncResult<PreparedStatement> psres = this.prep(conn, selects, from, where, null, orderby, params);
 		    
-		    res.copyMessages(psres);
-		    
 		    if (res.hasErrors())
 		    	return res;
 		    
@@ -735,7 +705,6 @@ public class SqlManager {
 		    
 		    // execute
 	    	FuncResult<ListStruct> res2 = this.callAndFormat(selects, pstmt);
-	    	res2.copyMessages(res);
 	    	
 	    	ListStruct lrs = res2.getResult();
 	    	
@@ -1066,8 +1035,6 @@ public class SqlManager {
 			// prep
 		    FuncResult<PreparedStatement> psres = this.prepStatement(conn, sql, params);
 		    
-		    res.copyMessages(psres);
-		    
 		    if (res.hasErrors())
 		    	return res;
 		    
@@ -1117,8 +1084,6 @@ public class SqlManager {
 			// prep
 		    FuncResult<PreparedStatement> psres = this.prepStatement(conn, sql, params);
 		    
-		    res.copyMessages(psres);
-		    
 		    if (res.hasErrors())
 		    	return res;
 		    
@@ -1167,8 +1132,6 @@ public class SqlManager {
 			
 			// prep
 		    FuncResult<PreparedStatement> psres = this.prepStatement(conn, sql, params);
-		    
-		    res.copyMessages(psres);
 		    
 		    if (res.hasErrors())
 		    	return res;
@@ -1228,8 +1191,6 @@ public class SqlManager {
 			
 			// prep
 		    FuncResult<PreparedStatement> psres = this.prepStatement(conn, sql, params);
-		    
-		    res.copyMessages(psres);
 		    
 		    if (res.hasErrors())
 		    	return res;

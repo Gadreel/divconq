@@ -27,11 +27,10 @@ import divconq.hub.Hub;
 import divconq.interchange.CommonPath;
 import divconq.interchange.FileSystemDriver;
 import divconq.interchange.IFileStoreFile;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
-import divconq.lang.WrappedFuncCallback;
-import divconq.lang.WrappedOperationCallback;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
 import divconq.log.Logger;
 import divconq.mod.ExtensionBase;
 import divconq.session.Session;
@@ -55,8 +54,8 @@ public class FileServerService extends ExtensionBase implements IService {
 	protected String minEvidence = null;
 	
 	@Override
-	public void init(OperationResult log, XElement config) {
-		super.init(log, config);
+	public void init(XElement config) {
+		super.init(config);
 		
 		this.fsd.setRootFolder(".\temp");
 		this.bestEvidence = "SHA256";
@@ -67,7 +66,7 @@ public class FileServerService extends ExtensionBase implements IService {
 				this.fsd.setRootFolder(config.getAttribute("FileStorePath"));
 				
 				// don't wait on this, it'll log correctly
-				this.fsd.connect(null, new WrappedOperationCallback(log) {					
+				this.fsd.connect(null, new OperationCallback() {					
 					@Override
 					public void callback() {
 						// NA
@@ -149,7 +148,7 @@ public class FileServerService extends ExtensionBase implements IService {
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFileDetail(path, new WrappedFuncCallback<IFileStoreFile>(request) {			
+		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -180,7 +179,7 @@ public class FileServerService extends ExtensionBase implements IService {
 					return;
 				}
 
-				fi.hash(meth, new WrappedFuncCallback<String>(request) {						
+				fi.hash(meth, new FuncCallback<String>() {						
 					@Override
 					public void callback() {
 						if (!request.hasErrors()) {
@@ -195,13 +194,13 @@ public class FileServerService extends ExtensionBase implements IService {
 		});
 	}
 	
-	public void handleDeleteFile(final TaskRun request) {
+	public void handleDeleteFile(TaskRun request) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
 		String fpath = rec.getFieldAsString("FilePath");
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFileDetail(path, new WrappedFuncCallback<IFileStoreFile>(request) {			
+		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -222,7 +221,7 @@ public class FileServerService extends ExtensionBase implements IService {
 					return;
 				}
 
-				fi.remove(new WrappedOperationCallback(request) {					
+				fi.remove(new OperationCallback() {					
 					@Override
 					public void callback() {
 						request.complete();
@@ -232,13 +231,13 @@ public class FileServerService extends ExtensionBase implements IService {
 		});
 	}
 	
-	public void handleDeleteFolder(final TaskRun request) {
+	public void handleDeleteFolder(TaskRun request) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
 		String fpath = rec.getFieldAsString("FolderPath");
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFileDetail(path, new WrappedFuncCallback<IFileStoreFile>(request) {			
+		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -259,7 +258,7 @@ public class FileServerService extends ExtensionBase implements IService {
 					return;
 				}
 
-				fi.remove(new WrappedOperationCallback(request) {					
+				fi.remove(new OperationCallback() {					
 					@Override
 					public void callback() {
 						request.complete();
@@ -275,7 +274,7 @@ public class FileServerService extends ExtensionBase implements IService {
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.addFolder(path, new WrappedOperationCallback(request) {
+		this.fsd.addFolder(path, new OperationCallback() {
 			@Override
 			public void callback() {
 				request.complete();
@@ -289,7 +288,7 @@ public class FileServerService extends ExtensionBase implements IService {
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFolderListing(path, new WrappedFuncCallback<List<IFileStoreFile>>(request) {			
+		this.fsd.getFolderListing(path, new FuncCallback<List<IFileStoreFile>>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -321,7 +320,7 @@ public class FileServerService extends ExtensionBase implements IService {
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFileDetail(path, new WrappedFuncCallback<IFileStoreFile>(request) {			
+		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -348,7 +347,7 @@ public class FileServerService extends ExtensionBase implements IService {
 					chan.setParams(rec.getField("Params"));
 				
 				// apply the channel to a write stream from selected file
-				this.getResult().openWrite(chan, new WrappedFuncCallback<RecordStruct>(request) {					
+				this.getResult().openWrite(chan, new FuncCallback<RecordStruct>() {					
 					@Override
 					public void callback() {
 						if (!request.hasErrors()) {
@@ -387,7 +386,7 @@ public class FileServerService extends ExtensionBase implements IService {
 			return;
 		}
 		
-		this.fsd.getFileDetail(path, new WrappedFuncCallback<IFileStoreFile>(request) {			
+		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -449,7 +448,7 @@ public class FileServerService extends ExtensionBase implements IService {
 					afterVerify.accept(match);
 				}
 				else if (StringUtil.isNotEmpty(selEvidenceType)) {
-					fresult.hash(selEvidenceType, new WrappedFuncCallback<String>(request) {						
+					fresult.hash(selEvidenceType, new FuncCallback<String>() {						
 						@Override
 						public void callback() {
 							if (request.hasErrors()) {
@@ -485,7 +484,7 @@ public class FileServerService extends ExtensionBase implements IService {
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFileDetail(path, new WrappedFuncCallback<IFileStoreFile>(request) {			
+		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -507,7 +506,7 @@ public class FileServerService extends ExtensionBase implements IService {
 				if (rec.hasField("Params"))
 					chan.setParams(rec.getField("Params"));
 				
-				this.getResult().openRead(chan, new WrappedFuncCallback<RecordStruct>(request) {					
+				this.getResult().openRead(chan, new FuncCallback<RecordStruct>() {					
 					@Override
 					public void callback() {
 						if (!request.hasErrors()) {
@@ -552,7 +551,7 @@ public class FileServerService extends ExtensionBase implements IService {
 			return;
 		}
 		
-		this.fsd.getFileDetail(path, new WrappedFuncCallback<IFileStoreFile>(request) {			
+		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -608,7 +607,7 @@ public class FileServerService extends ExtensionBase implements IService {
 					afterVerify.accept(match);
 				}
 				else if (StringUtil.isNotEmpty(selEvidenceType)) {
-					this.getResult().hash(selEvidenceType, new WrappedFuncCallback<String>(request) {						
+					this.getResult().hash(selEvidenceType, new FuncCallback<String>() {						
 						@Override
 						public void callback() {
 							if (request.hasErrors()) {

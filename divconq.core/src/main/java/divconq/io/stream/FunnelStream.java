@@ -2,7 +2,6 @@ package divconq.io.stream;
 
 import io.netty.buffer.ByteBuf;
 import divconq.script.StackEntry;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class FunnelStream extends BaseStream implements IStreamSource {
@@ -83,15 +82,15 @@ public class FunnelStream extends BaseStream implements IStreamSource {
 	}
 	
 	@Override
-	public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+	public HandleReturn handle(StreamMessage msg) {
     	if (msg == StreamMessage.FINAL) 
-    		return this.downstream.handle(cb, msg);
+    		return this.downstream.handle(msg);
     	
 		this.current = msg;
 		this.relayed = false;
 		
 		while (this.hasMore()) {
-			HandleReturn ret = this.downstream.handle(cb, this.nextMessage());
+			HandleReturn ret = this.downstream.handle(this.nextMessage());
 			
 			if (ret != HandleReturn.CONTINUE)
 				return ret;
@@ -101,15 +100,15 @@ public class FunnelStream extends BaseStream implements IStreamSource {
 	}
 
 	@Override
-	public void request(TaskRun cb) {
+	public void request() {
 		while (this.hasMore()) {
-			HandleReturn ret = this.downstream.handle(cb, this.nextMessage());
+			HandleReturn ret = this.downstream.handle(this.nextMessage());
 			
 			if (ret != HandleReturn.CONTINUE)
 				return;
 		}
 		
-    	this.upstream.request(cb);
+    	this.upstream.request();
 	}
 
 	@Override

@@ -21,6 +21,7 @@ import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
 
 import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
 import divconq.script.StackEntry;
@@ -124,7 +125,7 @@ public class DateTimeStruct extends ScalarStruct {
 				}
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + op + ": " + x);
+				OperationContext.get().error("Error doing " + op + ": " + x);
 			}
 			
 			stack.resume();
@@ -152,7 +153,7 @@ public class DateTimeStruct extends ScalarStruct {
 				}
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + op + ": " + x);
+				OperationContext.get().error("Error doing " + op + ": " + x);
 			}
 			
 			stack.resume();

@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
 
-import divconq.lang.OperationCallback;
+import divconq.lang.op.OperationCallback;
 import divconq.util.StringUtil;
 import divconq.view.Fragment;
 import divconq.view.Node;

@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import divconq.interchange.CommonPath;
 import divconq.interchange.FileSystemDriver;
 import divconq.interchange.FileSystemFile;
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
 import divconq.script.inst.With;
 import divconq.util.StringUtil;
@@ -39,7 +40,7 @@ public class LocalFolder extends With {
         String path = stack.stringFromSource("Path");
         
         if (StringUtil.isEmpty(path)) {
-			stack.log().errorTr(525);
+        	OperationContext.get().errorTr(525);
 			this.nextOpResume(stack);
 			return;
         }
@@ -50,7 +51,7 @@ public class LocalFolder extends With {
         	lpath = Paths.get(path);
         }
         catch (Exception x) {
-			stack.log().errorTr(526, x);
+        	OperationContext.get().errorTr(526, x);
 			this.nextOpResume(stack);
 			return;
         }

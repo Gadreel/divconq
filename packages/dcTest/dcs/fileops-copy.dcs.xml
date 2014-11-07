@@ -16,10 +16,10 @@
 	<Info>Size of t2: {$t2.Size}</Info>
 	
 	<FileOps>
-		<!-- a straght copy -->
+		<!-- a straight copy -->
 		<XCopy Source="$fs1" Dest="$fs2" />
 		
-		<!-- a straght copy -->
+		<!-- a straight copy -->
 		<XCopy Source="$fs1" Dest="$t1" />
 		
 		<!-- tar and save to file, use file name -->

@@ -123,7 +123,7 @@ public class BigDateTimeStruct extends ScalarStruct {
 				}
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + op + ": " + x);
+				OperationContext.get().error("Error doing " + op + ": " + x);
 			}
 			
 			stack.resume();
@@ -151,7 +151,7 @@ public class BigDateTimeStruct extends ScalarStruct {
 				}
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + op + ": " + x);
+				OperationContext.get().error("Error doing " + op + ": " + x);
 			}
 			
 			stack.resume();

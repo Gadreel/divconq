@@ -31,9 +31,10 @@ import org.joda.time.LocalTime;
 
 import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
-import divconq.lang.FuncResult;
 import divconq.lang.Memory;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.schema.DataType;
 import divconq.schema.IDataExposer;
 import divconq.script.StackEntry;
@@ -1066,13 +1067,11 @@ abstract public class Struct {
 	}
 
 	public void operation(StackEntry stack, XElement code) {
-		if ("Validate".equals(code.getName())) {
-			stack.log().copyMessages(this.validate());
-			stack.resume();
-		}
-		else {
-			stack.log().error("operation failed, op name not recoginized: " + code.getName());
-			stack.resume();
-		}
+		if ("Validate".equals(code.getName())) 
+			this.validate();
+		else 
+			OperationContext.get().error("operation failed, op name not recoginized: " + code.getName());
+
+		stack.resume();
 	}
 }

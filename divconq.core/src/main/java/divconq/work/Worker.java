@@ -19,6 +19,7 @@ package divconq.work;
 import java.util.concurrent.locks.StampedLock;
 
 import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
 import divconq.log.Logger;
 
 public class Worker implements Runnable {
@@ -77,6 +78,8 @@ public class Worker implements Runnable {
 	
 	@Override
 	public void run() {
+		OperationContext.useHubContext();
+		
 		Logger.trace("Work pool thread started: " + this.slot);		
 		
 		Hub.instance.getWorkPool().incThreadsCreated();
@@ -127,6 +130,8 @@ public class Worker implements Runnable {
 					//Logger.trace("Work pool thread running: " + this.slot);
 						
 					r.run();
+					
+					OperationContext.useHubContext();
 					
 					long stamp2 = this.lock.readLock();
 					

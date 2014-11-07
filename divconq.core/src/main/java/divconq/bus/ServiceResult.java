@@ -17,14 +17,13 @@
 package divconq.bus;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncCallback;
-import divconq.lang.OperationContext;
 import divconq.lang.TimeoutPlan;
-import divconq.lang.UserContext;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.UserContext;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
-import divconq.work.TaskRun;
 
 abstract public class ServiceResult extends FuncCallback<Message> {
 	protected String replytag = null;
@@ -42,15 +41,6 @@ abstract public class ServiceResult extends FuncCallback<Message> {
 		super(plan);
 	}
 	
-	// timeout on regular schedule  
-	public ServiceResult(TaskRun run) {
-		super(run, TimeoutPlan.Regular);
-	}
-	
-	public ServiceResult(TaskRun run, TimeoutPlan plan) {
-		super(run, plan);
-	}
-	
 	@Override
 	public boolean abandon() {
 		if (super.abandon()) {
@@ -63,36 +53,20 @@ abstract public class ServiceResult extends FuncCallback<Message> {
 	
 	public void setReply(Message v) {
 		this.setResult(v);
-
-		if (this.code == 0) {
-			this.code = v.getFieldAsInteger("Result");
-			this.message = v.getFieldAsString("Message");
-		}
 		
 		ListStruct h = v.getFieldAsList("Messages");
 		
 		if (h != null)
 			for (Struct st : h.getItems()) {
 				RecordStruct msg = (RecordStruct)st;
-				this.messages.add(msg);
 				
-				if ("Error".equals(msg.getFieldAsString("Level"))) {
-					if (this.code == 0) {
-						this.code = msg.getFieldAsInteger("Code");
-						this.message = msg.getFieldAsString("Message");
-					}
-				}
+				this.opcontext.log(msg);
 			}
 		
 		UserContext usr = OperationContext.get().getUserContext(); 
 		
-		// TODO change only if usr != this.opcontext.getUser  
-		
 		// switch the user without switching the operation context, and not elevating
-		this.opcontext = OperationContext.allocate(usr, this.opcontext.toBuilder());
-
-		if (this.run != null)
-			this.run.setContext(this.opcontext);
+		OperationContext.switchUser(this.opcontext, usr);
 	}
 	
 	/**

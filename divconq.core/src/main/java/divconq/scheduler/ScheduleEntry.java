@@ -19,8 +19,8 @@ package divconq.scheduler;
 import java.nio.file.Paths;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.struct.RecordStruct;
 import divconq.util.StringUtil;
 import divconq.work.ScriptWork;
@@ -105,8 +105,6 @@ public class ScheduleEntry {
 				if (prov != null) {
 					FuncResult<Task> res = prov.getTask(this);
 					
-					or.copyMessages(res);
-					
 					this.task = res.getResult();
 				}
 				else
@@ -152,12 +150,12 @@ public class ScheduleEntry {
 		// add a task observer that, when run is done, provides the scheduler with the run for analysis and continuation scheduling
 		
 		if (this.area == ScheduleArea.Local) {
-			or.copyMessages(Hub.instance.getWorkPool().submit(this.task));
+			Hub.instance.getWorkPool().submit(this.task);
 			return;
 		}
 		
 		if (this.area == ScheduleArea.Squad) {
-			or.copyMessages(Hub.instance.getWorkQueue().reserveUniqueAndSubmit(this.task));
+			Hub.instance.getWorkQueue().reserveUniqueAndSubmit(this.task);
 			
 			// don't error further even if we could not reserve
 			return;

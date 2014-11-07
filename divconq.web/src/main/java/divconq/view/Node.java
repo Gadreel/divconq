@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationContext;
 import divconq.util.StringUtil;
 import divconq.web.WebContext;
 

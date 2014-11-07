@@ -3,13 +3,12 @@ package divconq.io.stream;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-
 import divconq.interchange.IFileStoreDriver;
 import divconq.interchange.IFileStoreFile;
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
 import divconq.struct.Struct;
 import divconq.struct.scalar.NullStruct;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class CtpStreamDest extends BaseStream implements IStreamDest {
@@ -53,18 +52,18 @@ public class CtpStreamDest extends BaseStream implements IStreamDest {
 	}
 	
 	@Override
-	public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+	public HandleReturn handle(StreamMessage msg) {
 		ChannelFutureListener cfl = new ChannelFutureListener() {					
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
 				if (future.isSuccess()) {
 					if (msg == StreamMessage.FINAL)
-						cb.complete();
+						OperationContext.get().getTaskRun().complete();
 					else
-						cb.resume();
+						OperationContext.get().getTaskRun().resume();
 				}
 				else {
-					cb.kill("ERROR sending - DONE sending!  " + future.cause());
+					OperationContext.get().getTaskRun().kill("ERROR sending - DONE sending!  " + future.cause());
 				}	
 			}
 		};
@@ -78,16 +77,16 @@ public class CtpStreamDest extends BaseStream implements IStreamDest {
 	}
 
 	@Override
-	public void request(TaskRun cb) {
+	public void request() {
 		// we are terminal, no downstream should call us
-		cb.kill("File destination cannot be a source");
+		OperationContext.get().getTaskRun().kill("File destination cannot be a source");
 	}
 
 	@Override
-	public void execute(TaskRun cb) {
-		// TODO optimize if upstream is local file also
+	public void execute() {
+		// TODO optimize if upstream is local file 
 		
-		this.upstream.request(cb);
+		this.upstream.request();
 	}
 
 }

@@ -21,8 +21,8 @@ import divconq.bus.Message;
 import divconq.bus.ServiceResult;
 import divconq.hub.Hub;
 import divconq.lang.CountDownCallback;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
 import divconq.schema.Schema;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -120,7 +120,7 @@ public class TestBusAndContext implements IWork {
 		
 		int runcnt = 2;
 		
-		final CountDownCallback countdown = new CountDownCallback(runcnt, new OperationCallback(testrun) {			
+		final CountDownCallback countdown = new CountDownCallback(runcnt, new OperationCallback() {			
 			@Override
 			public void callback() {
 				testrun.info("TestBusAndConext finishing up.");
@@ -163,12 +163,10 @@ public class TestBusAndContext implements IWork {
 		for (int i = 0; i < runcnt; i++) {
 			Message msg = new Message("TestBusService", "Test", "NoOp");
 			
-			Hub.instance.getBus().sendMessage(msg, new ServiceResult(testrun) {
+			Hub.instance.getBus().sendMessage(msg, new ServiceResult() {
 				@Override
 				public void callback() {
 					// we now have a record of all the messages from the service
-					testrun.copyMessages(this);
-					
 					testrun.info("TestBusAndConext context after call:.");
 					
 					OperationContext testctx = testrun.getContext();

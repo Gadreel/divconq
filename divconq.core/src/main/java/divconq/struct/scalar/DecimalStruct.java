@@ -19,6 +19,7 @@ package divconq.struct.scalar;
 import java.math.BigDecimal;
 
 import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
 import divconq.script.StackEntry;
@@ -107,7 +108,7 @@ public class DecimalStruct extends ScalarStruct {
 				this.value = this.value.add(Struct.objectToDecimal(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -122,7 +123,7 @@ public class DecimalStruct extends ScalarStruct {
 				this.value = this.value.subtract(Struct.objectToDecimal(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -137,7 +138,7 @@ public class DecimalStruct extends ScalarStruct {
 				this.value = this.value.multiply(Struct.objectToDecimal(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -152,7 +153,7 @@ public class DecimalStruct extends ScalarStruct {
 				this.value = this.value.divide(Struct.objectToDecimal(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -167,7 +168,7 @@ public class DecimalStruct extends ScalarStruct {
 				this.value = this.value.min(Struct.objectToDecimal(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -182,7 +183,7 @@ public class DecimalStruct extends ScalarStruct {
 				this.value = this.value.max(Struct.objectToDecimal(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 				
 			stack.resume();

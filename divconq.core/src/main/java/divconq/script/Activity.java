@@ -28,10 +28,11 @@ import java.util.regex.Matcher;
 import org.joda.time.DateTime;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.IOperationObserver;
-import divconq.lang.OperationObserver;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.IOperationObserver;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
+import divconq.lang.op.OperationResult;
 import divconq.struct.Struct;
 import divconq.struct.CompositeStruct;
 import divconq.struct.ListStruct;
@@ -52,7 +53,8 @@ import divconq.xml.XmlReader;
 
 // note that Activity, not Main is the root function block, little different but means exit codes are with Activity
 public class Activity implements ISmartWork, IInstructionCallback {
-    protected ActivityManager manager = null;
+    protected OperationContext opcontext = null;
+    
     protected boolean debugmode = false;
     protected boolean inDebugger = false;
     protected boolean exitFlag = false;
@@ -73,17 +75,12 @@ public class Activity implements ISmartWork, IInstructionCallback {
 	
 	protected Map<String, Struct> globals = new HashMap<String, Struct>();
 	
-	protected TaskRun taskRun = null;
-	protected IOperationObserver taskObserver = null;
+	protected IOperationObserver taskObserver = null;		// TODO rework so it is not circular ref
 	protected boolean hasErrored = false;
 
-    public Activity() {
-    	this.manager = Hub.instance.getActivityManager();
+    public void setContext(OperationContext v) {
+    	this.opcontext = v;
     }
-
-	public OperationResult getLog() {
-		return this.taskRun;
-	}
 
     public ExecuteState getState() {
         return (this.stack != null) ? this.stack.getState() : ExecuteState.Ready;
@@ -168,20 +165,11 @@ public class Activity implements ISmartWork, IInstructionCallback {
 	public long getRunCount() {
 		return this.runCount.get();
 	}
-	
-	public ActivityManager getManager() {
-		return this.manager;
-	}
-	
-	public TaskRun getTaskRun() {
-		return this.taskRun;
-	}
     
 	@Override
 	public void run(TaskRun scriptrun) {
-		// TODO not cool - circular refs, try to cleanup someday by passing trun to everyone in stack?
-		if (this.taskRun == null) {
-			this.taskRun = scriptrun;
+		if (this.opcontext == null) {
+			this.opcontext = scriptrun.getContext();
 			
 			this.taskObserver = new OperationObserver() {
 				// lock is too expensive, this is a flag just too keep us from calling ourself again, not for thread safety
@@ -189,7 +177,7 @@ public class Activity implements ISmartWork, IInstructionCallback {
 				protected boolean inHandler = false;
 				
 				@Override
-				public void log(OperationResult or, RecordStruct entry) {
+				public void log(OperationContext or, RecordStruct entry) {
 					if ("Error".equals(entry.getFieldAsString("Level"))) {
 						if (this.inHandler)
 							return;
@@ -207,20 +195,18 @@ public class Activity implements ISmartWork, IInstructionCallback {
 								se.setLastCode(lcode);
 						}
 						
-						TaskRun r = Activity.this.taskRun;
-						
-						if (r != null) {
+						if (or != null) {
 							if (StringUtil.isNotEmpty(Activity.this.errorMessage) && (Activity.this.errorCode > 0)) 
-								r.error(Activity.this.errorCode, Activity.this.errorMessage);
+								or.error(Activity.this.errorCode, Activity.this.errorMessage);
 							else if (StringUtil.isNotEmpty(Activity.this.errorMessage)) 
-								r.error(Activity.this.errorMessage);
+								or.error(Activity.this.errorMessage);
 							else if (Activity.this.errorCode > 0) 
-								r.errorTr(Activity.this.errorCode);
+								or.errorTr(Activity.this.errorCode);
 						}
 						
 						if (Activity.this.errorMode == ErrorMode.Debug) {
-							if (r != null)
-								r.clearExitCode();
+							if (or != null)
+								or.clearExitCode();
 							
 							Activity.this.engageDebugger();							
 						}
@@ -228,8 +214,8 @@ public class Activity implements ISmartWork, IInstructionCallback {
 							Activity.this.setExitFlag(true);
 						}
 						else {
-							if (r != null)
-								r.clearExitCode();
+							if (or != null)
+								or.clearExitCode();
 						}
 						
 						this.inHandler = false;
@@ -237,7 +223,7 @@ public class Activity implements ISmartWork, IInstructionCallback {
 				}
 			};
 			
-			this.taskRun.addObserver(this.taskObserver);
+			this.opcontext.addObserver(this.taskObserver);
 		}
 		
     	if (this.inst == null) { 
@@ -259,7 +245,7 @@ public class Activity implements ISmartWork, IInstructionCallback {
 	
 	@Override
 	public void resume() {
-		TaskRun run = this.taskRun;
+		TaskRun run = this.opcontext.getTaskRun();
 		
 		if (run == null) {
 			System.out.println("Resume with no run!!!");
@@ -293,13 +279,10 @@ public class Activity implements ISmartWork, IInstructionCallback {
 	@Override
 	public void completed(TaskRun scriptrun) {
 		this.runtime = (System.currentTimeMillis() - this.starttime);
-		
-		// try to clean up circular ref
-		this.taskRun = null;
 	}
 
 	public void engageDebugger() {		
-		this.taskRun.trace("Debugger requested");
+		this.opcontext.debug("Debugger requested");
 		
 		this.debugmode = true;
 		
@@ -307,25 +290,25 @@ public class Activity implements ISmartWork, IInstructionCallback {
 			return;
 
 		// need a task run to do debugging
-		if (this.taskRun != null) {
-			IDebuggerHandler debugger = this.manager.getDebugger();
+		if (this.opcontext.getTaskRun() != null) {
+			IDebuggerHandler debugger = Hub.instance.getActivityManager().getDebugger();
 			
 			if (debugger == null) {
-				this.taskRun.error("Unable to debug script, no debugger registered.");
-				this.taskRun.kill();
+				this.opcontext.error("Unable to debug script, no debugger registered.");
+				this.opcontext.getTaskRun().kill();
 			}
 			else {
 				// so debugging don't timeout
-				this.taskRun.getTask().withTimeout(0).withDeadline(0);
+				this.opcontext.getTaskRun().getTask().withTimeout(0).withDeadline(0);
 			
-				debugger.startDebugger(this.taskRun);
+				debugger.startDebugger(this.opcontext.getTaskRun());
 			}
 		}
 	}
 
     public Struct createStruct(String type) {
-    	if (this.taskRun != null)
-    		return this.manager.createVariable(this.taskRun, type);
+    	if (this.opcontext.getTaskRun() != null)
+    		return Hub.instance.getActivityManager().createVariable(type);
     	
     	return NullStruct.instance;
     }
@@ -333,8 +316,8 @@ public class Activity implements ISmartWork, IInstructionCallback {
     public RecordStruct getDebugInfo() {
     	RecordStruct info = new RecordStruct();		// TODO type this
     	
-    	if (this.taskRun != null)
-    		info.setField("Log", this.taskRun.getMessages());
+    	if (this.opcontext != null)
+    		info.setField("Log", this.opcontext.getMessages());
     	
     	ListStruct list = new ListStruct();
 
@@ -354,8 +337,8 @@ public class Activity implements ISmartWork, IInstructionCallback {
         
         dumpVariables.setField("_Errored", new BooleanStruct(this.hasErrored));        
         
-    	if (this.taskRun != null)
-    		dumpVariables.setField("_ExitCode", new IntegerStruct(this.taskRun.getCode()));
+    	if (this.opcontext != null)
+    		dumpVariables.setField("_ExitCode", new IntegerStruct(this.opcontext.getCode()));
 
         // add the rest of the stack
     	if (this.stack != null)
@@ -406,16 +389,14 @@ public class Activity implements ISmartWork, IInstructionCallback {
     	
 		FuncResult<XElement> xres = XmlReader.parse(source, true); 
 		
-		res.copyMessages(xres);
-		
 		if (res.hasErrors()) {
 			res.error("Unable to parse script");
 			return res;
 		}
     	
-        this.script = new Script(this.manager);        
+        this.script = new Script();        
         
-        res.copyMessages(this.script.compile(xres.getResult(), source));
+        this.script.compile(xres.getResult(), source);
         
         if (res.hasErrors()) {
 			res.error("Unable to compile script");
@@ -439,10 +420,10 @@ public class Activity implements ISmartWork, IInstructionCallback {
         	return new BooleanStruct(this.hasErrored);
         
         if ("_ExitCode".equals(name)) 
-        	return new IntegerStruct(this.taskRun.getCode());
+        	return new IntegerStruct(this.opcontext.getCode());
         
         if ("_Log".equals(name)) 
-        	return this.taskRun.getMessages();
+        	return this.opcontext.getMessages();
 
         if ("_Now".equals(name))
         	return new DateTimeStruct(new DateTime());
@@ -456,23 +437,16 @@ public class Activity implements ISmartWork, IInstructionCallback {
             Struct ov = this.globals.containsKey(oname) ? this.globals.get(oname) : null;
 
             if (ov == null) {
-            	if (this.taskRun != null)
-            		this.taskRun.errorTr(507, oname);
-            	
+            	this.opcontext.errorTr(507, oname);
             	return null;
             }
             
             if (!(ov instanceof CompositeStruct)){
-            	if (this.taskRun != null)
-            		this.taskRun.errorTr(508, oname);
-            	
+            	this.opcontext.errorTr(508, oname);
             	return null;
             }
             
             FuncResult<Struct> sres = ((CompositeStruct)ov).select(name.substring(dotpos + 1)); 
-
-        	if (this.taskRun != null)
-        		this.taskRun.copyMessages(sres);
             
             return sres.getResult();
         }

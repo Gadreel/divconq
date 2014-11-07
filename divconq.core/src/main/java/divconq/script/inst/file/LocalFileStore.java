@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import divconq.interchange.FileSystemDriver;
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
 import divconq.script.inst.With;
 import divconq.util.StringUtil;
@@ -38,7 +39,7 @@ public class LocalFileStore extends With {
         String path = stack.stringFromSource("RootPath");
         
         if (StringUtil.isEmpty(folder)) {
-			stack.log().errorTr(534);
+        	OperationContext.get().errorTr(534);
 			this.nextOpResume(stack);
 			return;
         }
@@ -49,7 +50,7 @@ public class LocalFileStore extends With {
         	lpath = StringUtil.isNotEmpty(path) ? Paths.get(folder, path.substring(1)) : Paths.get(folder);
         }
         catch (Exception x) {
-			stack.log().errorTr(535, x);
+        	OperationContext.get().errorTr(535, x);
 			this.nextOpResume(stack);
 			return;
         }

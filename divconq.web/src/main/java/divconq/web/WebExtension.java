@@ -25,8 +25,8 @@ import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
 import divconq.interchange.CommonPath;
 import divconq.io.FileStoreEvent;
-import divconq.lang.FuncCallback;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationResult;
 import divconq.mod.Bundle;
 import divconq.mod.ExtensionBase;
 import divconq.session.Session;
@@ -96,15 +96,15 @@ public class WebExtension extends ExtensionBase implements IService, IWebExtensi
 			//if (StringUtil.isNotEmpty(range))
 			//	System.out.println("h2: " + range);
 			
-			res.copyMessages(d.execute(ctx));
+			d.execute(ctx);
 		}
 		
 		return res;
 	}
 
 	@Override
-	public void start(OperationResult log) {
-		super.start(log);
+	public void start() {
+		super.start();
 				
 		// detect changes to local file store
 		if (Hub.instance.getLocalFileStore() != null) {

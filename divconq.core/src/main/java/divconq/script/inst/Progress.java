@@ -16,6 +16,7 @@
 ************************************************************************ */
 package divconq.script.inst;
 
+import divconq.lang.op.OperationContext;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
 import divconq.script.StackEntry;
@@ -32,18 +33,18 @@ public class Progress extends Instruction {
 		String name = stack.stringFromSource("Name");
 		
 		if (amount >= 0)
-			stack.log().setAmountCompleted((int) amount);
+			OperationContext.get().setAmountCompleted((int) amount);
 		else if (add >= 0)
-			stack.log().setAmountCompleted(stack.log().getAmountCompleted() + (int) add);
+			OperationContext.get().setAmountCompleted(OperationContext.get().getAmountCompleted() + (int) add);
 		
 		if ((step >= 0) && StringUtil.isNotEmpty(name))
-			stack.log().setCurrentStep((int) step, name);
+			OperationContext.get().setCurrentStep((int) step, name);
 		
 		if (steps >= 0)
-			stack.log().setSteps((int) steps);
+			OperationContext.get().setSteps((int) steps);
 		
 		if (StringUtil.isNotEmpty(output))
-			stack.log().setProgressMessage(output);
+			OperationContext.get().setProgressMessage(output);
 		
 		stack.setState(ExecuteState.Done);
 		

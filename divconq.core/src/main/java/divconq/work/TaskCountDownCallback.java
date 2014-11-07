@@ -23,17 +23,19 @@ import java.util.Map;
 
 import divconq.hub.Hub;
 import divconq.lang.CountDownCallback;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationContext;
+import divconq.lang.op.IOperationObserver;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
 
 public class TaskCountDownCallback extends CountDownCallback {
 	protected int delayComplete = 2;
 	protected List<Task> tasks = new ArrayList<>();
 	protected HashMap<String, TaskRun> runs = new HashMap<>();
 	
-	protected ITaskObserver taskCallback = new TaskObserver() {
+	protected IOperationObserver taskCallback = new OperationObserver() {
 		@Override
-		public void completed(TaskRun or) {
+		public void completed(OperationContext or) {
 			TaskCountDownCallback.this.countDown();
 		}				
 	};
@@ -42,7 +44,7 @@ public class TaskCountDownCallback extends CountDownCallback {
 		this.delayComplete = v;
 	}
 	
-	public ITaskObserver getTaskCallback() {
+	public IOperationObserver getTaskCallback() {
 		return this.taskCallback;
 	}
 	
@@ -86,6 +88,7 @@ public class TaskCountDownCallback extends CountDownCallback {
 				OperationContext.set(this.callback.getContext());
 				
 				Task reporttask = new Task()
+					.withSubContext()
 					.withWork(new ISynchronousWork() {
 						@Override
 						public void run(TaskRun run) {

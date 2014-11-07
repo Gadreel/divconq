@@ -41,8 +41,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -59,12 +57,10 @@ import divconq.bus.net.StreamSession;
 import divconq.hub.Hub;
 import divconq.hub.ISystemWork;
 import divconq.hub.SysReporter;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
-import divconq.lang.TimeoutPlan;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.net.acl.AclFilter;
-import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
@@ -97,7 +93,7 @@ public class Bus {
 	protected ConcurrentHashMap<String,SocketInfo> connectors = new ConcurrentHashMap<>();
 	
 	// bus event group is separate from rest
-	protected EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+	protected EventLoopGroup eventLoopGroup = null;
 	
     /*
      * set localHub before calling this
@@ -193,6 +189,13 @@ public class Bus {
 		});
     }
 
+	private EventLoopGroup getEventLoopGroup() {
+		if (this.eventLoopGroup == null)
+			this.eventLoopGroup = new NioEventLoopGroup();
+		
+		return this.eventLoopGroup;
+	}
+
     public boolean isProxyMode() {
     	return this.proxymode;
     }
@@ -269,9 +272,7 @@ public class Bus {
 
 		OperationResult routeres = router.sendMessage(msg);
 		
-		or.copyMessages(routeres);
-		
-		if (or.hasErrors()) {	
+		if (routeres.hasErrors()) {	
 			if (callback != null) 
 				// put the routing errors into the callback
 				callback.abandon();
@@ -294,6 +295,7 @@ public class Bus {
 		return router.isAvailable();
 	}
 	
+	/* TODO restore but no waits
 	public void sendMessages(ServiceResult callback, TimeoutPlan timeout, Message... msgs) {
 		final Semaphore flag = new Semaphore(0);		
 		final CountDownLatch latch = new CountDownLatch(msgs.length);
@@ -337,6 +339,7 @@ public class Bus {
 		
 		callback.complete();
     }
+    */
 	
     public void sendReply(Message msg, Message original) {
     	if (msg == null) 
@@ -511,7 +514,7 @@ public class Bus {
 				if (conncount < info.getCount()) {
 			        Bootstrap b = new Bootstrap();
 			        
-			        b.group(this.eventLoopGroup)
+			        b.group(this.getEventLoopGroup())
 			         .channel(NioSocketChannel.class)
 			         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 250)		
 			         .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
@@ -557,7 +560,7 @@ public class Bus {
 				if (conncount < info.getStreamCount()) {
 			        Bootstrap b = new Bootstrap();
 			        
-			        b.group(this.eventLoopGroup)
+			        b.group(this.getEventLoopGroup())
 			         .channel(NioSocketChannel.class)
 			         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 250)			
 			         .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
@@ -623,7 +626,7 @@ public class Bus {
 				// -------------------------------------------------
 		        ServerBootstrap b = new ServerBootstrap();
 		        
-		        b.group(this.eventLoopGroup)
+		        b.group(this.getEventLoopGroup())
 		         .channel(NioServerSocketChannel.class)
 		         .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
 		         //.option(ChannelOption.SO_BACKLOG, 125)			// this is probably not needed but serves as note to research
@@ -669,7 +672,7 @@ public class Bus {
 				// -------------------------------------------------
 		        b = new ServerBootstrap();
 		        
-		        b.group(this.eventLoopGroup)
+		        b.group(this.getEventLoopGroup())
 		         .channel(NioServerSocketChannel.class)
 		         .option(ChannelOption.ALLOCATOR, Hub.instance.getBufferAllocator())
 		         //.option(ChannelOption.SO_BACKLOG, 125)			// this is probably not needed but serves as note to research
@@ -757,8 +760,6 @@ public class Bus {
 		
 		OperationResult routeres = router.deliverMessage(msg);
 		
-		res.copyMessages(routeres);
-		
 		if (routeres.hasErrors()) 	
 			return res;
 		
@@ -843,7 +844,8 @@ public class Bus {
     	// TODO sync these guys
 		
 		try {
-			this.eventLoopGroup.shutdownGracefully().await();
+			if (this.eventLoopGroup != null)
+				this.eventLoopGroup.shutdownGracefully().await();
 		} 
 		catch (InterruptedException x) {
 		}

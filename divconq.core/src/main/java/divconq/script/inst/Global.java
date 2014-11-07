@@ -16,6 +16,7 @@
 ************************************************************************ */
 package divconq.script.inst;
 
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
 import divconq.struct.ScalarStruct;
 import divconq.struct.Struct;
@@ -39,7 +40,7 @@ public class Global extends With {
             	var = stack.getActivity().createStruct(var3.getType().getId());		
 			
 			if (var == null) {
-				stack.log().errorTr(522);
+				OperationContext.get().errorTr(522);
 				this.nextOpResume(stack);
 				return;
 			} 
@@ -51,7 +52,7 @@ public class Global extends With {
 		}
         
 		if (var == null) {
-			stack.log().errorTr(520);
+			OperationContext.get().errorTr(520);
 			this.nextOpResume(stack);
 			return;
 		}

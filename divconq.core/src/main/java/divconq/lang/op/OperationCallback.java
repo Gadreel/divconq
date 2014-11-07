@@ -14,12 +14,12 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.lang;
+package divconq.lang.op;
 
 import java.util.concurrent.locks.ReentrantLock;
 
 import divconq.hub.Hub;
-import divconq.log.DebugLevel;
+import divconq.lang.TimeoutPlan;
 import divconq.scheduler.ISchedule;
 import divconq.work.IWork;
 import divconq.work.Task;
@@ -35,25 +35,17 @@ import divconq.work.TaskRun;
 abstract public class OperationCallback extends OperationResult {
 	protected boolean called = false;
 	protected ISchedule timeout = null;
-	protected ReentrantLock oplock = new ReentrantLock();
-	protected TaskRun run = null;
+	protected ReentrantLock oplock = new ReentrantLock();		
 	
 	public OperationCallback() {
 		super();
 	}
 	
-	public OperationCallback(DebugLevel loglevel) {
-		super(loglevel);
-	}
-	
-	public OperationCallback(OperationContext ctx) {
-		super(ctx);
-	}
-	
 	public OperationCallback(TimeoutPlan plan) {
-		super();
+		this();
 		
 		Task timeouttask = new Task()
+			.withSubContext()
 			.withWork(new IWork() {
 			@Override
 			public void run(TaskRun task) {
@@ -65,14 +57,24 @@ abstract public class OperationCallback extends OperationResult {
 		this.timeout = Hub.instance.getScheduler().runIn(timeouttask, plan.getSeconds());
 	}
 	
-	// do not timeout - but if at ServiceResult subclass we do 
-	public OperationCallback(TaskRun run) {
-		this.run = run;
+	public OperationCallback(OperationContext ctx) {
+		super(ctx);
 	}
 	
-	public OperationCallback(TaskRun run, TimeoutPlan plan) {
-		this(plan);
-		this.run = run;
+	public OperationCallback(OperationContext ctx, TimeoutPlan plan) {
+		this(ctx);
+		
+		Task timeouttask = new Task()
+			.withContext(ctx)
+			.withWork(new IWork() {
+			@Override
+			public void run(TaskRun task) {
+				OperationCallback.this.abandon();
+				task.complete();
+			}
+		});
+		
+		this.timeout = Hub.instance.getScheduler().runIn(timeouttask, plan.getSeconds());
 	}
 	
 	public void resetCalledFlag() {
@@ -82,7 +84,7 @@ abstract public class OperationCallback extends OperationResult {
 	// override if need to do something on timeout/giveup on operation
 	// return true if timeout occurred, false if already completed
 	public boolean abandon() {
-		// courtesy only, no need to look if we do know called is true, real called check below
+		// courtesy only, no need to lock if we do know called is true, real called check below
 		if (this.called)
 			return false;
 		
@@ -121,33 +123,26 @@ abstract public class OperationCallback extends OperationResult {
 			this.oplock.unlock();
 		}
 		
-		if (this.timeout != null)
-			this.timeout.cancel();
+		// be sure we restore the context
+		OperationContext ctx = OperationContext.get();
 		
-		// if we are related to a task in the workpool, this is all we need to get the task working correctly again 
-		// see TaskRun.resume - must keep this idea and that idea in sync
-		
-		if (this.run != null) 
-			this.run.thawContext();			// do not use local context if have run, run's context may be fresher than ours do due to multiple callbacks after a bus call
-		else if (this.opcontext != null)
+		try {
 			OperationContext.set(this.opcontext);
-		
-		this.callback();
-		
-		for (IOperationObserver ob : this.observers) {
-			try {
-				if (ob instanceof ICallbackObserver)
-					((ICallbackObserver)ob).completed(this);			
-			} 
-			catch (Exception x) {
-				this.error("Error notifying completing task: " + x);
-			}
 			
-			// they might change context on us, return context
-			if (this.run != null) 
-				this.run.thawContext();			// do not use local context if have run, run's context may be fresher than ours do due to multiple callbacks after a bus call
-			else if (this.opcontext != null)
-				OperationContext.set(this.opcontext);
+			if (this.timeout != null)
+				this.timeout.cancel();
+			
+			OperationContext.set(this.opcontext);
+			
+			this.markEnd();
+			
+			this.callback();
+			
+			// TODO review, this may not be useful
+			//this.opcontext.fireEvent(OperationEvents.COMPLETED, null);
+		}
+		finally {
+			OperationContext.set(ctx);
 		}
 	}
 

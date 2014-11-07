@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import divconq.lang.Memory;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.ScalarStruct;

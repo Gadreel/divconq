@@ -25,9 +25,9 @@ import divconq.api.ApiSession;
 import divconq.api.ServiceResult;
 import divconq.bus.Message;
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.WrappedFuncCallback;
-import divconq.lang.WrappedOperationCallback;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationCallback;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.HashUtil;
@@ -92,8 +92,8 @@ public class UploadFile implements ISmartWork {
 	
 	
 	public void requestUpload() {
-		this.xferctx.run.nextStep("Request Upload");
-		this.xferctx.run.setProgressMessage("Sending start upload request");		
+		this.xferctx.run.getContext().nextStep("Request Upload");
+		this.xferctx.run.getContext().setProgressMessage("Sending start upload request");		
     	
 		RecordStruct rec = new RecordStruct();
 		
@@ -111,10 +111,10 @@ public class UploadFile implements ISmartWork {
 		
 		Message msg = new Message(this.xferctx.servicename, "FileStore", "StartUpload", rec);
 		
-		this.session.establishDataStream("Uploading " + this.xferctx.local.getFileName(), "Upload", msg, new WrappedFuncCallback<RecordStruct>(this.xferctx.run) {
+		this.session.establishDataStream("Uploading " + this.xferctx.local.getFileName(), "Upload", msg, new FuncCallback<RecordStruct>() {
 			@Override
 			public void callback() {
-				if (this.run.hasErrors()) { 
+				if (UploadFile.this.xferctx.run.hasErrors()) { 
 		    		UploadFile.this.transition(UploadState.FREE_LOCAL_CHANNEL);
 				}
 				else {
@@ -128,19 +128,19 @@ public class UploadFile implements ISmartWork {
 	public void sendStream() {		
 		final TaskRun xferrun =  this.xferctx.run;
 		
-		xferrun.nextStep("Upload File");
-		xferrun.setProgressMessage("Uploading File");		
+		xferrun.getContext().nextStep("Upload File");
+		xferrun.getContext().setProgressMessage("Uploading File");		
     	
 		try {
 			Path local = UploadFile.this.xferctx.local;
 			
-			this.session.sendStream(FileChannel.open(local), Files.size(local), this.xferctx.streaminfo.getFieldAsInteger("Size", 0), this.xferctx.channelid, new WrappedOperationCallback(xferrun) {						
+			this.session.sendStream(FileChannel.open(local), Files.size(local), this.xferctx.streaminfo.getFieldAsInteger("Size", 0), this.xferctx.channelid, new OperationCallback() {						
 				@Override
 				public void callback() {
 					// no need to copy messages with a wrapped callback
 					
 			    	if (!xferrun.hasErrors()) 
-			    		xferrun.setProgressMessage("File Upload Complete");		
+			    		xferrun.getContext().setProgressMessage("File Upload Complete");		
 			    	else
 			    		xferrun.error("Send Stream Error: " + xferrun.getMessage());
 			    	
@@ -156,7 +156,7 @@ public class UploadFile implements ISmartWork {
     }
 	
 	public void recordOutcome() {
-		this.xferctx.run.nextStep("Record File Outcome");		
+		this.xferctx.run.getContext().nextStep("Record File Outcome");		
 		
     	String status = "Failure";    	
 		RecordStruct evidence = new RecordStruct();
@@ -172,7 +172,6 @@ public class UploadFile implements ISmartWork {
 			if (!"Size".equals(hashMethod)) {
 				try {
 					FuncResult<String> res = HashUtil.hash(hashMethod, Files.newInputStream(local));
-					this.xferctx.run.copyMessages(res); 
 					
 					if (!res.hasErrors())
 						evidence.setField(hashMethod, res.getResult());
@@ -187,10 +186,10 @@ public class UploadFile implements ISmartWork {
 		}
 		
 		if (this.xferctx.run.hasErrors()) {
-			this.xferctx.run.setProgressMessage("Upload failed");
+			this.xferctx.run.getContext().setProgressMessage("Upload failed");
 		}
 		else {
-			this.xferctx.run.setProgressMessage("Integrity good, approving!");
+			this.xferctx.run.getContext().setProgressMessage("Integrity good, approving!");
 			status = "Success";
 		}
 		
@@ -202,20 +201,19 @@ public class UploadFile implements ISmartWork {
 						new FieldStruct("Params", this.xferctx.xferparams)
 				));
 		
-		UploadFile.this.session.sendMessage(msg, new ServiceResult(this.xferctx.run) {							
+		UploadFile.this.session.sendMessage(msg, new ServiceResult() {							
 			@Override
 			public void callback() {
-				UploadFile.this.xferctx.run.copyMessages(this);					
 				UploadFile.this.transition(UploadState.FREE_LOCAL_CHANNEL);
 			}
 		});
 	}
 
 	public void freeLocalChannel() {
-		this.xferctx.run.nextStep("Cleanup");
-		this.xferctx.run.setProgressMessage("Freeing channel");		
+		this.xferctx.run.getContext().nextStep("Cleanup");
+		this.xferctx.run.getContext().setProgressMessage("Freeing channel");		
 		
-		this.session.freeDataChannel(this.xferctx.channelid, new WrappedOperationCallback(this.xferctx.run) {							
+		this.session.freeDataChannel(this.xferctx.channelid, new OperationCallback() {							
 			@Override
 			public void callback() {
 				UploadFile.this.transition(UploadState.UPLOAD_DONE);

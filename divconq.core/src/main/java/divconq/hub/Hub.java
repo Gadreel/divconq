@@ -49,8 +49,8 @@ import divconq.bus.Bus;
 import divconq.bus.Message;
 import divconq.count.CountManager;
 import divconq.io.LocalFileStore;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.locale.LocaleUtil;
 import divconq.locale.Localization;
 import divconq.log.DebugLevel;
@@ -127,7 +127,7 @@ public class Hub {
 	
 	protected ActivityManager actman = null;
 	protected ByteBufAllocator bufferAllocator = PooledByteBufAllocator.DEFAULT;
-	protected EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+	protected EventLoopGroup eventLoopGroup = null;
 	
 	protected CountManager countman = new CountManager(); 
 	
@@ -360,6 +360,9 @@ public class Hub {
 	}
 	
 	public EventLoopGroup getEventLoopGroup() {
+		if (this.eventLoopGroup == null)
+			this.eventLoopGroup = new NioEventLoopGroup();
+		
 		return this.eventLoopGroup;
 	}
 	
@@ -535,6 +538,8 @@ public class Hub {
 	public OperationResult start(HubResources resources) {
 		this.resources = resources;
 		
+		OperationContext.useHubContext();
+		
 		// in case resources have not be initialized, do so
 		// OperationResult will be set to the Hub Task Context is all is well
 		OperationResult or = resources.init();
@@ -560,11 +565,11 @@ public class Hub {
 				Logger.setLocale(logger.getAttribute("Locale"));
 		}		
 		
-		// initialize hub context locale and level
-		OperationContext.startHubContext(config);
-		
 		// prepare the logger - use files, use custom log writer
 		Logger.init(logger);
+		
+		// initialize hub context locale and level (depends on logger above)
+		OperationContext.startHubContext(config);
 		
 		or.boundary("Origin", "hub:", "Op", "Start");		
 		
@@ -692,10 +697,10 @@ public class Hub {
 			or.info(0, "Loading module: " + el.getAttribute("Name"));
 			
 			ModuleLoader loader = new ModuleLoader(Hub.class.getClassLoader());
-			loader.init(or, el);		
+			loader.init(el);		
 			this.modules.put(loader.getName(), loader);
 			this.orderedModules.add(loader);
-			loader.start(or);
+			loader.start();
 		}
 		
 		if (or.hasErrors()) {
@@ -729,20 +734,24 @@ public class Hub {
 		
 		// TODO review if this even works...
 		// every five minutes run cleanup to remove expired temp files
+		// also cleanup hub/default operating contexts
 		ISystemWork cleanexpiredtemp = new ISystemWork() {
 				@Override
 				public void run(SysReporter reporter) {
-					reporter.setStatus("Cleaning temp files");
+					reporter.setStatus("Cleaning contexts and temp files");
 					
-					if (!Hub.instance.isStopping()) 
+					if (!Hub.instance.isStopping())  {
 						FileUtil.cleanupTemp();
 					
-					reporter.setStatus("After cleaning temp files");
+						OperationContext.cleanUp();
+					}
+					
+					reporter.setStatus("After cleaning contexts and temp files");
 				}
 
 				@Override
 				public int period() {
-					return 300;
+					return 30;
 				}
 		};
 		
@@ -848,7 +857,7 @@ public class Hub {
 		
 		OperationContext.useHubContext();
 
-		OperationResult or = new OperationResult(OperationContext.getHubContext());
+		OperationResult or = new OperationResult();
 		
 		or.boundary("Origin", "hub:", "Op", "Stop");
 		
@@ -889,7 +898,7 @@ public class Hub {
 		for (int i = this.orderedModules.size() - 1; i >= 0; i--) {
 			ModuleLoader mod = this.orderedModules.get(i);			
 			or.info(0, "Stopping module: " + mod.getName());			
-			mod.stop(or);
+			mod.stop();
 		}
 		
 		or.debug(0, "Stopping count manager");
@@ -917,7 +926,8 @@ public class Hub {
 		this.bus.stopFinal(or);
 		
 		try {
-			this.eventLoopGroup.shutdownGracefully().await();
+			if (this.eventLoopGroup != null)
+				this.eventLoopGroup.shutdownGracefully().await();
 		} 
 		catch (InterruptedException x) {
 		}
@@ -1053,12 +1063,18 @@ public class Hub {
 			// these two services are required if not on Gateway then load them
 			
 			// load default dcDomains
-			if (!this.bus.isServiceAvailable("dcDomains"))
-				this.bus.getLocalHub().registerService(new DomainsService());
+			if (!this.bus.isServiceAvailable("dcDomains")) {
+				DomainsService s = new DomainsService();
+				s.init(null);
+				this.bus.getLocalHub().registerService(s);
+			}
 			
 			// load default dcAuth  
-			if (!this.bus.isServiceAvailable("dcAuth"))
-				this.bus.getLocalHub().registerService(new AuthService());
+			if (!this.bus.isServiceAvailable("dcAuth")) {
+				AuthService s = new AuthService();
+				s.init(null);
+				this.bus.getLocalHub().registerService(s);
+			}
 		}
 		
 		this.bus.sendMessage(

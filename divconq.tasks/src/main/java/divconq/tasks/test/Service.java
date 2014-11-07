@@ -19,8 +19,7 @@ package divconq.tasks.test;
 import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
 import divconq.mod.ExtensionBase;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
@@ -32,8 +31,8 @@ import divconq.work.TaskRun;
 
 public class Service extends ExtensionBase implements IService {
 	@Override
-	public void start(OperationResult log) {
-		super.start(log);
+	public void start() {
+		super.start();
 		
 		/*
 		Task task = ScriptFactory.createNccTestInsertTask();
@@ -72,7 +71,6 @@ public class Service extends ExtensionBase implements IService {
 				FuncResult<String> res = Hub.instance.getWorkQueue().submit(task);
 					
 				if (res.hasErrors()) {
-					request.copyMessages(res);
 					request.complete();
 					return;
 				}

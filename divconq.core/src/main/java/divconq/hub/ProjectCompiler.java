@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.locale.Localization;
 import divconq.schema.SchemaManager;
 import divconq.xml.XElement;
@@ -48,12 +48,12 @@ public class ProjectCompiler {
 				})) {					
 					or.trace(0, "Loading schema: " + schema.getAbsolutePath());
 					
-					or.copyMessages(sm.loadSchema(schema));
+					sm.loadSchema(schema);
 				}
 		}
 
 		or.trace(0, "Starting compiling schemas");
-		or.copyMessages(sm.compile());
+		sm.compile();
 
 		or.trace(0, "Finished compiling schemas");
 		

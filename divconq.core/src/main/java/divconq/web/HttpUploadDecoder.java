@@ -21,7 +21,7 @@ import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import divconq.bus.MessageUtil;
 import divconq.bus.net.StreamMessage;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.session.DataStreamChannel;
 
 public class HttpUploadDecoder implements IContentDecoder {

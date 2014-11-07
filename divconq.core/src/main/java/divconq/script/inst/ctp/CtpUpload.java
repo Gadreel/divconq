@@ -23,7 +23,8 @@ import divconq.api.ApiSession;
 import divconq.api.tasks.UploadFile;
 import divconq.hub.Hub;
 import divconq.interchange.CommonPath;
-import divconq.lang.OperationCallback;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
 import divconq.script.StackEntry;
@@ -45,7 +46,7 @@ public class CtpUpload extends Instruction {
         
         if (StringUtil.isEmpty(fname)) {
 			stack.setState(ExecuteState.Done);
-        	stack.log().error("Missing Source");
+			OperationContext.get().error("Missing Source");
         	stack.resume();
         	return;
         }
@@ -57,7 +58,7 @@ public class CtpUpload extends Instruction {
     	}
     	catch (Exception x) {
 			stack.setState(ExecuteState.Done);
-        	stack.log().error("Source error: " + x);
+			OperationContext.get().error("Source error: " + x);
         	stack.resume();
         	return;
     	}
@@ -66,7 +67,7 @@ public class CtpUpload extends Instruction {
         
         if (StringUtil.isEmpty(dname)) {
 			stack.setState(ExecuteState.Done);
-        	stack.log().error("Missing Dest");
+			OperationContext.get().error("Missing Dest");
         	stack.resume();
         	return;
         }
@@ -78,7 +79,7 @@ public class CtpUpload extends Instruction {
     	}
     	catch (Exception x) {
 			stack.setState(ExecuteState.Done);
-        	stack.log().error("Dest error: " + x);
+			OperationContext.get().error("Dest error: " + x);
         	stack.resume();
         	return;
     	}
@@ -87,14 +88,14 @@ public class CtpUpload extends Instruction {
         
         if ((ss == null) || !(ss instanceof ApiSession)) {
 			stack.setState(ExecuteState.Done);
-        	stack.log().errorTr(531);
+			OperationContext.get().errorTr(531);
         	stack.resume();
         	return;
         }
         
 		ApiSession sess = (ApiSession) ss;
         
-		Task t = Task.subtask(stack.getActivity().getTaskRun(), "Uploading", new OperationCallback() {
+		Task t = Task.subtask(OperationContext.get().getTaskRun(), "Uploading", new OperationCallback() {
 			@Override
 			public void callback() {
 				stack.setState(ExecuteState.Done);

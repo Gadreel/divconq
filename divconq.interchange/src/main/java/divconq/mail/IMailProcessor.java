@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.mail;
 
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
 import divconq.struct.RecordStruct;
 import divconq.work.Task;
 

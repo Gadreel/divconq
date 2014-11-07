@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.session;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.struct.RecordStruct;
 
 public interface IComponent {

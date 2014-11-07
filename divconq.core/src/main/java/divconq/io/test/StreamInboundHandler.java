@@ -11,8 +11,9 @@ import divconq.io.stream.CtpStreamSource;
 import divconq.io.stream.StreamMessage;
 import divconq.io.stream.StreamUtil;
 import divconq.io.stream.TerminateStream;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
 import divconq.work.Task;
-import divconq.work.TaskObserver;
 import divconq.work.TaskRun;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -60,18 +61,18 @@ public class StreamInboundHandler extends CtpMessageDecoder {
     				.withTitle("Streaming In Test")
     				.withTimeout(0);
     			
-    			this.srun = StreamUtil.composeStream(t, 
-    				this.src, 
-    				dest.allocDest(true));
-    			
-    			this.srun.addObserver(new TaskObserver() {
+    			t.withObserver(new OperationObserver() {
     				@Override
-    				public void completed(TaskRun or) {
+    				public void completed(OperationContext or) {
     					System.out.println("Transfer In is complete!!");
     	    			StreamInboundHandler.this.chanauto = true;
     					ctx.read();
     				}
     			});
+    			
+    			this.srun = StreamUtil.composeStream(t, 
+    				this.src, 
+    				dest.allocDest(true));
     			
     			this.chanauto = false;
     			
@@ -87,7 +88,7 @@ public class StreamInboundHandler extends CtpMessageDecoder {
     	else if (m instanceof TerminateStream) {
     		System.out.println("TERM STREAM from client! ");
     		
-			this.src.handle(this.srun, StreamMessage.FINAL);
+			this.src.handle(StreamMessage.FINAL);
 			this.src = null;
 			this.srun = null;
 	    	

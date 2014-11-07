@@ -16,12 +16,12 @@
 ************************************************************************ */
 package divconq.scheduler;
 
+import divconq.lang.op.IOperationObserver;
 import divconq.struct.RecordStruct;
-import divconq.work.ITaskObserver;
 import divconq.work.Task;
 import divconq.xml.XElement;
 
-public interface ISchedule extends ITaskObserver {
+public interface ISchedule extends IOperationObserver {
 	void init(XElement config);
 	Task task();
 	void setTask(Task v);

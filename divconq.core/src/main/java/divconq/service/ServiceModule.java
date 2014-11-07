@@ -16,19 +16,18 @@
 ************************************************************************ */
 package divconq.service;
 
-import divconq.lang.OperationResult;
 import divconq.mod.ModuleBase;
 
 // this class, being in an indirectly linked JAR, forces a new class loader to be used for all classes within this module 
 public class ServiceModule extends ModuleBase  {
 
 	@Override
-	public void start(OperationResult log) {
+	public void start() {
 		// nothing to do, yet
 	}
 
 	@Override
-	public void stop(OperationResult log) {
+	public void stop() {
 		// nothing to do, yet
 	}
 }

@@ -32,7 +32,7 @@ import org.joda.time.LocalTime;
 import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
 import divconq.lang.Memory;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.schema.DataType;
 import divconq.script.StackEntry;
 import divconq.struct.builder.BuilderStateException;
@@ -217,7 +217,7 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 		OperationResult or = new OperationResult();
 		
 		for (Object o : coll)
-			or.copyMessages(this.addItem(o));		// extra slow, enhance TOTO
+			this.addItem(o);		// extra slow, enhance TOTO
 		
 		return or;
 	}
@@ -226,7 +226,7 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 		OperationResult or = new OperationResult();
 		
 		for (Struct o : coll.getItems())
-			or.copyMessages(this.addItem(o));		// extra slow, enhance TOTO
+			this.addItem(o);		// extra slow, enhance TOTO
 		
 		return or;
 	}

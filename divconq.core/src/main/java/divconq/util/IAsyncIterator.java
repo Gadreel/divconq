@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.util;
 
-import divconq.lang.FuncCallback;
+import divconq.lang.op.FuncCallback;
 
 public interface IAsyncIterator<T> {
 	void hasNext(FuncCallback<Boolean> callback);

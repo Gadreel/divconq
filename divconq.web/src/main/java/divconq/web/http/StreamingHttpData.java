@@ -28,7 +28,7 @@ import divconq.bus.net.StreamMessage;
 import divconq.http.multipart.AbstractHttpData;
 import divconq.http.multipart.FileUpload;
 import divconq.http.multipart.InterfaceHttpData;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.session.DataStreamChannel;
 
 /**

@@ -33,7 +33,8 @@ import divconq.io.stream.StreamWork;
 import divconq.io.stream.TarStream;
 import divconq.io.stream.UngzipStream;
 import divconq.io.stream.UntarStream;
-import divconq.lang.OperationCallback;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
 import divconq.script.Ops;
 import divconq.script.StackEntry;
 import divconq.struct.Struct;
@@ -74,7 +75,7 @@ public class FileOps extends Ops {
 		else if ("PGPEncrypt".equals(op.getName())) 
 			this.injectStream(stack, op, new PgpEncryptStream());
 		else {
-			stack.log().error("Unknown FileOp: " + op.getName());
+			OperationContext.get().error("Unknown FileOp: " + op.getName());
 			this.nextOpResume(stack);
 		}
 	}
@@ -115,7 +116,7 @@ public class FileOps extends Ops {
         	src = stack.queryVariable("_LastStream");
         	
             if ((src == null) || (src instanceof NullStruct)) {
-	        	stack.log().error("Missing source");
+            	OperationContext.get().error("Missing source");
 				this.nextOpResume(stack);
 	        	return null;
             }
@@ -125,7 +126,7 @@ public class FileOps extends Ops {
         	return (IStreamSource) src;
         
         if (!(src instanceof IFileStoreFile) && !(src instanceof IFileStoreDriver) && !(src instanceof IFileCollection)) {
-        	stack.log().error("Invalid source type");
+        	OperationContext.get().error("Invalid source type");
 			this.nextOpResume(stack);
         	return null;
         }
@@ -140,7 +141,7 @@ public class FileOps extends Ops {
         	filesrc = new FileSourceStream((IFileCollection) src); 
         
         if (filesrc == null) {
-        	stack.log().error("Invalid source type");
+        	OperationContext.get().error("Invalid source type");
 			this.nextOpResume(stack);
         	return null;
         }
@@ -163,7 +164,7 @@ public class FileOps extends Ops {
         	return (IStreamDest) dest;
         
         if (!(dest instanceof IFileStoreFile) && !(dest instanceof IFileStoreDriver)) {
-        	stack.log().error("Invalid dest type");
+        	OperationContext.get().error("Invalid dest type");
 			this.nextOpResume(stack);
         	return null;
         }
@@ -176,7 +177,7 @@ public class FileOps extends Ops {
         	deststrm = ((IFileStoreFile)dest).allocDest();
         
         if (deststrm == null) {
-        	stack.log().error("Unable to create destination stream");
+        	OperationContext.get().error("Unable to create destination stream");
 			this.nextOpResume(stack);
         	return null;
         }
@@ -195,7 +196,7 @@ public class FileOps extends Ops {
     		
     		IWork sw = new StreamWork(streamout);
     		
-    		Task t = Task.subtask(stack.getActivity().getTaskRun(), "Streaming", new OperationCallback() {
+    		Task t = Task.subtask(OperationContext.get().getTaskRun(), "Streaming", new OperationCallback() {
     			@Override
     			public void callback() {
     				FileOps.this.nextOpResume(stack);
@@ -213,7 +214,7 @@ public class FileOps extends Ops {
         }
         else {
         	if (destRequired)
-        		stack.log().error("Missing dest for " + el.getName());
+        		OperationContext.get().error("Missing dest for " + el.getName());
         	
 			this.nextOpResume(stack);
         	return;

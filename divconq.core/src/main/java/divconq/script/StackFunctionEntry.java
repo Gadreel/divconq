@@ -16,7 +16,8 @@
 ************************************************************************ */
 package divconq.script;
 
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
 import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -51,8 +52,8 @@ public class StackFunctionEntry extends StackBlockEntry {
 		this.lastResult = v;
 
 		// if this is the Main function then the last result is also the task result
-        if ((this.parent == null) && (this.activity != null)) {
-        	TaskRun run = this.activity.getTaskRun();
+        if (this.parent == null) {
+        	TaskRun run = OperationContext.get().getTaskRun();
         	
         	if (run != null)
         		run.setResult(v);
@@ -139,20 +140,21 @@ public class StackFunctionEntry extends StackBlockEntry {
             	ov = this.activity.queryVariable(oname);
 
             if (ov == null) {
-            	this.log().errorTr(515, oname);
+            	OperationContext.get().errorTr(515, oname);
             	return null;
             }
             
             if (!(ov instanceof CompositeStruct)){
-            	this.log().errorTr(516, oname);
+            	OperationContext.get().errorTr(516, oname);
             	return null;
             }
             
             FuncResult<Struct> sres = ((CompositeStruct)ov).select(name.substring(dotpos + 1)); 
-
-            this.log().copyMessages(sres);
             
             return sres.getResult();
+        }
+        else if (name.equals(this.pname) || name.equals("_Param")) {
+            return this.param;
         }
         else if (this.variables.containsKey(name)) {
             return this.variables.get(name);

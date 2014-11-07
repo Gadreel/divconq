@@ -27,7 +27,6 @@ import divconq.hub.Hub;
 import divconq.script.StackEntry;
 import divconq.util.FileUtil;
 import divconq.util.StringUtil;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class GzipStream extends BaseStream implements IStreamSource {
@@ -65,9 +64,9 @@ public class GzipStream extends BaseStream implements IStreamSource {
     
 	// make sure we don't return without first releasing the file reference content
     @Override
-    public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+    public HandleReturn handle(StreamMessage msg) {
     	if (msg == StreamMessage.FINAL) 
-    		return this.downstream.handle(cb, msg);
+    		return this.downstream.handle(msg);
     	
     	// we don't know what to do with a folder at this stage - gzip is for file content only
     	// folder scanning is upstream in the FileSourceStream and partners
@@ -152,7 +151,7 @@ public class GzipStream extends BaseStream implements IStreamSource {
         if (in != null)
         	in.release();
         
-       	return this.downstream.handle(cb, blk);
+       	return this.downstream.handle(blk);
     }
 
     protected void deflate(ByteBuf out) {
@@ -168,7 +167,7 @@ public class GzipStream extends BaseStream implements IStreamSource {
     }
     
     @Override
-    public void request(TaskRun cb) {
-    	this.upstream.request(cb);
+    public void request() {
+    	this.upstream.request();
     }
 }

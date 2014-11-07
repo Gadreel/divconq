@@ -16,7 +16,6 @@
 ************************************************************************ */
 package divconq.mod;
 
-import divconq.lang.OperationResult;
 import divconq.xml.XElement;
 
 abstract public class ModuleBase implements IModule {
@@ -40,7 +39,7 @@ abstract public class ModuleBase implements IModule {
 	}
 
 	@Override
-	public void init(OperationResult log, XElement config) {
+	public void init(XElement config) {
 		this.config = config;
 	}
 }

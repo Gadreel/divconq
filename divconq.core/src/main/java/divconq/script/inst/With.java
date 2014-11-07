@@ -16,6 +16,7 @@
 ************************************************************************ */
 package divconq.script.inst;
 
+import divconq.lang.op.OperationContext;
 import divconq.script.Ops;
 import divconq.script.StackEntry;
 import divconq.struct.ScalarStruct;
@@ -35,7 +36,7 @@ public class With extends Ops {
 			if (var instanceof ScalarStruct) 
 				((ScalarStruct) var).adaptValue(var3);
 			else 
-				stack.log().errorTr(540);
+				OperationContext.get().errorTr(540);
 		}
 		
 		this.nextOpResume(stack);

@@ -23,11 +23,11 @@ import java.nio.file.Paths;
 
 import org.bouncycastle.openpgp.PGPException;
 
+import divconq.lang.op.OperationContext;
 import divconq.log.Logger;
 import divconq.pgp.EncryptedFileStream;
 import divconq.script.StackEntry;
 import divconq.util.FileUtil;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class PgpEncryptStream extends BaseStream implements IStreamSource {
@@ -48,10 +48,10 @@ public class PgpEncryptStream extends BaseStream implements IStreamSource {
 			this.pgp.loadPublicKey(Paths.get(keyPath));
 		} 
 		catch (IOException x) {
-			stack.log().error("Unabled to read keyfile: " + x);
+			OperationContext.get().error("Unabled to read keyfile: " + x);
 		} 
 		catch (PGPException x) {
-			stack.log().error("Unabled to load keyfile: " + x);
+			OperationContext.get().error("Unabled to load keyfile: " + x);
 		}
 	}
     
@@ -70,9 +70,9 @@ public class PgpEncryptStream extends BaseStream implements IStreamSource {
 
 	// make sure we don't return without first releasing the file reference content
     @Override
-    public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+    public HandleReturn handle(StreamMessage msg) {
     	if (msg == StreamMessage.FINAL) 
-    		return this.downstream.handle(cb, msg);
+    		return this.downstream.handle(msg);
     	
     	if (this.needInit) {
     		this.pgp.setFileName(msg.getPath().getFileName());
@@ -81,7 +81,7 @@ public class PgpEncryptStream extends BaseStream implements IStreamSource {
     			this.pgp.init();
     		}
     		catch (Exception x) {
-    			cb.kill("PGP init failed: " + x);
+    			OperationContext.get().getTaskRun().kill("PGP init failed: " + x);
     			return HandleReturn.DONE;
     		}
     		
@@ -98,7 +98,7 @@ public class PgpEncryptStream extends BaseStream implements IStreamSource {
 			
         	in.release();
 			
-			if (cb.isKilled())
+			if (OperationContext.get().getTaskRun().isKilled())
 				return HandleReturn.DONE;
 		}
 		
@@ -106,7 +106,7 @@ public class PgpEncryptStream extends BaseStream implements IStreamSource {
         ByteBuf buf = this.pgp.nextReadyBuffer();
         
         while (buf != null) {
-			HandleReturn ret = this.downstream.handle(cb, this.nextMessage(buf));
+			HandleReturn ret = this.downstream.handle(this.nextMessage(buf));
 			
 			if (ret != HandleReturn.CONTINUE)
 				return ret;
@@ -119,7 +119,7 @@ public class PgpEncryptStream extends BaseStream implements IStreamSource {
 				this.pgp.close();
 			} 
         	catch (PGPException x) {
-				cb.kill("PGP close failed: " + x);
+        		OperationContext.get().getTaskRun().kill("PGP close failed: " + x);
 				return HandleReturn.DONE;
 			}
         	
@@ -127,7 +127,7 @@ public class PgpEncryptStream extends BaseStream implements IStreamSource {
             buf = this.pgp.nextReadyBuffer();
             
             while (buf != null) {
-    			HandleReturn ret = this.downstream.handle(cb, this.nextMessage(buf));
+    			HandleReturn ret = this.downstream.handle(this.nextMessage(buf));
     			
     			if (ret != HandleReturn.CONTINUE)
     				return ret;
@@ -135,7 +135,7 @@ public class PgpEncryptStream extends BaseStream implements IStreamSource {
             	buf = this.pgp.nextReadyBuffer();
             }
             
-			HandleReturn ret = this.downstream.handle(cb, this.lastMessage());
+			HandleReturn ret = this.downstream.handle(this.lastMessage());
 			
 			if (ret != HandleReturn.CONTINUE)
 				return ret;
@@ -183,12 +183,12 @@ public class PgpEncryptStream extends BaseStream implements IStreamSource {
     }
     
     @Override
-    public void request(TaskRun cb) {
+    public void request() {
 		// write all buffers in the queue
         ByteBuf buf = this.pgp.nextReadyBuffer();
         
         while (buf != null) {
-			HandleReturn ret = this.downstream.handle(cb, this.nextMessage(buf));
+			HandleReturn ret = this.downstream.handle(this.nextMessage(buf));
 			
 			if (ret != HandleReturn.CONTINUE)
 				return;
@@ -198,12 +198,12 @@ public class PgpEncryptStream extends BaseStream implements IStreamSource {
 		
 		// if we reached done and we wrote all the buffers, then send the EOF marker if not already
 		if (this.pgp.isClosed()) {
-			HandleReturn ret = this.downstream.handle(cb, this.lastMessage());
+			HandleReturn ret = this.downstream.handle(this.lastMessage());
 			
 			if (ret != HandleReturn.CONTINUE)
 				return;
 		}
 		
-    	this.upstream.request(cb);
+    	this.upstream.request();
     }	
 }

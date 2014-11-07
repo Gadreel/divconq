@@ -24,8 +24,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import divconq.lang.FuncCallback;
-import divconq.lang.OperationCallback;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationCallback;
 import divconq.script.StackEntry;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
@@ -196,14 +196,14 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver, 
 		}
 		
 		if ("Delete".equals(codeEl.getName())) {
-			FileUtil.deleteDirectory(stack.log(), Paths.get(this.getFieldAsString("RootFolder")));
+			FileUtil.deleteDirectory(Paths.get(this.getFieldAsString("RootFolder")));
 			
 			stack.resume();
 			return;
 		}
 		
 		if ("MakeDir".equals(codeEl.getName())) {
-			stack.log().copyMessages(FileUtil.confirmOrCreateDir(Paths.get(this.getFieldAsString("RootFolder"))));
+			FileUtil.confirmOrCreateDir(Paths.get(this.getFieldAsString("RootFolder")));
 			stack.resume();
 			return;
 		}
@@ -368,7 +368,7 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver, 
 			}
 		}
 		else {
-			callback.copyMessages(FileUtil.confirmOrCreateDir(localpath));
+			FileUtil.confirmOrCreateDir(localpath);
 		}
 		
 		callback.complete();

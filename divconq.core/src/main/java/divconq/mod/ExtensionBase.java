@@ -18,7 +18,6 @@ package divconq.mod;
 
 import divconq.bus.IService;
 import divconq.hub.Hub;
-import divconq.lang.OperationResult;
 import divconq.xml.XElement;
 
 public class ExtensionBase implements IExtension {
@@ -40,7 +39,7 @@ public class ExtensionBase implements IExtension {
 	}
 
 	@Override
-	public void init(OperationResult log, XElement config) {
+	public void init(XElement config) {
 	}
 
 	// if an extension happens to be a service - well this is handled for ya
@@ -49,14 +48,14 @@ public class ExtensionBase implements IExtension {
 	}
 
 	@Override
-	public void start(OperationResult log) {
+	public void start() {
 		// if some subclass of this extension happens to be a Service, we'll register it automatically
 		if (this instanceof IService) 
 			Hub.instance.getBus().getLocalHub().registerService((IService)this);		
 	}
 
 	@Override
-	public void stop(OperationResult log) {
+	public void stop() {
 		// TODO
 		// if some subclass of this extension happens to be a Service, we'll register it automatically
 		//if (this instanceof IService) 

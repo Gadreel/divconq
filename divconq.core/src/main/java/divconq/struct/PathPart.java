@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.struct;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.util.StringUtil;
 
 public class PathPart {

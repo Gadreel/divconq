@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import divconq.interchange.CommonPath;
 import divconq.interchange.FileSystemDriver;
 import divconq.interchange.FileSystemFile;
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
 import divconq.script.inst.With;
 import divconq.struct.Struct;
@@ -56,7 +57,7 @@ public class TempFile extends With {
             path = new CommonPath(tpath);
         }
         catch (Exception x) {
-			stack.log().errorTr(539);
+        	OperationContext.get().errorTr(539);
 			this.nextOpResume(stack);
 			return;
         }

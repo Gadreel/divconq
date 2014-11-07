@@ -18,8 +18,8 @@ package divconq.scheduler;
 
 import java.util.HashMap;
 
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.scheduler.ISchedulerDriver;
 import divconq.scheduler.ScheduleEntry;
 import divconq.scheduler.ScheduleEntry.ScheduleArea;
@@ -71,8 +71,6 @@ public class LocalSchedulerDriver implements ISchedulerDriver {
 				
 				if (StringUtil.isNotEmpty(params)) {
 					FuncResult<CompositeStruct> pres = CompositeParser.parseJson(params);
-					
-					or.copyMessages(pres);
 					
 					if (pres.isNotEmptyResult())
 						entry.setParams((RecordStruct) pres.getResult());

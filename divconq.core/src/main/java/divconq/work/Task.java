@@ -23,9 +23,12 @@ import org.joda.time.DateTime;
 
 import divconq.bus.Message;
 import divconq.hub.Hub;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.IOperationObserver;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationLogger;
+import divconq.lang.op.OperationObserver;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.session.Session;
 import divconq.struct.FieldStruct;
@@ -42,9 +45,11 @@ public class Task {
 		
 		Task parent = run.getTask();
 		
-		t.context = parent.context;
+		t.context = parent.context.subContext();
 		
-		t.withId(parent.getId() + "_" + Session.nextUUId());
+		// sub tasks can be found through "child" context
+		//t.withId(parent.getId() + "_" + Session.nextUUId());
+		t.withId(Session.nextTaskId());
 		t.withTitle(parent.getTitle() + " - Subtask: " + suffix);
 
 		t.withTimeout(parent.getTimeout());
@@ -53,9 +58,9 @@ public class Task {
 		// subtasks should almost always use default bucket
 		
 		if (cb != null) {
-			t.withObserver(new WrappedTaskObserver(run) {
+			t.withObserver(new OperationObserver() {
 				@Override
-				public void completed(TaskRun or) {
+				public void completed(OperationContext ctx) {
 					cb.complete();
 				}
 			});
@@ -66,7 +71,7 @@ public class Task {
 	
 	// used during run
 	protected IWork work = null;
-	protected List<ITaskObserver> observers = null;
+	protected List<IOperationObserver> observers = null;
 	
 	// used with run or queueable
 	protected OperationContext context = null;	
@@ -83,7 +88,7 @@ public class Task {
 		if (!info.isFieldEmpty("Context"))
 			this.context = OperationContext.allocate(info.getFieldAsRecord("Context"));
 		else
-			this.context = OperationContext.get();
+			this.context = OperationContext.get().subContext();
 	}
 
 	public Task copy() {
@@ -91,7 +96,7 @@ public class Task {
 		
 		Task t = new Task(clone);
 		
-		t.context = this.context;		// ok not to copy, it is immutable
+		t.context = this.context.subContext();		// ok not to copy, it is immutable
 		
 		return t;
 	}
@@ -163,8 +168,8 @@ public class Task {
 		return this;
 	}
 	
-	public Task withCurrentContext() {
-		this.context = OperationContext.get();
+	public Task withSubContext() {
+		this.context = OperationContext.get().subContext();
 		return this;
 	}
 	
@@ -182,7 +187,7 @@ public class Task {
 		return this.context;
 	}
 	
-	public Task withObserver(ITaskObserver watcher) {
+	public Task withObserver(IOperationObserver watcher) {
 		if (this.observers == null)
 			this.observers = new ArrayList<>();
 
@@ -198,7 +203,7 @@ public class Task {
 		return this.withObserver(watcher.getClass().getCanonicalName());
 	}
 	
-	public Task withObserver(Class<? extends ITaskObserver> classref) {
+	public Task withObserver(Class<? extends IOperationObserver> classref) {
 		return this.withObserver(classref.getCanonicalName());
 	}
 	
@@ -222,10 +227,10 @@ public class Task {
 	}
 	
 	public Task withDefaultLogger() {
-		return this.withObserver("divconq.work.TaskLogger");
+		return this.withObserver(OperationLogger.class);
 	}
 	
-	public List<ITaskObserver> getObservers() {
+	public List<IOperationObserver> getObservers() {
 		if (this.observers != null)
 			return this.observers;
 		
@@ -242,7 +247,7 @@ public class Task {
 					continue;
 				}
 				
-				ITaskObserver observer = (ITaskObserver) Hub.instance.getInstance(orec.getFieldAsString("_Classname").toString());
+				IOperationObserver observer = (IOperationObserver) Hub.instance.getInstance(orec.getFieldAsString("_Classname").toString());
 				
 				if (observer instanceof RecordStruct)
 					((RecordStruct)observer).copyFields(orec);

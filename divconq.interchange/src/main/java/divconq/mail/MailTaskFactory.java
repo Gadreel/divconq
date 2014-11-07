@@ -18,7 +18,7 @@ package divconq.mail;
 
 import java.util.Collection;
 
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
@@ -92,6 +92,7 @@ public class MailTaskFactory {
 			.withParams(params)
 			.withBucket(MailTaskFactory.useBucket)
 			.withDefaultLogger()
+			.withSubContext()
 			.withMaxTries(6)
 			.withTimeout(30);
 		

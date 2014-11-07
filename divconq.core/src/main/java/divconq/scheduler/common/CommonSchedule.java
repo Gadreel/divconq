@@ -19,17 +19,17 @@ package divconq.scheduler.common;
 import org.joda.time.DateTime;
 
 import divconq.hub.Hub;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
 import divconq.scheduler.ISchedule;
 import divconq.scheduler.limit.LimitHelper;
 import divconq.struct.RecordStruct;
 import divconq.util.TimeUtil;
 import divconq.work.Task;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 // TODO respect Hub idled
-public class CommonSchedule implements ISchedule {
+public class CommonSchedule extends OperationObserver implements ISchedule {
 	static public final int METHOD_NONE = 0;
 	static public final int METHOD_STANDARD = 1;
 	static public final int METHOD_SCRIPT = 2;
@@ -348,7 +348,7 @@ public class CommonSchedule implements ISchedule {
 	}
 
 	@Override
-	public void completed(TaskRun or) {
+	public void completed(OperationContext ctx) {
 		// remember - we can look at the task for further info when rescheduling
 		// run.getResult();
 		
@@ -359,34 +359,30 @@ public class CommonSchedule implements ISchedule {
 	}
 
 	@Override
-	public void log(OperationResult run, RecordStruct entry) {
+	public void log(OperationContext ctx, RecordStruct entry) {
 	}
 
 	@Override
-	public void boundary(OperationResult run, String... tags) {
+	public void step(OperationContext ctx, int num, int of, String name) {
 	}
 
 	@Override
-	public void step(OperationResult run, int num, int of, String name) {
+	public void progress(OperationContext ctx, String msg) {
 	}
 
 	@Override
-	public void progress(OperationResult run, String msg) {
+	public void amount(OperationContext ctx, int v) {
 	}
 
 	@Override
-	public void amount(OperationResult run, int v) {
+	public void prep(OperationContext ctx) {
 	}
 
 	@Override
-	public void prep(TaskRun or) {
+	public void start(OperationContext ctx) {
 	}
 
 	@Override
-	public void start(TaskRun or) {
-	}
-
-	@Override
-	public void stop(TaskRun or) {
+	public void stop(OperationContext ctx) {
 	}
 }

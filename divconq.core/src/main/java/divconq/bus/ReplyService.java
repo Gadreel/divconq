@@ -20,7 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import divconq.hub.Hub;
 import divconq.util.StringUtil;
 import divconq.work.TaskRun;
 
@@ -46,7 +45,7 @@ public class ReplyService implements IService {
 	
 			try {
 				if (resp != null) {				
-					Hub.instance.getCountManager().allocateSetNumberCounter("dcBusReplyHandlers", this.handlers.size());
+					//Hub.instance.getCountManager().allocateSetNumberCounter("dcBusReplyHandlers", this.handlers.size());
 					
 					resp.setReply(msg);
 					resp.complete();
@@ -68,7 +67,7 @@ public class ReplyService implements IService {
 		
 		this.handlers.put(tag, resp);		// TODO consider keeping a handle to the task context so we can restore it in handler
 		
-		Hub.instance.getCountManager().allocateSetNumberCounter("dcBusReplyHandlers", this.handlers.size());
+		//Hub.instance.getCountManager().allocateSetNumberCounter("dcBusReplyHandlers", this.handlers.size());
 		
 		return tag;
 	}
@@ -83,7 +82,7 @@ public class ReplyService implements IService {
 		if (resp == null)
 			return;
 		
-		Hub.instance.getCountManager().allocateSetNumberCounter("dcBusReplyHandlers", this.handlers.size());
+		//Hub.instance.getCountManager().allocateSetNumberCounter("dcBusReplyHandlers", this.handlers.size());
 	}
 
 	public int size() {

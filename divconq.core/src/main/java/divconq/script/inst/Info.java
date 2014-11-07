@@ -18,7 +18,7 @@ package divconq.script.inst;
 
 import java.util.List;
 
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleUtil;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
@@ -46,7 +46,7 @@ public class Info extends Instruction {
 					: LocaleUtil.tr(LocaleUtil.getDefaultLocale(), "_code_" + code, oparams);
 		}		
 		
-		stack.log().info(code, output);
+		OperationContext.get().info(code, output);
 		
 		/*
 		if (output == null)

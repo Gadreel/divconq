@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.script;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.struct.RecordStruct;
 import divconq.xml.XElement;
 

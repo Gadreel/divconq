@@ -14,43 +14,25 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.lang;
+package divconq.lang.op;
 
 import divconq.bus.Message;
-import divconq.log.DebugLevel;
-import divconq.work.TaskRun;
+import divconq.struct.Struct;
 
 /**
- * Provides the same function support as @see OperationCallback, however allows for more
- * than a true/false result type.  A specific return type may be provided using generics.
+ * Provides the same function support as @see OperationResult, however allows for more
+ * than a true/false return type.  A specific return type may be provided using generics.
  * 
  * @author Andy
  *
  * @param <T> the return type
  */
-abstract public class FuncCallback<T> extends OperationCallback {
-	protected T value = null;
+public class FuncResult<T> extends OperationResult {
+	  protected T value = null;
 	 
-	public FuncCallback(DebugLevel loglevel) {
-		super(loglevel);
-	}
-		 
-	public FuncCallback() {
-		super();
-	}
-		
-	public FuncCallback(TimeoutPlan plan) {
-		super(plan);
-	}
-	
-	// timeout on regular schedule  
-	public FuncCallback(TaskRun run) {
-		super(run);
-	}
-	
-	public FuncCallback(TaskRun run, TimeoutPlan plan) {
-		super(run, plan);
-	}
+	  public FuncResult() {
+		  super();
+	  }
 	  
 	  /**
 	 * @return function result if call was a success
@@ -64,9 +46,20 @@ abstract public class FuncCallback<T> extends OperationCallback {
 	 */
 	public void setResult(T v) {
 	    this.value = v;
+	    
+	    this.markEnd();
 	}
 	
-	public Message toMessage() {
+	public boolean isNotEmptyResult() {
+		return !Struct.objectIsEmpty(this.value);
+	}
+	
+	public boolean isEmptyResult() {
+		return Struct.objectIsEmpty(this.value);
+	}
+	
+	@Override
+	public Message toLogMessage() {
 		Message msg = super.toLogMessage();
 		
 		if (this.value != null)

@@ -27,8 +27,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import divconq.api.HyperSession;
 import divconq.hub.Hub;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationResult;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -180,14 +180,14 @@ public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
 				
 				this.sent += camt;
 
-				callback.setAmountCompleted((int)(this.sent * 100 / this.size));
+				this.callback.getContext().setAmountCompleted((int)(this.sent * 100 / this.size));
 				
 				// final only if not canceled
 				if (chunk instanceof LastHttpContent) 
 					this.finish();
 			}
 			catch (IOException x) {
-				callback.error(1, "Failed download because of local io error: " + x);
+				this.callback.error(1, "Failed download because of local io error: " + x);
 				this.finish();
 			}
 			

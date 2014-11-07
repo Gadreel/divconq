@@ -27,8 +27,8 @@ import divconq.api.ApiSession;
 import divconq.bus.Bus;
 import divconq.hub.Hub;
 import divconq.hub.HubResources;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
 import divconq.mod.ModuleLoader;
@@ -49,10 +49,13 @@ import divconq.xml.XElement;
 public class Foreground {
 	static public TaskRun lastdebugrequest = null; 
 	
+	@SuppressWarnings("resource")
 	public static void main(String[] args) {
 		String deployment = (args.length > 0) ? args[0] : null;
 		String squadid = (args.length > 1) ? args[1] : null;
 		String hubid = (args.length > 2) ? args[2] : null;
+		
+		OperationContext.useHubContext();
 		
 		HubResources resources = new HubResources(deployment, squadid, null, hubid);
 
@@ -101,13 +104,13 @@ public class Foreground {
 		}
 		else {
 			ModuleLoader loader = new ModuleLoader(Hub.class.getClassLoader());
-			loader.init(or, cliel);
+			loader.init(cliel);
 			ILocalCommandLine cli = (ILocalCommandLine) loader.getInstance(cliel.getAttribute("ClientClass"));
 			
 			ApiSession capi = null;
 			boolean auth = true;
 			
-			String mode = cliel.getAttribute("Mode", "root");
+			String mode = cliel.getAttribute("Mode", "domain");
 			String sess = cliel.getAttribute("Session");
 			
 			if ("root".equals(mode)) {
@@ -157,13 +160,20 @@ public class Foreground {
 					}
 					
 					if ("*".equals(domain)) {
-						capi = ApiSession.createSessionFromConfig(sess);  // LocalSession("root");
+						if (StringUtil.isEmpty(sess))
+							capi = ApiSession.createLocalSession("root");
+						else
+							capi = ApiSession.createSessionFromConfig(sess);  // LocalSession("root");
 				
 						if (capi.startSession("root", "A1s2d3f4"))
 							break;
 					}
 					
-					capi = ApiSession.createSessionFromConfig(sess);  //  LocalSession(domain);
+					if (StringUtil.isEmpty(sess))
+						capi = ApiSession.createLocalSession(domain);
+					else
+						capi = ApiSession.createSessionFromConfig(sess);  //  LocalSession(domain);
+					
 					//capi = CoreApi.createSessionFromConfig(domain);
 					
 					System.out.print("UserName: ");

@@ -17,23 +17,16 @@
 package divconq.api;
 
 import divconq.bus.Message;
-import divconq.lang.FuncCallback;
 import divconq.lang.TimeoutPlan;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
-import divconq.work.TaskRun;
 
-abstract public class ServiceResult extends FuncCallback<Message> {
+abstract public class ServiceResult extends divconq.bus.ServiceResult {
 	protected ApiSession capi = null;
-	protected String replytag = null;
 	
 	public void setSession(ApiSession v) {
 		this.capi = v;
-	}
-	
-	public void setReplyTag(String v) {
-		this.replytag = v;
 	}
 	
 	// timeout on regular schedule  
@@ -45,36 +38,20 @@ abstract public class ServiceResult extends FuncCallback<Message> {
 		super(plan);
 	}
 	
-	// timeout on regular schedule  
-	public ServiceResult(TaskRun run) {
-		super(run, TimeoutPlan.Regular);
-	}
-	
-	public ServiceResult(TaskRun run, TimeoutPlan plan) {
-		super(run, plan);
-	}
-	
 	public void setReply(Message v) {
 		this.setResult(v);
 
-		if (this.code == 0) {
-			this.code = v.getFieldAsInteger("Result");
-			this.message = v.getFieldAsString("Message");
-		}
+		// TODO review, does not appear to do anything useful
+		//if (!v.isFieldEmpty("Result") && !v.isFieldEmpty("Message")) 
+		//	this.exit(v.getFieldAsInteger("Result", 0), v.getFieldAsString("Message"));
 		
 		ListStruct h = v.getFieldAsList("Messages");
 		
 		if (h != null)
 			for (Struct st : h.getItems()) {
 				RecordStruct msg = (RecordStruct)st;
-				this.messages.add(msg);
 				
-				if ("Error".equals(msg.getFieldAsString("Level"))) {
-					if (this.code == 0) {
-						this.code = msg.getFieldAsInteger("Code");
-						this.message = msg.getFieldAsString("Message");
-					}
-				}
+				this.opcontext.log(msg);
 			}
 	}
 	
@@ -86,33 +63,5 @@ abstract public class ServiceResult extends FuncCallback<Message> {
 		}
 		
 		return false;
-	}
-	
-	/**
-	 * @return the service result as String
-	 */
-	public String getBodyAsString() {
-		return this.getResult().getFieldAsString("Body");
-	}
-	
-	/**
-	 * @return the service result as Integer
-	 */
-	public Long getBodyAsInteger() {
-		return this.getResult().getFieldAsInteger("Body");
-	}
-
-	/**
-	 * @return the service result as RecordStruct
-	 */
-	public RecordStruct getBodyAsRec() {
-		return this.getResult().getFieldAsRecord("Body");
-	}
-
-	/**
-	 * @return the service result as ListStruct
-	 */
-	public ListStruct getBodyAsList() {
-		return this.getResult().getFieldAsList("Body");
 	}
 }

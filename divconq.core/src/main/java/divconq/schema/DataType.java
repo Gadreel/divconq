@@ -21,7 +21,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.schema.Field.ReqTypes;
 import divconq.struct.CompositeStruct;
 import divconq.struct.FieldStruct;
@@ -456,7 +457,9 @@ public class DataType {
 		return null;
 	}
 	
-	public Struct create(OperationResult mr) {
+	public FuncResult<Struct> create() {
+		FuncResult<Struct> mr = new FuncResult<>();
+		
 		this.compile(mr);
 		
 		Struct st = null;
@@ -484,10 +487,12 @@ public class DataType {
 		
 		// TODO err message if null
 		
-		if (st != null)
+		if (st != null) {
 			st.setType(this);
+			mr.setResult(st);
+		}
 		
-		return st; 
+		return mr; 
 	}
 
 	public DataType getPrimaryItemType() {

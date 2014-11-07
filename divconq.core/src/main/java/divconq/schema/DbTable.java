@@ -19,7 +19,7 @@ package divconq.schema;
 import java.util.HashMap;
 import java.util.Map;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 

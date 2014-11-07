@@ -39,7 +39,7 @@ import java.util.function.Predicate;
 
 import divconq.interchange.CommonPath;
 import divconq.io.LineIterator;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 
 // see Hub, it clears the temp files
 public class FileUtil {

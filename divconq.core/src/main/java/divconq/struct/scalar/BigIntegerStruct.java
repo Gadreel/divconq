@@ -18,6 +18,7 @@ package divconq.struct.scalar;
 
 import java.math.BigInteger;
 
+import divconq.lang.op.OperationContext;
 import divconq.schema.RootType;
 import divconq.script.StackEntry;
 import divconq.struct.ScalarStruct;
@@ -97,7 +98,7 @@ public class BigIntegerStruct extends ScalarStruct {
 				this.value = this.value.add(Struct.objectToBigInteger(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -112,7 +113,7 @@ public class BigIntegerStruct extends ScalarStruct {
 				this.value = this.value.subtract(Struct.objectToBigInteger(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -127,7 +128,7 @@ public class BigIntegerStruct extends ScalarStruct {
 				this.value = this.value.multiply(Struct.objectToBigInteger(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -142,7 +143,7 @@ public class BigIntegerStruct extends ScalarStruct {
 				this.value = this.value.divide(Struct.objectToBigInteger(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -157,7 +158,7 @@ public class BigIntegerStruct extends ScalarStruct {
 				this.value = this.value.min(Struct.objectToBigInteger(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -172,7 +173,7 @@ public class BigIntegerStruct extends ScalarStruct {
 				this.value = this.value.max(Struct.objectToBigInteger(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 				
 			stack.resume();

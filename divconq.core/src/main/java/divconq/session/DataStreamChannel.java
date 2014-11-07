@@ -23,8 +23,8 @@ import divconq.bus.MessageUtil;
 import divconq.bus.net.StreamMessage;
 import divconq.hub.Hub;
 import divconq.interchange.CommonPath;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -279,11 +279,9 @@ public class DataStreamChannel extends OperationResult {
 	}
 	
 	public void deliverMessage(StreamMessage msg) {
-		this.lastactivity = System.currentTimeMillis();
+		this.touch();
 		
 		OperationContext.set(this.opcontext);
-		
-		this.copyMessages(msg);
 		
 		Logger.trace("Stream Message: " + msg.toPrettyString());
 		
@@ -296,7 +294,6 @@ public class DataStreamChannel extends OperationResult {
     	OperationResult vres = msg.validate("StreamMessage");
     	
     	if (vres.hasErrors()) {
-			this.copyMessages(vres);
 			this.abort();
         	msg.release();
         	return;

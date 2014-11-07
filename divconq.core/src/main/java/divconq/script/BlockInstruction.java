@@ -19,8 +19,8 @@ package divconq.script;
 import java.util.ArrayList;
 import java.util.List;
 
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationResult;
 import divconq.xml.XElement;
 
 public abstract class BlockInstruction extends Instruction {

@@ -17,6 +17,7 @@
 package divconq.struct.scalar;
 
 import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
 import divconq.script.StackEntry;
@@ -107,7 +108,7 @@ public class IntegerStruct extends ScalarStruct {
 				this.value += it;
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -122,7 +123,7 @@ public class IntegerStruct extends ScalarStruct {
 				this.value -= Struct.objectToInteger(sref);			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -137,7 +138,7 @@ public class IntegerStruct extends ScalarStruct {
 				this.value *= Struct.objectToInteger(sref);			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -152,7 +153,7 @@ public class IntegerStruct extends ScalarStruct {
 				this.value /= Struct.objectToInteger(sref);			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -167,7 +168,7 @@ public class IntegerStruct extends ScalarStruct {
 				this.value = Math.min(this.value, Struct.objectToInteger(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -182,7 +183,7 @@ public class IntegerStruct extends ScalarStruct {
 				this.value = Math.max(this.value, Struct.objectToInteger(sref));			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();
@@ -208,7 +209,7 @@ public class IntegerStruct extends ScalarStruct {
 				this.value = FileUtil.testrnd.nextInt((int) (to - from)) + from;			
 			}
 			catch (Exception x) {
-				stack.log().error("Error doing " + code.getName() + ": " + x);
+				OperationContext.get().error("Error doing " + code.getName() + ": " + x);
 			}
 			
 			stack.resume();

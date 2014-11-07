@@ -21,9 +21,9 @@ import java.io.FileWriter;
 import java.nio.file.Path;
 import java.util.Scanner;
 
-import divconq.lang.FuncResult;
 import divconq.lang.chars.PigLatin;
 import divconq.lang.chars.RtlEnglish;
+import divconq.lang.op.FuncResult;
 import divconq.xml.XElement;
 import divconq.xml.XNode;
 import divconq.xml.XText;

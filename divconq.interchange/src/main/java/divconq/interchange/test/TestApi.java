@@ -23,8 +23,8 @@ import divconq.api.DumpCallback;
 import divconq.bus.Message;
 import divconq.hub.Hub;
 import divconq.hub.HubResources;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
 import divconq.struct.FieldStruct;
@@ -35,6 +35,8 @@ import divconq.util.StringUtil;
 public class TestApi {
 	@SuppressWarnings("resource")
 	public static void main(String[] args) {
+		OperationContext.useHubContext();
+		
 		HubResources resources = new HubResources();
 		resources.setDebugLevel(DebugLevel.Info);
 		OperationResult or = resources.init();

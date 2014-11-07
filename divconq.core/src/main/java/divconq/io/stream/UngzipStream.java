@@ -29,10 +29,10 @@ import java.util.zip.Inflater;
 import org.apache.commons.compress.compressors.gzip.GzipUtils;
 
 import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
 import divconq.util.FileUtil;
 import divconq.util.StringUtil;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class UngzipStream extends BaseStream implements IStreamSource {
@@ -115,9 +115,9 @@ public class UngzipStream extends BaseStream implements IStreamSource {
 
 	// make sure we don't return without first releasing the file reference content
     @Override
-    public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+    public HandleReturn handle(StreamMessage msg) {
     	if (msg == StreamMessage.FINAL) 
-    		return this.downstream.handle(cb, msg);
+    		return this.downstream.handle(msg);
     	
     	if (this.ourpath == null)
     		this.initializeFileValues(msg);
@@ -132,7 +132,7 @@ public class UngzipStream extends BaseStream implements IStreamSource {
 					? Unpooled.wrappedBuffer(rem, in)
 					: in;
 
-			this.inflate(cb, src);
+			this.inflate(src);
 			
 			// if there are any unread bytes here we need to store them and combine with the next "handle"
 			// this would be rare since the header and footer are small, but it is possible and should be handled
@@ -145,13 +145,13 @@ public class UngzipStream extends BaseStream implements IStreamSource {
 			if (rem != null) 
 				rem.release();
 			
-			if(cb.isKilled())
+			if(OperationContext.get().getTaskRun().isKilled())
 				return HandleReturn.DONE;
 		}
 		
 		// write all buffers in the queue
 		while (this.outlist.size() > 0) {
-			HandleReturn ret = this.downstream.handle(cb, this.nextMessage());
+			HandleReturn ret = this.downstream.handle(this.nextMessage());
 			
 			if (ret != HandleReturn.CONTINUE)
 				return ret;
@@ -159,7 +159,7 @@ public class UngzipStream extends BaseStream implements IStreamSource {
 		
 		// if we reached done and we wrote all the buffers, then send the EOF marker if not already
 		if ((this.gzipState == GzipState.DONE) && !this.eofsent)
-			return this.downstream.handle(cb, this.nextMessage());
+			return this.downstream.handle(this.nextMessage());
 		
 		// otherwise we need more data
 		return HandleReturn.CONTINUE;
@@ -206,7 +206,7 @@ public class UngzipStream extends BaseStream implements IStreamSource {
     }
 
     // return true when completely done
-    protected void inflate(TaskRun cb, ByteBuf in) {
+    protected void inflate(ByteBuf in) {
         switch (this.gzipState) {
         case HEADER_START:
             if (in.readableBytes() < 10) 
@@ -217,7 +217,7 @@ public class UngzipStream extends BaseStream implements IStreamSource {
             int magic1 = in.readByte();
 
             if (magic0 != 31) {
-                cb.kill("Input is not in the GZIP format");
+            	OperationContext.get().getTaskRun().kill("Input is not in the GZIP format");
                 return;
             }
             
@@ -227,7 +227,7 @@ public class UngzipStream extends BaseStream implements IStreamSource {
             int method = in.readUnsignedByte();
             
             if (method != Deflater.DEFLATED) {
-            	cb.kill("Unsupported compression method " + method + " in the GZIP header");
+            	OperationContext.get().getTaskRun().kill("Unsupported compression method " + method + " in the GZIP header");
             	return;
             }
             
@@ -237,7 +237,7 @@ public class UngzipStream extends BaseStream implements IStreamSource {
             this.crc.update(this.flags);
 
             if ((this.flags & FRESERVED) != 0) {
-            	cb.kill("Reserved flags are set in the GZIP header");
+            	OperationContext.get().getTaskRun().kill("Reserved flags are set in the GZIP header");
                 return;
             }
             
@@ -328,7 +328,7 @@ public class UngzipStream extends BaseStream implements IStreamSource {
                 long readCrc = crc.getValue();
                 
                 if (crcValue != readCrc) {
-                	cb.kill("CRC value missmatch. Expected: " + crcValue + ", Got: " + readCrc);
+                	OperationContext.get().getTaskRun().kill("CRC value missmatch. Expected: " + crcValue + ", Got: " + readCrc);
                     return;
                 }
             }
@@ -381,7 +381,7 @@ public class UngzipStream extends BaseStream implements IStreamSource {
                     else {
                         if (this.inflater.needsDictionary()) {
                             if (this.dictionary == null) {
-                            	cb.kill("decompression failure, unable to set dictionary as non was specified");
+                            	OperationContext.get().getTaskRun().kill("decompression failure, unable to set dictionary as non was specified");
                             	return;
                             }
                             
@@ -398,7 +398,7 @@ public class UngzipStream extends BaseStream implements IStreamSource {
                 in.skipBytes(readableBytes - this.inflater.getRemaining());
             } 
             catch (DataFormatException x) {
-            	cb.kill("decompression failure: " + x);
+            	OperationContext.get().getTaskRun().kill("decompression failure: " + x);
             	return;
             } 
             finally {
@@ -426,7 +426,7 @@ public class UngzipStream extends BaseStream implements IStreamSource {
             long readCrc = this.crc.getValue();
             
             if (crcValue != readCrc) {
-            	cb.kill("CRC value missmatch. Expected: " + crcValue + ", Got: " + readCrc);
+            	OperationContext.get().getTaskRun().kill("CRC value missmatch. Expected: " + crcValue + ", Got: " + readCrc);
             	return;
             }
 
@@ -439,7 +439,7 @@ public class UngzipStream extends BaseStream implements IStreamSource {
             int readLength = this.inflater.getTotalOut();
             
             if (dataLength != readLength) {
-            	cb.kill("Number of bytes mismatch. Expected: " + dataLength + ", Got: " + readLength);
+            	OperationContext.get().getTaskRun().kill("Number of bytes mismatch. Expected: " + dataLength + ", Got: " + readLength);
             	return;
             }
             
@@ -452,10 +452,10 @@ public class UngzipStream extends BaseStream implements IStreamSource {
     // TODO if there is more from us then handle that before going upstream 
     
     @Override
-    public void request(TaskRun cb) {
+    public void request() {
 		// write all buffers in the queue
 		while (this.outlist.size() > 0) {
-			HandleReturn ret = this.downstream.handle(cb, this.nextMessage());
+			HandleReturn ret = this.downstream.handle(this.nextMessage());
 			
 			if (ret != HandleReturn.CONTINUE)
 				return;
@@ -463,12 +463,12 @@ public class UngzipStream extends BaseStream implements IStreamSource {
 		
 		// if we reached done and we wrote all the buffers, then send the EOF marker if not already
 		if ((this.gzipState == GzipState.DONE) && !this.eofsent) {
-			HandleReturn ret = this.downstream.handle(cb, this.nextMessage());
+			HandleReturn ret = this.downstream.handle(this.nextMessage());
 			
 			if (ret != HandleReturn.CONTINUE)
 				return;
 		}
 		
-    	this.upstream.request(cb);
+    	this.upstream.request();
     }	
 }

@@ -97,7 +97,6 @@ public class SendEmail extends Instruction {
 				new ServiceResult() {
 					@Override
 					public void callback() {
-						stack.log().copyMessages(this);
 						stack.setState(ExecuteState.Done);
 						stack.resume();
 					}

@@ -34,10 +34,10 @@ import java.nio.file.StandardOpenOption;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
 import divconq.io.LineIterator;
-import divconq.lang.FuncResult;
 import divconq.lang.Memory;
-import divconq.lang.OperationResult;
 import divconq.lang.chars.Utf8Encoder;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 
 public class IOUtil {
     /**

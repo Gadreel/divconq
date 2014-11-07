@@ -35,8 +35,8 @@ import divconq.hub.Hub;
 import divconq.interchange.CommonPath;
 import divconq.interchange.FileSystemDriver;
 import divconq.interchange.FileSystemFile;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
 import divconq.log.Logger;
 import divconq.mod.ExtensionBase;
 import divconq.session.Session;
@@ -57,7 +57,7 @@ public class FileWatcher extends ExtensionBase implements IService {
 	protected List<Integer> watchids = new ArrayList<>();
 	
 	@Override
-	public void start(OperationResult log) {
+	public void start() {
 		XElement settings = this.getLoader().getSettings();
 		
 		if (settings != null) {
@@ -161,7 +161,7 @@ public class FileWatcher extends ExtensionBase implements IService {
 						this.watchids.add(watchID);
 					} 
 					catch (Exception x) {
-						log.error("Unable to add file watcher for " + dir + " - error: " +  x);
+						OperationContext.get().error("Unable to add file watcher for " + dir + " - error: " +  x);
 					}
 		        }
 
@@ -276,11 +276,11 @@ public class FileWatcher extends ExtensionBase implements IService {
 	        }
 		}
 		
-		super.start(log);
+		super.start();
 	}
 
 	@Override
-	public void stop(OperationResult log) {
+	public void stop() {
 		for (int ids : this.watchids)
 			try {
 				JNotify.removeWatch(ids);
@@ -288,7 +288,7 @@ public class FileWatcher extends ExtensionBase implements IService {
 			catch (JNotifyException x) {
 			}
 		
-		super.stop(log);
+		super.stop();
 	}
 
 	@Override

@@ -26,11 +26,12 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.joda.time.DateTime;
 
 import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.IOperationLogger;
-import divconq.lang.IOperationObserver;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.IOperationLogger;
+import divconq.lang.op.IOperationObserver;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationEvents;
+import divconq.lang.op.OperationResult;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.util.FileUtil;
@@ -50,7 +51,7 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 	protected boolean completed = false;
 	protected boolean killed = false;	
 	
-	protected final Lock completionlock = new ReentrantLock();
+	protected final Lock completionlock = new ReentrantLock();		// TODO consider StampedLock
 	
 	protected Set<AutoCloseable> closeables = new HashSet<>();
 	
@@ -65,12 +66,17 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 	
 	public TaskRun() {
 		this.task = new Task(); 
+		this.task.withSubContext();
+		
+		this.msgStart = 0;
 	}
 	
 	public TaskRun(Task info) {
 		this.task = info;
+		this.msgStart = 0;
 	}
 
+	// prep is running in external context, log to that context but 
 	public void prep() {
 		// if we are resuming, leave the rest alone
 		if (this.started != -1)
@@ -78,12 +84,17 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 		
 		this.task.prep();
 		
-		this.setContext(this.task.getContext());
+		OperationContext ctx = this.task.getContext();
+		
+		this.opcontext = ctx;
 
 		// add any new observers
 		for (IOperationObserver ob : this.task.getObservers())
-			this.addObserver(ob);
+			ctx.addObserver(ob);
 		
+		ctx.fireEvent(OperationEvents.PREP_TASK, null);
+
+		/* TODO cleanup
 		// loop task observers from Task as well as added at run time
 		for (IOperationObserver cb : this.observers) {
 			try {
@@ -97,6 +108,7 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 			// they might change context on us, return context
 			OperationContext.set(this.opcontext);
 		}
+		*/
 	}
 	
 	public boolean isComplete() {
@@ -161,8 +173,6 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 			
 			// get the logs up to date as much as possible
 			OperationResult res1 = Hub.instance.getWorkQueue().trackWork(this, false);		// TODO add param for update claim?  review this
-	
-			this.copyMessages(res1);
 			
 			if (res1.hasErrors()) {
 				this.errorTr(191, this.task.getId());
@@ -171,8 +181,6 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 			
 			// try to extend our claim
 			OperationResult res2 = Hub.instance.getWorkQueue().updateClaim(this.task);
-	
-			this.copyMessages(res2);
 			
 			if (res2.hasErrors()) {
 				this.errorTr(191, this.task.getId());
@@ -188,6 +196,8 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 	public void run() {
 		try {
 			OperationContext.set(this.opcontext);
+			
+			this.opcontext.setTaskRun(this);
 			
 			if (this.started == -1) {
 				
@@ -237,29 +247,16 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 					}
 				}
 				
-				// the official "logger" (the first) is available via the _Logger special var
-				for (IOperationObserver cb : this.observers) {
-					if (cb instanceof IOperationLogger) {
-						params.setField("_Logger", cb);
-						break;
-					}
-				}
+				// the official "logger" is available via the _Logger special var
+				IOperationLogger logger = this.opcontext.getLogger();
+				
+				if (logger != null)
+					params.setField("_Logger", logger);
 				
 				this.started = this.lastclaimed = System.currentTimeMillis();
 				
 				// task start before work
-				for (IOperationObserver cb : this.observers) {
-					try {
-						if (cb instanceof ITaskObserver)
-							((ITaskObserver)cb).start(this);			
-					} 
-					catch (Exception x) {
-						this.error("Error notifying start task: " + x);
-					}
-					
-					// they might change context on us, return context
-					OperationContext.set(this.opcontext);
-				}
+				this.opcontext.fireEvent(OperationEvents.START_TASK, null);
 			}
 			
 			//  TODO review info feature DCTASKLOG in NCC
@@ -293,18 +290,10 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 			this.complete();
 		}
 		finally {
-			OperationContext.clear();
+			//OperationContext.clear();
+			OperationContext.useHubContext();
 		}
 	}		
-
-	// when task enters an async callback that is not through OperationCallback or subclasses (e.g. a Java executor)
-	// then call this to get the task back in context
-	//
-	// caution - before making this do anything more than resume context, keep in mind that the dcBus
-	//           restores a task only by setting context, if this needs to do more then so does the bus  (try not to) 
-	public void thawContext() {
-		OperationContext.set(this.opcontext);
-	}
 	
 	public void resume() {
 		Hub.instance.getWorkPool().submit(this);		
@@ -413,32 +402,10 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 				}
 			
 			// task observers could log still - so before close log
-			for (IOperationObserver cb : this.observers) {
-				try {
-					if (cb instanceof ITaskObserver)
-						((ITaskObserver)cb).completed(this);			
-				} 
-				catch (Exception x) {
-					this.error("Error notifying completing task: " + x);
-				}
-				
-				// they might change context on us, return context
-				OperationContext.set(this.opcontext);
-			}
+			this.opcontext.fireEvent(OperationEvents.COMPLETED, null);
 			
 			// task observers stop can/should no longer log
-			for (IOperationObserver cb : this.observers) {
-				try {
-					if (cb instanceof ITaskObserver)
-						((ITaskObserver)cb).stop(this);			
-				} 
-				catch (Exception x) {
-					this.error("Error notifying completing task: " + x);
-				}
-				
-				// they might change context on us, return context
-				OperationContext.set(this.opcontext);
-			}
+			this.opcontext.fireEvent(OperationEvents.STOP_TASK, null);
 			
 			// if this is a queue task then end it - only if we got an audit it though
 			// TODO refine this - if we have a task id but not an audit id we should cleanup the queue...
@@ -495,27 +462,6 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 		return this.task.getTitle() + " (" + this.task.getId() + ")";
 	}
 	
-	@Override
-	public void addObserver(IOperationObserver oo) {
-		if (oo instanceof ITaskObserver) {
-			// protect with lock so we can ensure completed fires either now (if task is done)
-			// or later if it is not
-			this.completionlock.lock();
-	
-			super.addObserver(oo);
-			
-			try {
-				if (this.completed) 
-					((ITaskObserver)oo).completed(this);
-			}
-			finally {
-				this.completionlock.unlock();
-			}
-		}
-		else
-			super.addObserver(oo);		
-	}
-	
 	public RecordStruct toStatusReport() {
 		RecordStruct rec = new RecordStruct();
 		
@@ -549,6 +495,7 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 		this.complete();
 	}	
 	
+	/* TODO supports groovy, enhance
 	@Override
 	public Object invokeMethod(String name, Object arg1) {
 		// is really an object array
@@ -565,26 +512,7 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 		
 		return super.invokeMethod(name, arg1);
 	}
-	
-	public String getLog() {
-		// the first task observer that implements log builder gets to return the log 
-		for (IOperationObserver cb : this.observers) {
-			try {
-				if (cb instanceof IOperationLogger) 
-					return ((IOperationLogger)cb).logToString();	
-			} 
-			catch (Exception x) {
-				this.error("Error getting log: " + x);
-			}
-			finally {
-				// they might change context on us, return context
-				OperationContext.set(this.opcontext);
-			}
-		}
-				
-		// TODO reformat these as log entries not as JSON
-		return this.messages.toString();
-	}
+	*/
 
 	public RecordStruct status() {
 		RecordStruct status = this.task.status();
@@ -597,12 +525,12 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 		
 		status.setField("Code", this.getCode());
 		status.setField("Message", this.getMessage()); 
-		status.setField("Log", this.getLog());
-		status.setField("Progress", this.getProgressMessage()); 
-		status.setField("StepName", this.getCurrentStepName()); 
-		status.setField("Completed", this.getAmountCompleted()); 
-		status.setField("Step", this.getCurrentStep()); 
-		status.setField("Steps", this.getSteps());
+		status.setField("Log", this.getContext().getLog());
+		status.setField("Progress", this.opcontext.getProgressMessage()); 
+		status.setField("StepName", this.opcontext.getCurrentStepName()); 
+		status.setField("Completed", this.opcontext.getAmountCompleted()); 
+		status.setField("Step", this.opcontext.getCurrentStep()); 
+		status.setField("Steps", this.opcontext.getSteps());
 		
 		return status;
 	}

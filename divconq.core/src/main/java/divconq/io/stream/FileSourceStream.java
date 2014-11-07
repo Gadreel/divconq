@@ -11,9 +11,9 @@ import divconq.hub.Hub;
 import divconq.interchange.FileSystemFile;
 import divconq.interchange.IFileCollection;
 import divconq.interchange.IFileStoreFile;
-import divconq.lang.WrappedFuncCallback;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class FileSourceStream extends BaseStream implements IStreamSource {
@@ -34,7 +34,7 @@ public class FileSourceStream extends BaseStream implements IStreamSource {
 	}
 
 	@Override
-	public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+	public HandleReturn handle(StreamMessage msg) {
 		// we are at top of stream, nothing to do here
 		return HandleReturn.CONTINUE;
 	}
@@ -61,77 +61,77 @@ public class FileSourceStream extends BaseStream implements IStreamSource {
 	 * Someone downstream wants more data
 	 */
 	@Override
-	public void request(TaskRun cb) {
+	public void request() {
 		if (this.source == null) {
-			this.downstream.handle(cb, StreamMessage.FINAL);
+			this.downstream.handle(StreamMessage.FINAL);
 			return;
 		}
 		
 		if (this.current == null) {
-			this.source.next(new WrappedFuncCallback<IFileStoreFile>(cb) {
+			this.source.next(new FuncCallback<IFileStoreFile>() {
 				@Override
 				public void callback() {
 					if (this.hasErrors()) {
-						cb.kill();
+						OperationContext.get().getTaskRun().kill();
 						return;
 					}
 					
-					FileSourceStream.this.readFile(cb, this.getResult());
+					FileSourceStream.this.readFile(this.getResult());
 				}
 			});
 		}
 		// folders are handled in 1 msg, so we wouldn't get here in second or later call to a file
 		else if (this.current instanceof FileSystemFile)
-			FileSourceStream.this.readLocalFile(cb);
+			FileSourceStream.this.readLocalFile();
 		else {
-			FileSourceStream.this.readOtherFile(cb);
+			FileSourceStream.this.readOtherFile();
 		}
 	}
 	
-	public void readFile(TaskRun cb, IFileStoreFile file) {
+	public void readFile(IFileStoreFile file) {
 		this.current = file;
 		
 		// if we reached the end of the collection then finish
 		if (this.current == null) {
-			this.downstream.handle(cb, StreamMessage.FINAL);
+			this.downstream.handle(StreamMessage.FINAL);
 		}
 		else if (this.current.isFolder()) {
 	        StreamMessage fref = StreamMessage.fromFileStore(this.current);
 	        fref.setIsFolder(true);
 	        fref.setPath(this.current.path().subpath(this.source.path()));
 	        
-			if (this.downstream.handle(cb, fref) == HandleReturn.CONTINUE) {
+			if (this.downstream.handle(fref) == HandleReturn.CONTINUE) {
 				FileSourceStream.this.current = null;
-				cb.resume();
+				OperationContext.get().getTaskRun().resume();
 			}
 		}		
 		else if (this.current instanceof FileSystemFile)
-			FileSourceStream.this.readLocalFile(cb);
+			FileSourceStream.this.readLocalFile();
 		else {
-			FileSourceStream.this.readOtherFile(cb);
+			FileSourceStream.this.readOtherFile();
 		}
 	}
 	
-	public void readOtherFile(TaskRun cb) {
+	public void readOtherFile() {
 		// TODO abstract out so this class is a FileCollectionSourceStream and we
 		// use it pull out the source streams of files, which we then use as if upstream from us
 	}
 	
 	// release data if error
-	public void readLocalFile(TaskRun cb) {
+	public void readLocalFile() {
 		FileSystemFile fs = (FileSystemFile) this.current;
 
 		if (this.in == null) {
 			this.insize = fs.getSize();
 			
 			// As a source we are responsible for progress tracking
-			cb.setAmountCompleted(0);
+			OperationContext.get().setAmountCompleted(0);
 			
 			try {
 				this.in = FileChannel.open(fs.localPath(), StandardOpenOption.READ);
 			} 
 			catch (IOException x) {
-				cb.kill("Unable to read source file " + x);
+				OperationContext.get().getTaskRun().kill("Unable to read source file " + x);
 				return;
 			}
 		}
@@ -148,7 +148,7 @@ public class FileSourceStream extends BaseStream implements IStreamSource {
 				pos = (int)this.in.read(buffer);
 			} 
 			catch (IOException x1) {
-				cb.kill("Problem reading source file: " + x1);
+				OperationContext.get().getTaskRun().kill("Problem reading source file: " + x1);
 				data.release();
 				return;
 			}
@@ -164,12 +164,12 @@ public class FileSourceStream extends BaseStream implements IStreamSource {
 					this.in.close();
 				} 
 	        	catch (IOException x) {
-					cb.kill("Problem closing source file: " + x);
+	        		OperationContext.get().getTaskRun().kill("Problem closing source file: " + x);
 					data.release();
 					return;
 				}
 	        	
-	        	cb.setAmountCompleted(100);
+	        	OperationContext.get().setAmountCompleted(100);
 	        	
 		        fref.setEof(true);
 	        	
@@ -182,15 +182,15 @@ public class FileSourceStream extends BaseStream implements IStreamSource {
 		        this.inprog += pos;
 		        
 		        data.writerIndex(pos);
-		        cb.setAmountCompleted((int)(this.inprog * 100 / this.insize));
+		        OperationContext.get().setAmountCompleted((int)(this.inprog * 100 / this.insize));
 	        }
 	        
-	    	if (this.downstream.handle(cb, fref) != HandleReturn.CONTINUE)
+	    	if (this.downstream.handle(fref) != HandleReturn.CONTINUE)
 	    		break;
 	    	
 	    	if (this.current == null) {
 	    		// we need the next file
-	    		cb.resume();
+	    		OperationContext.get().getTaskRun().resume();
 	    		
 	    		// wait on the implied request
 	    		break;

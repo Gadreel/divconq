@@ -28,8 +28,8 @@ import divconq.bus.Message;
 import divconq.bus.MessageUtil;
 import divconq.bus.net.StreamMessage;
 import divconq.hub.Hub;
-import divconq.lang.OperationCallback;
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationResult;
 import divconq.session.IStreamDriver;
 import divconq.session.ISessionAdapter;
 import divconq.session.Session;
@@ -88,7 +88,7 @@ public class LocalSession extends ApiSession {
 	@Override
 	public void sendForgetMessage(Message msg) {
 		this.session.touch();
-		this.session.setTaskContext("hub:");
+		this.session.setContext("hub:");
 		this.session.sendMessage(msg);
 	}
 	
@@ -98,7 +98,7 @@ public class LocalSession extends ApiSession {
 		
 		this.replies.registerForReply(msg, callback);
 
-		this.session.setTaskContext("hub:");
+		this.session.setContext("hub:");
 		this.session.sendMessage(msg);
 	}
 
@@ -150,8 +150,8 @@ public class LocalSession extends ApiSession {
 		int seq = 0;
 		
 		if (size > 0) {
-			callback.setAmountCompleted((int)(sent * 100 / size));
-			chan.setAmountCompleted((int)(sent * 100 / size));		// keep the channel active so it does not timeout
+			callback.getContext().setAmountCompleted((int)(sent * 100 / size));
+			chan.getContext().setAmountCompleted((int)(sent * 100 / size));		// keep the channel active so it does not timeout
 		}
 	
 		try {
@@ -192,8 +192,8 @@ public class LocalSession extends ApiSession {
 				sent += amt;
 				
 				if (size > 0) { 
-					callback.setAmountCompleted((int)(sent * 100 / size));
-					chan.setAmountCompleted((int)(sent * 100 / size));		// keep the channel active so it does not timeout
+					callback.getContext().setAmountCompleted((int)(sent * 100 / size));
+					chan.getContext().setAmountCompleted((int)(sent * 100 / size));		// keep the channel active so it does not timeout
 				}
 				
 				callback.touch();
@@ -249,7 +249,7 @@ public class LocalSession extends ApiSession {
 			return;
 		}
 		
-		callback.setAmountCompleted(0);
+		callback.getContext().setAmountCompleted(0);
 		
 		chan.setDriver(new IStreamDriver() {
 			protected long amt = offset;
@@ -284,7 +284,7 @@ public class LocalSession extends ApiSession {
 					seq++;
 					
 					if (size > 0) 
-						callback.setAmountCompleted((int)(this.amt * 100 / size));
+						callback.getContext().setAmountCompleted((int)(this.amt * 100 / size));
 					
 					if (msg.isFinal()) {
 						chan.complete();

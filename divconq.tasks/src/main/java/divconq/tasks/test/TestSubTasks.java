@@ -19,13 +19,14 @@ package divconq.tasks.test;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
 import divconq.struct.RecordStruct;
-import divconq.work.IWork;
+import divconq.work.ISmartWork;
 import divconq.work.Task;
 import divconq.work.TaskRun;
-import divconq.work.WrappedTaskObserver;
 
-public class TestSubTasks implements IWork {
+public class TestSubTasks implements ISmartWork {
 	// do 8 greets before ending
 	protected AtomicInteger countdown = new AtomicInteger(8); 
 	
@@ -42,7 +43,7 @@ public class TestSubTasks implements IWork {
 		
 		// don't run if we are idled (we might run 3 of 5 rounds with this)
 		if (Hub.instance.isIdled()) {
-			trun.exit(0, "Test sub tasks Successfully Completed");
+			trun.exit(0, "Test sub tasks Successfully Exited but did not Complete");
 			trun.complete();
 			return;
 		}
@@ -52,11 +53,40 @@ public class TestSubTasks implements IWork {
 		
 		Task subtask = ScriptFactory.createSlowGreetTask(greet);
 		
+		/*
+		Task subtask = new Task()
+			.withTitle("Greetings for: " + greet)
+			.withDefaultLogger()
+			.withSubContext()
+			.withParams(new RecordStruct(
+					new FieldStruct("Greet", greet)
+				)
+			)
+			.withWork(ExceptionWork.class);
+		*/
+		
 		// wrapper so we collect the logs from sub tasks
-		Hub.instance.getWorkPool().submit(subtask, new WrappedTaskObserver(trun) {
-			public void completed(TaskRun or) {
+		Hub.instance.getWorkPool().submit(subtask, new OperationObserver() {
+			public void completed(OperationContext or) {
 				Hub.instance.getWorkPool().submit(trun);
 			}
 		});
+	}
+
+	@Override
+	public void cancel(TaskRun run) {
+	}
+
+	@Override
+	public void completed(TaskRun trun) {
+		System.out.println("TestSubTasks Completed!");
+		System.out.println();
+		System.out.println("trun has errors: " + trun.hasErrors());
+		System.out.println("trun finish code: " + trun.getCode());
+		System.out.println("trun # msgs: " + trun.getMessages().getSize());
+
+		System.out.println();
+		System.out.println("Log for total:");
+		OperationsWork.dumpLog(trun);
 	}
 }

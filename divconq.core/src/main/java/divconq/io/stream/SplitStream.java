@@ -24,7 +24,6 @@ import io.netty.buffer.ByteBuf;
 import divconq.script.StackEntry;
 import divconq.util.FileUtil;
 import divconq.util.StringUtil;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class SplitStream extends BaseStream implements IStreamSource {
@@ -54,9 +53,9 @@ public class SplitStream extends BaseStream implements IStreamSource {
     
 	// make sure we don't return without first releasing the file reference content
     @Override
-    public HandleReturn handle(TaskRun cb, StreamMessage msg) {
+    public HandleReturn handle(StreamMessage msg) {
     	if (msg == StreamMessage.FINAL) 
-    		return this.downstream.handle(cb, msg);
+    		return this.downstream.handle(msg);
 
     	ByteBuf in = msg.getPayload();
 
@@ -87,7 +86,7 @@ public class SplitStream extends BaseStream implements IStreamSource {
     	
 		// write all messages in the queue
 		while (this.outlist.size() > 0) {
-			HandleReturn ret = this.downstream.handle(cb, this.outlist.remove(0));
+			HandleReturn ret = this.downstream.handle(this.outlist.remove(0));
 			
 			if (ret != HandleReturn.CONTINUE)
 				return ret;
@@ -117,15 +116,15 @@ public class SplitStream extends BaseStream implements IStreamSource {
     }
     
     @Override
-    public void request(TaskRun cb) {
+    public void request() {
 		// write all messages in the queue
 		while (this.outlist.size() > 0) {
-			HandleReturn ret = this.downstream.handle(cb, this.outlist.remove(0));
+			HandleReturn ret = this.downstream.handle(this.outlist.remove(0));
 			
 			if (ret != HandleReturn.CONTINUE)
 				return;
 		}
 		
-    	this.upstream.request(cb);
+    	this.upstream.request();
     }
 }

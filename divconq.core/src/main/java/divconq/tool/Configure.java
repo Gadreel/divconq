@@ -20,8 +20,8 @@ import java.io.File;
 import java.util.Scanner;
 
 import divconq.hub.Clock;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.util.FileUtil;
 import divconq.util.ISettingsObfuscator;
 import divconq.util.StringUtil;

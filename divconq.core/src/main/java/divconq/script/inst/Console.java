@@ -18,7 +18,7 @@ package divconq.script.inst;
 
 import java.util.List;
 
-import divconq.lang.OperationContext;
+import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleUtil;
 import divconq.script.ExecuteState;
 import divconq.script.IDebugger;

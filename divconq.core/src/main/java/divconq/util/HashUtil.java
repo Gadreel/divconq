@@ -23,7 +23,7 @@ import java.security.MessageDigest;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
 
 public class HashUtil {
 	public static FuncResult<String> hash(String method, InputStream in) {

@@ -83,8 +83,8 @@ import divconq.hub.Hub;
 import divconq.interchange.CommonPath;
 import divconq.io.ByteBufWriter;
 import divconq.io.FileStoreEvent;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationResult;
 import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
 import divconq.locale.Localization;
@@ -412,7 +412,7 @@ public class WebDomain implements IWebDomain {
 			else
 			*/
 			
-			res.copyMessages(this.executeFile(ctx));
+			this.executeFile(ctx);
 		}
 		
 		return res;
@@ -589,7 +589,7 @@ public class WebDomain implements IWebDomain {
 			return res;
 		}
 		
-		res.copyMessages(this.writeFile(ctx, assres.getResult()));
+		this.writeFile(ctx, assres.getResult());
 		
 		return res;
 	}

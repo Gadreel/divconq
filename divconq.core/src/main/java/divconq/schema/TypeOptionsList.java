@@ -19,7 +19,7 @@ package divconq.schema;
 import java.util.ArrayList;
 import java.util.List;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;

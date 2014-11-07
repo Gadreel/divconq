@@ -19,10 +19,8 @@ package divconq.tasks.services;
 import divconq.bus.IService;
 import divconq.bus.MessageUtil;
 import divconq.bus.Message;
-import divconq.hub.Hub;
-import divconq.lang.FuncResult;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
+import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
 import divconq.mod.ExtensionBase;
 import divconq.struct.RecordStruct;
 import divconq.tasks.sql.Router;
@@ -42,8 +40,8 @@ public class Main extends ExtensionBase implements IService {
 	}
 
 	@Override
-	public void start(OperationResult log) {
-		super.start(log);
+	public void start() {
+		super.start();
 		
 		OperationContext.useNewRoot();
 		
@@ -58,7 +56,7 @@ public class Main extends ExtensionBase implements IService {
 		
 		String version = deployed.getFieldAsString("Version");
 		
-		log.info(0, "Starting FT Tasks ver  " + version);
+		OperationContext.get().info(0, "Starting FT Tasks ver  " + version);
 		
 		/*
 		XElement settings = this.getLoader().getSettings();
@@ -69,10 +67,12 @@ public class Main extends ExtensionBase implements IService {
 		}
 		*/
 		
+		/* TODO restore after some testing
 		if (!Hub.instance.getSQLDatabase().testConnection()) {
 			log.errorTr(400485);		// TODO move to dct range
 			return;
 		}
+		*/
 		
 		// TODO make this a setting - load from SQL or from noSQL
 		// TODO check message version and use the router for that version
@@ -255,7 +255,19 @@ public class Main extends ExtensionBase implements IService {
 				.withParams(new RecordStruct(new FieldStruct("Greet", "Mike")))
 				.withWork(TestSubTasks.class);
 	
-			Hub.instance.getWorkQueue().submit(task);
+			Hub.instance.getWorkPool().submit(task);
+		}
+		*/
+
+		/*
+		{
+			Task task = new Task()
+				.withTitle("OperationsWork Test")
+				.withDefaultLogger()
+				.withParams(new RecordStruct(new FieldStruct("Greet", "Mike")))
+				.withWork(OperationsWork.class);
+	
+			Hub.instance.getWorkPool().submit(task);
 		}
 		*/
 	}

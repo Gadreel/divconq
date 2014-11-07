@@ -30,7 +30,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 import org.joda.time.format.ISODateTimeFormat;
 
-import divconq.lang.FuncResult;
+import divconq.lang.op.FuncResult;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
@@ -161,8 +161,6 @@ public class MwsServices {
 			in.close();
 	 
 			FuncResult<XElement> xres = XmlReader.parse(response.toString(), false);
-			
-			res.copyMessages(xres);
 			
 			res.setResult(xres.getResult());
        }

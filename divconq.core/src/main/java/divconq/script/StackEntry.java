@@ -16,7 +16,9 @@
 ************************************************************************ */
 package divconq.script;
 
-import divconq.lang.OperationResult;
+import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationResult;
 import divconq.struct.ListStruct;
 import divconq.struct.Struct;
 import divconq.struct.RecordStruct;
@@ -112,10 +114,6 @@ public class StackEntry {
 
         return this.parent.queryFunctionStack();
     }
-
-    public OperationResult log() {
-        return this.activity.getLog();
-    }
     
     public Struct resolveValue(String val) {
     	if (val == null)
@@ -136,7 +134,7 @@ public class StackEntry {
     }
 
 	public void operate(Struct target, XElement source) {
-		this.activity.manager.operate(this, target, source);
+		Hub.instance.getActivityManager().operate(this, target, source);
 	}
     
     public Struct refFromSource(String attr) {
@@ -280,7 +278,7 @@ public class StackEntry {
             if (qvar2 != null) 
                 sb.append(qvar2.toString());
             else {
-            	this.log().warnTr(500, varname);
+            	OperationContext.get().warnTr(500, varname);
                 sb.append(val.substring(bpos, epos + 1));
             }
 
@@ -298,14 +296,14 @@ public class StackEntry {
 
     public void addVariable(String name, Struct var) {
     	if (var == null) {
-    		this.log().errorTr(512);
+    		OperationContext.get().errorTr(512);
     		return;
     	}
     		
         StackBlockEntry b = this.queryBlockStack();
         
         if (b == null) 
-        	this.log().errorTr(513, name);
+        	OperationContext.get().errorTr(513, name);
         else
         	b.addVariable(name, var);
     }

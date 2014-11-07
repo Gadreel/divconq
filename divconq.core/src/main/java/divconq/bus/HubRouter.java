@@ -31,10 +31,11 @@ import divconq.bus.net.StreamMessage;
 import divconq.bus.net.StreamSession;
 import divconq.hub.Hub;
 import divconq.hub.HubEvents;
-import divconq.lang.FuncCallback;
-import divconq.lang.OperationContext;
-import divconq.lang.OperationResult;
-import divconq.lang.UserContext;
+import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationObserver;
+import divconq.lang.op.OperationResult;
+import divconq.lang.op.UserContext;
 import divconq.log.Logger;
 import divconq.session.DataStreamChannel;
 import divconq.struct.FieldStruct;
@@ -42,8 +43,6 @@ import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.util.StringUtil;
-import divconq.work.TaskObserver;
-import divconq.work.TaskRun;
 import divconq.work.Task;
  
 public class HubRouter {
@@ -240,6 +239,7 @@ public class HubRouter {
 			}
 			
 			Task tb = new Task()
+				.withTitle("Hub Router: " + srv)
 				.withContext(tc)
 				.withParams(msg)
 				.withBucket("Bus")		// typically this will fall back into Default
@@ -249,20 +249,9 @@ public class HubRouter {
 						public void callback() {
 							UserContext uc = this.getResult();
 							
-							if (uc != null) {
-								// TODO only if the user context changed, then update the operation context
-								//if (!uc.equals(this.getContext().getUserContext()))
-								
-								// update the operation context
+							// update the operation context
+							if (uc != null) 
 								OperationContext.use(uc, tc.toBuilder());
-							}
-							
-							//Message rmsg = null;
-							
-							//System.out.println("d2: " + msg);
-							
-							// if there were verify errors copy them and do not continue
-							task.copyMessages(this);
 							
 							if (task.hasErrors()) {
 							    task.complete();
@@ -270,10 +259,10 @@ public class HubRouter {
 							}
 
 							// validate the structure of the message
-							task.copyMessages(Hub.instance.getSchema().validateRequest(msg));	
+							OperationResult vres = Hub.instance.getSchema().validateRequest(msg);	
 							
 							// if invalid structure then do not continue
-							if (task.hasErrors()) {
+							if (vres.hasErrors()) {
 							    task.complete();
 							    return;
 							}
@@ -308,13 +297,17 @@ public class HubRouter {
 						tc.verify(fcb);
 				});
 					
-			or.copyMessages(Hub.instance.getWorkPool().submit(tb, new TaskObserver() {
+			Hub.instance.getWorkPool().submit(tb, new OperationObserver() {
 				@Override
-				public void completed(TaskRun or) {
+				public void completed(OperationContext or) {
+					// set to this so that we can use the proper - elevated - context during
+					// the reply routing
+					OperationContext.set(or);
+					
 					// send a response, be it just error messages or a full body
-				    Hub.instance.getBus().sendReply(or.toLogMessage(), msg);
+				    Hub.instance.getBus().sendReply(or.getTaskRun().toLogMessage(), msg);
 				}
-			}));		
+			});
 			
 			//System.out.println("Call to " + srv + " -- " + tb.getId());
 		

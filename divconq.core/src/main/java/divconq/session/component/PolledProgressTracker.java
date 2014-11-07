@@ -18,7 +18,7 @@ package divconq.session.component;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-import divconq.lang.OperationResult;
+import divconq.lang.op.OperationResult;
 import divconq.session.IComponent;
 import divconq.session.Session;
 import divconq.struct.RecordStruct;
