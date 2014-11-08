@@ -14,12 +14,13 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.log;
+package divconq.log.slf4j;
+
 
 /**
  * Holds the results of formatting done by {@link MessageFormatter}.
  */
-class FormattingTuple {
+public class FormattingTuple {
 
     static final FormattingTuple NULL = new FormattingTuple(null);
 

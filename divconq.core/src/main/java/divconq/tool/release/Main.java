@@ -624,6 +624,18 @@ public class Main implements ILocalCommandLine {
 						break;
 					}
 					
+					or = FileUtil.copyFileTree(Paths.get("./divconq.core/src/org"), gitpath.resolve("divconq.core/src/main/java/org"), new Predicate<Path>() {
+						@Override
+						public boolean test(Path file) {
+							return file.getFileName().toString().endsWith(".java");
+						}
+					});
+					
+					if (or.hasErrors()) {
+						System.out.println("Error copying files");
+						break;
+					}
+					
 					or = FileUtil.copyFileTree(Paths.get("./divconq.core/src/localize"), gitpath.resolve("divconq.core/src/main/resources/localize"), new Predicate<Path>() {
 						@Override
 						public boolean test(Path file) {

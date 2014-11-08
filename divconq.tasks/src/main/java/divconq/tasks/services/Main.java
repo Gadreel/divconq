@@ -58,6 +58,9 @@ public class Main extends ExtensionBase implements IService {
 		
 		OperationContext.get().info(0, "Starting FT Tasks ver  " + version);
 		
+		//Logger logger = LoggerFactory.getLogger(Main.class);
+	    //logger.info("Hello World");	
+		
 		/*
 		XElement settings = this.getLoader().getSettings();
 

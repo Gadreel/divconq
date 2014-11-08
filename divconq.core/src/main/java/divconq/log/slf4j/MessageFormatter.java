@@ -14,7 +14,7 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.log;
+package divconq.log.slf4j;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -85,7 +85,7 @@ import java.util.Map;
  * {@link #format(String, Object, Object)} and
  * {@link #arrayFormat(String, Object[])} methods for more details.
  */
-final class MessageFormatter {
+public class MessageFormatter {
     static final char DELIM_START = '{';
     static final char DELIM_STOP = '}';
     static final String DELIM_STR = "{}";
@@ -108,7 +108,7 @@ final class MessageFormatter {
      * @param arg            The argument to be substituted in place of the formatting anchor
      * @return The formatted message
      */
-    static FormattingTuple format(String messagePattern, Object arg) {
+    static public FormattingTuple format(String messagePattern, Object arg) {
         return arrayFormat(messagePattern, new Object[]{arg});
     }
 
@@ -131,12 +131,12 @@ final class MessageFormatter {
      *                       anchor
      * @return The formatted message
      */
-    static FormattingTuple format(final String messagePattern,
+    static public FormattingTuple format(final String messagePattern,
                                   Object argA, Object argB) {
         return arrayFormat(messagePattern, new Object[]{argA, argB});
     }
 
-    static Throwable getThrowableCandidate(Object[] argArray) {
+    static public Throwable getThrowableCandidate(Object[] argArray) {
         if (argArray == null || argArray.length == 0) {
             return null;
         }
@@ -158,7 +158,7 @@ final class MessageFormatter {
      *                       anchors
      * @return The formatted message
      */
-    static FormattingTuple arrayFormat(final String messagePattern,
+    static public FormattingTuple arrayFormat(final String messagePattern,
                                        final Object[] argArray) {
 
         Throwable throwableCandidate = getThrowableCandidate(argArray);
@@ -223,7 +223,7 @@ final class MessageFormatter {
         }
     }
 
-    static boolean isEscapedDelimeter(String messagePattern,
+    static public boolean isEscapedDelimeter(String messagePattern,
                                       int delimeterStartIndex) {
 
         if (delimeterStartIndex == 0) {
@@ -232,7 +232,7 @@ final class MessageFormatter {
         return messagePattern.charAt(delimeterStartIndex - 1) == ESCAPE_CHAR;
     }
 
-    static boolean isDoubleEscaped(String messagePattern,
+    static public boolean isDoubleEscaped(String messagePattern,
                                    int delimeterStartIndex) {
         return delimeterStartIndex >= 2 && messagePattern.charAt(delimeterStartIndex - 2) == ESCAPE_CHAR;
     }

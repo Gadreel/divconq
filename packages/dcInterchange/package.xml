@@ -9,5 +9,6 @@
 		<Package Name="dcCorePublic" MinVersion="0.9" />
 	
 		<Library File="javax.mail-1.5.jar" />
+		<Library File="sshd-core-0.13.0.jar"/>
 	</DependsOn>
 </Package>
