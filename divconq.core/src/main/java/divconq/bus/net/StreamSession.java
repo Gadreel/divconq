@@ -219,7 +219,7 @@ public class StreamSession {
 
     				this.chan = ch;
     	            
-    				this.router = Hub.instance.getBus().allocateOrGetHub(rhid);
+    				this.router = Hub.instance.getBus().allocateOrGetHub(rhid, session.getSocketInfo().isGateway());
     				this.router.addSession(this);
     				
                     Logger.info("dcBus stream " + this.getSessionMode() + " Greeted!");

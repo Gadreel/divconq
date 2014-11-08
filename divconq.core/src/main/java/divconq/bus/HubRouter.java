@@ -37,6 +37,7 @@ import divconq.lang.op.OperationObserver;
 import divconq.lang.op.OperationResult;
 import divconq.lang.op.UserContext;
 import divconq.log.Logger;
+import divconq.schema.ServiceSchema.Op;
 import divconq.session.DataStreamChannel;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
@@ -52,6 +53,7 @@ public class HubRouter {
 	
 	// used with local router
 	protected boolean local = false;
+	protected boolean gateway = false;
 	protected ConcurrentHashMap<String, IService> registered = new ConcurrentHashMap<String, IService>();
 	protected ReplyService localReplies = null;
 	
@@ -110,8 +112,9 @@ public class HubRouter {
 	}
 	
 	// use for remote router
-	public HubRouter(String id) {
+	public HubRouter(String id, boolean gateway) {
 		this.hubid = id;
+		this.gateway = gateway;
 	}
 	
 	// use for local router
@@ -314,6 +317,11 @@ public class HubRouter {
 			return or;
         }
 
+        if (this.gateway) {
+        	// TODO consider stripping AuthToken and SessionId and Credentials from message
+        	// when sending to gateway... review how this would work
+        }
+        
         // route to remote
 		Session sess = this.nextDirectRoute();
 		
@@ -351,7 +359,7 @@ public class HubRouter {
     		if (plist != null) {
     			for (Struct pitem : plist.getItems()) {
     				RecordStruct prec = (RecordStruct) pitem;
-    				HubRouter phub = Hub.instance.getBus().allocateOrGetHub(prec.getFieldAsString("Id"));
+    				HubRouter phub = Hub.instance.getBus().allocateOrGetHub(prec.getFieldAsString("Id"), session.getSocketInfo().isGateway());
     				
     				/*
     				if (phub == null) {
@@ -384,6 +392,118 @@ public class HubRouter {
 			return;
     	}            
         
+    	String service = msg.getFieldAsString("Service");
+    	String feature = msg.getFieldAsString("Feature");
+    	
+    	boolean looksLikeReply = ("Replies".equals(service) || ("Session".equals(service) && "Reply".equals(feature)));
+    	
+    	// =====================================================================
+    	// when coming from a gateway be very picky about what we allow through
+		// however, all calls to Replies service are allowed for now, we can get more specific later
+    	// and of course verify requests are allowed since we are the verifier :)
+    	// =====================================================================
+    	if (this.gateway && !msg.isVerifyRequest() && !looksLikeReply) {
+	        boolean isguest = true;
+	        
+	        RecordStruct context = msg.getFieldAsRecord("Context");
+			
+			// session must be present if not Guest 
+	        if (context == null) {
+	        	System.out.println("dcBus " + this.getHubId() + " tried to call without context, got: " + msg);
+	        	return;
+	        }
+	        
+			String uid = context.getFieldAsString("UserId");
+			
+			// session must be present if not Guest 
+	        if (StringUtil.isEmpty(uid)) {
+	        	System.out.println("dcBus " + this.getHubId() + " tried to call without userid, got: " + msg);
+	        	return;
+	        }
+			
+			if (!"00000_000000000000002".equals(uid))
+				isguest = false;
+			else if (!context.isFieldEmpty("AuthToken") || !context.isFieldEmpty("Credentials"))
+				isguest = false;
+			else {
+				ListStruct tags = context.getFieldAsList("AuthTags");
+				
+				if ((tags == null) || (tags.getSize() != 1))
+					isguest = false;
+				else if (!"Guest".equals(tags.getItemAsString(0)))
+					isguest = false;
+			}
+
+			// if not guest then we are even more picky
+			if (!isguest) {
+				Op op = Hub.instance.getSchema().getService().getOp(service, feature, msg.getFieldAsString("Op"));
+				
+				// operations tagged as Gateway can be called by gateway no matter what...even when gateway is hacked
+				// normal user tag check applies, Gateway only means it gets past here, not pass message validation
+				// though if gateway is hacked then a Gateway tag pretty much = callable as hacker can send Root context
+				if (!op.isTagged("Gateway")) {
+					String sid = context.getFieldAsString("SessionId");
+					
+					// session must be present if not Guest 
+			        if (StringUtil.isEmpty(sid)) {
+			        	System.out.println("dcBus " + this.getHubId() + " tried to call as user without session, got: " + msg);
+			        	return;
+			        }
+			        
+					String atoken = context.getFieldAsString("AuthToken");
+					
+					// session must be present if not Guest 
+			        if (StringUtil.isEmpty(atoken)) {
+			        	System.out.println("dcBus " + this.getHubId() + " tried to call as user without authtoken, got: " + msg);
+			        	return;
+			        }
+	
+			        String expectedhubid = session.getSocketInfo().getHubId();
+					
+					// session must be present if not Guest - session must come from gateway
+			        if (StringUtil.isNotEmpty(expectedhubid) && !sid.startsWith(expectedhubid)) {
+			        	System.out.println("dcBus " + this.getHubId() + " tried to call with session " + sid + ", got: " + msg);
+			        	return;
+			        }
+			        
+			        divconq.session.Session us = Hub.instance.getSessions().lookup(sid);
+			        
+			        if (us == null) {
+			        	System.out.println("dcBus " + this.getHubId() + " tried to call with missing session " + sid + ", got: " + msg);
+			        	return;
+			        }
+			        
+			        if (!atoken.equals(us.getUser().getAuthToken())) {
+			        	System.out.println("dcBus " + this.getHubId() + " tried to call with bad token " + atoken + ", got: " + msg);
+			        	return;
+			        }
+			        
+			        if (!uid.equals(us.getUser().getUserId())) {
+			        	System.out.println("dcBus " + this.getHubId() + " tried to call with user id for session " + uid + ", got: " + msg);
+			        	return;
+			        }
+					
+					//System.out.println("Gateway request passed checks, before context: " + context);
+			        
+			        // OK, we got this far, go forward but only with the context we had at login
+			        // copy the user context into the message
+			        us.getUser().freeze(context);
+			        
+					//System.out.println("Gateway request passed checks, after context: " + context);
+				}
+			}
+			
+			//System.out.println("Gateway request passed checks z: " + msg);
+    	}
+    	// TODO temp - show me messages coming into gateway from server 
+    	else if (!looksLikeReply) {
+			System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
+			System.out.println("Server request passed checks z: " + msg);
+			System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
+    	}
+    	
+    	// =====================================================================
+    	
     	// if message is not HELLO then it needs to be routed to the correct hub
     	String srv = msg.getFieldAsString("Service");
     	
@@ -414,7 +534,7 @@ public class HubRouter {
 
 		String hub = msg.getFieldAsString("ToHub");
 		
-		HubRouter router = Hub.instance.getBus().allocateOrGetHub(hub);
+		HubRouter router = Hub.instance.getBus().allocateOrGetHub(hub, session.getSocketInfo().isGateway());
 		
 		OperationResult routeres = router.deliverMessage(msg);
 		

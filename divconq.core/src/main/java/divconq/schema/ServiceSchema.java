@@ -118,7 +118,7 @@ public class ServiceSchema {
 		return this.getOp(msg.getFieldAsString("Service"), msg.getFieldAsString("Feature"), msg.getFieldAsString("Op"));
 	}
 	
-	protected Op getOp(String service, String feature, String op) {
+	public Op getOp(String service, String feature, String op) {
 		if (StringUtil.isEmpty(service))
 			return null;
 		
@@ -157,6 +157,22 @@ public class ServiceSchema {
 		
 		protected DataType request = null;
 		protected DataType response = null;
+		
+		public boolean isTagged(String... tags) {
+			if (this.securityTags == null) 
+				return false;
+			
+			for (int i = 0; i < this.securityTags.length; i++) {
+				String has = this.securityTags[i];
+
+				for (String wants : tags) {
+					if (has.equals(wants))
+						return true;
+				}
+			}
+			
+			return false;
+		}
 	}
 
 	public void compile(OperationResult mr) {

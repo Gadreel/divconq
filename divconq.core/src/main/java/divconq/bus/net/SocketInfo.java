@@ -43,6 +43,7 @@ public class SocketInfo {
 	protected int streamcount = 2;
 	protected String hubid = null;
 	protected String targetthumbprint = null;
+	protected boolean gateway = false;
 	
 	/*
 	 * <Connector Kind="[enum above]" Address="[ip/name]" HubId="[hubid]"  Port="[num]" Ssl="True|False" Number="[n]" TargetThumbprint="[targetthumbprint]" />
@@ -94,6 +95,8 @@ public class SocketInfo {
 		}
 		
 		this.useSsl = "true".equals(config.getAttribute("Ssl", "true").toLowerCase());
+		
+		this.gateway = "true".equals(config.getAttribute("Gateway", "false").toLowerCase());
 		
 		// TODO given just the hubid we should be able to find the address/port/thumbprint/kind from
 		// the MATRIX file...
@@ -155,6 +158,10 @@ public class SocketInfo {
 	
 	public boolean isUseSsl() {
 		return this.useSsl;
+	}
+	
+	public boolean isGateway() {
+		return this.gateway;
 	}
 	
 	public void setCount(int count) {

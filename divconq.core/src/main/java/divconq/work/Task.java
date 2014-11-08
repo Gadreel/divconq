@@ -18,6 +18,7 @@ package divconq.work;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.joda.time.DateTime;
 
@@ -30,7 +31,6 @@ import divconq.lang.op.OperationLogger;
 import divconq.lang.op.OperationObserver;
 import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
-import divconq.session.Session;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
@@ -39,6 +39,14 @@ import divconq.util.StringUtil;
 
 // conforms to dcTaskInfo data type
 public class Task {
+	static public String nextTaskId() {
+		  return Task.nextTaskId("DEFAULT");
+	}	
+	
+	static public String nextTaskId(String part) {
+		  return OperationContext.getHubId() + "_" + part + "_" + UUID.randomUUID().toString().replace("-", "");
+	}	
+	
 	// create a subtask of a running task
 	public static Task subtask(TaskRun run, String suffix, OperationCallback cb) {
 		Task t = new Task();
@@ -49,7 +57,7 @@ public class Task {
 		
 		// sub tasks can be found through "child" context
 		//t.withId(parent.getId() + "_" + Session.nextUUId());
-		t.withId(Session.nextTaskId());
+		t.withId(Task.nextTaskId());
 		t.withTitle(parent.getTitle() + " - Subtask: " + suffix);
 
 		t.withTimeout(parent.getTimeout());
@@ -547,7 +555,7 @@ public class Task {
 			this.info.setField("Title", "[unnamed]");
 		
 		if (this.info.isFieldEmpty("Id"))
-			this.info.setField("Id", Session.nextTaskId());
+			this.info.setField("Id", Task.nextTaskId());
 	}
 
 	/* doesn't work with lambda's

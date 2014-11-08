@@ -122,7 +122,7 @@ dc.comm = {
 				// TODO check for timeouts in Replies
 
 				// TODO		callbackfunc( { Result: 1, Message: "AJAX call failed or timed out." } );
-			}, 5000);
+			}, 55000);
 		}
 		catch(x) {
 			console.log('Unabled to create web socket: ' + x);

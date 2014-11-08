@@ -294,6 +294,18 @@ public class Bus {
 		
 		return router.isAvailable();
 	}
+
+	// used on gateways to lookup the hub id of the one hub they are connected to
+	// return the hub if of the single, active, hub that provides backend services for us
+	public String getTetherId() {
+		for (HubRouter hub : this.hubrouters.values()) {
+			// is direct detects if the hub is active and not local - if so we use that hub
+			if (hub.isDirect())
+				return hub.getHubId();
+		}
+		
+		return null;
+	}
 	
 	/* TODO restore but no waits
 	public void sendMessages(ServiceResult callback, TimeoutPlan timeout, Message... msgs) {
@@ -408,14 +420,14 @@ public class Bus {
     }
     */
     
-    public HubRouter allocateOrGetHub(String id) {
+    public HubRouter allocateOrGetHub(String id, boolean gateway) {
     	this.hubLock.lock();
    
     	try {
     		HubRouter hr = this.hubrouters.get(id);
 			
 			if (hr == null) {
-				hr = new HubRouter(id);
+				hr = new HubRouter(id, gateway);
 				this.hubrouters.put(id, hr);
 				
 				Hub.instance.getCountManager().allocateSetNumberCounter("dcBusHubCount", this.hubrouters.size());
@@ -500,7 +512,7 @@ public class Bus {
 			// ==========================================================================
 			
 			for (final SocketInfo info : this.connectors.values()) {
-				HubRouter router = this.allocateOrGetHub(info.getHubId());
+				HubRouter router = this.allocateOrGetHub(info.getHubId(), info.isGateway());
 				
 				if (router.isLocal())
 					continue;

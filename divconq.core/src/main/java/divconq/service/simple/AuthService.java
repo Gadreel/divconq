@@ -33,6 +33,7 @@ import divconq.lang.op.OperationContextBuilder;
 import divconq.lang.op.UserContext;
 import divconq.locale.LocaleUtil;
 import divconq.mod.ExtensionBase;
+import divconq.session.Session;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.HexUtil;
@@ -130,13 +131,30 @@ public class AuthService extends ExtensionBase implements IService {
 				String authToken = uc.getAuthToken();
 				
 				if (StringUtil.isNotEmpty(authToken)) {
-					if (this.sessions.contains(authToken)) {
+					System.out.println("---------- Token not empty");
+					
+					if (this.xmlMode) {
+						Session sess = Hub.instance.getSessions().lookup(request.getContext().getSessionId());
+						
+						System.out.println("---------- Xml Mode");
+						
+						if ((sess != null) && authToken.equals(sess.getUser().getAuthToken())) {
+							System.out.println("---------- Token verified");
+							
+							// verified
+							request.complete();
+							return;
+						}
+					}
+					else if (this.sessions.contains(authToken)) {
 						//System.out.println("verify existing");
 						
 						request.complete();
 						return;
 					}
 				}				
+				
+				System.out.println("---------- Token empty or bad");
 				
 				// else try to authenticate
 				RecordStruct creds = uc.getCredentials();  // msg.getFieldAsRecord("Credentials");
@@ -148,10 +166,14 @@ public class AuthService extends ExtensionBase implements IService {
 					return;
 				}
 				
+				System.out.println("---------- Using Creds");
+				
 				String uname = creds.getFieldAsString("UserName"); 
 				String passwd = creds.getFieldAsString("Password");
 				
 				if (this.xmlMode) {
+					System.out.println("---------- Xml Mode");
+					
 					DomainUsers du = this.xmlData.get(uc.getDomainId());
 					
 					if ((du == null) || !du.verify(uname, passwd)) {
@@ -183,17 +205,25 @@ public class AuthService extends ExtensionBase implements IService {
 				byte[] feedbuff = new byte[32];
 				this.random.nextBytes(feedbuff);
 				String token = HexUtil.bufferToHex(feedbuff);
-
-				this.sessions.add(token);
+				
+				System.out.println("---------- Verified and token");
 				
 				// create the new context
 				if (this.xmlMode) 
 					uc = this.xmlData.get(uc.getDomainId()).context(uname, token);
-				else
+				else 
 					uc = request.getContext().toBuilder().elevateToRootTask().withAuthToken(token).toUserContext();
 				
 				// make sure we use the new context in our return
 				OperationContext.switchUser(request.getContext(), uc);
+				
+				if (this.xmlMode) {
+					Session ss = Hub.instance.getSessions().findOrCreateTether(request.getContext());
+					System.out.println("---------- Session added: " + ss);
+				}
+				else {
+					this.sessions.add(token);
+				}
 				
 				System.out.println("verify new");
 				
@@ -204,7 +234,11 @@ public class AuthService extends ExtensionBase implements IService {
 			if ("SignOut".equals(op)) {
 				String authToken = uc.getAuthToken();
 				
-				if (StringUtil.isNotEmpty(authToken)) 
+				if (this.xmlMode) {
+					Hub.instance.getSessions().terminate(request.getContext().getSessionId());
+					System.out.println("---------- Session removed");
+				}
+				else if (StringUtil.isNotEmpty(authToken)) 
 					this.sessions.remove(authToken);
 				
 				this.clearUserContext(request.getContext());

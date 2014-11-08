@@ -1345,7 +1345,7 @@
 		</Service>
 		
 		<Service Name="dcDomains">
-			<Secure Tags="SysAdmin">
+			<Secure Tags="SysAdmin,Gateway">
 				<Feature Name="Manager">
 					<Op Name="LoadAll">
 						<Description>
@@ -1363,7 +1363,7 @@
 		</Service>
 		
 		<Service Name="Session">
-			<Secure Tags="Guest,User">
+			<Secure Tags="PowerUser,Admin,SysAdmin">
 				<Feature Name="Manager">
 					<Op Name="Start">
 						<Description>
@@ -1397,8 +1397,21 @@
 						<Request Inherits="RequestMessage">
 							<Field Name="Body" Required="True">
 								<Record>
-									<Field Name="Id" Type="dcTinyString" />
-									<Field Name="AccessCode" Type="dcTinyString" />
+									<Field Name="Id" Type="dcTinyString" Required="True" />
+									<Field Name="AccessCode" Type="dcTinyString" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="Touch">
+						<Description>
+							Keep a session alive - send and forget is fine.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcTinyString" Required="True" />
 								</Record>
 							</Field>
 						</Request>

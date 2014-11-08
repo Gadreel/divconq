@@ -23,13 +23,13 @@ import divconq.lang.op.OperationResult;
 import divconq.scheduler.ISchedulerDriver;
 import divconq.scheduler.ScheduleEntry;
 import divconq.scheduler.ScheduleEntry.ScheduleArea;
-import divconq.session.Session;
 import divconq.struct.CompositeParser;
 import divconq.struct.CompositeStruct;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.StringUtil;
+import divconq.work.Task;
 import divconq.xml.XElement;
 
 public class LocalSchedulerDriver implements ISchedulerDriver {
@@ -43,7 +43,7 @@ public class LocalSchedulerDriver implements ISchedulerDriver {
 				String id = task.getAttribute("Id");
 				
 				if (StringUtil.isEmpty(id))
-					id = Session.nextTaskId();
+					id = Task.nextTaskId();
 				
 				String title = task.getAttribute("Title");
 				

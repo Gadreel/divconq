@@ -56,7 +56,7 @@ public class ScriptFactory {
 	
 	static public Task createSingTask(String dedicated) {
 		// id is good for local or queue use 
-		String tid = divconq.session.Session.nextTaskId("12BottlesSong");
+		String tid = Task.nextTaskId("12BottlesSong");
 
 		OperationLogger logger = new OperationLogger();
 		

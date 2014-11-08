@@ -145,7 +145,7 @@ public class Scheduler {
 					sched.init(schedule);
 					
 					sched.setTask(new Task()
-						.withId(divconq.session.Session.nextTaskId("ScheduleLoader"))
+						.withId(Task.nextTaskId("ScheduleLoader"))
 						.withTitle("Scheduled Task Loader: " + rec.getFieldAsString("Title"))
 						.withRootContext()
 						.withWork(trun -> {

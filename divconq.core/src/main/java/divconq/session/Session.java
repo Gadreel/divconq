@@ -59,14 +59,6 @@ public class Session {
 		  return new BigInteger(130, Session.random).toString(32);
 	}	
 	
-	static public String nextTaskId() {
-		  return Session.nextTaskId("DEFAULT");
-	}	
-	
-	static public String nextTaskId(String part) {
-		  return OperationContext.getHubId() + "_" + part + "_" + UUID.randomUUID().toString().replace("-", "");
-	}	
-	
 	static public String nextUUId() {
 		  return UUID.randomUUID().toString().replace("-", "");
 	}	
@@ -74,6 +66,7 @@ public class Session {
 	protected String id = null;
 	protected String key = null;
 	protected long lastAccess = 0;
+	protected long lastTetherAccess = 0;
 	protected UserContext user = null;
 	protected DebugLevel level = null;
 	protected String originalOrigin = null;
@@ -171,7 +164,7 @@ Context: {
 		this.id = OperationContext.getHubId() + "_" + Session.nextSessionId();
 		this.key = StringUtil.buildSecurityCode();
 		this.level = Logger.getGlobalLevel();
-		this.user = UserContext.allocate(usrctx);		
+		this.user = UserContext.allocate(usrctx);
 		this.originalOrigin = "hub:";
 		
 		this.touch();
@@ -186,25 +179,68 @@ Context: {
 	public Session(OperationContext ctx) {
 		this(ctx.getUserContext().toBuilder());
 		
+		this.level = ctx.getLevel();		
 		this.originalOrigin = ctx.getOrigin();
 	}
 	
 	public void touch() {
-		this.lastAccess = System.currentTimeMillis();		
-	}
+		this.lastAccess = System.currentTimeMillis();
+
+		System.out.println("Session touched: " + this.id);
+		
+		// keep any tethered sessions alive by pinging them at least once every minute
+		if ((this.lastAccess - this.lastTetherAccess > 59000)		// if tether was last updated a minute or more ago  
+				&& this.user.isAuthenticated()						// if this is an authenticated user
+		) {
+			if (Hub.instance.getResources().isGateway()) {			// if we are a gateway
+				// at least for now, gateways are only ever tethered to 1 hub, so if we find that hub we have the dest
+				String tid = Hub.instance.getBus().getTetherId();
+				
+				if (StringUtil.isNotEmpty(tid)) {
+					OperationContext curr = OperationContext.get();
+					
+					try {
+						// be sure to send the message with the correct context
+						OperationContext.set(this.allocateContext());
+						
+						// send and forget the keep alive request
+						Message msg = new Message("Session", "Manager", "Touch",
+								new RecordStruct(new FieldStruct("Id", this.id)));
 	
-	// TODO user sessions can be idle for a longer time (7 minutes?) than guest sessions (75 seconds)
-	public boolean isLongRunning() {
-		return this.user.isTagged("User");
+						System.out.println("Session pinging tethered: " + this.id);
+						
+				    	msg.setField("ToHub", tid);
+						
+						Hub.instance.getBus().sendMessage(msg);
+					}
+					finally {
+						OperationContext.set(curr);
+					}
+				}
+			}
+			
+			// keep this up to date whether we are gateway or not, this way fewer checks
+			this.lastTetherAccess = this.lastAccess;
+		}
 	}
 	
 	public void end() {
 		//System.out.println("collab session ended: " + this.collabId);
 		if (!this.user.looksLikeGuest() && !this.user.looksLikeRoot()) {
-			Message msg = new Message("dcAuth", "Authentication", "SignOut");				
-			Hub.instance.getBus().sendMessage(msg);	
+			OperationContext curr = OperationContext.get();
 			
-			this.clearToGuest();
+			try {
+				// be sure to send the message with the correct context
+				OperationContext.set(this.allocateContext());
+				
+				Message msg = new Message("dcAuth", "Authentication", "SignOut");				
+				Hub.instance.getBus().sendMessage(msg);	
+				
+				this.clearToGuest();
+			}
+			finally {
+				OperationContext.set(curr);
+			}
 		}
 		
 		Logger.info("Ending session: " + this.id);
@@ -514,7 +550,7 @@ Context: {
 					// so the user verify will travel along with the request message 
 					OperationContext.switchUser(this.getContext(), uc);
 					
-					boolean nowlikeguest = Session.this.user.looksLikeGuest();
+					boolean nowlikeguest = uc.looksLikeGuest();
 					
 					if (nowlikeguest && !waslikequest)
 						cb.error(1, "User not authenticated!");
@@ -853,7 +889,8 @@ Context: {
 		this.user = UserContext.allocateRoot();
 	}
 
-	public void reviewPlan() {
+	public boolean reviewPlan(long clearGuest, long clearUser) {
+		// TODO add plans into mix - check both tasks and channels for completeness (terminate only on complete, vs on timeout, vs never)
 		// TODO add session plan features
 		
 		// review get called often - optimize so that as few objects as possible are 
@@ -885,6 +922,19 @@ Context: {
 				}		
 			}
 		}
+		
+		if (this.isLongRunning())
+			return ((this.lastAccess > clearUser) || this.keep); 
+		
+		return ((this.lastAccess > clearGuest) || this.keep); 
+	}
+	
+	// user sessions can be idle for a longer time (3 minutes default) than guest sessions (75 seconds default)
+	// why? because we need to keep tethered sessions going and we only want to send message once every minute
+	// and it might take user 1 minute to update their session, so to be sure to keep everything in line
+	// requires > 2 minutes
+	public boolean isLongRunning() {
+		return this.user.isTagged("User");
 	}
 
 	public Collection<DataStreamChannel> channels() {

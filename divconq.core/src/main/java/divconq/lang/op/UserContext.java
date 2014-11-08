@@ -125,12 +125,22 @@ public class UserContext {
 	}
 
 	/**
-	 * Verified tasks have been authenticated.  
+	 * Verified users have been authenticated or are the built-in Guest or Root users.  
 	 * 
-	 * @return true if task has been elevated
+	 * @return true if user does not require verification
 	 */
 	public boolean isVerified() {
 		return this.context.getFieldAsBooleanOrFalse("Verified");
+	}
+
+	/**
+	 * Authenticated users have been authenticated by dcAuth service.
+	 * Unlike isVerified we do not return true for the built-in Guest or Root users.  
+	 * 
+	 * @return true if user was authenticated via credentials
+	 */
+	public boolean isAuthenticated() {
+		return !this.context.isFieldEmpty("AuthToken");
 	}
 
 	/**

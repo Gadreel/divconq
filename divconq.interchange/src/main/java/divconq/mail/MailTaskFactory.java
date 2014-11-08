@@ -81,7 +81,7 @@ public class MailTaskFactory {
 		if (MailTaskFactory.processor == null)
 			return null;
 		
-		String tid = divconq.session.Session.nextTaskId("EMAIL");
+		String tid = Task.nextTaskId("EMAIL");
 		
 		if (StringUtil.isNotEmpty(MailTaskFactory.debugBCC))
 			params.setField("BccDebug", MailTaskFactory.debugBCC);

@@ -39,7 +39,6 @@ import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.log.Logger;
 import divconq.mod.ExtensionBase;
-import divconq.session.Session;
 import divconq.struct.CompositeParser;
 import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
@@ -114,7 +113,7 @@ public class FileWatcher extends ExtensionBase implements IService {
 					        				String id = task.getAttribute("Id");
 					        				
 					        				if (StringUtil.isEmpty(id))
-					        					id = Session.nextTaskId();
+					        					id = Task.nextTaskId();
 					        				
 					        				String title = task.getAttribute("Title");			        				
 					        				String script = task.getAttribute("Script");			        				

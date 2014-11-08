@@ -59,19 +59,14 @@ public class Sessions implements IService {
 				reporter.setStatus("Reviewing session plans");
 				
 				if (!Hub.instance.isStopping()) {
-					// sessions only last 1 minute
-					long clearGuest = System.currentTimeMillis() - (65 * 1000);		// TODO configure
-					//long clearUser = new DateTime().minusSeconds(301).getMillis();		// TODO maybe user can last longer?
+					// guest sessions only last 1 minute, users 5 minutes
+					long clearGuest = System.currentTimeMillis() - (75 * 1000);		// TODO configure - 1 minute, 15 secs
+					long clearUser = System.currentTimeMillis() - (195 * 1000);		// TODO config - 3 minutes, 15 secs 
 					
 					for (Session sess : Sessions.this.sessions.values()) {
-						sess.reviewPlan();
-						
-						// TODO add isLongRunnning check into the mix...
-						// TODO add plans into mix - check both tasks and channels for completeness (terminate only on complete, vs on timeout, vs never)
-						if ((sess.lastAccess < clearGuest) && !sess.keep) {
+						if (!sess.reviewPlan(clearGuest, clearUser)) {
 							Logger.info("Killing inactive session: " + sess.getId());
 							Sessions.this.terminate(sess.getId());
-							//System.out.println("cleanup");
 						}
 					}
 				}
@@ -106,20 +101,24 @@ public class Sessions implements IService {
 				return;
 			}
 			else if ("End".equals(op)) {
-				if (!req.isFieldEmpty("Id") && !req.isFieldEmpty("AccessCode")) {
-					Session s = this.sessions.get(req.getFieldAsString("Id"));
-					
-					if (s.getKey().equals(req.getFieldAsString("AccessCode"))) {
-						//this.sessions.remove(s.getId());
-						//s.end();
-						this.terminate(s.getId());
-						
-						request.complete();
-						return;
-					}
-				}
+				Session s = this.sessions.get(req.getFieldAsString("Id"));
 				
-				request.error(1, "Unable to end session, missing Id or Code or session already terminated.");		// TODO better codes
+				if ((s != null) && s.getKey().equals(req.getFieldAsString("AccessCode"))) 
+					this.terminate(s.getId());
+				else
+					request.error(1, "Unable to end session, missing Id or Code or session already terminated.");	
+				
+				request.complete();
+				return;
+			}
+			else if ("Touch".equals(op)) {
+				Session s = this.sessions.get(req.getFieldAsString("Id"));
+				
+				if (s != null) 
+					s.touch();
+				else
+					request.error(1, "Unable to touch session, missing Id or Code or session terminated.");	
+				
 				request.complete();
 				return;
 			}
@@ -281,6 +280,24 @@ public class Sessions implements IService {
 		this.sessions.put(s.getId(), s);
 		return s;
 	}
+
+	// based on current context/user
+	public Session findOrCreateTether(OperationContext ctx) {
+		String sid = ctx.getSessionId();
+		
+		Session s = this.sessions.get(sid);
+		
+		if (s == null) {
+			s = new Session(ctx);
+			s.id = ctx.getSessionId();			// we are not copying and do not have secret key...may need to review this in future
+			this.sessions.put(s.getId(), s);
+		}
+		else {
+			s.user = ctx.getUserContext();		
+		}
+		
+		return s;
+	}
 	
 	// runs a single task and then terminates session
 	public SessionTaskInfo createForSingleTaskAndDie(Task info) {		
@@ -318,6 +335,7 @@ public class Sessions implements IService {
 	}
 	
 	// runs a single task and then idles for "30" minutes
+	/* TODO review, we no longer give 30 minutes
 	public SessionTaskInfo createForSingleTaskAndWait(Task info) {
 		final Session session = this.createForContext(info.getContext());
 		
@@ -335,6 +353,7 @@ public class Sessions implements IService {
 		
 		return new SessionTaskInfo(session, run);
 	}
+	*/
 
 	public List<TaskRun> collectTasks(String... tags) {
 		List<TaskRun> matches = new ArrayList<TaskRun>();
@@ -364,6 +383,10 @@ public class Sessions implements IService {
 	}
 
 	public void terminate(String id) {
+		if (StringUtil.isEmpty(id))
+			return;
+		
+		// remove before end so we don't end up with infinite recursive terminate with dcAuth sign out
 		Session s = this.sessions.remove(id);
 
 		if (s != null)

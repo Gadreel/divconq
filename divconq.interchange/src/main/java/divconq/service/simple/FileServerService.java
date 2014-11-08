@@ -693,7 +693,7 @@ public class FileServerService extends ExtensionBase implements IService {
     				String id = task.getAttribute("Id");
     				
     				if (StringUtil.isEmpty(id))
-    					id = Session.nextTaskId();
+    					id = Task.nextTaskId();
     				
     				String title = task.getAttribute("Title");			        				
     				String script = task.getAttribute("Script");			        				

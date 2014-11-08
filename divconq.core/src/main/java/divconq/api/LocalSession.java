@@ -30,11 +30,15 @@ import divconq.bus.net.StreamMessage;
 import divconq.hub.Hub;
 import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationResult;
+import divconq.scheduler.ISchedule;
 import divconq.session.IStreamDriver;
 import divconq.session.ISessionAdapter;
 import divconq.session.Session;
 import divconq.session.DataStreamChannel;
 import divconq.struct.ListStruct;
+import divconq.work.IWork;
+import divconq.work.Task;
+import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 // TODO test to be sure that the user associated with the session is not
@@ -42,6 +46,7 @@ import divconq.xml.XElement;
 // to run multiple local sessions, all impersonating different users
 public class LocalSession extends ApiSession {
 	protected Session session = null;
+	protected ISchedule sched = null;
 	
 	@Override
 	public void init(XElement config) {
@@ -51,10 +56,24 @@ public class LocalSession extends ApiSession {
 	public void init(Session session, XElement config) {
 		this.session = session;
 		
-		this.session.setKeep(true);
+		//this.session.setKeep(true);
 		this.session.setAdatper(new LocalSessionAdatper());
 		
 		this.user = this.session.getUser();
+		
+		// don't think we need context here because .touch sets context anyway
+		Task touchtask = new Task()
+			.withTitle("Keep Local Session Alive: " + this.session.getId())
+			.withWork(new IWork() {				
+				@Override
+				public void run(TaskRun trun) {
+					LocalSession.this.session.touch();
+					trun.complete();
+				}
+			});
+		
+		// use the touch approach to keep session alive - for tethers in gateway
+		this.sched  = Hub.instance.getScheduler().runEvery(touchtask, 55);
 	}
 	
 	public class LocalSessionAdatper implements ISessionAdapter {			
@@ -80,6 +99,11 @@ public class LocalSession extends ApiSession {
 	
 	@Override
 	public void stopped() {
+		if (this.sched != null) {
+			this.sched.cancel();
+			this.sched = null;
+		}
+		
 		Hub.instance.getSessions().terminate(this.session.getId());		
 		
 		this.replies.forgetReplyAll();		

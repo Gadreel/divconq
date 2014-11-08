@@ -186,7 +186,7 @@ public class Session {
 	    	            }
     				}
     	            
-    				this.router = Hub.instance.getBus().allocateOrGetHub(rhid);
+    				this.router = Hub.instance.getBus().allocateOrGetHub(rhid, session.getSocketInfo().isGateway());
     				this.router.addSession(this);
 
     				this.chan = ch;
