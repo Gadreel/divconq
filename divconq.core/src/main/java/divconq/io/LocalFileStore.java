@@ -20,7 +20,7 @@ import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationResult;
 import net.contentobjects.jnotify.JNotify;

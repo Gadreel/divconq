@@ -301,4 +301,48 @@ public class IOUtil {
     public static LineIterator lineIterator(InputStream input, Charset encoding) throws IOException {
         return new LineIterator(new InputStreamReader(input, encoding));
     }
+    
+    public static long byteArrayToLong(byte[] b) {
+        return  (b[0] & 0xff) << 56
+        		| (b[1] & 0xff) << 48 
+        		| (b[2] & 0xff) << 40 
+        		| (b[3] & 0xff) << 32 
+        		| (b[4] & 0xff) << 24 
+        		| (b[5] & 0xff) << 16 
+        		| (b[6] & 0xff) << 8 
+        		| (b[7] & 0xff);
+    }
+
+    public static byte[] longToByteArray(long a) {
+        byte[] ret = new byte[8];
+        
+        ret[0] = (byte) ((a >> 56) & 0xff);
+        ret[1] = (byte) ((a >> 48) & 0xff);
+        ret[2] = (byte) ((a >> 40) & 0xff);
+        ret[3] = (byte) ((a >> 32) & 0xff);
+        ret[4] = (byte) ((a >> 24) & 0xff);
+        ret[5] = (byte) ((a >> 16) & 0xff);   
+        ret[6] = (byte) ((a >> 8) & 0xff);   
+        ret[7] = (byte) (a & 0xff);
+        
+        return ret;
+    }    
+    
+    public static int byteArrayToInt(byte[] b) {
+        return  (b[0] & 0xff) << 24
+        		| (b[1] & 0xff) << 16 
+        		| (b[2] & 0xff) << 8 
+        		| (b[3] & 0xff);
+    }
+
+    public static byte[] intToByteArray(int a) {
+        byte[] ret = new byte[4];
+        
+        ret[0] = (byte) ((a >> 24) & 0xff);
+        ret[1] = (byte) ((a >> 16) & 0xff);   
+        ret[2] = (byte) ((a >> 8) & 0xff);   
+        ret[3] = (byte) (a & 0xff);
+        
+        return ret;
+    }    
  }

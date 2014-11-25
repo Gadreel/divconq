@@ -70,15 +70,15 @@ public class Message extends RecordStruct {
 	}
 
 	public boolean hasErrors() {
-		return (this.getFieldAsInteger("Result", 0) > 0);
+		return MessageUtil.hasErrors(this);
 	}
 	
-	public int getCode() {
-		return (int) this.getFieldAsInteger("Result", 0);
+	public long getCode() {
+		return MessageUtil.getCode(this);
 	}
 	
 	public String getMessage() {
-		return this.getFieldAsString("Message");
+		return MessageUtil.getMessage(this);
 	}
 	
 	public ListStruct getMessages() {

@@ -37,7 +37,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.io.LineIterator;
 import divconq.lang.op.OperationResult;
 

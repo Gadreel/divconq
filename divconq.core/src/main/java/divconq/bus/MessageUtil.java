@@ -27,7 +27,6 @@ import divconq.work.TaskRun;
 public class MessageUtil {
 	static public Message success(String... flds) {
 		Message m = new Message();
-		m.setField("Result", 0);
 		
 		if (flds.length > 0) {
 			RecordStruct body = new RecordStruct();
@@ -55,35 +54,23 @@ public class MessageUtil {
 
 	public static Message success(Struct body) {
 		Message m = new Message();
-		m.setField("Result", 0);
 		m.setField("Body", body);
 		return m;
 	}
 	
+	// TODO discourage use of these following - use OC  .toLogMessage(); instead 
 	static public Message error(int code, String msg) {
 		OperationResult or = new OperationResult();
 		or.error(code, msg);
 		
-		return MessageUtil.messages(or);
+		return or.toLogMessage();
 	}
 	
 	static public Message errorTr(int code, Object... params) {
 		OperationResult or = new OperationResult();
 		or.errorTr(code, params);
 		
-		return MessageUtil.messages(or);
-	}
-	
-	static public Message messages(OperationResult ri) {
-		Message m = new Message();
-		
-		if (ri != null) {
-			m.setField("Result", ri.getCode());
-			m.setField("Message", ri.getMessage());
-			m.setField("Messages", ri.getMessages());
-		}
-		
-		return m;
+		return or.toLogMessage();
 	}
 	
 	static public Message fromRecord(RecordStruct msg) {
@@ -124,23 +111,8 @@ public class MessageUtil {
 	static public StreamMessage streamMessages(OperationResult ri) {
 		StreamMessage m = new StreamMessage();
 		
-		if (ri != null) {
-			m.setField("Result", ri.getCode());
-			m.setField("Message", ri.getMessage());
-			m.setField("Messages", ri.getMessages());
-		}
-		
-		return m;
-	}
-	
-	static public StreamMessage streamError(OperationResult ri, int code, String msg) {
 		if (ri != null) 
-			return MessageUtil.streamMessages(ri);
-
-		StreamMessage m = new StreamMessage();
-		
-		m.setField("Result", code);
-		m.setField("Message", msg);
+			m.setField("Messages", ri.getMessages());
 		
 		return m;
 	}
@@ -198,4 +170,83 @@ public class MessageUtil {
 		Message msg = (Message) request.getTask().getParams();
 		return msg.getFieldAsList("Body");
 	}
+	
+	// search backward through log to find an error, if we hit a message with an Exit tag then
+	// stop, as Exit resets Error (unless it is an error itself)
+	// similar to findExitEntry but stops after last Error as we don't need to loop through all
+	static public boolean hasErrors(RecordStruct rec) {
+		ListStruct msgs = rec.getFieldAsList("Messages");
+		
+		if (msgs == null)
+			return false;
+		
+		for (int i = msgs.getSize() - 1; i >= 0; i--) {
+			RecordStruct msg =  (RecordStruct) msgs.getItem(i);
+			
+			if ("Error".equals(msg.getFieldAsString("Level")))
+				return true;
+		
+			if (msg.hasField("Tags")) {
+				ListStruct tags = msg.getFieldAsList("Tags");
+				
+				if (tags.stringStream().anyMatch(tag -> tag.equals("Exit")))
+					break;
+			}
+		}
+		
+		return false;
+	}
+
+	static public long getCode(RecordStruct rec) {
+		RecordStruct entry = MessageUtil.findExitEntry(rec);
+		
+		if (entry == null)
+			return 0;
+		
+		return entry.getFieldAsInteger("Code", 0);
+	}
+
+	static public String getMessage(RecordStruct rec) {
+		RecordStruct entry = MessageUtil.findExitEntry(rec);
+		
+		if (entry == null)
+			return null;
+		
+		return entry.getFieldAsString("Message");
+	}
+
+	static public RecordStruct findExitEntry(RecordStruct rec) {
+		return MessageUtil.findExitEntry(rec, 0, -1);
+	}
+
+	// search backward through log to find an exit, if we hit a message with an Exit tag then
+	// stop, as Exit resets Error.  now return the first error after Exit.  if no errors after
+	// then return Exit
+	static public RecordStruct findExitEntry(RecordStruct rec, int msgStart, int msgEnd) {
+		ListStruct msgs = rec.getFieldAsList("Messages");
+		
+		if (msgs == null)
+			return null;
+		
+		if (msgEnd == -1)
+			msgEnd = msgs.getSize();
+		
+		RecordStruct firsterror = null;
+		
+		for (int i = msgEnd - 1; i >= msgStart; i--) {
+			RecordStruct msg =  (RecordStruct) msgs.getItem(i);
+			
+			if ("Error".equals(msg.getFieldAsString("Level")))
+				firsterror = msg;
+		
+			if (msg.hasField("Tags")) {
+				ListStruct tags = msg.getFieldAsList("Tags");
+				
+				if (tags.stringStream().anyMatch(tag -> tag.equals("Exit")))
+					return (firsterror != null) ? firsterror : msg;
+			}
+		}
+		
+		return firsterror;
+	}	
 }

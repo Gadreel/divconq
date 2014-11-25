@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;

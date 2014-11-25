@@ -18,9 +18,6 @@ package divconq.api;
 
 import divconq.bus.Message;
 import divconq.lang.TimeoutPlan;
-import divconq.struct.ListStruct;
-import divconq.struct.RecordStruct;
-import divconq.struct.Struct;
 
 abstract public class ServiceResult extends divconq.bus.ServiceResult {
 	protected ApiSession capi = null;
@@ -41,18 +38,7 @@ abstract public class ServiceResult extends divconq.bus.ServiceResult {
 	public void setReply(Message v) {
 		this.setResult(v);
 
-		// TODO review, does not appear to do anything useful
-		//if (!v.isFieldEmpty("Result") && !v.isFieldEmpty("Message")) 
-		//	this.exit(v.getFieldAsInteger("Result", 0), v.getFieldAsString("Message"));
-		
-		ListStruct h = v.getFieldAsList("Messages");
-		
-		if (h != null)
-			for (Struct st : h.getItems()) {
-				RecordStruct msg = (RecordStruct)st;
-				
-				this.opcontext.log(msg);
-			}
+		this.opcontext.logResult(v);
 	}
 	
 	@Override

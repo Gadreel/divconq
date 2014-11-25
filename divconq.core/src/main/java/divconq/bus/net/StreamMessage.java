@@ -18,6 +18,7 @@ package divconq.bus.net;
 
 import java.nio.ByteBuffer;
 
+import divconq.bus.MessageUtil;
 import divconq.struct.RecordStruct;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -56,8 +57,16 @@ public class StreamMessage extends RecordStruct {
 		this.data = Unpooled.copiedBuffer(buf.array(), 0, buf.position());
 	}
 
-	public boolean hasError() {
-		return (this.getFieldAsInteger("Result", 0) > 0);
+	public boolean hasErrors() {
+		return MessageUtil.hasErrors(this);
+	}
+	
+	public long getCode() {
+		return MessageUtil.getCode(this);
+	}
+	
+	public String getMessage() {
+		return MessageUtil.getMessage(this);
 	}
 
 	public boolean isFinal() {

@@ -23,10 +23,10 @@ import java.util.function.Consumer;
 import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.bus.MessageUtil;
+import divconq.filestore.CommonPath;
+import divconq.filestore.IFileStoreFile;
+import divconq.filestore.local.FileSystemDriver;
 import divconq.hub.Hub;
-import divconq.interchange.CommonPath;
-import divconq.interchange.FileSystemDriver;
-import divconq.interchange.IFileStoreFile;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationCallback;
@@ -82,6 +82,256 @@ public class FileServerService extends ExtensionBase implements IService {
 		}
 		
 		this.channels = Hub.instance.getSessions().createForService();
+	}
+	
+	@Override
+	public void start() {
+		super.start();
+		
+		/*
+		 *	Select: {
+		 *		Path: "/User/karabiner",
+		 *		Recursion: 999,     
+		 *		Content: false
+		 *	}
+		 *
+		 */
+
+    	/*
+        EventLoopGroup el = Hub.instance.getEventLoopGroup();
+    	
+        try {
+            ServerBootstrap sb = new ServerBootstrap()
+            	.group(el)
+              	.channel(NioServerSocketChannel.class)
+              	.handler(new ChannelInitializer<ServerSocketChannel>() {
+                  @Override
+                  public void initChannel(ServerSocketChannel ch) throws Exception {
+                      //ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
+                  }
+              	})
+              	//.childOption(ChannelOption.AUTO_READ, false)
+              	.childHandler(new ChannelInitializer<SocketChannel>() {
+              		@Override
+              		public void initChannel(SocketChannel ch) throws Exception {
+              			CtpAdapter adapter = FileServerService.this.channels.allocateCtpAdapter();
+
+              			adapter.setMapper(CtpfCommandMapper.instance);
+              			
+              			adapter.setHandler(new ICommandHandler() {			
+                      		protected IFileSelector lastSelector = null;
+                      		
+              				@Override
+              				public void handle(CtpCommand cmd, CtpAdapter adapter) {
+              					//System.out.println("Server got command: " + cmd.getCmdCode());
+              					
+            					if ((cmd instanceof RequestCommand) && ((RequestCommand)cmd).isOp(CtpConstants.CTP_F_OP_SELECT)) {
+            						FileSelection sel = new FileSelection()
+            							.withInstructions(((RequestCommand)cmd).getBody().getFieldAsRecord("Select"));
+            						
+              						this.lastSelector = FileServerService.this.fsd.select(sel);
+
+              						try {
+              							RecordStruct res = new RecordStruct(
+              								new FieldStruct("Messages", new ListStruct(
+                  								new RecordStruct(
+                      								new FieldStruct("Code", 1),
+                      								new FieldStruct("Message", "failed to list!!"),
+                      								new FieldStruct("Level", "Info"),		// Error to test error		
+                      								new FieldStruct("Occurred", "20141118T063704Z")
+                      							)
+              								))              								
+              							);
+              							
+              							ResponseCommand resp = new ResponseCommand();
+              							resp.setBody(res);
+              							
+										adapter.sendCommand(resp);
+	  								}
+	  								catch (Exception x) {
+	  									System.out.println("Ctp-F Server error: " + x);
+	  								}
+              					}
+            					
+            					if (cmd instanceof ResponseCommand) {
+            			            //System.out.println("Ctp-F Server: Client ACK the final block!");
+            					}
+            					
+            					if (cmd instanceof EngageCommand) {
+            			            System.out.println("Ctp-F Server: Client sent engage");
+            			            
+									try {
+										adapter.sendCommand(new ResponseCommand());
+									} 
+									catch (Exception x) {
+	  									System.out.println("Ctp-F Server error: " + x);
+									}
+            					}
+            					
+            					/*
+            					if ((cmd instanceof RequestCommand) && ((RequestCommand)cmd).isOp(CtpConstants.CTP_F_OP_INIT)) {
+            			            System.out.println("Ctp-F Server: Client sent init");
+            			            
+									try {
+										adapter.sendCommand(new ResponseCommand());
+									} 
+									catch (Exception x) {
+	  									System.out.println("Ctp-F Server error: " + x);
+									}
+            					}
+            					* /
+              					
+              					if ((cmd instanceof SimpleCommand) && (cmd.getCmdCode() == CtpConstants.CTP_F_CMD_STREAM_READ)) {
+              						if (this.lastSelector != null) {
+              							this.lastSelector.read(adapter);
+              							// TODO we should probably handle final back here??
+              						}
+              						else {
+              							System.out.println("Error - no select");
+              							// TODO send error response...
+              						}
+              					}
+              					
+              					if (cmd instanceof BlockCommand) {
+              						BlockCommand file = (BlockCommand) cmd;
+              						
+              						System.out.println("% " + file.getPath() + "     " + file.getSize()
+              								+ "     " + (file.isFolder() ? "FOLDER" : "FILE"));
+              						
+              						adapter.read();
+              					}
+              					
+              					if ((cmd instanceof SimpleCommand) && (cmd.getCmdCode() == CtpConstants.CTP_F_CMD_STREAM_WRITE)) {
+            			            System.out.println("Ctp-F Server: Client sent WRITE");
+            			            
+									try {
+										adapter.sendCommand(new ResponseCommand());
+									} 
+									catch (Exception x) {
+	  									System.out.println("Ctp-F Server error: " + x);
+									}
+              					}
+              					
+              					// get more, unless a stream command - then let it handle automatically
+              					if (!(cmd instanceof IStreamCommand)) {
+              						//System.out.println("Server issues read!!");
+              						adapter.read();
+              					}
+              					
+              					cmd.release();
+              				}
+              				
+              				@Override
+              				public void close() {
+              					System.out.println("Server Connection closed");
+              				}
+              			});
+              			
+              			//tunnel.read();
+          			
+          				ch.pipeline().addLast(
+          						//new SslHandler(SslContextFactory.getServerEngine()),
+          						
+          						// TODO put Zlib encoding directly into CtpHandler so "read" works better
+      	            		  //new JdkZlibEncoder(ZlibWrapper.ZLIB),
+    	            		  //new JdkZlibDecoder(ZlibWrapper.ZLIB),	            		  
+								//new LoggingHandler(LogLevel.INFO),
+    	            		  
+                                //new LoggingHandler(LogLevel.INFO),
+          						new CtpHandler(adapter, true)
+                		 );
+          			    
+          				/* server not responsible for keep alive
+          			    Task alive = new Task().withWork(new IWork() {			
+          					@Override
+          					public void run(TaskRun trun) {
+          			            //System.out.println("Ctp Client - Active: " + chx.isActive());
+          			            
+          			            try {
+          			            	adapter.sendCommand(CtpCommand.ALIVE);
+          						}
+          						catch (Exception x) {
+          							System.out.println("Ctp-F Client error: " + x);
+          						}
+          			            
+          			            trun.complete();
+          					}
+          				});
+          			    
+          			    Hub.instance.getScheduler().runEvery(alive, 30);
+          				* /
+              		}
+              	});
+
+    	    // Start the server.
+    	    sb.bind(8181).sync();
+        } 
+        catch (Exception x) {
+        	System.out.println("FS Start Error: " + x);
+        }
+		*/
+		
+		/*
+		System.out.println("Folder Listing: ");
+		
+		IFileSelector selector = this.fsd.select(
+				new FileSelection()
+					.withRelativeTo("/User")
+					.withFileSet("/karabiner", 2)
+					.withForListing(true)
+		);
+		
+		selector.forEach(new FuncCallback<IFileStoreFile>() {
+			@Override
+			public void callback() {
+				System.out.println("Path: " + this.getResult().getPath());
+				System.out.println("RelativePath: " + this.getResult().path().subpath(selector.selection().relativeTo()));
+			}
+		});
+		
+		System.out.println();
+		System.out.println("Folder Detail: ");
+		
+		IFileSelector selector2 = this.fsd.select(
+				new FileSelection()
+					.withFileSet("/User/karabiner", 0)
+		);
+		
+		selector2.forEach(new FuncCallback<IFileStoreFile>() {
+			@Override
+			public void callback() {
+				System.out.println("FileName: " + this.getResult().getName());
+				System.out.println("Path: " + this.getResult().getPath());
+				System.out.println("LastModified: " + this.getResult().getModification());
+			}
+		});
+		*/
+		
+		//CommonPath path = new CommonPath("/User/karabiner");
+		
+		/*
+		CommonPath path = new CommonPath("/User/Salt");
+		
+		this.fsd.getFolderListing(path, new FuncCallback<List<IFileStoreFile>>() {			
+			@Override
+			public void callback() {
+				if (this.hasErrors()) {
+					System.out.println("Folder Listing Failed: " + this.getMessage());
+					return;					
+				}
+				
+				for (IFileStoreFile file : this.getResult()) {
+					System.out.println();
+					System.out.println("FileName: " + file.getName());
+					System.out.println("IsFolder: " + file.isFolder());
+					System.out.println("LastModified: " + file.getModification());
+					System.out.println("Size: " + file.getSize());
+				}
+				
+				System.out.println();
+			}
+		});
+		*/
 	}
 	
 	@Override

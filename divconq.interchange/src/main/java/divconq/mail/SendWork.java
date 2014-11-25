@@ -37,7 +37,6 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
 import divconq.bus.Message;
-import divconq.bus.MessageUtil;
 import divconq.hub.Hub;
 import divconq.io.InputWrapper;
 import divconq.io.OutputWrapper;
@@ -219,7 +218,7 @@ public class SendWork implements IWork {
 			RecordStruct smsg = req.getFieldAsRecord("StatusMessage");		
 			
 			if (smsg != null) {
-				Message smsg2 = MessageUtil.messages(task);
+				Message smsg2 = task.toLogMessage();
 				smsg2.copyFields(smsg);
 				Hub.instance.getBus().sendMessage(smsg2);
 			}

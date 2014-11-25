@@ -19,9 +19,9 @@ package divconq.script.inst.file;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import divconq.interchange.CommonPath;
-import divconq.interchange.FileSystemDriver;
-import divconq.interchange.FileSystemFile;
+import divconq.filestore.CommonPath;
+import divconq.filestore.local.FileSystemDriver;
+import divconq.filestore.local.FileSystemFile;
 import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
 import divconq.script.inst.With;

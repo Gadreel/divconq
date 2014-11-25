@@ -48,6 +48,7 @@ import divconq.api.IApiSessionFactory;
 import divconq.bus.Bus;
 import divconq.bus.Message;
 import divconq.count.CountManager;
+import divconq.ctp.net.CtpServices;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
@@ -107,6 +108,7 @@ public class Hub {
 	protected List<ModuleLoader> orderedModules = new ArrayList<>();
 
 	protected Bus bus = new Bus();
+	protected CtpServices ctp = new CtpServices();
 	protected WorkPool workpool = null;
 	protected WorkQueue workqueue = new WorkQueue(); 
 	protected Scheduler scheduler = new Scheduler();
@@ -341,6 +343,10 @@ public class Hub {
 	
 	public Bus getBus() {
 		return this.bus;
+	}
+	
+	public CtpServices getCtp() {
+		return this.ctp;
 	}
 	
 	public LocalFileStore getLocalFileStore() {
@@ -636,6 +642,8 @@ public class Hub {
 		
 		or.debug(0, "Initializing Bus");
 		
+		this.ctp.init(config.find("Ctp"));
+		
 		// setup our bus
 		this.bus.init(or, config.find("Bus"));
 		
@@ -743,7 +751,7 @@ public class Hub {
 					if (!Hub.instance.isStopping())  {
 						FileUtil.cleanupTemp();
 					
-						OperationContext.cleanUp();
+						//OperationContext.cleanUp();
 					}
 					
 					reporter.setStatus("After cleaning contexts and temp files");
@@ -881,6 +889,8 @@ public class Hub {
 		}
 		
 		or.debug(0, "Stopping bus matrix");
+		
+		this.ctp.stopMatrix();
 		
 		// will wait up to 2 seconds for each session to close (should be faster)
 		this.bus.stopMatrix(or);

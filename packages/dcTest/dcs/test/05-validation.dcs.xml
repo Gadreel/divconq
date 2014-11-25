@@ -31,7 +31,6 @@
 	<!-- this is a valid ResponseMessage -->
 	<Var Name="resp" Type="ResponseMessage">
 		<SetField Name="Service" Value="Reply" />
-		<SetField Name="Result" Value="6" />
 		<NewList Name="Messages" />
 		<Validate />
 	</Var>

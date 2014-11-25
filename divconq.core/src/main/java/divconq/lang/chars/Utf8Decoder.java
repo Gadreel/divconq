@@ -31,6 +31,8 @@ public class Utf8Decoder implements ICharDecoder {
     private int charatcer = 0;
     private boolean needMore = false;
 
+    // TODO consider maybe array of char instead of string builder? then return new String(array)?
+    // prescan for size
     protected List<StringBuilder32> result = new ArrayList<StringBuilder32>();
     private int lastSpecial = -1;
     

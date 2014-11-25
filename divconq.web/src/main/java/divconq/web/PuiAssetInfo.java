@@ -19,7 +19,7 @@ package divconq.web;
 import java.nio.file.Path;
 import java.util.Map.Entry;
 
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.io.ByteBufWriter;
 import divconq.lang.op.FuncResult;
 import divconq.util.IOUtil;

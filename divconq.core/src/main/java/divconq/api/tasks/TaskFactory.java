@@ -21,7 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import divconq.api.ApiSession;
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.log.Logger;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;

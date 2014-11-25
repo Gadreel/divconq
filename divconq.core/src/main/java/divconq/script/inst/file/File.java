@@ -16,9 +16,9 @@
 ************************************************************************ */
 package divconq.script.inst.file;
 
-import divconq.interchange.CommonPath;
-import divconq.interchange.IFileStoreDriver;
-import divconq.interchange.IFileStoreFile;
+import divconq.filestore.CommonPath;
+import divconq.filestore.IFileStoreDriver;
+import divconq.filestore.IFileStoreFile;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;

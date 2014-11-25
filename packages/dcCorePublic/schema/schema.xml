@@ -122,12 +122,18 @@
 		
 		<!-- UserCredentials may be overriden by customer (install) to reflect their credentialing system -->
 		<Record Id="UserCredentials">
-			<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+			<Field Name="UserName" Type="dcUser:dcUserName" />
 			<Field Name="Password" Type="dcUser:dcPassword" />
 			<Field Name="ConfirmationCode" Type="dcUser:dcConfirmCode" />
-			<Field Name="ThumbPrint" Type="dcTinyString" />
-			<Field Name="PublicKey" Type="String" />
-			<!-- Field Name="Domain" Type="dcDomain:dcName" / -->
+			<Field Name="AccessCode" Type="dcTinyString" />
+			<Field Name="SessionId" Type="dcTinyString" />
+			<!-- caller does not set this, it is set by the connection code after verifying the client key (or Verified = false if not)  -->
+			<!--  - ThumbPrint for login is automatically set by server using the TLS or SSH client key
+				  - server must have a copy of all possible client public keys with which to verify the client key
+				  - only the thumbprint is passed to the Auth module - presence of ThumbPrint means it was verified by server
+			-->
+			<Field Name="KeyThumbPrint" Type="dcSmallString" />
+			<Field Name="KeyVerified" Type="Boolean" />
 		</Record>
 		
 		<Record Id="UserContext">
@@ -178,11 +184,12 @@
 			<Field Name="Code" Type="Integer" Required="True" />
 			<Field Name="Occurred" Type="DateTime" Required="True" />
 			<Field Name="Message" Type="String" />
+			<Field Name="Tags">
+				<List Type="dcTinyString" />
+			</Field>
 		</Record>			
 		
 		<Record Id="ResponseMessage" Inherits="CoreMessage">
-			<Field Name="Result" Type="Integer" Required="True" />
-			<Field Name="Message" Type="String" />
 			<Field Name="Messages">
 				<List Type="ResultMessage" />
 			</Field>
@@ -199,8 +206,23 @@
 		
 		<!-- any message should conform to GenericMessage at the least -->
 		<Record Id="GenericMessage" Inherits="RequestMessage,ResponseMessage">
-			<Field Name="Result" Type="Integer" />		<!-- not required -->
 			<Field Name="Body" Type="Any" />
+		</Record>
+		
+		<Record Id="CtpResponseMessage">
+			<Field Name="Body" Type="Any" />
+			<Field Name="Messages">
+				<List Type="ResultMessage" />
+			</Field>
+		</Record>
+		
+		<Record Id="CtpSEngageMessage">
+			<Field Name="ClientVersion" Type="dcTinyString" />
+			<Field Name="ClientName" Type="dcTinyString" />
+			<Field Name="Credentials" Type="UserCredentials" />
+			<Field Name="Service" Type="dcSmallString" Required="True" />
+			<Field Name="Protocol" Type="dcTinyString" Required="True" />
+			<Field Name="Params" Type="Any" />
 		</Record>
 		
 		<!-- incoming RPC messages must conform -->
@@ -219,8 +241,6 @@
 			<Field Name="RespondTo" Type="dcTinyString" />
 
 			<!-- may contain response -->
-			<Field Name="Result" Type="Integer" />
-			<Field Name="Message" Type="String" />
 			<Field Name="FromHub" Type="dcHubId" />
 			<Field Name="Messages">
 				<List Type="ResultMessage" />
@@ -231,8 +251,6 @@
 		</Record>
 		
 		<Record Id="StreamMessage">
-			<Field Name="Result" Type="Integer" />
-			<Field Name="Message" Type="String" />
 			<Field Name="Messages">
 				<List Type="ResultMessage" />
 			</Field>

@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.web;
 
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.io.FileStoreEvent;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationResult;

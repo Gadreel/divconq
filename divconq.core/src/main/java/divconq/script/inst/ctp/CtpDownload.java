@@ -21,8 +21,8 @@ import java.nio.file.Paths;
 
 import divconq.api.ApiSession;
 import divconq.api.tasks.DownloadFile;
+import divconq.filestore.CommonPath;
 import divconq.hub.Hub;
-import divconq.interchange.CommonPath;
 import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationContext;
 import divconq.script.ExecuteState;

@@ -19,7 +19,7 @@ package divconq.view;
 import java.util.HashMap;
 import java.util.Map;
 
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationCallback;
 import divconq.web.IWebExtension;

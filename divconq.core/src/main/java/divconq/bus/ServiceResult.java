@@ -23,7 +23,6 @@ import divconq.lang.op.OperationContext;
 import divconq.lang.op.UserContext;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
-import divconq.struct.Struct;
 
 abstract public class ServiceResult extends FuncCallback<Message> {
 	protected String replytag = null;
@@ -54,14 +53,7 @@ abstract public class ServiceResult extends FuncCallback<Message> {
 	public void setReply(Message v) {
 		this.setResult(v);
 		
-		ListStruct h = v.getFieldAsList("Messages");
-		
-		if (h != null)
-			for (Struct st : h.getItems()) {
-				RecordStruct msg = (RecordStruct)st;
-				
-				this.opcontext.log(msg);
-			}
+		this.opcontext.logResult(v);
 		
 		UserContext usr = OperationContext.get().getUserContext(); 
 		

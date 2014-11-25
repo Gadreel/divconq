@@ -65,6 +65,8 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 	}
 	
 	public TaskRun() {
+		super();
+		
 		this.task = new Task(); 
 		this.task.withSubContext();
 		
@@ -72,6 +74,8 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 	}
 	
 	public TaskRun(Task info) {
+		super();
+		
 		this.task = info;
 		this.msgStart = 0;
 	}
@@ -87,6 +91,8 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 		OperationContext ctx = this.task.getContext();
 		
 		this.opcontext = ctx;
+		
+		this.markStart();
 
 		// add any new observers
 		for (IOperationObserver ob : this.task.getObservers())
@@ -296,6 +302,9 @@ public class TaskRun extends FuncResult<Struct> implements Runnable {
 	}		
 	
 	public void resume() {
+		if (this.opcontext != null)
+			this.opcontext.touch();
+		
 		Hub.instance.getWorkPool().submit(this);		
 	}
 	

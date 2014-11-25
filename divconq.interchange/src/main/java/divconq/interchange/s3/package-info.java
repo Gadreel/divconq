@@ -17,7 +17,7 @@
 
  /**
  * This package once provided an S3 implementation of the DivConq File System.
- * It effectively made a remote S3 services function as a {@link divconq.interchange.FileSystemDriver}.
+ * It effectively made a remote S3 services function as a {@link divconq.filestore.local.FileSystemDriver}.
  * 
  * TODO restore this functionality once we have the regular local FS API figured out.
  */

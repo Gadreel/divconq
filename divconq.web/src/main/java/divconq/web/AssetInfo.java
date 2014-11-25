@@ -24,7 +24,7 @@ import io.netty.handler.codec.http.HttpChunkedInput;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.stream.ChunkedInput;
 import io.netty.handler.stream.ChunkedNioFile;
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.io.ByteBufWriter;
 import divconq.util.FileUtil;
 import divconq.util.MimeUtil;

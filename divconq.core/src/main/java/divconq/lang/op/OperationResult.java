@@ -20,7 +20,6 @@ import divconq.bus.Message;
 import divconq.log.DebugLevel;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
-import divconq.util.StringUtil;
 
 /**
  * Provides info about the success of a method call - like a boolean return - only with more info.
@@ -52,11 +51,15 @@ public class OperationResult {  //implements GroovyObject {  TODO provide middle
     public OperationResult(OperationContext ctx) {
     	this.opcontext = (ctx != null) ? ctx : OperationContext.allocateGuest();
     	
-    	this.msgStart = this.opcontext.messages.size();
+    	this.msgStart = this.opcontext.logMarker();
+    }
+    
+    public void markStart() {
+    	this.msgStart = this.opcontext.logMarker();
     }
     
     public void markEnd() {
-    	this.msgEnd = this.opcontext.messages.size();	// end is exclusive, so size is right
+    	this.msgEnd = this.opcontext.logMarker();	// end is exclusive, so size is right
     }
     
     public OperationContext getContext() {
@@ -221,28 +224,7 @@ public class OperationResult {  //implements GroovyObject {  TODO provide middle
 	public Message toLogMessage() {
 		Message m = new Message();
 		
-		m.setField("Result", this.getCode());
-		
-		String msg = this.getMessage();
-		
-		if (StringUtil.isNotEmpty(msg)) 
-			m.setField("Message", msg);
-		
 		m.setField("Messages", this.opcontext.getMessages(this.msgStart, this.msgEnd));		
-		
-		return m;
-	}
-	
-	// don't include all the Messages, overkill for an external response
-	public Message toBasicLogMessage() {
-		Message m = new Message();
-		
-		m.setField("Result", this.getCode());
-		
-		String msg = this.getMessage();
-		
-		if (StringUtil.isNotEmpty(msg)) 
-			m.setField("Message", msg);
 		
 		return m;
 	}

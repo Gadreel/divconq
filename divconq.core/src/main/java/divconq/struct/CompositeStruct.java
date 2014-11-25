@@ -153,13 +153,7 @@ abstract public class CompositeStruct extends Struct implements ICompositeOutput
 		return rb.getMemory();
 	}
 	
-	/**
-	 * Convert the structure to Json and return in Memory (think StringBuilder in this usage).
-	 *  
-	 * @param buf buffer to write into
-	 * @throws BuilderStateException if the structure is invalid then this exception arises
-	 */
-	public void toSerial(ByteBuf buf) throws BuilderStateException {		// TODO return funcresult
+	public void toSerial(ByteBuf buf) throws BuilderStateException {		
 		CompositeToBufferBuilder rb = new CompositeToBufferBuilder(buf);		
 		this.toBuilder(rb);		
 		rb.write(Special.End);

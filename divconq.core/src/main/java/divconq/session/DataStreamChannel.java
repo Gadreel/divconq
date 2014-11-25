@@ -21,8 +21,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import divconq.bus.MessageUtil;
 import divconq.bus.net.StreamMessage;
+import divconq.filestore.CommonPath;
 import divconq.hub.Hub;
-import divconq.interchange.CommonPath;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
@@ -285,7 +285,7 @@ public class DataStreamChannel extends OperationResult {
 		
 		Logger.trace("Stream Message: " + msg.toPrettyString());
 		
-		if (msg.hasError()) {
+		if (msg.hasErrors()) {
 			this.close();
         	msg.release();
 			return;

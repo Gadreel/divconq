@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.util.StringUtil;
 import divconq.www.http.ContentType;
 import divconq.www.http.parse.ContentTypeParser;

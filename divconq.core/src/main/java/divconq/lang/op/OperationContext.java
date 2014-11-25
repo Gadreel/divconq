@@ -34,6 +34,7 @@ import divconq.session.Session;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.struct.Struct;
 import divconq.util.StringUtil;
 import divconq.util.TimeUtil;
 import divconq.work.TaskRun;
@@ -158,6 +159,7 @@ public class OperationContext {
 	// without a reset - this could throw off the markers in any OR pointing to hub/default
 	// but generally that is such a small problem...not worried about it.
 	// Hub startup and shutdown are exempt from this, which is when they are used most
+	/*
 	public static void cleanUp() {
 		while (OperationContext.hubcontext.messages.size() > 1000)
 			OperationContext.hubcontext.messages.remove(0);
@@ -165,6 +167,7 @@ public class OperationContext {
 		while (OperationContext.defaultcontext.messages.size() > 1000)
 			OperationContext.defaultcontext.messages.remove(0);
 	}
+	*/
 	
 	/**
 	 * @return context of the current thread, if any
@@ -192,7 +195,8 @@ public class OperationContext {
 	 * @param v context for current thread to use
 	 */
 	static public void set(OperationContext v) {
-		OperationContext.context.set(v);
+		if (v != null)
+			OperationContext.context.set(v);
 	}
 	
 	/**
@@ -386,6 +390,11 @@ public class OperationContext {
 	protected UserContext userctx = null;
 	protected DebugLevel level = Logger.getGlobalLevel();
 	
+	protected boolean limitLog = true;
+	protected int logOffset = 0;
+	
+	protected List<RecordStruct> messages = new ArrayList<>();
+	
 	// ======================================================
 	// these vars used only locally, not included in bus calls
 	// nor in any workqueue calls, these work locally only
@@ -396,8 +405,6 @@ public class OperationContext {
 	
 	protected OperationContext parent = null;
 	protected List<WeakReference<OperationContext>> children = new ArrayList<>();
-	
-	protected List<RecordStruct> messages = new ArrayList<>();
 
 	// progress tracking
     protected int progTotalSteps = 0;
@@ -416,13 +423,27 @@ public class OperationContext {
     public void touch() {
     	this.lastactivity = System.currentTimeMillis();
     }
+
+    // touch parent context too 
+    public void deepTouch() {
+		this.fireEvent(OperationEvents.PROGRESS, OperationEvents.PROGRESS_AMOUNT);
+    }
     
     public long getLastActivity() {
 		return this.lastactivity;
 	}
 	
+    public void setLimitLog(boolean v) {
+		this.limitLog = v;
+	}
     
+    public boolean isLimitLog() {
+    	return this.limitLog;
+    }
     
+    public int logMarker() {
+    	return this.logOffset + this.messages.size();
+    }
     
 	// once elevated we can call any service we want, but first we must
 	// call a service we are allowed to call
@@ -494,6 +515,10 @@ public class OperationContext {
 	 */
 	public DebugLevel getLevel() {
 		return this.level;
+	}
+	
+	public void setLevel(DebugLevel v) {
+		this.level = v;
 	}
 	
 	/**
@@ -702,9 +727,13 @@ public class OperationContext {
 	// stop, as Exit resets Error.  now return the first error after Exit.  if no errors after
 	// then return Exit
 	public RecordStruct findExitEntry(int msgStart, int msgEnd) {
+		msgStart -= this.logOffset;		// adjust so the markers are relative to the current collection of messages, assuming some may have been purged
+		
 		if (msgEnd == -1)
 			msgEnd = this.messages.size();
-		
+		else
+			msgEnd -= this.logOffset;
+			
 		RecordStruct firsterror = null;
 		
 		for (int i = msgEnd - 1; i >= msgStart; i--) {
@@ -729,8 +758,12 @@ public class OperationContext {
 	}
 
 	public ListStruct getMessages(int msgStart, int msgEnd) {
+		msgStart -= this.logOffset;		// adjust so the markers are relative to the current collection of messages, assuming some may have been purged
+		
 		if (msgEnd == -1)
 			msgEnd = this.messages.size();
+		else
+			msgEnd -= this.logOffset;
 		
 		return new ListStruct(this.messages.subList(msgStart, msgEnd).toArray());	
 	}
@@ -744,8 +777,12 @@ public class OperationContext {
 	}
 
 	public boolean hasCode(long code, int msgStart, int msgEnd) {
+		msgStart -= this.logOffset;		// adjust so the markers are relative to the current collection of messages, assuming some may have been purged
+		
 		if (msgEnd == -1)
 			msgEnd = this.messages.size();
+		else
+			msgEnd -= this.logOffset;
 		
 		for (int i = msgStart; i < msgEnd; i++) {
 			RecordStruct msg =  this.messages.get(i); 
@@ -880,7 +917,7 @@ public class OperationContext {
 		if (tags.length > 0)
 			entry.setField("Tags", new ListStruct((Object[])tags));
 		
-		this.log(entry);
+		this.log(entry, lvl);
 		
 		// pass the message to logger 
 		if (this.getLevel().getCode() >= lvl.getCode()) {
@@ -910,7 +947,7 @@ public class OperationContext {
 				new FieldStruct("Message", msg)
 		);
 		
-		this.log(entry);
+		this.log(entry, lvl);
 	
 		// pass the code to logger 
 		if (this.getLevel().getCode() >= lvl.getCode()) 
@@ -930,7 +967,7 @@ public class OperationContext {
 				new FieldStruct("Tags", new ListStruct((Object[])tags))
 		);
 		
-		this.log(entry);
+		this.log(entry, DebugLevel.Info);
 		
 		// pass the code to logger 
 		if (this.getLevel().getCode() >= DebugLevel.Info.getCode())
@@ -941,9 +978,38 @@ public class OperationContext {
 	// not generally called by code, internal use mostly
     // call this to bypass the Hub logger - for example a bus callback 
 	public void log(RecordStruct entry) {
+		this.log(entry, DebugLevel.parse(entry.getFieldAsString("Level")));
+	}
+	
+	public void log(RecordStruct entry, DebugLevel lvl) {
+		// think twice about logging debug or trace so we don't overflow the OC log
+		// always log Info, Error, Warn so it bubbles up and so "hasCode" is relable at those levels
+		if ((lvl == DebugLevel.Debug) || (lvl == DebugLevel.Trace)) {
+			if (this.getLevel().getCode() < lvl.getCode()) 
+				return;
+		}
+		
+		if (this.limitLog) {
+			while (this.messages.size() > 999) {		// no more than 1000 messages when limit is on
+				this.messages.remove(0);
+				this.logOffset++;
+			}
+		}
+		
+		// this isn't thread safe, and much of the time it won't be much of an issue
+		// but could consider Stamp Lock approach to accessing messages array
 		this.messages.add(entry);
 		
 		this.fireEvent(OperationEvents.LOG, entry);
+	}
+	
+	public void logResult(RecordStruct v) {
+		ListStruct h = v.getFieldAsList("Messages");
+		
+		if (h != null) {
+			for (Struct st : h.getItems()) 
+				this.log((RecordStruct) st);
+		}
 	}
 
 	public boolean isLevel(DebugLevel debug) {
@@ -1108,6 +1174,11 @@ public class OperationContext {
     
     // events might fire from external context, keep this in mind
     public void fireEvent(OperationEvent event, Object detail) {
+    	this.fireEvent(this, event, detail);
+	}
+    
+    // events might fire from external context, keep this in mind
+    public void fireEvent(OperationContext src, OperationEvent event, Object detail) {
 		OperationContext curr = OperationContext.get();
 		
 		try {
@@ -1116,14 +1187,14 @@ public class OperationContext {
 			for (IOperationObserver ob : this.observers) {
 		    	OperationContext.set(this);
 		    	
-				ob.fireEvent(event, this, detail);
+				ob.fireEvent(event, src, detail);
 			}
 			
 			if (this.parent != null) {
 				if (event == OperationEvents.LOG)
 					this.parent.log((RecordStruct) detail);
 				else if (event == OperationEvents.PROGRESS)
-					this.parent.fireEvent(event, detail);
+					this.parent.fireEvent(src, event, detail);
 			}
 			
 			// TODO missing concept here

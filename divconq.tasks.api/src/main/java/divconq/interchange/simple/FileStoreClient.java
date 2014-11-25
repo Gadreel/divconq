@@ -36,19 +36,23 @@ import divconq.api.DumpCallback;
 import divconq.api.ServiceResult;
 import divconq.api.tasks.TaskFactory;
 import divconq.bus.Message;
+import divconq.ctp.f.CtpFClient;
+import divconq.filestore.CommonPath;
 import divconq.hub.Foreground;
 import divconq.hub.Hub;
 import divconq.hub.ILocalCommandLine;
-import divconq.interchange.CommonPath;
 import divconq.lang.TimeoutPlan;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationObserver;
 import divconq.lang.op.OperationResult;
+import divconq.log.DebugLevel;
 import divconq.script.Activity;
 import divconq.script.ui.ScriptUtility;
 import divconq.struct.FieldStruct;
+import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.struct.Struct;
 import divconq.util.FileUtil;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
@@ -94,6 +98,7 @@ public class FileStoreClient implements ILocalCommandLine {
 				//System.out.println("104) Start Test dcBus");
 				//System.out.println("105) Send Test dcBus");
 				System.out.println("200) Local Utilities");
+				System.out.println("201) Ctp Client");
 
 				String opt = scan.nextLine();
 				
@@ -744,6 +749,205 @@ public class FileStoreClient implements ILocalCommandLine {
 				
 				case 200: {
 					Foreground.utilityMenu(scan);					
+					break;
+				}
+				
+				case 201: {
+					CtpFClient.utilityMenu(scan);
+					break;
+				}
+				
+				/*
+				case 202: {
+					//System.out.println("Value to set: ");
+					//String spath = scan.nextLine();
+					
+					  // a static method that loads the RocksDB C++ library.
+					  RocksDB.loadLibrary();
+					  // the Options class contains a set of configurable DB options
+					  // that determines the behavior of a database.
+					  Options options = new Options().setCreateIfMissing(true);
+					  RocksDB db = null;
+					  
+					  try {
+					    // a factory method that returns a RocksDB instance
+					    db = RocksDB.open(options, "/Work/Temp/rocks");
+					    // do something
+					    
+					    /*
+					    byte[] k1 = Utf8Encoder.encode("T1");
+					    
+					    byte[] value = db.get(k1);
+					    
+					    if (value != null) {  // value == null if key1 does not exist in db.
+					    	System.out.println("Found value: " + Utf8Decoder.decode(value));
+					    }					    
+					    else
+					    	System.out.println("No value found");
+					    
+					      db.put(k1, Utf8Encoder.encode(spath));
+					    * /
+
+					    System.out.println("Forwards: ");
+					    
+					    RocksIterator it = db.newIterator();
+					    
+					    for (it.seekToFirst(); it.isValid(); it.next()) {
+						    byte[] key = it.key();
+					    	System.out.println("Found key: " + HexUtil.bufferToHex(key));
+					    }
+
+					    System.out.println();
+					    System.out.println("Backwards: ");
+					    
+					    it = db.newIterator();
+					    
+					    for (it.seekToLast(); it.isValid(); it.prev()) {
+						    byte[] key = it.key();
+					    	System.out.println("Found key: " + HexUtil.bufferToHex(key));
+					    }
+					    
+					    /*
+					    byte[] a = new byte[] { (byte) 0x01 };		// false
+					    byte[] b = new byte[] { (byte) 0x10, (byte) 0x22, (byte) 0x22, (byte) 0x22 };		// pat
+					    byte[] c = new byte[] { (byte) 0x10, (byte) 0x55, (byte) 0x55, (byte) 0x55 };		// mike
+					    byte[] d = new byte[] { (byte) 0x10, (byte) 0x66 };		// stan
+					    byte[] omega = new byte[] { (byte) 0xff };
+					    
+					    db.put(a, a);
+					    db.put(b, Utf8Encoder.encode("pat"));
+					    db.put(c, Utf8Encoder.encode("mike"));
+					    db.put(d, Utf8Encoder.encode("stan"));
+					    db.put(omega, omega);
+					    
+					    it = db.newIterator();
+					    
+					    // seek last string
+					    byte[] ls = new byte[] { (byte) 0x11 };		// past strings
+					    it.seek(ls);
+					    
+					    System.out.println("is valid 1: " + it.isValid());
+					    
+					    byte[] key = it.key();
+					    
+					    if (key != null) {  
+					    	System.out.println("Found key: " + HexUtil.bufferToHex(key));
+					    }					    
+					    else
+					    	System.out.println("No key found");
+					    
+					    it.prev();
+					    
+					    System.out.println("is valid 2: " + it.isValid());
+					    
+					    key = it.key();
+					    
+					    if (key != null) {  
+					    	System.out.println("Found key: " + HexUtil.bufferToHex(key));
+					    }					    
+					    else
+					    	System.out.println("No key found");
+					    * /
+					    
+					    it = db.newIterator();
+					    
+					    // HOW TO SEEK PAST SOMETHING and then 1 back to find it
+					    // seek past pat
+					    byte[] ls = new byte[] { (byte) 0x10, (byte) 0x22, (byte) 0x22, (byte) 0x22, (byte) 0x00 };		// past pat
+					    it.seek(ls);
+					    
+					    System.out.println("is valid 1: " + it.isValid());
+					    
+					    byte[] key = it.key();
+					    
+					    if (key != null) {  
+					    	System.out.println("Found key: " + HexUtil.bufferToHex(key));
+					    }					    
+					    else
+					    	System.out.println("No key found");
+					    
+					    it.prev();
+					    
+					    System.out.println("is valid 2: " + it.isValid());
+					    
+					    key = it.key();
+					    
+					    if (key != null) {  
+					    	System.out.println("Found key: " + HexUtil.bufferToHex(key));
+					    }					    
+					    else
+					    	System.out.println("No key found");
+					    
+					    //db.put(arg0, arg1);
+					      
+					     /*
+    auto iter = DB::NewIterator(ReadOptions());
+    for (iter.Seek(prefix); iter.Valid() && iter.key().startswith(prefix); iter.Next()) {
+       // do something
+    }					      * 
+					      * /
+					      
+					  } 
+					  catch (RocksDBException x) {
+					    // do some error handling
+					    System.out.println("rocks error!!");
+					  }
+					  finally {
+						  if (db != null) db.close();
+						  options.dispose();
+					  }
+					  
+					  break;
+				}
+				*/
+				
+				
+				case 203: {
+					OperationContext ctx = OperationContext.allocateGuest();
+					
+					ctx.setLevel(DebugLevel.Trace);
+					
+					ctx.setLimitLog(false);
+					
+					OperationContext.set(ctx);
+					
+					System.out.println("Test Setup");
+					
+					for (int i = 0; i < 5; i++)
+						ctx.info("Entry #" + i);
+					
+					OperationResult or = new OperationResult();
+					
+					or.debug("invisible 1");
+					or.trace("invisible a");
+					
+					or.info("OR 1");
+					or.info("OR 2");
+					or.info("OR 3");
+					
+					or.markEnd();
+					
+					or.debug("invisible 2");
+					
+					for (int i = 5; i < 10; i++)
+						ctx.info("Entry #" + i);
+					
+					System.out.println();
+					System.out.println("What is in OC:");
+					
+					ListStruct msgs = ctx.getMessages();
+					
+					for (Struct s : msgs.getItems())
+						System.out.println("- " + s);
+					
+					System.out.println();
+					System.out.println("What is in OR:");
+					
+					msgs = or.getMessages();
+					
+					for (Struct s : msgs.getItems())
+						System.out.println("- " + s);
+					
 					break;
 				}
 				}

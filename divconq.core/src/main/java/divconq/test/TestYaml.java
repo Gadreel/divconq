@@ -43,9 +43,8 @@ import javax.script.ScriptEngineManager;
 
 import org.joda.time.DateTime;
 
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.io.OutputWrapper;
-import divconq.io.test.LocalEcho;
 import divconq.lang.Memory;
 import divconq.lang.chars.Utf8Decoder;
 import divconq.lang.chars.Utf8Encoder;
@@ -68,7 +67,6 @@ import static divconq.struct.StructUtil.*;
 public class TestYaml {
 
 	public static void main(String[] args) throws Exception {
-		LocalEcho.main(args);
 	}
 	
 	public static void maincp(String[] args) {

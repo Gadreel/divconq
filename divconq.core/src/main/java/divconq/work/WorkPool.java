@@ -139,7 +139,7 @@ public class WorkPool implements ExecutorService {
 				.withSubContext()
 				.withWork(command);
 			
-			this.submit(builder, null);
+			this.submit(builder);
 		}
 	}
 	
@@ -194,7 +194,7 @@ public class WorkPool implements ExecutorService {
 		run.prep();
 		
 		// this will also catch if run was resubmitted but killed
-		if (run.hasErrors()) {
+		if ((run.hasErrors() && !run.hasStarted()) || run.isKilled()) {
 			run.errorTr(216, run);		// TODO different error messages if resume
 			run.complete();
 			return;

@@ -20,7 +20,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.xml.XAttribute;
 import divconq.xml.XElement;
 

@@ -30,6 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import divconq.bus.Message;
 import divconq.bus.MessageUtil;
 import divconq.bus.ServiceResult;
+import divconq.ctp.CtpAdapter;
 import divconq.hub.Hub;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.IOperationObserver;
@@ -591,7 +592,7 @@ Context: {
 					
 					if (info != null) {
 						Struct res = info.getResult();
-						Message reply = MessageUtil.messages(info);
+						Message reply = info.toLogMessage();
 						
 						reply.setField("Body",
 								new RecordStruct(
@@ -694,7 +695,7 @@ Context: {
 		OperationResult smor = Hub.instance.getBus().sendMessage(msg);
 		
 		if (smor.hasErrors())
-			Session.this.reply(MessageUtil.messages(smor), msg);		
+			Session.this.reply(smor.toLogMessage(), msg);		
 	}
 	
 	public void deliver(Message msg) {
@@ -939,5 +940,9 @@ Context: {
 
 	public Collection<DataStreamChannel> channels() {
 		return this.channels.values();
+	}
+	
+	public CtpAdapter allocateCtpAdapter() {
+		return new CtpAdapter(this.allocateContext());
 	}
 }

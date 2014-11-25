@@ -19,7 +19,7 @@ package divconq.api.tasks;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.util.StringUtil;

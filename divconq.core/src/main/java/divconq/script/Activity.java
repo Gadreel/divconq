@@ -177,48 +177,42 @@ public class Activity implements ISmartWork, IInstructionCallback {
 				protected boolean inHandler = false;
 				
 				@Override
-				public void log(OperationContext or, RecordStruct entry) {
+				public void log(OperationContext ctx, RecordStruct entry) {
 					if ("Error".equals(entry.getFieldAsString("Level"))) {
 						if (this.inHandler)
 							return;
 						
 						this.inHandler = true;
 						
-						Activity.this.hasErrored = true;
-						
-						long lcode = entry.getFieldAsInteger("Code", 1);
-						
-						if (lcode > 0) {
-							StackEntry se = Activity.this.stack.getExecutingStack();
+						try {
+							Activity.this.hasErrored = true;
 							
-							if (se != null)
-								se.setLastCode(lcode);
-						}
-						
-						if (or != null) {
-							if (StringUtil.isNotEmpty(Activity.this.errorMessage) && (Activity.this.errorCode > 0)) 
-								or.error(Activity.this.errorCode, Activity.this.errorMessage);
+							long lcode = entry.getFieldAsInteger("Code", 1);
+							
+							if (lcode > 0) {
+								StackEntry se = Activity.this.stack.getExecutingStack();
+								
+								if (se != null)
+									se.setLastCode(lcode);
+							}
+							
+							if (StringUtil.isNotEmpty(Activity.this.errorMessage) && (Activity.this.errorCode > 0))  
+								ctx.exit(Activity.this.errorCode, Activity.this.errorMessage);
 							else if (StringUtil.isNotEmpty(Activity.this.errorMessage)) 
-								or.error(Activity.this.errorMessage);
+								ctx.exit(1, Activity.this.errorMessage);
 							else if (Activity.this.errorCode > 0) 
-								or.errorTr(Activity.this.errorCode);
-						}
-						
-						if (Activity.this.errorMode == ErrorMode.Debug) {
-							if (or != null)
-								or.clearExitCode();
+								ctx.exitTr(Activity.this.errorCode);
 							
-							Activity.this.engageDebugger();							
+							if (Activity.this.errorMode == ErrorMode.Debug) 
+								Activity.this.engageDebugger();							
+							else if (Activity.this.errorMode == ErrorMode.Exit) 
+								Activity.this.setExitFlag(true);
+							
+							// else if resume do nothing
 						}
-						else if (Activity.this.errorMode == ErrorMode.Exit) {
-							Activity.this.setExitFlag(true);
+						finally {						
+							this.inHandler = false;
 						}
-						else {
-							if (or != null)
-								or.clearExitCode();
-						}
-						
-						this.inHandler = false;
 					}					
 				}
 			};

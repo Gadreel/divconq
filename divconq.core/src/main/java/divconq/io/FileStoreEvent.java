@@ -19,7 +19,7 @@ package divconq.io;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import divconq.interchange.CommonPath;
+import divconq.filestore.CommonPath;
 
 public class FileStoreEvent {
 	protected boolean delete = false;		// else it was modified
