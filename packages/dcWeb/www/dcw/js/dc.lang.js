@@ -153,6 +153,15 @@ var dc = {
 					
 				return false;
 			},
+			isList: function(v) {
+				if (dc.util.Struct.isEmpty(v) || dc.util.Struct.isScalar(v))
+					return false;
+					
+				if (v instanceof Array)
+					return true;
+					
+				return false;
+			},
 			isComposite: function(v) {
 				if (dc.util.Struct.isEmpty(v) || dc.util.Struct.isScalar(v))
 					return false;
@@ -524,6 +533,30 @@ var dc = {
 				};
 
 				return (window.crypto && window.crypto.getRandomValues) ? _cryptoGuid() : _guid();
+			}
+		},
+		Messages: {
+			findExitEntry : function(list) {
+				if (!dc.util.Struct.isList(list)) 
+					return null;
+			
+				var firsterror = null;
+				
+				for (var i = list.length - 1; i >= 0; i--) {
+					var msg = list[i];
+					
+					if ("Error" == msg.Level)
+						firsterror = msg;
+				
+					if (dc.util.Struct.isList(msg.Tags)) {
+						for (var t = 0; t < msg.Tags.length; t++) {
+							if (msg.Tags[t] == 'Exit')
+								return (firsterror != null) ? firsterror : msg;
+						}
+					}
+				}
+
+				return firsterror;
 			}
 		},
 		Crypto: {

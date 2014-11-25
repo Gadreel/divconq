@@ -36,13 +36,14 @@ public class ExitIfErrored extends Instruction {
 			return;
 		}
 		
+		
 		String output = this.source.hasText() ? stack.resolveValue(this.source.getText()).toString() : null;
 		long code = stack.intFromSource("Code", 0);
 		Struct result = stack.codeHasAttribute("Result") ? stack.refFromSource("Result") : null;
 		
 		if (StringUtil.isNotEmpty(output))
 			OperationContext.get().exit(code, output);
-		else if (code > 1) {
+		else if (stack.codeHasAttribute("Code")) {
 			List<XElement> params = this.source.selectAll("Param");
 			Object[] oparams = new Object[params.size()];
 			
@@ -57,14 +58,11 @@ public class ExitIfErrored extends Instruction {
 		if ((result == null) && StringUtil.isNotEmpty(output))
 			result = new StringStruct(output);
 		
-		if (stack.codeHasAttribute("Code")) { 
+		if (stack.codeHasAttribute("Code"))  
 			stack.setLastResult(code, result);
-			OperationContext.get().exit(code, (result != null) ? result.toString() : null);
-		}
-		else if (result != null) {
+		else if (result != null) 
 			stack.setLastResult(result);
-		}
-			
+		
 		stack.getActivity().setExitFlag(true);
 		stack.setState(ExecuteState.Done);
 		stack.resume();

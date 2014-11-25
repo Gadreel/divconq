@@ -24,6 +24,7 @@ import divconq.mod.ExtensionLoader;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.struct.Struct;
 import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
@@ -52,7 +53,8 @@ public class DomainsService extends ExtensionBase implements IService {
 						res.addItem(new RecordStruct(
 								new FieldStruct("Id", mdomain.getAttribute("Id")),
 								new FieldStruct("Title", mdomain.getAttribute("Title")),
-								new FieldStruct("Names", names)
+								new FieldStruct("Names", names),
+								new FieldStruct("Settings", Struct.objectToStruct(mdomain.find("Settings")))
 							)
 						);
 					}

@@ -187,7 +187,7 @@ Context: {
 	public void touch() {
 		this.lastAccess = System.currentTimeMillis();
 
-		System.out.println("Session touched: " + this.id);
+		//System.out.println("Session touched: " + this.id);
 		
 		// keep any tethered sessions alive by pinging them at least once every minute
 		if ((this.lastAccess - this.lastTetherAccess > 59000)		// if tether was last updated a minute or more ago  

@@ -423,6 +423,7 @@
 			</Field>
 			<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
 			<Field Name="ObscureSeed" Type="dcDomain:dcObscureSeed" />			
+			<Field Name="Settings" Type="Xml" />
 		</Record>
 		
 		<Record Id="dcSearchResult">

@@ -36,7 +36,7 @@ public class Exit extends Instruction {
 		
 		if (StringUtil.isNotEmpty(output))
 			OperationContext.get().exit(code, output);
-		else if (code > 0) {
+		else if (stack.codeHasAttribute("Code")) {
 			List<XElement> params = this.source.selectAll("Param");
 			Object[] oparams = new Object[params.size()];
 			

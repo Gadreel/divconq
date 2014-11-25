@@ -64,6 +64,17 @@ dc.comm = {
 				
 				try {
 					var msg = JSON.parse(e.data);
+						
+					var ee = dc.util.Messages.findExitEntry(msg.Messages);
+					
+					// setup the "result" of the message based on the exit entry
+					if (!ee) {
+						msg.Result = 0;
+					}
+					else {
+						msg.Result = ee.Code;
+						msg.Message = ee.Message;
+					}
 					
 					if (msg.Service == 'Replies') {
 						if (msg.Feature == 'Reply') {

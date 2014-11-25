@@ -45,6 +45,10 @@ public class DomainInfo {
 		return this.obfuscator;
 	}
 	
+	public XElement getSettings() {
+		return this.info.getFieldAsXml("Settings");
+	}
+	
 	public DomainInfo(RecordStruct info) {
 		this.info = info;
 				

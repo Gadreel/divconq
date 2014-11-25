@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import divconq.bus.Message;
+import divconq.hub.Hub;
 import divconq.io.InputWrapper;
 import divconq.io.OutputWrapper;
 import divconq.lang.Memory;
@@ -127,6 +128,8 @@ public class Response {
         for (Entry<CharSequence, String> h : this.headers.entrySet())
         	response.headers().set(h.getKey(), h.getValue());
         
+        Hub.instance.getSecurityPolicy().hardenHttpResponse(response);
+        
         // Write the response.
         ChannelFuture future = ch.writeAndFlush(response);
 
@@ -172,6 +175,8 @@ public class Response {
         
         for (Entry<CharSequence, String> h : this.headers.entrySet())
         	response.headers().set(h.getKey(), h.getValue());
+        
+        Hub.instance.getSecurityPolicy().hardenHttpResponse(response);
         
         // Write the response.
         ch.write(response);

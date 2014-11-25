@@ -3,7 +3,7 @@
 	<CtpSession Name="MySession" Host="localhost" />
 	
 	<CtpCall Name="TheResponse" Session="$MySession" Service="Status" Feature="Echo" Op="Test" Data="Hello Buddy!" />
-	<ExitIfErrored Code="1" Result="Cannot continue, there was an error calling the Status service" />
+	<ExitIfErrored Code="1">Cannot continue, there was an error calling the Status service</ExitIfErrored>
 	<Info>Here is the response we got: {$TheResponse}</Info>
 	
 	<CtpCallForget Session="$MySession" Service="Status" Feature="Tickle" Op="Test" Data="Hello Buddy!" />

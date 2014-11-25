@@ -1016,6 +1016,12 @@ abstract public class Struct {
 			return svalue;
 		}
 		
+		if (o instanceof XElement) {
+			svalue = new StringStruct();
+			((StringStruct)svalue).adaptValue(o);
+			return svalue;
+		}
+		
 		// TODO
 		//if (o instanceof CharSequence)
 		//	return CompositeParser.parseJson(o.toString());

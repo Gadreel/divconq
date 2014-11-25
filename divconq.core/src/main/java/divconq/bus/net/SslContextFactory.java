@@ -96,7 +96,7 @@ public final class SslContextFactory {
         engine.setUseClientMode(false);
         engine.setWantClientAuth(true);
         
-        Hub.instance.harden(engine);
+        Hub.instance.getSecurityPolicy().hardenBus(engine);
         
 		return engine;
 	}
@@ -109,7 +109,7 @@ public final class SslContextFactory {
         SSLEngine engine = SslContextFactory.ClientContext.createSSLEngine();
         engine.setUseClientMode(true);
         
-        Hub.instance.harden(engine);
+        Hub.instance.getSecurityPolicy().hardenBus(engine);
         
         return engine;
 	}
