@@ -36,7 +36,7 @@ abstract public class BaseStream extends RecordStruct implements IStream {
 		this.downstream = downstream;
 	}
 	
-	/**
+	/*
 	 * A message was sent from upstream to me.
 	 * 
 	 * @param msg data to process

@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 import divconq.bus.MessageUtil;
 import divconq.bus.net.StreamMessage;
@@ -132,11 +133,17 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 		this.setField("Path", "/" + fpath.substring(cwd.length() + 1).replace('\\', '/'));
 		
 		this.setField("FullPath", fpath);
+
 		
 		if (Files.exists(this.localpath)) {
 			try {
+
+				//System.out.println("UnFormatted: " + Files.getLastModifiedTime(this.localpath).toMillis());
+				//System.out.println("Formatted: " + TimeUtil.stampFmt.print(Files.getLastModifiedTime(this.localpath).toMillis()));
+				
+				
 				this.setField("Size", Files.size(this.localpath));
-				this.setField("Modified", new DateTime(Files.getLastModifiedTime(this.localpath).toMillis()));
+				this.setField("Modified", new DateTime(Files.getLastModifiedTime(this.localpath).toMillis(), DateTimeZone.UTC));
 			} 
 			catch (IOException x) {
 			}

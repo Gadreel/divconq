@@ -118,7 +118,8 @@ dc.pui = {
 		__devmode: false,
 		__hashes: { },
 		__pages: { },
-		__mainPage: '/dct/pages/Main',
+		__mainPage: '/dcw/pages/Main',
+		__signInPage: '/dcw/pages/SignIn',
 		
 		init: function() {
 			dc.pui.Loader.__content = document.getElementById('pageContent');
@@ -162,6 +163,10 @@ dc.pui = {
 		
 		setMainPage: function(v) {
 			dc.pui.Loader.__mainPage = v;
+		},
+		
+		setSigninPage: function(v) {
+			dc.pui.Loader.__signInPage = v;
 		},
 		
 		loadMainPage: function() {
@@ -1563,10 +1568,10 @@ $(document).ready(function() {
 				if (dc.user.isVerified())
 					dc.pui.Loader.loadMainPage();
 				else 
-					dc.pui.Loader.loadPage('/dct/pages/SignIn');		// TODO configure
+					dc.pui.Loader.loadPage(dc.pui.Loader.__signInPage);		
 			});
 		}
 		else 
-			dc.pui.Loader.loadPage('/dct/pages/SignIn');		// TODO configure
+			dc.pui.Loader.loadPage(dc.pui.Loader.__signInPage);		
 	});
 });

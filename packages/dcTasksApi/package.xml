@@ -1,7 +1,7 @@
 <Package 
 	ClassRoot="dct" 
 	Abbrv="dct" 
-	Version="0.5.1"
+	Version="0.9.5"
 	MessageCodes="280000-299999"
 >
 	<DependsOn>

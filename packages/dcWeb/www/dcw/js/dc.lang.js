@@ -341,6 +341,10 @@ var dc = {
 				return moment.utc(z, 'YYYYMMDDTHHmmssSSSZ', true).local().format('MMM Do YYYY, h:mm:ss a Z');
 			},
 		
+			formatZLocalMedium: function(z) {
+				return moment.utc(z, 'YYYYMMDDTHHmmssSSSZ', true).local().format('MM-DD-YYYY h:mm:ss a');
+			},
+		
 			toUtc : function(date) {
 				var year = date.getUTCFullYear();
 				var month = date.getUTCMonth();

@@ -1,7 +1,7 @@
 <Package 
 	ClassRoot="divconq" 
 	Abbrv="dct" 
-	Version="0.4.1"
+	Version="0.9.5"
 	MessageCodes="40000-49999"
 >
 	<DependsOn>

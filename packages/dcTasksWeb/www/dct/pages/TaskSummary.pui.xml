@@ -28,7 +28,7 @@
 			
 			sect.empty(); 
 		
-			var item = dc.tasks.Tracker.getStatusFor(this.Params.TaskId);
+			var item = dc.comm.Tracker.getStatusFor(this.Params.TaskId);
 			
 			if (item == null)
 				return;

@@ -1,7 +1,7 @@
 <Package 
 	ClassRoot="divconq" 
 	Abbrv="dc" 
-	Version="0.9.3"
+	Version="0.9.5"
 	MessageCodes="1-99999"
 >
 	<!-- MessageCodes="90000-99999" for zCustom -->

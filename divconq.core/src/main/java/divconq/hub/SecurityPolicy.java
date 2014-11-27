@@ -84,11 +84,11 @@ public class SecurityPolicy {
 		if (!resp.headers().contains("Content-Security-Policy") || cspForce) {
 			if ("Strict".equals(mode)) {
 				resp.headers().set("Content-Security-Policy" + report, 
-					"default-src 'self' img-src 'self' data: media-src mediastream: frame-ancestors 'none' connect-src *");
+					"default-src 'self'; img-src 'self' data:; media-src mediastream:; frame-ancestors 'self'; connect-src *;");
 			}
 			else if ("Loose".equals(mode)) {
 				resp.headers().set("Content-Security-Policy" + report, 
-					"default-src 'self' img-src * media-src * font-src * style-src 'unsafe-inline' * frame-ancestors 'none' connect-src *");
+					"default-src 'self'; img-src *; media-src *; font-src *; style-src 'unsafe-inline' *; frame-ancestors 'self'; connect-src *;");
 			}
 			
 			// TODO

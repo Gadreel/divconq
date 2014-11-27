@@ -27,6 +27,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.HttpHeaders.Values;
+import io.netty.handler.codec.http.DefaultCookie;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -257,6 +258,11 @@ public class Response {
         	name = FileUtil.randomFilename("bin");
         
         response.headers().set("Content-Disposition", "attachment; filename=\"" + NetUtil.urlEncodeUTF8(name) + "\"");
+        
+		Cookie dl = new DefaultCookie("fileDownload", "true");
+		dl.setPath("/");
+        
+        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.encode(dl));
 
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 

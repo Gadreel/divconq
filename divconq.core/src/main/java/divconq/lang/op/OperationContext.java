@@ -901,6 +901,7 @@ public class OperationContext {
 	 * @param lvl level of message
 	 * @param code for message
 	 * @param msg text of message
+	 * @param tags of message
 	 */
 	public void log(DebugLevel lvl, long code, String msg, String... tags) {
 		// must be some sort of message

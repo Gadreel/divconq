@@ -17,7 +17,9 @@
 package divconq.service.simple;
 
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import divconq.bus.IService;
@@ -26,7 +28,11 @@ import divconq.bus.MessageUtil;
 import divconq.filestore.CommonPath;
 import divconq.filestore.IFileStoreFile;
 import divconq.filestore.local.FileSystemDriver;
+import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
+import divconq.hub.HubEvents;
+import divconq.hub.IEventSubscriber;
+import divconq.hub.IHubEvent;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationCallback;
@@ -49,6 +55,9 @@ import divconq.xml.XElement;
 
 public class FileServerService extends ExtensionBase implements IService {
 	protected FileSystemDriver fsd = new FileSystemDriver();
+	
+	protected Map<String, FileSystemDriver> domainFsd = new HashMap<>();
+	
 	protected Session channels = null;
 	protected String bestEvidence = null;
 	protected String minEvidence = null;
@@ -80,6 +89,38 @@ public class FileServerService extends ExtensionBase implements IService {
 			if (config.hasAttribute("MinimumEvidence")) 
 				this.minEvidence = config.getAttribute("MinimumEvidence");
 		}
+
+		// load domain related details only after we are noted to be running
+		Hub.instance.subscribeToEvent(HubEvents.Running, new IEventSubscriber() {
+			@Override
+			public void eventFired(IHubEvent e) {
+				for (DomainInfo domain : Hub.instance.getDomains()) {
+					XElement dset = domain.getSettings();
+					
+					if (dset != null) {
+						XElement fsset = dset.find("FileServer");
+						
+						if ((fsset != null) && fsset.hasAttribute("FileStorePath")) {
+							FileSystemDriver dfsd = new FileSystemDriver();
+							
+							dfsd.setRootFolder(fsset.getAttribute("FileStorePath"));
+							
+							// don't wait on this, it'll log correctly
+							dfsd.connect(null, new OperationCallback() {					
+								@Override
+								public void callback() {
+									// NA
+								}
+							});
+							
+							FileServerService.this.domainFsd.put(domain.getId(), dfsd);
+							
+							// TODO support Best and Min Evidence at domain level
+						}
+					}
+				}
+			}
+		});
 		
 		this.channels = Hub.instance.getSessions().createForService();
 	}
@@ -341,49 +382,55 @@ public class FileServerService extends ExtensionBase implements IService {
 		String feature = msg.getFieldAsString("Feature");
 		String op = msg.getFieldAsString("Op");
 		
+		// find the correct file store for this domain
+		FileSystemDriver fs = this.domainFsd.get(request.getContext().getUserContext().getDomainId());
+		
+		if (fs == null)
+			fs = this.fsd;
+		
 		if ("FileStore".equals(feature)) {
 			if ("FileDetail".equals(op)) {
-				this.handleFileDetail(request);
+				this.handleFileDetail(request, fs);
 				return;
 			}
 			
 			if ("DeleteFile".equals(op)) {
-				this.handleDeleteFile(request);
+				this.handleDeleteFile(request, fs);
 				return;
 			}
 			
 			if ("DeleteFolder".equals(op)) {
-				this.handleDeleteFolder(request);
+				this.handleDeleteFolder(request, fs);
 				return;
 			}
 			
 			if ("AddFolder".equals(op)) {
-				this.handleAddFolder(request);
+				this.handleAddFolder(request, fs);
 				return;
 			}
 			
 			if ("ListFiles".equals(op)) {
-				this.handleListFiles(request);
+				this.handleListFiles(request, fs);
 				return;
 			}
 			
 			if ("StartUpload".equals(op)) {
-				this.handleStartUpload(request);
+				this.handleStartUpload(request, fs);
 				return;
 			}
 
 			if ("FinishUpload".equals(op)) {
-				this.handleFinishUpload(request);
+				this.handleFinishUpload(request, fs);
 				return;
 			}
 			
 			if ("StartDownload".equals(op)) {
-				this.handleStartDownload(request);
+				this.handleStartDownload(request, fs);
 				return;
 			}
 
 			if ("FinishDownload".equals(op)) {
-				this.handleFinishDownload(request);
+				this.handleFinishDownload(request, fs);
 				return;
 			}
 		}
@@ -392,13 +439,13 @@ public class FileServerService extends ExtensionBase implements IService {
 		request.complete();
 	}
 	
-	public void handleFileDetail(final TaskRun request) {
+	public void handleFileDetail(final TaskRun request, FileSystemDriver fs) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
 		String fpath = rec.getFieldAsString("FilePath");
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
+		fs.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -444,13 +491,13 @@ public class FileServerService extends ExtensionBase implements IService {
 		});
 	}
 	
-	public void handleDeleteFile(TaskRun request) {
+	public void handleDeleteFile(TaskRun request, FileSystemDriver fs) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
 		String fpath = rec.getFieldAsString("FilePath");
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
+		fs.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -481,13 +528,13 @@ public class FileServerService extends ExtensionBase implements IService {
 		});
 	}
 	
-	public void handleDeleteFolder(TaskRun request) {
+	public void handleDeleteFolder(TaskRun request, FileSystemDriver fs) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
 		String fpath = rec.getFieldAsString("FolderPath");
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
+		fs.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -518,13 +565,13 @@ public class FileServerService extends ExtensionBase implements IService {
 		});
 	}
 	
-	public void handleAddFolder(final TaskRun request) {
+	public void handleAddFolder(TaskRun request, FileSystemDriver fs) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
 		String fpath = rec.getFieldAsString("FolderPath");
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.addFolder(path, new OperationCallback() {
+		fs.addFolder(path, new OperationCallback() {
 			@Override
 			public void callback() {
 				request.complete();
@@ -532,13 +579,13 @@ public class FileServerService extends ExtensionBase implements IService {
 		});
 	}
 	
-	public void handleListFiles(final TaskRun request) {
-		final RecordStruct rec = MessageUtil.bodyAsRecord(request);
-		final String fpath = rec.getFieldAsString("FolderPath");
+	public void handleListFiles(TaskRun request, FileSystemDriver fs) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String fpath = rec.getFieldAsString("FolderPath");
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFolderListing(path, new FuncCallback<List<IFileStoreFile>>() {			
+		fs.getFolderListing(path, new FuncCallback<List<IFileStoreFile>>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -564,13 +611,13 @@ public class FileServerService extends ExtensionBase implements IService {
 		});
 	}
 	
-	public void handleStartUpload(final TaskRun request) {
-		final RecordStruct rec = MessageUtil.bodyAsRecord(request);
-		final String fpath = rec.getFieldAsString("FilePath");
+	public void handleStartUpload(TaskRun request, FileSystemDriver fs) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String fpath = rec.getFieldAsString("FilePath");
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
+		fs.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -620,9 +667,9 @@ public class FileServerService extends ExtensionBase implements IService {
 		});
 	}
 	
-	public void handleFinishUpload(final TaskRun request) {
-		final RecordStruct rec = MessageUtil.bodyAsRecord(request);
-		final String fpath = rec.getFieldAsString("FilePath");
+	public void handleFinishUpload(TaskRun request, FileSystemDriver fs) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String fpath = rec.getFieldAsString("FilePath");
 		
 		CommonPath path = new CommonPath(fpath);
 		
@@ -636,7 +683,7 @@ public class FileServerService extends ExtensionBase implements IService {
 			return;
 		}
 		
-		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
+		fs.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -728,13 +775,13 @@ public class FileServerService extends ExtensionBase implements IService {
 		});
 	}
 	
-	public Message handleStartDownload(final TaskRun request) {
-		final RecordStruct rec = MessageUtil.bodyAsRecord(request);
-		final String fpath = rec.getFieldAsString("FilePath");
+	public Message handleStartDownload(TaskRun request, FileSystemDriver fs) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String fpath = rec.getFieldAsString("FilePath");
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
+		fs.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -785,9 +832,9 @@ public class FileServerService extends ExtensionBase implements IService {
 		return null;
 	}
 	
-	public void handleFinishDownload(final TaskRun request) {
-		final RecordStruct rec = MessageUtil.bodyAsRecord(request);
-		final String fpath = rec.getFieldAsString("FilePath");
+	public void handleFinishDownload(TaskRun request, FileSystemDriver fs) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String fpath = rec.getFieldAsString("FilePath");
 		
 		CommonPath path = new CommonPath(fpath);
 		
@@ -801,7 +848,7 @@ public class FileServerService extends ExtensionBase implements IService {
 			return;
 		}
 		
-		this.fsd.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
+		fs.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
