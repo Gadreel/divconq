@@ -21,6 +21,7 @@ import io.netty.buffer.ByteBuf;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import divconq.hub.Hub;
 import divconq.lang.Memory;
 import divconq.lang.chars.Special;
 import divconq.lang.op.FuncResult;
@@ -157,6 +158,31 @@ abstract public class CompositeStruct extends Struct implements ICompositeOutput
 		CompositeToBufferBuilder rb = new CompositeToBufferBuilder(buf);		
 		this.toBuilder(rb);		
 		rb.write(Special.End);
+	}
+	
+	public void toSerialMemory(Memory res) throws BuilderStateException {
+		ByteBuf buf = Hub.instance.getBufferAllocator().buffer(16 * 1024, 16 * 1024 * 1024);
+		
+		CompositeToBufferBuilder rb = new CompositeToBufferBuilder(buf);		
+		this.toBuilder(rb);		
+		rb.write(Special.End);
+		
+		res.write(buf.array(), buf.arrayOffset(), buf.readableBytes());
+		buf.release();
+	}
+	
+	public Memory toSerialMemory() throws BuilderStateException {
+		ByteBuf buf = Hub.instance.getBufferAllocator().buffer(16 * 1024, 16 * 1024 * 1024);
+		
+		CompositeToBufferBuilder rb = new CompositeToBufferBuilder(buf);		
+		this.toBuilder(rb);		
+		rb.write(Special.End);
+		
+		Memory res = new Memory(buf.readableBytes());
+		res.write(buf.array(), buf.arrayOffset(), buf.readableBytes());
+		buf.release();
+		
+		return res;
 	}
 	
 	@Override

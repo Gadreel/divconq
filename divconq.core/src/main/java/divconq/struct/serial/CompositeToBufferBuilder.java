@@ -66,7 +66,7 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 	}
 	
 	@Override
-	public void record(Object... props) throws BuilderStateException {
+	public ICompositeBuilder record(Object... props) throws BuilderStateException {
 		this.startRecord();
 		
 		String name = null;
@@ -85,19 +85,23 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 		}
 		
 		this.endRecord();
+		
+		return this;
 	}
 	
 	@Override
-	public void startRecord() throws BuilderStateException {
+	public ICompositeBuilder startRecord() throws BuilderStateException {
 		// indicate we are in a record
 		this.cstate = new BuilderInfo(BuilderState.InRecord);
 		this.bstate.add(cstate);
 		
 		this.write(Special.StartRec); 
+		
+		return this;
 	}
 	
 	@Override
-	public void endRecord() throws BuilderStateException {
+	public ICompositeBuilder endRecord() throws BuilderStateException {
 		// cannot call end rec with being in a record or field
 		if ((this.cstate == null) || (this.cstate.State == BuilderState.InList))
 			throw new BuilderStateException("Cannot end record when in list");
@@ -113,13 +117,17 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 		
 		// mark the value complete, let parent container know we need commas
 		this.completeValue();
+		
+		return this;
 	}
 
 	// names may contain only alpha-numerics
 	@Override
-	public void field(String name, Object value) throws BuilderStateException {
+	public ICompositeBuilder field(String name, Object value) throws BuilderStateException {
 		this.field(name);
 		this.value(value);
+		
+		return this;
 	}
 
 	/*
@@ -127,7 +135,7 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 	 * or to call if in a record straight up
 	 */
 	@Override
-	public void field(String name) throws BuilderStateException {
+	public ICompositeBuilder field(String name) throws BuilderStateException {
 		// fields cannot occur outside of records
 		if ((this.cstate == null) || (this.cstate.State == BuilderState.InList))
 			throw new BuilderStateException("Cannot add field while in list");
@@ -141,10 +149,12 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 			this.field();
 		
 		this.value(name);
+		
+		return this;
 	}
 	
 	@Override
-	public void field() throws BuilderStateException {
+	public ICompositeBuilder field() throws BuilderStateException {
 		// fields cannot occur outside of records
 		if ((this.cstate == null) || (this.cstate.State == BuilderState.InList))
 			throw new BuilderStateException("Cannot add field when in list");
@@ -162,6 +172,8 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 		this.bstate.add(cstate);
 		
 		this.write(Special.Field);
+		
+		return this;
 	}
 	
 	private void endField() throws BuilderStateException {
@@ -174,26 +186,30 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 	}
 	
 	@Override
-	public void list(Object... props) throws BuilderStateException {
+	public ICompositeBuilder list(Object... props) throws BuilderStateException {
 		this.startList();
 		
 		for (Object o : props)
 			this.value(o);
 		
 		this.endList();
+		
+		return this;
 	}
 	
 	@Override
-	public void startList() throws BuilderStateException {
+	public ICompositeBuilder startList() throws BuilderStateException {
 		// mark that we are in a list
 		this.cstate = new BuilderInfo(BuilderState.InList);
 		this.bstate.add(cstate);
 		
 		this.write(Special.StartList);
+		
+		return this;
 	}
 	
 	@Override
-	public void endList() throws BuilderStateException {
+	public ICompositeBuilder endList() throws BuilderStateException {
 		// must be in a list
 		if ((this.cstate == null) || (this.cstate.State != BuilderState.InList))
 			throw new BuilderStateException("Not in a list, cannot end list");
@@ -206,6 +222,8 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 		
 		// mark the value complete, let parent container know we need commas
 		this.completeValue();
+		
+		return this;
 	}
 	
 	@Override
@@ -217,7 +235,7 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 	}
 	
 	@Override
-	public void value(Object value) throws BuilderStateException {
+	public ICompositeBuilder value(Object value) throws BuilderStateException {
 		// cannot occur outside of field or list
 		if ((this.cstate == null) || (this.cstate.State == BuilderState.InRecord))
 			throw new BuilderStateException("Cannot add a value unless in a field or in a list");
@@ -226,7 +244,7 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 			// TODO check that name is valid
 			this.write(value.toString());			
 			this.cstate.IsNamed = true;
-			return;
+			return this;
 		}
 
 		// TODO handle other object types - reader, etc
@@ -237,7 +255,7 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 		if (value instanceof ICompositeOutput) {
 			((ICompositeOutput)value).toBuilder(this);
 			this.completeValue();
-			return;
+			return this;
 		}
 
 		// if not a composite then it is a scalar
@@ -282,11 +300,13 @@ public class CompositeToBufferBuilder implements ICompositeBuilder {
 			this.write("%" + Base64.encodeToString(((byte[])value), false));
 		else 
 			this.writeEscape("`" + value.toString());		// TODO more efficient with memory/builder/etc
+		
+		return this;
 	}
 	
 	@Override
 	// TODO not supported currently, need some sort of escaping/framing
-	public void rawJson(Object value) throws BuilderStateException {
+	public ICompositeBuilder rawJson(Object value) throws BuilderStateException {
 		// cannot occur outside of field or list
 		if ((this.cstate == null) || (this.cstate.State == BuilderState.InRecord))
 			throw new BuilderStateException("Cannot add JSON when not in field or in list");

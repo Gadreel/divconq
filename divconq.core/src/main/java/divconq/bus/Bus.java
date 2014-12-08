@@ -95,6 +95,8 @@ public class Bus {
 	// bus event group is separate from rest
 	protected EventLoopGroup eventLoopGroup = null;
 	
+	protected boolean stopped = false;
+	
     /*
      * set localHub before calling this
      */
@@ -232,6 +234,15 @@ public class Bus {
 		
 		if (tc == null) {
 			or.errorTr(219, msg);		
+			
+			if (callback != null) 
+				callback.abandon();
+			
+			return or;
+		}
+
+		if (this.stopped) {
+			or.error("Unable to send message, bus stopped.");
 			
 			if (callback != null) 
 				callback.abandon();
@@ -666,7 +677,7 @@ public class Bus {
 			        ChannelFuture bfuture = b.bind(info.getAddress()).sync();
 			        
 			        if (bfuture.isSuccess()) {
-			        	Logger.info("dcBus Message Server listening");
+			        	Logger.info("dcBus Message Server listening - now listening for dcMessages on TCP port " + info.getPort());
 				        this.activelisteners.put(info, bfuture.channel());
 			        }
 			        else
@@ -714,7 +725,7 @@ public class Bus {
 			        ChannelFuture bfuture = b.bind(info.getStreamAddress()).sync();
 			        
 			        if (bfuture.isSuccess()) {
-			        	Logger.info("dcBus Stream Server listening");
+			        	Logger.info("dcBus Stream Server listening - now listening for dcStreams on TCP port " + info.getPort());
 				        this.activestreamlisteners.put(info, bfuture.channel());
 			        }
 			        else
@@ -854,6 +865,7 @@ public class Bus {
     
     public void stopFinal(OperationResult or) {
     	// TODO sync these guys
+		this.stopped = true;
 		
 		try {
 			if (this.eventLoopGroup != null)

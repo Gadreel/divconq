@@ -58,9 +58,6 @@ public class BasicSettingsObfuscator implements ISettingsObfuscator {
 	protected SecretKeySpec aeskey = null;
 	protected SecretKeySpec hmackey = null;
 	
-	/* (non-Javadoc)
-	 * @see divconq.util.ISettingsObfuscator#init(divconq.xml.XElement)
-	 */
 	@Override
 	public void init(XElement config) {
 		String salt1 = null;
@@ -113,9 +110,6 @@ public class BasicSettingsObfuscator implements ISettingsObfuscator {
 		this.hmackey = new SecretKeySpec(skey, "hmacSHA512");
 	}
 
-	/* (non-Javadoc)
-	 * @see divconq.util.ISettingsObfuscator#configure(divconq.xml.XElement)
-	 */
 	@Override
 	public void configure(XElement config) {
 		byte[] idbuff = new byte[64];
@@ -129,17 +123,11 @@ public class BasicSettingsObfuscator implements ISettingsObfuscator {
 		config.setAttribute("Feed", HexUtil.bufferToHex(feedbuff));
 	}
 
-	/* (non-Javadoc)
-	 * @see divconq.util.ISettingsObfuscator#decryptHexToString(java.lang.CharSequence)
-	 */
 	@Override
 	public String decryptHexToString(CharSequence v) {
 		return this.decryptString(HexUtil.decodeHex(v));
 	}
 
-	/* (non-Javadoc)
-	 * @see divconq.util.ISettingsObfuscator#decryptString(byte[])
-	 */
 	@Override
 	public String decryptString(byte[] v) {
 		if (v == null)
@@ -160,17 +148,11 @@ public class BasicSettingsObfuscator implements ISettingsObfuscator {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see divconq.util.ISettingsObfuscator#encryptStringToHex(java.lang.CharSequence)
-	 */
 	@Override
 	public String encryptStringToHex(CharSequence v) {
     	return HexUtil.bufferToHex(this.encryptString(v));
 	}
 
-	/* (non-Javadoc)
-	 * @see divconq.util.ISettingsObfuscator#encryptString(java.lang.CharSequence)
-	 */
 	@Override
 	public byte[] encryptString(CharSequence v) {
 		if (StringUtil.isEmpty(v))
@@ -225,17 +207,11 @@ public class BasicSettingsObfuscator implements ISettingsObfuscator {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see divconq.util.ISettingsObfuscator#hashStringToHex(java.lang.CharSequence)
-	 */
 	@Override
 	public String hashStringToHex(CharSequence v) {
     	return HexUtil.bufferToHex(this.hashString(v));
 	}
 
-	/* (non-Javadoc)
-	 * @see divconq.util.ISettingsObfuscator#hashString(java.lang.CharSequence)
-	 */
 	@Override
 	public byte[] hashString(CharSequence v) {
 		if (StringUtil.isEmpty(v))

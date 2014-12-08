@@ -87,7 +87,7 @@ public class TestBusErrors implements IWork {
 		testrun.info("Test operation id is " + testctx.getOpId());
 		//testrun.info("Test bucket is " + testctx.getBucket());
 		testrun.info("Test is elevated " + testctx.isElevated());
-		testrun.info("Test user is " + testctx.getUserContext().getUserName());
+		testrun.info("Test user is " + testctx.getUserContext().getUsername());
 		
 		testrun.info("Now make the service call");
 		
@@ -103,7 +103,7 @@ public class TestBusErrors implements IWork {
 				testrun.info("Test operation id is " + testctx.getOpId());
 				//testrun.info("Test bucket is " + testctx.getBucket());
 				testrun.info("Test is elevated " + testctx.isElevated());
-				testrun.info("Test user is " + testctx.getUserContext().getUserName());
+				testrun.info("Test user is " + testctx.getUserContext().getUsername());
 				
 				testrun.info("TestBusErrors is cleaning up.");
 				

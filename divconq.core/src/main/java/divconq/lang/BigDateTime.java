@@ -67,7 +67,7 @@ import divconq.util.StringUtil;
  * to each other.
  * 
  */
-public class BigDateTime {
+public class BigDateTime implements Comparable<BigDateTime> {
 	protected Long year = null;
 	protected Integer month = null;
 	protected Integer day = null;
@@ -314,5 +314,49 @@ public class BigDateTime {
 			bd.second = Integer.parseInt(date.substring(20, 22));
 		
 		return fr;
+	}
+
+	@Override
+	public int compareTo(BigDateTime o) {
+		if (o == null)
+			return 1;
+		
+		if (this.year < o.year)
+			return -1;
+		
+		if (this.year > o.year)
+			return 1;
+		
+		if (this.month < o.month)
+			return -1;
+		
+		if (this.month > o.month)
+			return 1;
+		
+		if (this.day < o.day)
+			return -1;
+		
+		if (this.day > o.day)
+			return 1;
+		
+		if (this.hour < o.hour)
+			return -1;
+		
+		if (this.hour > o.hour)
+			return 1;
+		
+		if (this.minute < o.minute)
+			return -1;
+		
+		if (this.minute > o.minute)
+			return 1;
+		
+		if (this.second < o.second)
+			return -1;
+		
+		if (this.second > o.second)
+			return 1;
+		
+		return 0;
 	}
 }

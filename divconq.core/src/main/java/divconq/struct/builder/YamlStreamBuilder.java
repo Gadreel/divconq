@@ -53,7 +53,7 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 	}
 	
 	@Override
-	public void record(Object... props) throws BuilderStateException {
+	public ICompositeBuilder record(Object... props) throws BuilderStateException {
 		this.startRecord();
 		
 		String name = null;
@@ -72,10 +72,12 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 		}
 		
 		this.endRecord();
+		
+		return this;
 	}
 	
 	@Override
-	public void startRecord() throws BuilderStateException {
+	public ICompositeBuilder startRecord() throws BuilderStateException {
 		// if in a list and need comma
 		if ((this.cstate != null) && (this.cstate.State == BuilderState.InList)) {
 			if (this.cstate.CommaNeeded) {
@@ -99,10 +101,12 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 			this.write("\n");
 			this.indent();
 		}
+		
+		return this;
 	}
 	
 	@Override
-	public void endRecord() throws BuilderStateException {
+	public ICompositeBuilder endRecord() throws BuilderStateException {
 		// cannot call end rec with being in a record or field
 		if ((this.cstate == null) || (this.cstate.State == BuilderState.InList))
 			throw new BuilderStateException("Cannot end record when in list");
@@ -123,13 +127,17 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 		
 		// mark the value complete, let parent container know we need commas
 		this.completeValue();
+		
+		return this;
 	}
 
 	// names may contain only alpha-numerics
 	@Override
-	public void field(String name, Object value) throws BuilderStateException {
+	public ICompositeBuilder field(String name, Object value) throws BuilderStateException {
 		this.field(name);
 		this.value(value);
+		
+		return this;
 	}
 
 	/*
@@ -137,7 +145,7 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 	 * or to call if in a record straight up
 	 */
 	@Override
-	public void field(String name) throws BuilderStateException {
+	public ICompositeBuilder field(String name) throws BuilderStateException {
 		// fields cannot occur outside of records
 		if ((this.cstate == null) || (this.cstate.State == BuilderState.InList))
 			throw new BuilderStateException("Cannot add field when in list");
@@ -151,10 +159,12 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 			this.field();
 		
 		this.value(name);
+		
+		return this;
 	}
 	
 	@Override
-	public void field() throws BuilderStateException {
+	public ICompositeBuilder field() throws BuilderStateException {
 		// fields cannot occur outside of records
 		if ((this.cstate == null) || (this.cstate.State == BuilderState.InList))
 			throw new BuilderStateException("Cannot add field when in list");
@@ -182,6 +192,8 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 		// note that we are in a field now, value not completed
 		this.cstate = new BuilderInfo(BuilderState.InField, this.cstate.indent);
 		this.bstate.add(cstate);
+		
+		return this;
 	}
 	
 	private void endField() throws BuilderStateException {
@@ -201,17 +213,19 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 	}
 	
 	@Override
-	public void list(Object... props) throws BuilderStateException {
+	public ICompositeBuilder list(Object... props) throws BuilderStateException {
 		this.startList();
 		
 		for (Object o : props)
 			this.value(o);
 		
 		this.endList();
+		
+		return this;
 	}
 	
 	@Override
-	public void startList() throws BuilderStateException {
+	public ICompositeBuilder startList() throws BuilderStateException {
 		// if in a list and need comma
 		//if ((this.cstate != null) && (this.cstate.State == BuilderState.InList)) {
 			//this.write(", ");
@@ -252,10 +266,12 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 		//	this.write("\n");
 		//	this.indent();
 		//}
+		
+		return this;
 	}
 	
 	@Override
-	public void endList() throws BuilderStateException {
+	public ICompositeBuilder endList() throws BuilderStateException {
 		// must be in a list
 		if ((this.cstate == null) || (this.cstate.State != BuilderState.InList))
 			throw new BuilderStateException("Cannot end list when not in list");
@@ -276,6 +292,8 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 		
 		// mark the value complete, let parent container know we need commas
 		this.completeValue();
+		
+		return this;
 	}
 	
 	private void indent() {
@@ -312,7 +330,7 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 	}
 	
 	@Override
-	public void value(Object value) throws BuilderStateException {
+	public ICompositeBuilder value(Object value) throws BuilderStateException {
 		// cannot occur outside of field or list
 		if ((this.cstate == null) || ((this.cstate.State != BuilderState.InField) && (this.cstate.State != BuilderState.InList)))
 			throw new BuilderStateException("Cannot add value unless in field or in list");
@@ -327,7 +345,7 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 			
 			this.cstate.IsNamed = true;
 			
-			return;
+			return this;
 		}
 
 		// if in a list, check if we need a comma 
@@ -418,10 +436,12 @@ public class YamlStreamBuilder implements ICompositeBuilder {
 		
 		// mark the value complete, let parent container know we need commas
 		this.completeValue();
+		
+		return this;
 	}
 	
 	@Override
-	public void rawJson(Object value) throws BuilderStateException {
+	public ICompositeBuilder rawJson(Object value) throws BuilderStateException {
 		// TODO add support - supposedly YAML 1.2 will be JSON compliant, so look for support in Snake
 		throw new BuilderStateException("Raw JSON not supported yet");
 		

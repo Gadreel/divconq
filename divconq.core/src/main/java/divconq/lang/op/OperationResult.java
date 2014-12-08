@@ -252,6 +252,10 @@ public class OperationResult {  //implements GroovyObject {  TODO provide middle
 	public boolean hasCode(long code) {
 		return this.opcontext.hasCode(code, this.msgStart, this.msgEnd);
 	}
+
+	public boolean hasLogLevel(DebugLevel lvl) {
+		return this.opcontext.hasLevel(this.msgStart, this.msgEnd, lvl);
+	}
 	
 	/*
 	@Override

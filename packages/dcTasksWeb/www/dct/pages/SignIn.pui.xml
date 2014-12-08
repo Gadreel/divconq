@@ -20,7 +20,7 @@
 		
 		<Form Name="SignIn">
 			<FieldContainer Label="User Name:">
-				<TextInput Name="UserName" Required="true" />
+				<TextInput Name="Username" Required="true" />
 			</FieldContainer>
 			<FieldContainer Label="Password:">
 				<PasswordInput Name="Password" Required="true" />
@@ -41,13 +41,13 @@
 				this.form().query('Password').focus();
 			}
 			else {
-				this.form().query('UserName').focus();
+				this.form().query('Username').focus();
 			}
 	</Function>
 	<Function Name="Save" Params="e">
 			var values = dc.pui.Page.getFormValues('SignIn');
 			
-			dc.user.signin(values.UserName, values.Password, values.RememberMe, function(msg) { 
+			dc.user.signin(values.Username, values.Password, values.RememberMe, function(msg) { 
 				if (dc.user.isVerified())
 					dc.pui.Loader.loadMainPage();
 				else

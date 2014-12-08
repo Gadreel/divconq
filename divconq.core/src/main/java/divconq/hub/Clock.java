@@ -159,6 +159,9 @@ public class Clock {
 				}
 			}
 		}
+		else {
+			DateTimeZone.setDefault(DateTimeZone.UTC);
+		}
 
 		if (this.obfus == null)
 			this.obfus = new BasicSettingsObfuscator();

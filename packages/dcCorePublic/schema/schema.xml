@@ -98,7 +98,7 @@
 			<StringRestriction MaxLength="250" />
 		</StringType>
 		
-		<StringType Id="dcUserName">
+		<StringType Id="dcUsername">
 			<StringRestriction MaxLength="64" />
 		</StringType>
 		
@@ -122,7 +122,7 @@
 		
 		<!-- UserCredentials may be overriden by customer (install) to reflect their credentialing system -->
 		<Record Id="UserCredentials">
-			<Field Name="UserName" Type="dcUser:dcUserName" />
+			<Field Name="Username" Type="dcUser:dcUsername" />
 			<Field Name="Password" Type="dcUser:dcPassword" />
 			<Field Name="ConfirmationCode" Type="dcUser:dcConfirmCode" />
 			<Field Name="AccessCode" Type="dcTinyString" />
@@ -138,12 +138,13 @@
 		
 		<Record Id="UserContext">
 			<Field Name="UserId" Type="Id" />
-			<Field Name="UserName" Type="dcUser:dcUserName" />
+			<Field Name="Username" Type="dcUser:dcUsername" />
 			<Field Name="FullName" Type="dcSmallString" />
 			<Field Name="Email" Type="dcUser:dcEmail" />
 			<Field Name="Credentials" Type="UserCredentials" />
 			<Field Name="AuthToken" Type="dcAuthToken" />
 			<Field Name="Verified" Type="Boolean" />
+			<Field Name="Gateway" Type="Boolean" />		<!--  request comes over dcBus from a gateway, security considerations -->
 			<Field Name="Locale" Type="dcSmallString" />
 			<Field Name="Chronology" Type="dcSmallString" />
 			<Field Name="DomainId" Type="Id" />
@@ -500,11 +501,12 @@
 	
 	<Services>
 		<Service Name="Replies">
-			<Secure Tags="Guest,User">
+			<Secure Tags="SysAdmin">
 				<Feature Name="Reply">
 					<Op Name="Deliver">
 						<Description>
 							Handles replies to requests (a callback approach).
+							Must be elevated to call this.
 						</Description>
 						<Request Inherits="GenericMessage" />
 					</Op>
@@ -513,7 +515,7 @@
 		</Service>
 		
 		<Service Name="Status">
-			<Secure Tags="Guest,User">
+			<Secure Tags="PowerUser">
 				<Feature Name="Echo">
 					<Op Name="Test">
 						<Description>
@@ -537,8 +539,6 @@
 						</Request>
 					</Op>
 				</Feature>
-			</Secure>
-			<Secure Tags="User">
 				<Feature Name="Translate">
 					<Op Name="Text">
 						<Description>
@@ -758,13 +758,13 @@
 				<Feature Name="Authentication">
 					<Op Name="SignIn">
 						<Description>
-							Verify credentials, start a session (AuthToken).
+							Verify credentials, start a session (AuthToken) indirectly as Verify is called implicitly.
 						</Description>
 						<Request Inherits="RequestMessage" />
 						<Response Inherits="ResponseMessage">
 							<Field Name="Body">
 								<Record>
-									<Field Name="UserName" Type="dcUser:dcUserName" />
+									<Field Name="Username" Type="dcUser:dcUsername" />
 									<Field Name="FirstName" Type="dcUser:dcFirstName" />
 									<Field Name="LastName" Type="dcUser:dcLastName" />
 									<Field Name="Email" Type="dcUser:dcEmail" />
@@ -790,29 +790,29 @@
 				<Feature Name="Recovery">
 					<Op Name="InitiateSelf">
 						<Description>
-							Password reset request for a single user record, based on credentials (UserName).
+							Password reset request for a single user record, based on username or user email in User field.
 						</Description>
-						<Request Inherits="RequestMessage" />
-						<Response Inherits="ResponseMessage">
-							<Field Name="Body">
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
 								<Record>
-									<Field Name="Code" Type="dcUser:dcConfirmCode" />
+									<Field Name="User" Type="dcSmallString" Required="True" />
 								</Record>
 							</Field>
-						</Response>
+						</Request>
+						<Response Inherits="ResponseMessage" />
 					</Op>
 				</Feature>
 			</Secure>
 			<Secure Tags="Admin">
 				<Feature Name="Recovery">
-					<Op Name="InitiateUser">
+					<Op Name="InitiateAdmin">
 						<Description>
-							Password reset request for a single user record.
+							Password reset request for a single user record, based on username or user email in User field.
 						</Description>
 						<Request Inherits="RequestMessage">
 							<Field Name="Body" Required="True">
 								<Record>
-									<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+									<Field Name="User" Type="dcSmallString" Required="True" />
 								</Record>
 							</Field>
 						</Request>
@@ -820,6 +820,8 @@
 							<Field Name="Body">
 								<Record>
 									<Field Name="Code" Type="dcUser:dcConfirmCode" />
+									<Field Name="Email" Type="dcUser:dcEmail" />
+									<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
 								</Record>
 							</Field>
 						</Response>
@@ -840,19 +842,18 @@
 							<Field Name="Body">
 								<Record>
 									<Field Name="Id" Type="dcUser:Id" />
-									<Field Name="UserName" Type="dcUser:dcUserName" />
+									<Field Name="Username" Type="dcUser:dcUsername" />
 									<Field Name="FirstName" Type="dcUser:dcFirstName" />
 									<Field Name="LastName" Type="dcUser:dcLastName" />
-									<Field Name="Groups">
-										<List Type="dcGroup:dcName" />
-									</Field>
 									<Field Name="Email" Type="dcUser:dcEmail" />
 									<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
 									<Field Name="Chronology" Type="dcUser:dcChronology" />
 									<Field Name="Locale" Type="dcUser:dcLocale" />
 									<Field Name="Description" Type="dcUser:dcDescription" />
 									<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
-									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
+									<Field Name="Groups">
+										<List Type="dcGroup:dcName" />
+									</Field>
 									<Field Name="AuthorizationTags">
 										<List Type="dcUser:dcAuthorizationTag" />
 									</Field>
@@ -867,7 +868,7 @@
 						<Request Inherits="RequestMessage">
 							<Field Name="Body" Required="True">
 								<Record>
-									<Field Name="UserName" Type="dcUser:dcUserName" Required="IfPresent" />
+									<Field Name="Username" Type="dcUser:dcUsername" Required="IfPresent" />
 									<Field Name="FirstName" Type="dcUser:dcFirstName" Required="IfPresent" />
 									<Field Name="LastName" Type="dcUser:dcLastName" Required="IfPresent" />
 									<Field Name="Email" Type="dcUser:dcEmail" Required="IfPresent" />
@@ -876,18 +877,10 @@
 									<Field Name="Chronology" Type="dcUser:dcChronology" />
 									<Field Name="Locale" Type="dcUser:dcLocale" />
 									<Field Name="Description" Type="dcUser:dcDescription" />
-									<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
-									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
 								</Record>
 							</Field>
 						</Request>
-						<Response Inherits="ResponseMessage">
-							<Field Name="Body">
-								<Record>
-									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
-								</Record>
-							</Field>
-						</Response>
+						<Response Inherits="ResponseMessage" />
 					</Op>
 					<Op Name="RetireSelf">
 						<Description>
@@ -917,7 +910,7 @@
 							<Field Name="Body">
 								<Record>
 									<Field Name="Id" Type="dcUser:Id" />
-									<Field Name="UserName" Type="dcUser:dcUserName" />
+									<Field Name="Username" Type="dcUser:dcUsername" />
 									<Field Name="FirstName" Type="dcUser:dcFirstName" />
 									<Field Name="LastName" Type="dcUser:dcLastName" />
 									<Field Name="Email" Type="dcUser:dcEmail" />
@@ -926,7 +919,6 @@
 									<Field Name="Locale" Type="dcUser:dcLocale" />
 									<Field Name="Description" Type="dcUser:dcDescription" />
 									<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
-									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
 									<Field Name="Groups">
 										<List Type="dcGroup:dcName" />
 									</Field>
@@ -945,7 +937,7 @@
 							<Field Name="Body" Required="True">
 								<Record>
 									<Field Name="Id" Type="dcUser:Id" Required="True" />
-									<Field Name="UserName" Type="dcUser:dcUserName" Required="IfPresent" />
+									<Field Name="Username" Type="dcUser:dcUsername" Required="IfPresent" />
 									<Field Name="FirstName" Type="dcUser:dcFirstName" />
 									<Field Name="LastName" Type="dcUser:dcLastName" />
 									<Field Name="Email" Type="dcUser:dcEmail" />
@@ -955,17 +947,10 @@
 									<Field Name="Locale" Type="dcUser:dcLocale" />
 									<Field Name="Description" Type="dcUser:dcDescription" />
 									<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
-									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
 								</Record>
 							</Field>
 						</Request>
-						<Response Inherits="ResponseMessage">
-							<Field Name="Body">
-								<Record>
-									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
-								</Record>
-							</Field>
-						</Response>
+						<Response Inherits="ResponseMessage" />
 					</Op>
 					<Op Name="AddUser">
 						<Description>
@@ -974,7 +959,7 @@
 						<Request Inherits="RequestMessage">
 							<Field Name="Body" Required="True">
 								<Record>
-									<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+									<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
 									<Field Name="FirstName" Type="dcUser:dcFirstName" />
 									<Field Name="LastName" Type="dcUser:dcLastName" />
 									<Field Name="Email" Type="dcUser:dcEmail" />
@@ -995,7 +980,6 @@
 							<Field Name="Body">
 								<Record>
 									<Field Name="Id" Type="dcUser:Id" />
-									<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
 								</Record>
 							</Field>
 						</Response>
@@ -1080,14 +1064,14 @@
 						</Request>
 						<Response Inherits="ResponseMessage" />
 					</Op>
-					<Op Name="UserNameLookup">
+					<Op Name="UsernameLookup">
 						<Description>
 							Find user record id based on a user name.
 						</Description>
 						<Request Inherits="RequestMessage">
 							<Field Name="Body" Required="True">
 								<Record>
-									<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+									<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
 								</Record>
 							</Field>
 						</Request>
@@ -1109,7 +1093,7 @@
 								<List>
 									<Record>
 										<Field Name="Id" Type="dcUser:Id" />
-										<Field Name="UserName" Type="dcUser:dcUserName" />
+										<Field Name="Username" Type="dcUser:dcUsername" />
 										<Field Name="FirstName" Type="dcUser:dcFirstName" />
 										<Field Name="LastName" Type="dcUser:dcLastName" />
 										<Field Name="Email" Type="dcUser:dcEmail" />
@@ -1119,6 +1103,7 @@
 						</Response>
 					</Op>
 				</Feature>
+				
 				
 				<!-- groups -->
 					
@@ -1141,7 +1126,7 @@
 									<Field Name="Name" Type="dcGroup:dcName" />
 									<Field Name="Description" Type="dcGroup:dcDescription" />
 									<Field Name="Users">
-										<List Type="dcUser:dcUserName" />
+										<List Type="dcUser:dcUsername" />
 									</Field>
 									<Field Name="AuthorizationTags">
 										<List Type="dcGroup:dcAuthorizationTag" />
@@ -1159,7 +1144,7 @@
 								<Record>
 									<Field Name="Id" Type="dcGroup:Id" Required="True" />
 									<Field Name="Name" Type="dcGroup:dcName" Required="IfPresent" />
-									<Field Name="Description" Type="dcdcGroup:dcDescription" />
+									<Field Name="Description" Type="dcGroup:dcDescription" />
 								</Record>
 							</Field>
 						</Request>
@@ -1339,23 +1324,247 @@
 						</Response>
 					</Op>
 				</Feature>
-			</Secure>
-		</Service>
-		
-		<!-- TODO move to dcd -->
-		<Service Name="dcdUsers">
-			<Secure Tags="User">	<!-- choose better tagging -->
-				<Feature Name="Desktop">
-					<Op Name="LoadSelf">
+				<!-- domains -->
+					
+				<Feature Name="Domains">
+					<Op Name="MyLoadDomain">
 						<Description>
-							Load user's own desktop settings.
+							Load current domain record.
 						</Description>
 						<Request Inherits="RequestMessage" />
 						<Response Inherits="ResponseMessage">
 							<Field Name="Body">
 								<Record>
-									<Field Name="RootApp" Type="dcSmallString" />
+									<Field Name="Id" Type="dcDomain:Id" />
+									<Field Name="Title" Type="dcDomain:dcTitle" />
+									<Field Name="Description" Type="dcDomain:dcDescription" />
+									<Field Name="Names">
+										<List Type="dcDomain:dcName" />
+									</Field>
 								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="MyUpdateDomain">
+						<Description>
+							Update current domain record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Title" Type="dcDomain:dcTitle" Required="IfPresent" />
+									<Field Name="Description" Type="dcDomain:dcDescription" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="MySetDomainNames">
+						<Description>
+							Set (replace) the names for current domain.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Names" Required="True">
+										<List Type="dcDomain:dcName" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="MyAddDomainNames">
+						<Description>
+							Add the names for current domain.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Names" Required="True">
+										<List Type="dcDomain:dcName" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="MyRemoveDomainNames">
+						<Description>
+							Remove the names for current domain.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Names" Required="True">
+										<List Type="dcDomain:dcName" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+				</Feature>
+				
+			</Secure>
+			<Secure Tags="SysAdmin">
+				<!-- domains -->
+					
+				<Feature Name="Domains">
+					<Op Name="LoadDomain">
+						<Description>
+							Load a domain record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcDomain:Id" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Id" Type="dcDomain:Id" />
+									<Field Name="Title" Type="dcDomain:dcTitle" />
+									<Field Name="Description" Type="dcDomain:dcDescription" />
+									<Field Name="Names">
+										<List Type="dcDomain:dcName" />
+									</Field>
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="UpdateDomain">
+						<Description>
+							Update a domain record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcDomain:Id" Required="True" />
+									<Field Name="Title" Type="dcDomain:dcTitle" Required="IfPresent" />
+									<Field Name="Description" Type="dcDomain:dcDescription" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="AddDomain">
+						<Description>
+							Add a domain record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Title" Type="dcDomain:dcTitle" Required="IfPresent" />
+									<Field Name="Description" Type="dcDomain:dcDescription" />
+									<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
+									<Field Name="Names">
+										<List Type="dcDomain:dcName" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Id" Type="dcDomain:Id" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="RetireDomain">
+						<Description>
+							Remove (retire) domain record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcDomain:Id" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="ReviveDomain">
+						<Description>
+							Undo retirement of a domain record.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcDomain:Id" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="SetDomainNames">
+						<Description>
+							Set (replace) the names for each domain listed.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcDomain:Id" Required="True" />
+									<Field Name="Names" Required="True">
+										<List Type="dcDomain:dcName" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="AddDomainNames">
+						<Description>
+							Add the name for each domain listed.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcDomain:Id" Required="True" />
+									<Field Name="Names" Required="True">
+										<List Type="dcDomain:dcName" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="RemoveDomainNames">
+						<Description>
+							Remove the authorization tags for each group listed.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="dcDomain:Id" Required="True" />
+									<Field Name="Names" Required="True">
+										<List Type="dcDomain:dcName" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
+					</Op>
+					<Op Name="ListDomains">
+						<Description>
+							Load a list all domain records, no matter how many.  Use with discretion.
+						</Description>
+						<Request Inherits="RequestMessage" />
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dcDomain:Id" />
+										<Field Name="Title" Type="dcDomain:dcTitle" />
+										<Field Name="Description" Type="dcDomain:dcDescription" />
+										<Field Name="Names">
+											<List Type="dcDomain:dcName" />
+										</Field>
+									</Record>
+								</List>
 							</Field>
 						</Response>
 					</Op>
@@ -1382,7 +1591,7 @@
 		</Service>
 		
 		<Service Name="Session">
-			<Secure Tags="PowerUser,Admin,SysAdmin">
+			<Secure Tags="Admin">
 				<Feature Name="Manager">
 					<Op Name="Start">
 						<Description>
@@ -1437,6 +1646,7 @@
 						<Response Inherits="ResponseMessage" />
 					</Op>
 				</Feature>
+				<!--  review
 				<Feature Name="Session">
 					<Op Name="default">
 						<Description>
@@ -1466,14 +1676,6 @@
 						</Response>
 					</Op>
 				</Feature>
-				<Feature Name="Reply">
-					<Op Name="Deliver">
-						<Description>
-							Handles replies to requests (a callback approach).
-						</Description>
-						<Request Inherits="GenericMessage" />
-					</Op>
-				</Feature>
 				<Feature Name="InBox">
 					<Op Name="Deliver">
 						<Description>
@@ -1485,44 +1687,13 @@
 						<Response Inherits="ResponseMessage" />
 					</Op>
 				</Feature>
-				<!-- review security for these FS ops -->
-				<Feature Name="FileStore">
-					<Op Name="Connect">
+				 -->
+				<Feature Name="Reply">
+					<Op Name="Deliver">
 						<Description>
-							Check to see if we can connect and use the FileStore.
+							Handles replies to requests (a callback approach).
 						</Description>
-						<Request Inherits="RequestMessage">
-							<Field Name="Body" Type="AnyRecord" Hint="dciFileStoreDriver" />
-						</Request>
-						<Response Inherits="ResponseMessage" />
-					</Op>
-					<Op Name="Close">
-						<Description>
-							Close connection to FileStore.
-						</Description>
-						<Request Inherits="RequestMessage">
-							<Field Name="Body" Type="AnyRecord" Hint="dciFileStoreDriver" />
-						</Request>
-						<Response Inherits="ResponseMessage" />
-					</Op>
-					<Op Name="Scan">
-						<Description>
-							Find file matches to limits given.
-						</Description>
-						<Request Inherits="RequestMessage">
-							<Field Name="Body" Type="AnyRecord" Hint="dciFileStoreScanner" />
-						</Request>
-						<Response Inherits="ResponseMessage">
-							<Field Name="Body">
-								<Record>
-									<Field Name="Total" Type="Integer" />
-									<Field Name="Offset" Type="Integer" />
-									<Field Name="Matches">
-										<List Type="fisFile" />  		
-									</Field>
-								</Record>
-							</Field>
-						</Response>
+						<Request Inherits="GenericMessage" />
 					</Op>
 				</Feature>
 				<Feature Name="DataChannel">
@@ -1597,30 +1768,6 @@
 									<Field Name="Hub" Type="dcHubId" />
 									<Field Name="Session" Type="dcTinyString" />
 									<Field Name="Channel" Type="dcTinyString" />
-								</Record>
-							</Field>
-						</Request>
-						<Response Inherits="ResponseMessage" />
-					</Op>
-				</Feature>
-			</Secure>
-			<Secure Tags="SysAdmin">
-				<Feature Name="FileStore">
-					<!-- 
-						these three operations are used by an application module in response
-						to external callers and make sense in that context
-					-->
-					<Op Name="SetForUpload">
-						<Description>
-							Mount/connect to a filestore.  Set the session to use this filestore with the
-							next upload.
-						</Description>
-						<Request Inherits="RequestMessage">
-							<Field Name="Body" Required="True">
-								<Record>
-									<Field Name="Driver" Type="dcSmallString" Required="True" />
-									<Field Name="Settings" Type="AnyRecord" Hint="dciFileStoreDriver" />
-									<Field Name="File" Type="fisFile" Required="True" />
 								</Record>
 							</Field>
 						</Request>

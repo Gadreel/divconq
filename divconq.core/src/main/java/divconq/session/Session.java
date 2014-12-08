@@ -95,12 +95,12 @@ Context: {
       Chronology: "/America/Chicago",
       Locale: "en-US",  
       UserId: "119",
-      UserName: "awhite",
+      Username: "awhite",
       FullName: "Andy White",
       Email: "andy.white@divconq.com",
       AuthToken: "010A0D0502",
       Credentials: {
-         UserName: "nnnn",
+         Username: "nnnn",
          Password: "mmmm"
       }
 }

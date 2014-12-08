@@ -44,7 +44,7 @@ public class ObjectBuilder implements ICompositeBuilder {
 	}
 	
 	@Override
-	public void record(Object... props) throws BuilderStateException {
+	public ICompositeBuilder record(Object... props) throws BuilderStateException {
 		this.startRecord();
 		
 		String name = null;
@@ -63,10 +63,12 @@ public class ObjectBuilder implements ICompositeBuilder {
 		}
 		
 		this.endRecord();
+		
+		return this;
 	}
 	
 	@Override
-	public void startRecord() throws BuilderStateException {
+	public ICompositeBuilder startRecord() throws BuilderStateException {
 		// if in a list, check if we need a comma 
 		if ((this.cstate != null) && (this.cstate.State == BuilderState.InList)) {			
 			if (!this.cstate.ValueComplete)
@@ -83,10 +85,12 @@ public class ObjectBuilder implements ICompositeBuilder {
 			this.root = this.cstate.CurrentE;
 		
 		this.bstate.add(cstate);
+		
+		return this;
 	}
 	
 	@Override
-	public void endRecord() throws BuilderStateException {
+	public ICompositeBuilder endRecord() throws BuilderStateException {
 		// cannot call end rec with being in a record or field
 		if (this.cstate == null)			
 			throw new BuilderStateException("Cannot end record, structure not started");
@@ -105,14 +109,18 @@ public class ObjectBuilder implements ICompositeBuilder {
 		
 		// mark the value complete, let parent container know we need commas
 		this.completeValue(child);
+		
+		return this;
 	}
 	
 
 	// names may contain only alpha-numerics
 	@Override
-	public void field(String name, Object value) throws BuilderStateException {
+	public ICompositeBuilder field(String name, Object value) throws BuilderStateException {
 		this.field(name);
 		this.value(value);
+		
+		return this;
 	}
 
 	/*
@@ -120,7 +128,7 @@ public class ObjectBuilder implements ICompositeBuilder {
 	 * or to call if in a record straight up
 	 */
 	@Override
-	public void field(String name) throws BuilderStateException {
+	public ICompositeBuilder field(String name) throws BuilderStateException {
 		// fields cannot occur outside of records
 		if (this.cstate == null)			
 			throw new BuilderStateException("Cannot end record, structure not started");
@@ -137,10 +145,12 @@ public class ObjectBuilder implements ICompositeBuilder {
 			this.field();
 		
 		this.value(name);
+		
+		return this;
 	}
 	
 	@Override
-	public void field() throws BuilderStateException {
+	public ICompositeBuilder field() throws BuilderStateException {
 		// fields cannot occur outside of records
 		if (this.cstate == null)			
 			throw new BuilderStateException("Cannot end record, structure not started");
@@ -159,6 +169,8 @@ public class ObjectBuilder implements ICompositeBuilder {
 		// note that we are in a field now, value not completed
 		this.cstate = new BuilderInfo(BuilderState.InField);
 		this.bstate.add(cstate);
+		
+		return this;
 	}
 	
 	private void endField(CompositeStruct child) throws BuilderStateException {
@@ -181,17 +193,19 @@ public class ObjectBuilder implements ICompositeBuilder {
 	}
 	
 	@Override
-	public void list(Object... props) throws BuilderStateException {
+	public ICompositeBuilder list(Object... props) throws BuilderStateException {
 		this.startList();
 		
 		for (Object o : props)
 			this.value(o);
 		
 		this.endList();
+		
+		return this;
 	}
 	
 	@Override
-	public void startList() throws BuilderStateException {
+	public ICompositeBuilder startList() throws BuilderStateException {
 		// if in a list, check if we need a comma 
 		if ((this.cstate != null) && (this.cstate.State == BuilderState.InList)) {			
 			if (!this.cstate.ValueComplete)
@@ -211,10 +225,12 @@ public class ObjectBuilder implements ICompositeBuilder {
 		
 		// start out complete (an empty list is complete)
 		this.cstate.ValueComplete = true;
+		
+		return this;
 	}
 	
 	@Override
-	public void endList() throws BuilderStateException {
+	public ICompositeBuilder endList() throws BuilderStateException {
 		// must be in a list
 		if ((this.cstate == null) || (this.cstate.State != BuilderState.InList))
 			throw new BuilderStateException("Cannot end list when not in a list");
@@ -229,6 +245,8 @@ public class ObjectBuilder implements ICompositeBuilder {
 		
 		// mark the value complete, let parent container know we need commas
 		this.completeValue(child);
+		
+		return this;
 	}
 		
 	private void endItem(CompositeStruct child) throws BuilderStateException {
@@ -255,7 +273,7 @@ public class ObjectBuilder implements ICompositeBuilder {
 	}
 	
 	@Override
-	public void value(Object value) throws BuilderStateException {
+	public ICompositeBuilder value(Object value) throws BuilderStateException {
 		// cannot occur outside of field or list
 		if ((this.cstate == null) || ((this.cstate.State != BuilderState.InField) && (this.cstate.State != BuilderState.InList)))
 			throw new BuilderStateException("Value can only be called within a field or a list");
@@ -268,7 +286,7 @@ public class ObjectBuilder implements ICompositeBuilder {
 				
 			this.cstate.CurrentField = name;
 			this.cstate.IsNamed = true;
-			return;
+			return this;
 		}
 		
 		// if in a list, check if we need a comma 
@@ -293,7 +311,7 @@ public class ObjectBuilder implements ICompositeBuilder {
 			this.cstate.CurrentValue = value;
 		else if (value instanceof ICompositeOutput) {
 			((ICompositeOutput)value).toBuilder(this);	
-			return;		// don't mark complete, stuff in value should handle that
+			return this;		// don't mark complete, stuff in value should handle that
 		}
 		//else if (value instanceof ByteBuffer) 
 			//this.write("\"" + Base64.encodeBase64String(((ByteBuffer)value).array()) + "\"");		// TODO more efficient
@@ -307,10 +325,12 @@ public class ObjectBuilder implements ICompositeBuilder {
 		
 		// mark the value complete, let parent container know we need commas
 		this.completeValue(null);
+		
+		return this;
 	}
 	
 	@Override
-	public void rawJson(Object value) throws BuilderStateException {
+	public ICompositeBuilder rawJson(Object value) throws BuilderStateException {
 		// cannot occur outside of field or list
 		if ((this.cstate == null) || (this.cstate.State == BuilderState.InRecord))
 			throw new BuilderStateException("Raw JSON can only occur within a field or a list");
@@ -327,6 +347,8 @@ public class ObjectBuilder implements ICompositeBuilder {
 		
 		// mark the value complete, let parent container know we need commas
 		this.completeValue(null);
+		
+		return this;
 	}
 	
 	private void popState() throws BuilderStateException {

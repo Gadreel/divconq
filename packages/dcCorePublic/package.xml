@@ -9,4 +9,7 @@
 		<Package Name="dcCore" MinVersion="0.9" />
 	</DependsOn>
 
+	<NoLongerDependsOn>
+		<Library Path="packages/dcCorePublic/schema/m.xml"/>
+	</NoLongerDependsOn>
 </Package>

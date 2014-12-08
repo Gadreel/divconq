@@ -139,7 +139,7 @@ public class MessageUtil {
     	if (msg == null) 
     		return;
     	
-    	msg.setToHub(original.getFieldAsString("Hub"));
+    	msg.withToHub(original.getFieldAsString("Hub"));
     	
     	RecordStruct body = msg.getFieldAsRecord("Body");
     	

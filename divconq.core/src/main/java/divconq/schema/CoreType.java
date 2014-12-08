@@ -202,6 +202,11 @@ public class CoreType {
 			if (this.restrictions.size() == 0)
 				return true;
 			
+			if (StringUtil.containsRestrictedChars(x)) {
+				mr.error("String contains restricted characters!");
+				return false;
+			}
+			
 			for (IDataRestriction dr : this.restrictions) {
 				if (dr.pass(x)) 
 					return true;

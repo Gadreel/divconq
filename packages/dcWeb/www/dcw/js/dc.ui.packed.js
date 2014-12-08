@@ -1564,7 +1564,7 @@ $(document).ready(function() {
 		var info = dc.user.getUserInfo();
 
 		if (info.Credentials) {
-			dc.user.signin(info.Credentials.UserName, info.Credentials.Password, info.RememberMe, function(msg) { 
+			dc.user.signin(info.Credentials.Username, info.Credentials.Password, info.RememberMe, function(msg) { 
 				if (dc.user.isVerified())
 					dc.pui.Loader.loadMainPage();
 				else 

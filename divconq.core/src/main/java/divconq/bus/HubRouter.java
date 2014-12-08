@@ -254,7 +254,7 @@ public class HubRouter {
 							
 							// update the operation context
 							if (uc != null) 
-								OperationContext.use(uc, tc.toBuilder());
+								OperationContext.switchUser(tc, uc);		// this should update the task context too
 							
 							if (task.hasErrors()) {
 							    task.complete();
@@ -264,18 +264,19 @@ public class HubRouter {
 							// validate the structure of the message
 							OperationResult vres = Hub.instance.getSchema().validateRequest(msg);	
 							
-							// if invalid structure then do not continue
-							if (vres.hasErrors()) {
-							    task.complete();
-							    return;
-							}
-							
 							// when making a valid call to any service, you are elevated to system access for the duration of the request
 							// RPC users get a new context with each call though, and reply will not violate any security
 							// so it is up to each service to call only other services as appropriate - that is each service 
 							// is ultimately responsible for security
-							if (!OperationContext.get().isElevated())
-								OperationContext.use(OperationContext.get().toBuilder().withElevated(true));
+							if (!tc.isElevated())
+								OperationContext.elevate(tc);		// this should update the task context too
+							
+							// if invalid structure then do not continue, but we do need the elevate above to
+							// call reply service
+							if (vres.hasErrors()) {
+							    task.complete();
+							    return;
+							}
 							
 							cb.handle(task);
 							

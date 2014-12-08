@@ -44,5 +44,29 @@ public class DbField {
 	public boolean dynamic = false;
 	public boolean list = false;
 	public String fkey = null;
+	
+	public boolean isList() {
+		return this.list;
+	}
 
+	public boolean isDynamic() {
+		return this.dynamic;
+	}
+
+	public boolean isIndexed() {
+		return this.indexed;
+	}
+	
+	public String getName() {
+		return this.name;
+	}
+
+	public String getType() {
+		return this.type;
+	}
+	
+	public String getForeignKey() {
+		return this.fkey;
+	}
+	
 }

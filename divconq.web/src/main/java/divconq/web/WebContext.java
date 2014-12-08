@@ -118,7 +118,7 @@ public class WebContext {
 				return uc.getUserId();
 			
 			if ("dcUsername".equals(name))
-				return uc.getUserName();
+				return uc.getUsername();
 			
 			if ("dcUserFullname".equals(name))
 				return uc.getFullName();

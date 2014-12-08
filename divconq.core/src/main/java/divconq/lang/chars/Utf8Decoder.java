@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import divconq.lang.Memory;
 import divconq.lang.StringBuilder32;
 
 public class Utf8Decoder implements ICharDecoder {
@@ -264,6 +265,42 @@ public class Utf8Decoder implements ICharDecoder {
         try {
         	while (buffer.readableBytes() > 0) {
 	            if (this.readByteNeedMore(buffer.readByte(), true))
+	            	continue;
+	        
+	            if (this.lastSpecial != -1) {
+            		this.result = new ArrayList<StringBuilder32>();		
+            		return sb;
+	            }
+	            
+	            sb.append(this.getCharacterAndReset());
+	        }	        
+        }
+        catch (Exception x) {
+        	// TODO
+        }
+    	
+    	return null;
+	}
+
+	public StringBuilder32 processBytesUntilSpecial(Memory buffer) {
+		if (buffer == null)
+			return null;
+		
+        StringBuilder32 sb = null;
+        
+        // continue to build up strings from last call
+        if (this.result.size() > 0)
+        	sb = this.result.get(this.result.size() - 1);
+        else {
+        	sb = new StringBuilder32();
+        	this.result.add(sb);
+        }
+        
+        this.lastSpecial = -1;
+        
+        try {
+        	while (buffer.readableBytes() > 0) {
+	            if (this.readByteNeedMore((byte)buffer.readByte(), true))
 	            	continue;
 	        
 	            if (this.lastSpecial != -1) {

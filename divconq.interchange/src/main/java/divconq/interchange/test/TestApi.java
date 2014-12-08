@@ -277,7 +277,7 @@ public class TestApi {
 				System.out.print("User Name: ");
 				String uname = in.nextLine();
 				
-				req.setField("UserName", uname);				
+				req.setField("Username", uname);				
 				
 				System.out.print("First Name: ");
 				String fname = in.nextLine();
@@ -348,7 +348,7 @@ public class TestApi {
 				String uname = in.nextLine();
 				
 				if (!"*".equals(uname)) 
-					req.setField("UserName", uname);
+					req.setField("Username", uname);
 				
 				System.out.print("First Name: ");
 				String fname = in.nextLine();
@@ -443,7 +443,7 @@ public class TestApi {
 				System.out.print("User Name: ");
 				String uname = in.nextLine();
 				
-				RecordStruct req = new RecordStruct(new FieldStruct("UserName", uname));
+				RecordStruct req = new RecordStruct(new FieldStruct("Username", uname));
 				
 				capi.sendMessage(new Message("dcAuth", "Recovery", "InitiateUser", req), new DumpCallback("InitiateUser"));
 				
@@ -457,9 +457,9 @@ public class TestApi {
 				if (StringUtil.isEmpty(uname))
 					break;
 				
-				RecordStruct req = new RecordStruct(new FieldStruct("UserName", uname));
+				RecordStruct req = new RecordStruct(new FieldStruct("Username", uname));
 				
-				capi.sendMessage(new Message("dcCoreDataServices", "Users", "UserNameLookup", req), new DumpCallback("UserNameLookup"));
+				capi.sendMessage(new Message("dcCoreDataServices", "Users", "UsernameLookup", req), new DumpCallback("UsernameLookup"));
 				
 				break;
 			}

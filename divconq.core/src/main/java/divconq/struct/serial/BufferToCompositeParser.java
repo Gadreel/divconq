@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
 import divconq.lang.chars.Special;
 import divconq.lang.chars.Utf8Decoder;
@@ -67,35 +68,67 @@ public class BufferToCompositeParser {
 			if (str == null)
 				break;		// we need more buffer
 			
-			if (str.length() > 0) {
-				if (this.builder.needFieldName())
-					this.builder.value(str.toString());
-				else
-					this.toScalar(this.builder, str);
-			}
-			
-			int special = this.decoder.getLastSpecialCharacter();
-			
-			// at the end (there should be no outstanding text
-			if (special == Special.End.getCode()) {
-				this.done = true;
+			if (this.parseChunk(str))
 				break;
-			}
-			
-			if (special == Special.StartRec.getCode()) 
-				this.builder.startRecord();
-			else if (special == Special.EndRec.getCode()) 
-				this.builder.endRecord();
-			else if (special == Special.StartList.getCode()) 
-				this.builder.startList();
-			else if (special == Special.EndList.getCode()) 
-				this.builder.endList();
-			// is for delineation only does not do anything
-			//else if (special == Special.Scalar.getCode()) 
-			//	this.builder.scalar();
-			else if (special == Special.Field.getCode())
-				this.builder.field();
 		}
+	}
+	
+	public void parseStruct(ByteBuffer input) throws Exception {
+		while (true) {
+			StringBuilder32 str = this.decoder.processBytesUntilSpecial(input);			
+		
+			if (str == null)
+				break;		// we need more buffer
+			
+			if (this.parseChunk(str))
+				break;
+		}
+	}
+	
+	public void parseStruct(Memory input) throws Exception {
+		while (true) {
+			StringBuilder32 str = this.decoder.processBytesUntilSpecial(input);			
+		
+			if (str == null)
+				break;		// we need more buffer
+			
+			if (this.parseChunk(str))
+				break;
+		}
+	}
+	
+	// return true if at end
+	public boolean parseChunk(StringBuilder32 str) throws Exception { 
+		if (str.length() > 0) {
+			if (this.builder.needFieldName())
+				this.builder.value(str.toString());
+			else
+				this.toScalar(this.builder, str);
+		}
+		
+		int special = this.decoder.getLastSpecialCharacter();
+		
+		// at the end (there should be no outstanding text
+		if (special == Special.End.getCode()) {
+			this.done = true;
+			return true;
+		}
+		
+		if (special == Special.StartRec.getCode()) 
+			this.builder.startRecord();
+		else if (special == Special.EndRec.getCode()) 
+			this.builder.endRecord();
+		else if (special == Special.StartList.getCode()) 
+			this.builder.startList();
+		else if (special == Special.EndList.getCode()) 
+			this.builder.endList();
+		// is for delineation only does not do anything
+		//else if (special == Special.Scalar.getCode()) 
+		//	this.builder.scalar();
+		else if (special == Special.Field.getCode())
+			this.builder.field();
+		
+		return false;
 	}
 	
 	protected void toScalar(ICompositeBuilder rb, CharSequence val) throws BuilderStateException {

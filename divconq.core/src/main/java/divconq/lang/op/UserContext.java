@@ -66,7 +66,7 @@ public class UserContext {
 	}
 	
 	static public UserContext allocateFromTask(RecordStruct m) {
-		return new UserContext(m.deepCopyExclude("OpId", "SessionId", "Origin", "DebugLevel", "Elevated", "Pool"));
+		return new UserContext(m.deepCopyExclude("OpId", "SessionId", "Origin", "DebugLevel", "Elevated", "Gateway", "Pool"));
 	}
 	
 	static public OperationContextBuilder checkCredentials(UserContext ctx, RecordStruct v) {
@@ -95,8 +95,8 @@ public class UserContext {
 	/**
 	 * @return the username of the user
 	 */
-	public String getUserName() {
-		return this.context.getFieldAsString("UserName");
+	public String getUsername() {
+		return this.context.getFieldAsString("Username");
 	}
 
 	/**

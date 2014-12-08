@@ -41,12 +41,17 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.joda.time.DateTime;
+
 import divconq.api.ApiSession;
 import divconq.api.IApiSessionFactory;
 import divconq.bus.Bus;
 import divconq.bus.Message;
 import divconq.count.CountManager;
 import divconq.ctp.net.CtpServices;
+import divconq.db.IDatabaseManager;
+import divconq.db.ObjectResult;
+import divconq.db.DataRequest;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
@@ -63,6 +68,8 @@ import divconq.service.simple.DomainsService;
 import divconq.session.Sessions;
 import divconq.sql.SqlManager;
 import divconq.sql.SqlManager.SqlDatabase;
+import divconq.struct.CompositeStruct;
+import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -115,6 +122,7 @@ public class Hub {
 	protected Sessions sessions = new Sessions();
 	protected HubResources resources = null;
 	protected SecurityPolicy policy = new SecurityPolicy();
+	protected IDatabaseManager db = null;
 
 	// domain tracking
 	protected ConcurrentHashMap<String, String> dnamemap = new ConcurrentHashMap<>();
@@ -171,7 +179,7 @@ public class Hub {
 			if (this.dependencyCntBoot > 0) {
 				// not ready is ok if we are still starting
 				if (this.state == HubState.Booting) {
-					Logger.info("Waiting on boot dependecies: " + this.dependencyCntBoot);
+					Logger.info("Waiting on boot dependencies: " + this.dependencyCntBoot);
 					return;
 				}
 				
@@ -190,7 +198,7 @@ public class Hub {
 			if (this.dependencyCntConn > 0) {
 				// not ready is ok if we are just starting
 				if (this.state == HubState.Booted) {
-					Logger.info("Waiting on connect dependecies: " + this.dependencyCntConn);
+					Logger.info("Waiting on connect dependencies: " + this.dependencyCntConn);
 					return;
 				}
 				
@@ -208,7 +216,7 @@ public class Hub {
 			if (this.dependencyCntRun > 0) {
 				// not ready is ok if we are just starting
 				if (this.state == HubState.Connected) {
-					Logger.info("Waiting on run dependecies: " + this.dependencyCntRun);
+					Logger.info("Waiting on run dependencies: " + this.dependencyCntRun);
 					return;
 				}
 				
@@ -479,6 +487,10 @@ public class Hub {
 	public long getStartTime() {
 		return this.starttime;
 	}
+
+	public IDatabaseManager getDatabase() {
+		return this.db;
+	}
 	
 	public SqlDatabase getSQLDatabase() {
 		return this.getSQLDatabase("default");
@@ -654,6 +666,29 @@ public class Hub {
 			or.exitTr(139);
 			return or;
 		}
+		// load the sql databases, if any
+		
+		or.debug(0, "Initializing dcDatabase");
+		
+		XElement dcdb = config.find("dcDatabase");
+		
+		if (dcdb != null) {
+			String cname = dcdb.getAttribute("Class", "divconq.db.rocks.DatabaseManager");
+			
+			try {
+				Class<?> dbclass = Class.forName(cname);				
+				this.db = (IDatabaseManager) dbclass.newInstance();
+				this.db.init(dcdb);
+			} 
+			catch (Exception x) {
+				or.error("Unable to load/start database class: " + x);
+			}
+			
+			if (or.hasErrors()) {
+				or.exitTr(146);		// TODO fix code to dcdb code
+				return or;
+			}
+		}
 		
 		// load the sql databases, if any
 		
@@ -754,7 +789,18 @@ public class Hub {
 					if (!Hub.instance.isStopping())  {
 						FileUtil.cleanupTemp();
 					
-						//OperationContext.cleanUp();
+						RecordStruct params = new RecordStruct(
+								new FieldStruct("ExpireThreshold", new DateTime().minusMinutes(5)),
+								new FieldStruct("LongExpireThreshold", new DateTime().minusMinutes(30))
+						);
+						
+						Hub.instance.getDatabase().submit(new DataRequest("dcCleanup").withParams(params), new ObjectResult() {
+							@Override
+							public void process(CompositeStruct result) {
+								if (this.hasErrors())
+									Logger.errorTr(114);
+							}
+						});
 					}
 					
 					reporter.setStatus("After cleaning contexts and temp files");
@@ -762,7 +808,7 @@ public class Hub {
 
 				@Override
 				public int period() {
-					return 30;
+					return 300;
 				}
 		};
 		
@@ -932,6 +978,16 @@ public class Hub {
 			Thread.sleep(500);
 		} 
 		catch (InterruptedException x) {
+		}
+		
+		or.debug(0, "Stopping SQL Database Manager");		
+		
+		this.sqldbman.stop();
+		
+		if (this.db != null) {
+			or.debug(0, "Stopping dcDatabase");
+			
+			this.db.stop();
 		}
 		
 		or.debug(0, "Stopping bus");

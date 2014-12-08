@@ -22,14 +22,21 @@
 package divconq.interchange.simple;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalTime;
+import org.rocksdb.RocksIterator;
 
 import divconq.api.ApiSession;
 import divconq.api.DumpCallback;
@@ -37,23 +44,44 @@ import divconq.api.ServiceResult;
 import divconq.api.tasks.TaskFactory;
 import divconq.bus.Message;
 import divconq.ctp.f.CtpFClient;
+import divconq.db.Constants;
+import divconq.db.ObjectResult;
+import divconq.db.DataRequest;
+import divconq.db.common.KeyQueryRequest;
+import divconq.db.common.RequestFactory;
+import divconq.db.query.LoadRecordRequest;
+import divconq.db.query.SelectFields;
+import divconq.db.rocks.RocksInterface;
+import divconq.db.rocks.DatabaseManager;
+import divconq.db.rocks.keyquery.ExpandoKeyLevel;
+import divconq.db.rocks.keyquery.KeyQuery;
+import divconq.db.rocks.keyquery.MatchKeyLevel;
+import divconq.db.rocks.keyquery.WildcardKeyLevel;
+import divconq.db.update.DbRecordRequest;
+import divconq.db.update.InsertRecordRequest;
+import divconq.db.update.UpdateRecordRequest;
+import divconq.db.util.ByteUtil;
 import divconq.filestore.CommonPath;
 import divconq.hub.Foreground;
 import divconq.hub.Hub;
 import divconq.hub.ILocalCommandLine;
+import divconq.lang.Memory;
 import divconq.lang.TimeoutPlan;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationObserver;
 import divconq.lang.op.OperationResult;
 import divconq.log.DebugLevel;
+import divconq.log.Logger;
 import divconq.script.Activity;
 import divconq.script.ui.ScriptUtility;
+import divconq.struct.CompositeStruct;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.util.FileUtil;
+import divconq.util.HexUtil;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
 import divconq.work.Task;
@@ -64,7 +92,7 @@ public class FileStoreClient implements ILocalCommandLine {
 	@Override
 	public void run(final Scanner scan, final ApiSession api) {
 		boolean running = true;
-		
+
 		String fsService = "dcTestFileServer";		
 		
 		XElement cliset = Hub.instance.getConfig().selectFirst("CommandLine/Settings");
@@ -950,11 +978,731 @@ public class FileStoreClient implements ILocalCommandLine {
 					
 					break;
 				}
+				
+				case 204: {
+					System.out.println("8a:         MIN: " + HexUtil.bufferToHex(ByteUtil.longToDBNumber(Long.MIN_VALUE)));
+					System.out.println("6a: -9999999999: " + HexUtil.bufferToHex(ByteUtil.longToDBNumber(-9999999999L)));
+					System.out.println("4a:       -1000: " + HexUtil.bufferToHex(ByteUtil.longToDBNumber(-1000)));
+					System.out.println("2a:          -1: " + HexUtil.bufferToHex(ByteUtil.longToDBNumber(-1)));
+					System.out.println("1a:           1: " + HexUtil.bufferToHex(ByteUtil.longToDBNumber(1)));
+					System.out.println("3a:        1000: " + HexUtil.bufferToHex(ByteUtil.longToDBNumber(1000)));
+					System.out.println("5a:  9999999999: " + HexUtil.bufferToHex(ByteUtil.longToDBNumber(9999999999L)));
+					System.out.println("7a:         MAX: " + HexUtil.bufferToHex(ByteUtil.longToDBNumber(Long.MAX_VALUE)));
+					break;
+				}
+				
+				case 205: {
+					/*
+					BigDecimal small = new BigDecimal("0.0000000017");
+					BigDecimal small2 = new BigDecimal("0.1");
+					BigDecimal big = new BigDecimal("10000000000000000000000000000");
+					BigDecimal both = new BigDecimal("10000000000000000000000000000.000000001");
+					BigDecimal odd = new BigDecimal("0.999999999");
+					*/
+					
+					System.out.println(" DB_NUMBER_MIN: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(Constants.DB_NUMBER_MIN)));
+					System.out.println(" Long.MIN_VALUE: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal(Long.MIN_VALUE))));
+					System.out.println(" -9999999999.999999999: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("-9999999999.999999999"))));
+					System.out.println(" -9999999999: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("-9999999999"))));
+					System.out.println("       -1000.0001: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("-1000.0001"))));
+					System.out.println("       -1000: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("-1000"))));
+					System.out.println("          -1.000000001: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("-1.000000001"))));
+					System.out.println("          -1: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("-1"))));
+					System.out.println("          -0.1: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("-0.1"))));
+					System.out.println("   -0.0000000017: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("-0.0000000017"))));
+					System.out.println("    0.0000000017: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("0.0000000017"))));
+					System.out.println("          0.1: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("0.1"))));
+					System.out.println("           1: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("1"))));
+					System.out.println("           1.000000001: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("1.000000001"))));
+					System.out.println("        1000: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("1000"))));
+					System.out.println("        1000.0001: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("1000.0001"))));
+					System.out.println("  9999999999: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("9999999999"))));
+					System.out.println("  9999999999.999999999: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal("9999999999.999999999"))));
+					System.out.println("   Long.MAX_VALUE: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(new BigDecimal(Long.MAX_VALUE))));
+					System.out.println(" DB_NUMBER_MAX: " + HexUtil.bufferToHex(ByteUtil.decimalToDBNumber(Constants.DB_NUMBER_MAX)));
+					
+					/*
+					System.out.println("1a:         " + HexUtil.bufferToHex(small.toBigInteger().toByteArray()));
+					System.out.println("1b:         " + HexUtil.bufferToHex(small.unscaledValue().toByteArray()));
+					System.out.println("1c:         " + small.scale());
+					
+					System.out.println();
+					System.out.println("2a:         " + HexUtil.bufferToHex(big.toBigInteger().toByteArray()));
+					System.out.println("2b:         " + HexUtil.bufferToHex(big.unscaledValue().toByteArray()));
+					
+					System.out.println();
+					System.out.println("3a:         " + HexUtil.bufferToHex(both.toBigInteger().toByteArray()));
+					System.out.println("3b:         " + HexUtil.bufferToHex(both.subtract(big).unscaledValue().toByteArray()));
+					System.out.println("3c:         " + both.scale());
+					System.out.println("3d:         " + HexUtil.bufferToHex(both.subtract(big).movePointRight(8).toBigInteger().toByteArray()));
+					
+					odd = odd.setScale(9, RoundingMode.HALF_UP);
+					
+					//System.out.println("4a:         " + odd.scale());
+					System.out.println("4b:         " + odd.toPlainString());
+					
+					System.out.println("4c:        " + HexUtil.bufferToHex(odd.unscaledValue().toByteArray()));
+					
+					System.out.println("5a:         " + small.toPlainString());
+					
+					small = small.setScale(9, RoundingMode.HALF_UP);
+					
+					//System.out.println("4a:         " + odd.scale());
+					System.out.println("5b:         " + small.toPlainString());
+					
+					System.out.println("5c:        " + HexUtil.bufferToHex(small.unscaledValue().toByteArray()));
+					
+					System.out.println("6a:         " + small2.toPlainString());
+					
+					small2 = small2.setScale(9, RoundingMode.HALF_UP);
+					
+					//System.out.println("4a:         " + odd.scale());
+					System.out.println("6b:         " + small2.toPlainString());
+					
+					System.out.println("6c:        " + HexUtil.bufferToHex(small2.unscaledValue().toByteArray()));
+					*/
+					
+					/*
+					odd = odd.movePointRight(9);
+					
+					System.out.println("4c:         " + odd.toPlainString());
+					System.out.println("4d:         " + odd.longValue());
+					System.out.println("4e:         " + odd.intValue());
+					System.out.println("4f:         " + odd.toBigInteger().toString());
+					System.out.println("4g:         " + HexUtil.bufferToHex(odd.toBigInteger().toByteArray()));
+					
+					System.out.println("4h:         " + HexUtil.bufferToHex(odd.unscaledValue().toByteArray()));
+					*/
+
+				}
+				
+				case 206: {
+					Memory m = new Memory(ByteUtil.longToDBNumber(Long.MIN_VALUE));
+					m.setPosition(0);
+					System.out.println("8a:         MIN: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.longToDBNumber(-9999999999L));
+					m.setPosition(0);
+					System.out.println("6a: -9999999999: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.longToDBNumber(-1000));
+					m.setPosition(0);
+					System.out.println("4a:       -1000: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.longToDBNumber(-1));
+					m.setPosition(0);
+					System.out.println("2a:          -1: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.longToDBNumber(1));
+					m.setPosition(0);
+					System.out.println("1a:           1: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.longToDBNumber(1000));
+					m.setPosition(0);
+					System.out.println("3a:        1000: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.longToDBNumber(9999999999L));
+					m.setPosition(0);
+					System.out.println("5a:  9999999999: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.longToDBNumber(Long.MAX_VALUE));
+					m.setPosition(0);
+					System.out.println("7a:         MAX: " + ByteUtil.dbNumberToNumber(m));
+					
+					break;
+				}
+				
+				case 207: {
+					
+					Memory m = new Memory(ByteUtil.decimalToDBNumber(Constants.DB_NUMBER_MIN));
+					m.setPosition(0);
+					System.out.println("6a: MIN: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.decimalToDBNumber(Constants.DB_NUMBER_MIN.add(new BigDecimal("0.000000001"))));
+					m.setPosition(0);
+					System.out.println("6a: near MIN: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.decimalToDBNumber(new BigDecimal("-9999999999.999999999")));
+					m.setPosition(0);
+					System.out.println("6a: -9999999999.999999999: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.decimalToDBNumber(new BigDecimal("-999999.9999")));
+					m.setPosition(0);
+					System.out.println("6a: -999999.9999: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.decimalToDBNumber(new BigDecimal("-1000.01")));
+					m.setPosition(0);
+					System.out.println("4a:     -1000.01: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.decimalToDBNumber(new BigDecimal("-1.1")));
+					m.setPosition(0);
+					System.out.println("2a:         -1.1: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.decimalToDBNumber(new BigDecimal("1.1")));
+					m.setPosition(0);
+					System.out.println("1a:          1.1: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.decimalToDBNumber(new BigDecimal("1000.01")));
+					m.setPosition(0);
+					System.out.println("3a:      1000.01: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.decimalToDBNumber(new BigDecimal("999999.9999")));
+					m.setPosition(0);
+					System.out.println("5a:  999999.9999: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.decimalToDBNumber(new BigDecimal("9999999999.999999999")));
+					m.setPosition(0);
+					System.out.println("6a: 9999999999.999999999: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.decimalToDBNumber(Constants.DB_NUMBER_MAX.subtract(new BigDecimal("0.000000001"))));
+					m.setPosition(0);
+					System.out.println("6a: near MAX: " + ByteUtil.dbNumberToNumber(m));
+					
+					m = new Memory(ByteUtil.decimalToDBNumber(Constants.DB_NUMBER_MAX));
+					m.setPosition(0);
+					System.out.println("6a: MAX: " + ByteUtil.dbNumberToNumber(m));
+					
+					
+					break;
+				}
+				
+				case 208: {
+					Memory mem = new Memory();
+					
+					ByteUtil.encodeValue(mem, "hello world", true);
+					mem.writeByte(Constants.DB_TYPE_MARKER_ALPHA);
+					
+					ByteUtil.encodeValue(mem, 99.75, true);
+					mem.writeByte(Constants.DB_TYPE_MARKER_ALPHA);
+					
+					ByteUtil.encodeValue(mem, "GOODBYE CRUEL WORLD", true);
+					
+					System.out.println("Encoded: " + HexUtil.bufferToHex(mem.toArray()));
+					
+					mem.setPosition(0);
+					
+					mem.readByte();  // read type
+					System.out.println("Decode A: " + ByteUtil.dbStringToString(mem));
+					mem.readByte(); // read marker
+					mem.readByte();  // read type
+					System.out.println("Decode B: " + ByteUtil.dbNumberToNumber(mem));
+					mem.readByte(); // read marker
+					mem.readByte();  // read type
+					System.out.println("Decode C: " + ByteUtil.dbStringToString(mem) + "|");
+					
+					break;
+				}
+				
+				case 209: {
+					try {
+						RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+						
+						adapt.set("Record", "Person", 1045, "Age", 21);
+						adapt.set("Record", "Person", 1045, "DOB", new LocalDate(1990, 8, 31));
+						adapt.set("Record", "Person", 1045, "Name", "Jenny Peters");
+						adapt.set("Record", "Person", 1045, "Start", new LocalTime(10, 20, 15));
+						
+						adapt.set("Record", "Person", 2045, "Age", 41);
+						adapt.set("Record", "Person", 2045, "DOB", new LocalDate(1970, 8, 31));
+						adapt.set("Record", "Person", 2045, "Name", "Harold Peters");
+						adapt.set("Record", "Person", 2045, "Start", new LocalTime(20, 20, 15));
+						
+						adapt.set("Record", "Person", 3045, "Age", 31);
+						adapt.set("Record", "Person", 3045, "DOB", new LocalDate(1980, 8, 31));
+						adapt.set("Record", "Person", 3045, "Name", "Roger Peters");
+						adapt.set("Record", "Person", 3045, "Start", new LocalTime(6, 20, 15));
+						
+						// special tags
+						adapt.set("Record", "z");
+						adapt.set("Record", "Person", "y");
+						adapt.set("Record", "Person", 3046, "x");
+						
+						adapt.set("Record", "Person", 3046, "Age", 35);
+						adapt.set("Record", "Person", 3046, "DOB", new LocalDate(1975, 8, 31));
+						adapt.set("Record", "Person", 3046, "Name", "Roger White");
+						adapt.set("Record", "Person", 3046, "Start", new LocalTime(8, 20, 15));
+						
+						adapt.set("Bin", "Person", 3047, "Age", 37);
+						adapt.set("Bin", "Person", 3047, "DOB", new LocalDate(1960, 8, 31));
+						adapt.set("Bin", "Person", 3047, "Name", "Roger Green");
+						adapt.set("Bin", "Person", 3047, "Start", new LocalTime(7, 20, 15));
+						
+						adapt.set("Record", "Rabbit", 3048, "Age", 17);
+						adapt.set("Record", "Rabbit", 3048, "DOB", new LocalDate(1999, 8, 31));
+						adapt.set("Record", "Rabbit", 3048, "Name", "Roger Rabbit");
+						adapt.set("Record", "Rabbit", 3048, "Start", new LocalTime(12, 20, 15));
+					}
+					catch (Exception x) {
+						System.out.println("Error with db: " + x);
+					}
+					
+					break;
+				}
+				
+				case 210: {
+					try {
+						RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+						
+						System.out.println("Name: " + adapt.getAsString("Record", "Person", 2045, "Name"));
+						System.out.println("Sex: " + adapt.getAsString("Record", "Person", 2045, "Sex"));
+						System.out.println("Age: " + adapt.getAsInteger("Record", "Person", 2045, "Age"));
+						System.out.println("DOB: " + adapt.getAsDate("Record", "Person", 2045, "DOB"));
+						System.out.println("Start: " + adapt.getAsTime("Record", "Person", 2045, "Start"));
+					}
+					catch (Exception x) {
+						System.out.println("Error with db: " + x);
+					}
+					
+					break;
+				}
+				
+				case 211: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					RocksIterator it = adapt.iterator();
+					
+					it.seekToFirst();
+					
+					while (it.isValid()) {
+						byte[] key = it.key();						
+						
+						if (key[0] == Constants.DB_TYPE_MARKER_OMEGA) {
+							System.out.println("END");
+							break;
+						}
+						
+						byte[] val = it.value();
+						
+						System.out.println("Hex Key: " + HexUtil.bufferToHex(key));
+						List<Object> keyParts = ByteUtil.extractKeyParts(key);
+						
+						for (Object p : keyParts)
+							System.out.print((p == null) ? " / " : p.toString() + " / ");
+						
+						System.out.println(" = " + ByteUtil.extractValue(val));
+						
+						it.next();
+					}
+					
+					break;
+				}
+				
+				case 212: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					KeyQuery kq = new KeyQuery(adapt, new MatchKeyLevel("Record"), 
+							new MatchKeyLevel("Person"), new MatchKeyLevel(2045), new MatchKeyLevel("Name"));
+					
+					this.dumpQuery(kq);
+					
+					break;
+				}
+				
+				case 213: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					KeyQuery kq = new KeyQuery(adapt, new MatchKeyLevel("Record"), 
+							new MatchKeyLevel("Person"), new MatchKeyLevel(2045), new WildcardKeyLevel());
+					
+					this.dumpQuery(kq);
+					
+					break;
+				}
+				
+				case 214: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					KeyQuery kq = new KeyQuery(adapt, new MatchKeyLevel("Record"), 
+							new MatchKeyLevel("Person"), new WildcardKeyLevel(), new MatchKeyLevel("Name"));
+					
+					kq.setBrowseMode(true);
+					
+					this.dumpQuery(kq);
+					
+					break;
+				}
+				
+				case 215: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					KeyQuery kq = new KeyQuery(adapt, new MatchKeyLevel("Record"), 
+							new WildcardKeyLevel(), new WildcardKeyLevel(), new MatchKeyLevel("Name"));
+					
+					this.dumpQuery(kq);
+					
+					break;
+				}
+				
+				case 216: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					KeyQuery kq = new KeyQuery(adapt, new WildcardKeyLevel(), 
+							new MatchKeyLevel("Person"), new WildcardKeyLevel(), new MatchKeyLevel("Name"));
+					
+					this.dumpQuery(kq);
+					
+					break;
+				}
+				
+				case 217: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					KeyQuery kq = new KeyQuery(adapt, new WildcardKeyLevel(), 
+							new MatchKeyLevel("Person"), new ExpandoKeyLevel());
+					
+					this.dumpQuery(kq);
+					
+					break;
+				}
+				
+				case 218: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					KeyQuery kq = new KeyQuery(adapt, new WildcardKeyLevel(), 
+							new WildcardKeyLevel(), new WildcardKeyLevel());
+					
+					//KeyQuery kq = new KeyQuery(adapt, new WildcardKeyLevel(), 
+					//		new MatchKeyLevel("Person"), new WildcardKeyLevel());
+					
+					//KeyQuery kq = new KeyQuery(adapt, new MatchKeyLevel("Record"), 
+					//		new MatchKeyLevel("Person"), new WildcardKeyLevel());
+					
+					kq.setBrowseMode(true);
+					
+					this.dumpQuery(kq);
+					
+					break;
+				}
+				
+				case 219: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					System.out.println("First: ");
+					
+					KeyQuery kq = new KeyQuery(adapt, new MatchKeyLevel("Record"), 
+							new MatchKeyLevel("Person"), new MatchKeyLevel(3045));
+					
+					kq.setBrowseMode(true);
+					
+					this.dumpQuery(kq);
+					
+					System.out.println("Second: ");
+					
+					kq = new KeyQuery(adapt, new MatchKeyLevel("Record"), 
+							new MatchKeyLevel("Person"), new MatchKeyLevel(3046));
+					
+					kq.setBrowseMode(true);
+					
+					this.dumpQuery(kq);
+					
+					break;
+				}
+				
+				case 220: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					KeyQuery kq = new KeyQuery(adapt, new WildcardKeyLevel(), 
+							new MatchKeyLevel("Person"));
+					
+					kq.setBrowseMode(true);
+					
+					this.dumpQuery(kq);
+					
+					break;
+				}
+				
+				case 221: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					KeyQuery kq = new KeyQuery(adapt, new WildcardKeyLevel());
+					
+					kq.setBrowseMode(true);
+					
+					this.dumpQuery(kq);
+					
+					break;
+				}
+				
+				case 222: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
+					KeyQuery kq = new KeyQuery(adapt, new WildcardKeyLevel(),
+							new WildcardKeyLevel());
+					
+					kq.setBrowseMode(true);
+					
+					this.dumpQuery(kq);
+					
+					break;
+				}
+				
+				case 223: {
+					Hub.instance.getDatabase().submit(new KeyQueryRequest(), new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("KeyQuery returned: " + result);
+						}
+					});
+					
+					break;
+				}
+				
+				case 224: {
+					DbRecordRequest req = new InsertRecordRequest()
+							.withTable("dcDomain")
+							.withSetField("dcTitle", "Betty Site")
+							.withSetField("dcName", "betty.com", "betty.com")
+							.withSetField("dcName", "www.betty.com", "www.betty.com")
+							.withSetField("dcDescription", "Website for Betty Example");
+							
+					Hub.instance.getDatabase().submit(req, new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("InsertRecordRequest returned: " + result);
+						}
+					});
+					
+					break;
+				}
+				
+				case 225: {
+					DbRecordRequest req = new UpdateRecordRequest()
+							.withTable("dcDomain")
+							.withId("00100_000000000000001")
+							.withSetField("dcName", "mail.betty.com", "mail.betty.com")			// add mail
+							.withSetField("dcName", "www.betty.com", "web.betty.com")			// change www to web
+							.withRetireField("dcName", "betty.com")								// retire a name
+							.withSetField("dcDescription", "Website for Betty Example 2");		// update a field		
+							
+					Hub.instance.getDatabase().submit(req, new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("UpdateRecordRequest returned: " + result);
+						}
+					});
+					
+					break;
+				}
+				
+				case 226: {
+					// alternative syntax
+					DbRecordRequest req = new InsertRecordRequest()
+						.withTable("dcDomain")
+						.withSetField("dcTitle", "Mandy Site")
+						.withSetField("dcDescription", "Website for Mandy Example")
+						.withSetField("dcName", "mandy.com", "mandy.com")
+						.withSetField("dcName", "www.mandy.com", "www.mandy.com");
+							
+					Hub.instance.getDatabase().submit(req, new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("InsertRecordRequest returned: " + result);
+						}
+					});
+					
+					break;
+				}
+				
+				case 227: {
+					DbRecordRequest req = new InsertRecordRequest()
+							.withTable("dcUser")
+							// all DynamicScalar, but suibid is auto assigned
+							.withSetField("dcUsername", "mblack")
+							.withSetField("dcEmail", "mblack@mandy.com")
+							.withSetField("dcFirstName", "Mandy")
+							.withSetField("dcLastName", "Black");
+					
+					Hub.instance.getDatabase().submit(req, new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("InsertRecordRequest returned: " + result);
+						}
+					});
+					
+					break;
+				}
+				
+				case 228: {
+					System.out.println("Last name sid: ");
+					String subid = scan.nextLine();
+					
+					DbRecordRequest req = new UpdateRecordRequest()
+						.withTable("dcUser")
+						.withId("00100_000000000000001")
+						.withSetField("dcLastName", subid, "Blackie");
+					
+					Hub.instance.getDatabase().submit(req, new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("UpdateRecordRequest returned: " + result);
+						}
+					});
+					
+					DbRecordRequest ireq = new InsertRecordRequest()
+						.withTable("dcUser")
+						// all DynamicScalar, but suibid is auto assigned
+						.withSetField("dcUsername", "xblackie")
+						.withSetField("dcEmail", "xblackie@mandy.com")
+						.withSetField("dcFirstName", "Charles")
+						.withSetField("dcLastName", "Blackie");
+					
+					Hub.instance.getDatabase().submit(ireq, new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("InsertRecordRequest returned: " + result);
+						}
+					});
+					
+					break;
+				}
+				
+				case 229: {
+					
+					DataRequest req = new DataRequest("dcPing");
+					
+					Hub.instance.getDatabase().submit(req, new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("PingRequest 1 returned: " + result);
+						}
+					});
+					
+					Hub.instance.getDatabase().submit(RequestFactory.ping(), new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("PingRequest 2 returned: " + result);
+						}
+					});
+					
+					
+					break;
+				}
+				
+				case 230: {
+					System.out.println("Echo phrase: ");
+					String in = scan.nextLine();
+					
+					Hub.instance.getDatabase().submit(RequestFactory.echo(in), new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("EchoRequest returned: " + result);
+						}
+					});
+					
+					break;
+				}
+				
+				case 231: {
+					LoadRecordRequest req = new LoadRecordRequest()
+						.withTable("dcDomain")
+						.withId(OperationContext.get().getUserContext().getDomainId()) 
+						.withSelect(new SelectFields()
+							.withField("dcTitle", "SiteName")
+							.withField("dcDescription", "Description")
+							.withField("dcName", "Names")
+						);
+					
+					Hub.instance.getDatabase().submit(req, new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("LoadRecordRequest returned: " + result);
+						}
+					});
+					
+					break;
+				}
+				
+				case 232: {
+					RecordStruct params = new RecordStruct(
+							new FieldStruct("ExpireThreshold", new DateTime().minusMinutes(3)),
+							new FieldStruct("LongExpireThreshold", new DateTime().minusMinutes(5))
+					);
+					
+					
+					Hub.instance.getDatabase().submit(new DataRequest("dcCleanup").withParams(params), new ObjectResult() {							
+						@Override
+						public void process(CompositeStruct result) {
+							if (this.hasErrors())
+								Logger.errorTr(114);
+						}
+					});
+					
+				}
+				
+				case 233: {
+					// run as sysadmin
+			    	Message msg = new Message()
+			    		.withService("dcCoreDataServices")
+			    		.withFeature("Domains")
+			    		.withOp("AddDomain");
+			    	
+			    	msg.bodyRecord()
+						.withField("Title", "Betty Site")
+						.withField("Names", new ListStruct("betty.com", "www.betty.com"))
+						.withField("Description", "Website for Betty Example");
+			    	
+			    	api.sendMessage(msg, new DumpCallback("AddDomain Result"));			    	
+					
+					break;
+				}
+				
+				case 234: {
+					// run as admin
+			    	Message msg = new Message()
+			    		.withService("dcCoreDataServices")
+			    		.withFeature("Domains")
+			    		.withOp("MyUpdateDomain");
+			    	
+			    	msg.bodyRecord()
+						.withField("Description", "Website for Betty Example 2");
+			    	
+			    	api.sendMessage(msg, new DumpCallback("UpdateDomain Result") {
+			    		@Override
+			    		public void callback() {
+			    			super.callback();
+			    			
+					    	Message msg = new Message()
+					    		.withService("dcCoreDataServices")
+					    		.withFeature("Domains")
+					    		.withOp("MySetDomainNames");
+					    	
+					    	// this retires betty.com and adds mail.betty.com, where www.betty.com is left intact
+					    	msg.bodyRecord()
+								.withField("Names", new ListStruct("mail.betty.com", "www.betty.com"));
+					    	
+					    	api.sendMessage(msg, new DumpCallback("SetDomainNames Result"));						    			
+			    		}
+			    	});			    	
+			    	
+					break;
+				}
+				
+				
 				}
 			}
 			catch (Exception x) {
 				System.out.println("Command Line Error: " + x);
 			}
+		}
+	}
+	
+	public void dumpQuery(KeyQuery kq) {
+		while (kq.nextKey() != null) {
+			byte[] key = kq.key();						
+			
+			if (key[0] == Constants.DB_TYPE_MARKER_OMEGA) {
+				System.out.println("END");
+				break;
+			}
+			
+			byte[] val = kq.value();
+			
+			List<Object> keyParts = ByteUtil.extractKeyParts(key);
+			
+			for (Object p : keyParts)
+				System.out.print(p.toString() + " / ");
+			
+			System.out.println(" = " + ByteUtil.extractValue(val));
 		}
 	}
 }

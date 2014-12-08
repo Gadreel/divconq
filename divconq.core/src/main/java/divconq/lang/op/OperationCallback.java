@@ -105,6 +105,10 @@ abstract public class OperationCallback extends OperationResult {
 		return true;
 	}
 	
+	public void useContext() {
+		OperationContext.set(this.opcontext);
+	}
+	
 	public void complete() {
 		// courtesy only, no need to look if we do know called is true, real called check below
 		if (this.called)

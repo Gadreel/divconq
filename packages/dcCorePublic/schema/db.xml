@@ -4,7 +4,7 @@
 			The root domain has a record id of 00000_000000000000001 that is always present and is reserved (note that hub 00000 is also reserved)
 			
 			tables in the root domain are recorded under just the table name - ^dcRecord("dcUser"
-			tables in other domanis are recorded under table name + domain name - ^dcRecord("dcUser#00100_000000000000001"
+			tables in other domains are recorded under table name + domain name - ^dcRecord("dcUser#00100_000000000000001"
 			
 			therefore, for the root domain the config is in ^dcRecord("dcDomain","00000_000000000000001" while all other configs 
 			are in there own domain, e.g.  ^dcRecord("dcDomain#00975_000000123000001","00975_000000123000001"
@@ -29,6 +29,9 @@
 			<Field Name="dcDomainIndex" Type="Id" List="True" />
 		</Table>
 		
+		<Trigger Table="dcDomain" Operation="BeforeInsert" Execute="divconq.db.trigger.BeforeDomainInsert" />
+		<Trigger Table="dcDomain" Operation="AfterInsert" Execute="divconq.db.trigger.AfterDomainInsert" />
+		
 		<!--
 			guest user = 00000_000000000000000
 			root user  = 00000_000000000000001
@@ -43,7 +46,7 @@
 			but this user may also appear in another domain, such as ^dcRecord("dcUser#00100_000000000000001","00975_000000123000999"
 		-->
 		<Table Id="dcUser">
-			<Field Name="dcUserName" Type="dcUserName" Required="True" Indexed="True" Dynamic="True" />
+			<Field Name="dcUsername" Type="dcUsername" Required="True" Indexed="True" Dynamic="True" />
 			<Field Name="dcFirstName" Type="dcTinyString" Indexed="True" Dynamic="True" />
 			<Field Name="dcLastName" Type="dcTinyString" Indexed="True" Dynamic="True" />
 			
@@ -65,25 +68,22 @@
 			<Field Name="dcGroup" ForeignKey="dcGroup" List="True" /> 
 		</Table>
 		
+		<Trigger Table="dcUser" Operation="BeforeInsert" Execute="divconq.db.trigger.BeforeUserInsert" />
+		
 		<Table Id="dcGroup">
 			<Field Name="dcName" Type="dcSmallString" Required="True" Indexed="True" Dynamic="True" />
 			<Field Name="dcAuthorizationTag" Type="dcTinyString" List="True" />
 			<Field Name="dcDescription" Type="String" />
 		</Table>
 		
+		<!-- 
 		<RecordComposer Name="dcAuthorizationTags" Execute="recAuthTags^dcUser" />
 		<SelectComposer Name="dcAuthorizationTags" Execute="selAuthTags^dcUser" />
 		<WhereComposer Name="dcAuthorizationTags" Execute="whrAuthTags^dcUser" />
-		
-		<RecordFilter Name="dcIsAccountTaken" Execute="acctTaken^dcUser">
-			<Description>
-				Checks to see if the account name is already in use by another
-				user.
-			</Description>
-		</RecordFilter>
-		
-		<Secure Tags="Guest,User">
-			<Procedure Name="dcPing" Execute="ping^dcConn">
+		 -->
+		 
+		<Secure Tags="PowerUser,Admin">
+			<Procedure Name="dcPing" Execute="divconq.db.proc.Ping">
 				<Description>
 					Test the database, call Ping and it will return Pong.
 				</Description>
@@ -91,7 +91,7 @@
 					<Field Name="Text" Type="String" />
 				</Response>
 			</Procedure>			
-			<Procedure Name="dcEcho" Execute="echo^dcConn">
+			<Procedure Name="dcEcho" Execute="divconq.db.proc.Echo">
 				<Description>
 					Test the database, give it a string and it will echo back.
 					Try non-latin unicode characters for fun.
@@ -103,12 +103,14 @@
 					<Field Name="Text" Type="String" />
 				</Response>
 			</Procedure>			
-			<Procedure Name="dcSignIn" Execute="signIn^dcUser">
+		</Secure>			
+		<Secure Tags="Admin">
+			<Procedure Name="dcSignIn" Execute="divconq.db.proc.SignIn">
 				<Description>
 					Start a user session if credentials pass.
 				</Description>
 				<Request>
-					<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+					<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
 					<Field Name="Password" Type="dcSmallString" />
 					<Field Name="At" Type="DateTime" Required="True" />
 					<Field Name="Code" Type="dcUser:dcConfirmCode" />
@@ -116,19 +118,34 @@
 					<Field Name="Suspect" Type="Boolean" />
 				</Request>
 				<Response>
-					<Field Name="UserId" Type="Id" />
-					<Field Name="FirstName" Type="dcUser:dcFirstName" />
-					<Field Name="LastName" Type="dcUser:dcLastName" />
-					<Field Name="Email" Type="dcUser:dcEmail" />
-					<Field Name="Locale" Type="dcUser:dcLocale" />
-					<Field Name="Chronology" Type="dcUser:dcChronology" />
-					<Field Name="AuthToken" Type="dcAuthToken" />
-					<Field Name="AuthorizationTags">
+					<Field Name="UserInfo">
+						<Record>
+							<Field Name="UserId" Type="Id" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" />
+							<Field Name="LastName" Type="dcUser:dcLastName" />
+							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="Locale" Type="dcUser:dcLocale" />
+							<Field Name="Chronology" Type="dcUser:dcChronology" />
+							<Field Name="AuthToken" Type="dcAuthToken" />
+							<Field Name="AuthorizationTags">
+								<List Type="dcUser:dcAuthorizationTag" />
+							</Field>
+						</Record>
+					</Field>
+					<Field Name="AdditionalTags">
 						<List Type="dcUser:dcAuthorizationTag" />
 					</Field>
 				</Response>
 			</Procedure>
-			<Procedure Name="dcVerifySession" Execute="verify^dcUser">
+			<Procedure Name="dcSignOut" Execute="divconq.db.proc.SignOut">
+				<Description>
+					Kill a user session.
+				</Description>
+				<Request>
+					<Field Name="AuthToken" Type="dcAuthToken" Required="True" />
+				</Request>
+			</Procedure>			
+			<Procedure Name="dcVerifySession" Execute="divconq.db.proc.Verify">
 				<Description>
 					Verify a user session.
 				</Description>
@@ -137,42 +154,40 @@
 					<Field Name="AuthToken" Type="dcAuthToken" Required="True" />
 				</Request>
 				<Response>
-					<Field Name="AuthorizationTags">
+					<Field Name="UserInfo">
+						<Record>
+							<Field Name="AuthorizationTags">
+								<List Type="dcUser:dcAuthorizationTag" />
+							</Field>
+						</Record>
+					</Field>
+					<Field Name="AdditionalTags">
 						<List Type="dcUser:dcAuthorizationTag" />
 					</Field>
 				</Response>
 			</Procedure>			
-		</Secure>			
-		<Secure Tags="User">
-			<Procedure Name="dcInitiateRecovery" Execute="recovery^dcUser">
+			<Procedure Name="dcInitiateRecovery" Execute="divconq.db.proc.InitiateRecovery">
 				<Description>
-					Start a user "lost password" recovery sequence by setting
-					a code into the user record and marking the time.  Typically
+					Start a user "lost password" recovery sequence.  Typically
 					the user has 30 minutes to use the code or it expires.
-					This procedure is not exposed directly to the public (Guest)
-					and may only be initiated by a trusted/controled sequence of events
-					beyond the dcDb service.
 				</Description>
 				<Request>
-					<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
-					<Field Name="At" Type="DateTime" Required="True" />
-					<Field Name="Code" Type="dcUser:dcConfirmCode" Required="True" />
+					<Field Name="User" Type="dcSmallString" Required="True" />
 				</Request>
+				<Response>
+					<Field Name="Code" Type="dcUser:dcConfirmCode" />
+					<Field Name="Email" Type="dcUser:dcEmail" />
+					<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+				</Response>
 			</Procedure>
-			<Procedure Name="dcSignOut" Execute="signOut^dcUser">
-				<Description>
-					Kill a user session.
-				</Description>
-				<Request>
-					<Field Name="AuthToken" Type="dcAuthToken" Required="True" />
-				</Request>
-			</Procedure>			
-			<Procedure Name="dcUserNameLookup" Execute="unameLookup^dcUser">
+			
+			<!-- 
+			<Procedure Name="dcUsernameLookup" Execute="unameLookup^dcUser">
 				<Description>
 					For a given user name, find the user id if present.
 				</Description>
 				<Request>
-					<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+					<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
 				</Request>
 				<Response>
 					<Field Name="UserId" Type="Id" />
@@ -187,8 +202,6 @@
 					<Field Name="CacheId" Type="Integer" />
 				</Request>
 			</Procedure>
-		</Secure>			
-		<Secure Tags="Admin">
 			<Procedure Name="dcExportDomain" Execute="export^dcUtil">
 				<Description>
 					Dump all records (and more?) from the domain.
@@ -197,7 +210,8 @@
 					<List Type="Any" />
 				</ListResponse>
 			</Procedure>
-			<Procedure Name="dcLoadRecord" Execute="loadRec^dcDbQuery">
+			-->
+			<Procedure Name="dcLoadRecord" Execute="divconq.db.proc.LoadRecord">
 				<Description>
 					Load a single record including fields and subqueries.
 				</Description>
@@ -212,7 +226,7 @@
 				</Request>
 				<Response Any="True" />
 			</Procedure>
-			<Procedure Name="dcSelect" Execute="select^dcDbSelect">
+			<Procedure Name="dcSelect" Execute="divconq.db.proc.SelectAdvanced">
 				<Description>
 					Load an ordered list of records applying a Select,
 					Order and Where clause (like SQL) as well as a
@@ -258,7 +272,7 @@
 					</Field>
 				</RecResponse>
 			</Procedure>
-			<Procedure Name="dcList" Execute="list^dcDbSelect">
+			<Procedure Name="dcList" Execute="divconq.db.proc.ListAdvanced">
 				<Description>
 					Load an ordered list of values applying a single Select field,
 					Order clause and Where clause (like SQL) as well as a
@@ -300,7 +314,7 @@
 					</Field>
 				</RecResponse>
 			</Procedure>
-			<Procedure Name="dcSelectDirect" Execute="select^dcDbQuery">
+			<Procedure Name="dcSelectDirect" Execute="divconq.db.proc.SelectDirect">
 				<Description>
 					Load an ordered list of records applying a Select,
 					Where clause (like SQL) as well as a
@@ -331,7 +345,7 @@
 					<Record Any="True" />
 				</ListResponse>
 			</Procedure>
-			<Procedure Name="dcListDirect" Execute="list^dcDbQuery">
+			<Procedure Name="dcListDirect" Execute="divconq.db.proc.ListDirect">
 				<Description>
 					Load an ordered list of values applying a single Select field,
 					and Where clause (like SQL) as well as a
@@ -358,7 +372,7 @@
 				</Request>
 				<ListResponse Type="Any" />
 			</Procedure>
-			<Procedure Name="dcRetireRecord" Execute="retireRec^dcDbUpdate">
+			<Procedure Name="dcRetireRecord" Execute="divconq.db.proc.RetireRecord">
 				<Description>
 					Mark a single record as retired.
 				</Description>
@@ -366,7 +380,7 @@
 					<Field Name="Id" Type="Id" Required="True" />
 				</Request>
 			</Procedure>
-			<Procedure Name="dcReviveRecord" Execute="reviveRec^dcDbUpdate">
+			<Procedure Name="dcReviveRecord" Execute="divconq.db.proc.ReviveRecord">
 				<Description>
 					Mark a single record as not retired.
 				</Description>
@@ -374,9 +388,9 @@
 					<Field Name="Id" Type="Id" Required="True" />
 				</Request>
 			</Procedure>
-			<Procedure Name="dcInsertRecord" Execute="insertRec^dcDbUpdate">
+			<Procedure Name="dcInsertRecord" Execute="divconq.db.proc.UpdateRecord">
 				<Description>
-					Insert a new record.  Capable of 1MB of data.
+					Insert a new record.  
 				</Description>
 				<Request Inherits="dcDbCall">
 					<Field Name="Fields" Type="AnyRecord" Required="True" />
@@ -385,34 +399,31 @@
 					<Field Name="Id" Type="Id" />
 				</Response>
 			</Procedure>
-			<Procedure Name="dcUpdateRecord" Execute="updateRec^dcDbUpdate">
+			<Procedure Name="dcUpdateRecord" Execute="divconq.db.proc.UpdateRecord">
 				<Description>
-					Update a single record.  Capable of 1MB of data.
+					Update a single record.
 				</Description>
 				<Request Inherits="dcDbCall">
 					<Field Name="Id" Type="Id" Required="True" />
 					<Field Name="Fields" Type="AnyRecord" Required="True" />
 				</Request>
 			</Procedure>
-			<Procedure Name="dcUpdateBigField" Execute="updateFld^dcDbUpdate">
+			<Procedure Name="dcUpdateSet" Execute="divconq.db.proc.UpdateSet">
 				<Description>
-					Update a single field on a record.  Capable of 40MB of data.
 				</Description>
 				<Request Inherits="dcDbCall">
-					<Field Name="Id" Type="Id" Required="True" />
-					<Field Name="Field" Type="String" Required="True" />
-					<Field Name="Content" Type="AnyRecord" />
+					<Field Name="Operation" Type="dcSmallString" Required="True" />
+					<Field Name="Table" Type="dcSmallString" Required="True" />
+					<Field Name="Records" Required="True">
+						<List Type="Id" />
+					</Field>
+					<Field Name="Field" Type="dcSmallString" Required="True" />
+					<Field Name="SubIds" Required="True">
+						<List Type="dcSmallString" />
+					</Field>
 				</Request>
 			</Procedure>
-			<Procedure Name="dcUpdateText" Execute="updateTxt^dcDbUpdate">
-				<Description>
-					Update text index on one or more fields on a record.  Capable of 40MB of data.
-				</Description>
-				<Request Inherits="dcDbCall">
-					<Field Name="Id" Type="Id" Required="True" />
-					<Field Name="Fields" Type="AnyRecord" Required="True" />
-				</Request>
-			</Procedure>
+			<!-- add text search feature right into Select
 			<Procedure Name="dcSearchText" Execute="srchTxt^dcDbUpdate">
 				<Description>
 					Search text index on one or more fields.
@@ -428,9 +439,10 @@
 					<Record Inherits="dcSearchResult" />
 				</ListResponse>
 			</Procedure>
+			 -->
 		</Secure>
 		<Secure Tags="SysAdmin">
-			<Procedure Name="dcCleanup" Execute="cleanup^dcUser">
+			<Procedure Name="dcCleanup" Execute="divconq.db.proc.Cleanup">
 				<Description>
 					Cleanup expired temp globals such as sessions, 
 					big params and cache.
@@ -441,6 +453,27 @@
 				</Request>
 			</Procedure>			
 			
+			<Procedure Name="dcKeyQuery" Execute="divconq.db.rocks.proc.KeyQueryProc">
+				<Description>
+					Search key patterns in the database.
+				</Description>
+				<Request>
+					<Field Name="BrowseMode" Type="Boolean" />
+					<Field Name="Levels">
+						<List>
+							<Record Type="Any">
+								<Field Name="LevelType" Type="dcSmallString" Required="True" />
+							</Record>
+						</List>
+					</Field>
+				</Request>
+				<ListResponse>
+					<!--  list in list [ key part 1, key part 2, key part 3, value ] -->
+					<List Type="Any" />
+				</ListResponse>
+			</Procedure>			
+			
+			<!-- 
 			<Procedure Name="dcStartSession" Execute="startSess^dcUser">
 				<Description>
 					Start a user session, skipping authentication.
@@ -448,7 +481,7 @@
 				</Description>
 				<Request>
 					<Field Name="At" Type="DateTime" Required="True" />
-					<Field Name="UserName" Type="dcUser:dcUserName" />
+					<Field Name="Username" Type="dcUser:dcUsername" />
 					<Field Name="UserId" Type="Id" />
 				</Request>
 				<Response>
@@ -464,71 +497,17 @@
 					</Field>
 				</Response>
 			</Procedure>
-			
-			<Procedure Name="dcAllocateDomain" Execute="allocDomain^dcUser">
+			 -->
+			 
+			<Procedure Name="dcLoadDomains" Execute="divconq.db.proc.LoadDomains">
 				<Description>
-					Get a new domain id.
-				</Description>
-				<Response>
-					<Field Name="Id" Type="Id" />
-				</Response>
-			</Procedure>
-			
-			<Procedure Name="dcLoadDomains" Execute="loadDomains^dcUser">
-				<Description>
-					Start a user session, skipping authentication.
-					Requires either user name or user id, not both.
 				</Description>
 				<ListResponse>
 					<Record Inherits="dcLoadDomainsResponse" />
 				</ListResponse>
 			</Procedure>
 			
-			<Procedure Name="dcSeed" Execute="seed^dcUser">
-				<Description>
-					Load part of the clock's seed.
-				</Description>
-				<Response>
-					<Field Name="Seed" Type="dcTinyString" />
-				</Response>
-			</Procedure>
-
-			<Procedure Name="dcSchemaUpdate" Execute="update^dcSchema">
-				<Description>
-					Provide an up to date snapshot of the Project Schema to 
-					the database.  Enables translation, procedures, table definitions
-					within M.
-				</Description>
-				<Request>
-					<Field Name="Procs">
-						<List Type="DbProc" />
-					</Field>
-					<Field Name="RecordFilters">
-						<List Type="DbFilter" />
-					</Field>
-					<Field Name="WhereFilters">
-						<List Type="DbFilter" />
-					</Field>
-					<Field Name="RecordComposers">
-						<List Type="DbFilter" />
-					</Field>
-					<Field Name="SelectComposers">
-						<List Type="DbFilter" />
-					</Field>
-					<Field Name="WhereComposers">
-						<List Type="DbFilter" />
-					</Field>
-					<Field Name="Collectors">
-						<List Type="DbFilter" />
-					</Field>
-					<Field Name="Tables">
-						<List Type="DbTable" />
-					</Field>
-					<Field Name="Locales">
-						<List Type="Locale" />
-					</Field>
-				</Request>
-			</Procedure>
+			<!-- 
 			<Procedure Name="dcFailResultTest" Execute="fail^dcConn">
 				<Description>
 					Will cause the result parser to fail, testing the error handling of 
@@ -558,6 +537,7 @@
 					<Field Name="Text" Type="String" />
 				</Response>
 			</Procedure>
+			 -->
 		</Secure>
 		
 	</Database>

@@ -374,10 +374,15 @@ public class OperationContext {
 		});
 	}
 
-	// generally don't mutate a context, but for sig-in support we need to
+	// generally don't mutate a context, but for sign-in support we need to
 	public static void switchUser(OperationContext ctx, UserContext usr) {
 		// TODO change only if usr != this.opcontext.getUser  
 		ctx.userctx = usr;
+	}
+
+	// generally don't mutate a context, but sometimes this is fine - use internally only
+	public static void elevate(OperationContext ctx) {
+		ctx.opcontext.withField("Elevated", true);
 	}
 	
 	// instance code
@@ -545,6 +550,10 @@ public class OperationContext {
 	 */
 	public boolean isElevated() {
 		return this.opcontext.getFieldAsBooleanOrFalse("Elevated");
+	}
+
+	public boolean isGateway() {
+		return this.opcontext.getFieldAsBooleanOrFalse("Gateway");
 	}
 	
 	// only use during hub booting
@@ -788,6 +797,29 @@ public class OperationContext {
 			RecordStruct msg =  this.messages.get(i); 
 		
 			if (msg.getFieldAsInteger("Code") == code)
+				return true;
+		}
+		
+		return false;
+	}
+
+	// search backward through log to find an error, if we hit a message with an Exit tag then
+	// stop, as Exit resets Error (unless it is an error itself)
+	// similar to findExitEntry but stops after last Error as we don't need to loop through all
+	public boolean hasLevel(int msgStart, int msgEnd, DebugLevel lvl) {
+		msgStart -= this.logOffset;		// adjust so the markers are relative to the current collection of messages, assuming some may have been purged
+		
+		if (msgEnd == -1)
+			msgEnd = this.messages.size();
+		else
+			msgEnd -= this.logOffset;
+
+		String slvl = lvl.toString();
+		
+		for (int i = msgStart; i < msgEnd; i++) {
+			RecordStruct msg =  this.messages.get(i);
+			
+			if (slvl.equals(msg.getFieldAsString("Level")))
 				return true;
 		}
 		

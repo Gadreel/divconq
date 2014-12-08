@@ -88,7 +88,7 @@ public class TestBusAndContext implements IWork {
 				request.info("Service operation id is " + myctx.getOpId());
 				//opresult.info("Service bucket is " + myctx.getBucket());
 				request.info("Service is elevated " + myctx.isElevated());
-				request.info("Service user is " + myctx.getUserContext().getUserName());
+				request.info("Service user is " + myctx.getUserContext().getUsername());
 				
 				if (myctx.getOpId().equals(testctx.getOpId()))
 					request.info("Our operation id matches");
@@ -104,7 +104,7 @@ public class TestBusAndContext implements IWork {
 				if (callcnt == 2) {
 					// all we have to do is change the user context, bus will return the context
 					OperationContext.use(myctx.toBuilder().withRootUserTemplate());
-					request.info("Service user is now " + OperationContext.get().getUserContext().getUserName());
+					request.info("Service user is now " + OperationContext.get().getUserContext().getUsername());
 				}
 				
 				request.complete();
@@ -114,7 +114,7 @@ public class TestBusAndContext implements IWork {
 		testrun.info("Test operation id is " + testctx.getOpId());
 		//testrun.info("Test bucket is " + testctx.getBucket());
 		testrun.info("Test is elevated " + testctx.isElevated());
-		testrun.info("Test user is " + testctx.getUserContext().getUserName());
+		testrun.info("Test user is " + testctx.getUserContext().getUsername());
 		
 		testrun.info("Now make the service call");
 		
@@ -130,7 +130,7 @@ public class TestBusAndContext implements IWork {
 				testrun.info("Test operation id is " + testctx.getOpId());
 				//testrun.info("Test bucket is " + testctx.getBucket());
 				testrun.info("Test is elevated " + testctx.isElevated());
-				testrun.info("Test user is " + testctx.getUserContext().getUserName());
+				testrun.info("Test user is " + testctx.getUserContext().getUsername());
 				
 				testrun.info("Here are all of the messages for run, including those from service: ");
 				
@@ -174,7 +174,7 @@ public class TestBusAndContext implements IWork {
 					testrun.info("Test operation id is " + testctx.getOpId());
 					//testrun.info("Test bucket is " + testctx.getBucket());
 					testrun.info("Test is elevated " + testctx.isElevated());
-					testrun.info("Test user is " + testctx.getUserContext().getUserName());
+					testrun.info("Test user is " + testctx.getUserContext().getUsername());
 					
 					countdown.countDown();
 				}

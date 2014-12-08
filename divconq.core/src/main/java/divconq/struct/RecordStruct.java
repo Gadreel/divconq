@@ -168,9 +168,6 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 		return (this.fields.size() == 0);
 	}
 	
-	/* (non-Javadoc)
-	 * @see divconq.struct.builder.ICompositeOutput#toBuilder(divconq.struct.builder.ICompositeBuilder)
-	 */
 	@Override
 	public void toBuilder(ICompositeBuilder builder) throws BuilderStateException {
 		builder.startRecord();
@@ -238,6 +235,11 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 	 */
 	public OperationResult setField(String name, Object value) {
 		return this.setField(new FieldStruct(name, value));
+	}
+	
+	public RecordStruct withField(String name, Object value) {
+		this.setField(new FieldStruct(name, value));
+		return this;
 	}
 	
 	/**

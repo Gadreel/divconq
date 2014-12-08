@@ -51,7 +51,7 @@ public class AuthService extends ExtensionBase implements IService {
 		if ("Authentication".equals(feature)) {
 			if ("SignIn".equals(op)) {
 				SelectFields selt = new SelectFields(
-						new SelectField("dcUserName"),
+						new SelectField("dcUsername"),
 						new SelectField("dcFirstName"),
 						new SelectField("dcLastName"),
 						new SelectField("dcEmail")
@@ -76,7 +76,7 @@ public class AuthService extends ExtensionBase implements IService {
 							RecordStruct urec = reslist.getItemAsRecord(0);
 							
 							request.setResult(new RecordStruct(
-									new FieldStruct("UserName", urec.getFieldAsString("dcUserName")),
+									new FieldStruct("Username", urec.getFieldAsString("dcUsername")),
 									new FieldStruct("FirstName", urec.getFieldAsString("dcFirstName")),
 									new FieldStruct("LastName", urec.getFieldAsString("dcLastName")),
 									new FieldStruct("Email", urec.getFieldAsString("dcEmail"))
@@ -127,7 +127,7 @@ public class AuthService extends ExtensionBase implements IService {
 					return;
 				}
 				
-				SignInRequest tp1 = new SignInRequest(creds.getFieldAsString("UserName"), 
+				SignInRequest tp1 = new SignInRequest(creds.getFieldAsString("Username"), 
 						creds.getFieldAsString("Password"), creds.getFieldAsString("ConfirmationCode"));
 				
 				// TODO for all services, be sure we return all messages from the submit with the message
@@ -177,7 +177,7 @@ public class AuthService extends ExtensionBase implements IService {
 					return;
 				}
 				
-				final InitiateRecoveryRequest req = new InitiateRecoveryRequest(creds.getFieldAsString("UserName"));
+				final InitiateRecoveryRequest req = new InitiateRecoveryRequest(creds.getFieldAsString("Username"));
 				
 				db.submit(req, new ObjectCallback() {
 					@Override
@@ -211,7 +211,7 @@ public class AuthService extends ExtensionBase implements IService {
 				.withVerified(true)
 				.withAuthToken(urec.getFieldAsString("AuthToken"))
 				.withUserId(urec.getFieldAsString("UserId"))
-				.withUserName(tc.getUserContext().getCredentials().getFieldAsString("UserName"))
+				.withUsername(tc.getUserContext().getCredentials().getFieldAsString("Username"))
 				.withFullName(urec.getFieldAsString("FirstName") + " " + urec.getFieldAsString("LastName"))		// TODO make locale smart
 				.withEmail(urec.getFieldAsString("Email"))
 				.withAuthTags(urec.getFieldAsList("AuthorizationTags"))

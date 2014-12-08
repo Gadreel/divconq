@@ -604,7 +604,36 @@ abstract public class Struct {
 	}
 	
 	static public LocalTime objectToTime(Object o) {
-		// TODO
+		if (o == null)
+			return null;
+		
+		if (o instanceof FieldStruct)
+			return Struct.objectToTime(((FieldStruct)o).getValue());
+		
+		if (o instanceof NullStruct)
+			return null;
+		
+		if (o instanceof AnyStruct)
+			o = ((AnyStruct)o).getValue();
+		else if (o instanceof DateStruct)
+			o = ((DateStruct)o).getValue();
+		else if (o instanceof StringStruct)
+			o = ((StringStruct)o).getValue();
+		
+		if (o == null)
+			return null;
+		
+		if (o instanceof LocalTime)
+			return (LocalTime)o;
+		
+		if (o instanceof CharSequence) {
+			try {
+				return LocalTime.parse(o.toString());
+			}
+			catch (Exception x) {
+			}
+		}
+		
 		return null;
 	}
 	
@@ -1035,6 +1064,81 @@ abstract public class Struct {
 		svalue = new AnyStruct();
 		((AnyStruct)svalue).adaptValue(o);
 		return svalue;
+	}
+	
+	// return the most appropriate core type for this object
+	// core types are: String, DateTime, BigDateTime, BigDecimal, BigInteger, Long (aka Integer), Boolean, Memory
+	// XElement and CompositeStructs too!
+	static public Object objectToCore(Object o) {
+		if (o == null)
+			return null;
+		
+		if (o instanceof CompositeStruct)
+			return o;
+		
+		if (o instanceof FieldStruct)
+			return Struct.objectToCore(((FieldStruct)o).getValue());
+		
+		if (o instanceof ScalarStruct)
+			return Struct.objectToCore(((ScalarStruct)o).getGenericValue());
+		
+		if (o instanceof java.sql.Timestamp) {
+			String t = ((java.sql.Timestamp)o).toString();
+			
+			// going to be returned in the local server's timezone, need to make that into UTC			  
+			return TimeUtil.sqlStampFmt.parseDateTime(t);
+		}
+		
+		if (o instanceof java.sql.Clob) {
+			try {
+				return ((java.sql.Clob)o).getSubString(1L, (int)((java.sql.Clob)o).length());
+			} 
+			catch (SQLException x) {
+				return null;
+			}
+		}
+		
+		if (o instanceof DateTime) 
+			return o;
+		
+		if (o instanceof LocalDate) 
+			return o;
+		
+		if (o instanceof LocalTime) 
+			return o;
+		
+		if (o instanceof BigDateTime) 
+			return o;
+		
+		if (o instanceof BigDecimal) 
+			return o;
+		
+		if ((o instanceof Double) || (o instanceof Float)) 
+			return Struct.objectToDecimal(o);
+		
+		if (o instanceof BigInteger) 
+			return o;
+		
+		if (o instanceof Number) 
+			return Struct.objectToInteger(o);
+		
+		if (o instanceof Boolean) 
+			return o;
+		
+		if (o instanceof CharSequence) 
+			return o.toString();
+		
+		if (o instanceof Memory) 
+			return o;
+		
+		if (o instanceof XElement) 
+			return o;
+		
+		// TODO add some other obvious types - List, Array, Map?, etc 
+		// bytebuffer, bytearray, memory...
+		
+		// could not convert
+		return null;
 	}
 	
 	// if it is any of our common types it can become a string, but otherwise not

@@ -93,7 +93,7 @@ public class AuthService extends ExtensionBase implements IService {
 		if ("Authentication".equals(feature)) {
 			if ("SignIn".equals(op)) {
 				
-				String uname = uc.getUserName();
+				String uname = uc.getUsername();
 				
 				if (this.xmlMode) {
 					DomainUsers du = this.xmlData.get(uc.getDomainId());
@@ -116,7 +116,7 @@ public class AuthService extends ExtensionBase implements IService {
 				}
 				else {
 					request.setResult(new RecordStruct(
-							new FieldStruct("UserName", "root"),
+							new FieldStruct("Username", "root"),
 							new FieldStruct("FirstName", "Root"),
 							new FieldStruct("LastName", "User"),
 							new FieldStruct("Email", "root@locahost")
@@ -168,7 +168,7 @@ public class AuthService extends ExtensionBase implements IService {
 				
 				System.out.println("---------- Using Creds");
 				
-				String uname = creds.getFieldAsString("UserName"); 
+				String uname = creds.getFieldAsString("Username"); 
 				String passwd = creds.getFieldAsString("Password");
 				
 				if (this.xmlMode) {
@@ -313,7 +313,7 @@ public class AuthService extends ExtensionBase implements IService {
 				this.cachedIndex.put(usr.getAttribute("Username"), usr);
 				
 				this.cachedUserRecord.put(uid, new RecordStruct(
-					new FieldStruct("UserName", usr.getAttribute("Username")),
+					new FieldStruct("Username", usr.getAttribute("Username")),
 					new FieldStruct("FirstName", usr.getAttribute("First")),
 					new FieldStruct("LastName", usr.getAttribute("Last")),
 					new FieldStruct("Email", usr.getAttribute("Email"))
@@ -331,7 +331,7 @@ public class AuthService extends ExtensionBase implements IService {
 				this.cachedUserContext.put(uid, new OperationContextBuilder()
 						.withDomainId(did)
 						.withUserId(uid)
-						.withUserName(usr.getAttribute("Username"))
+						.withUsername(usr.getAttribute("Username"))
 						.withFullName(usr.getAttribute("First") + " " + usr.getAttribute("Last"))
 						.withEmail(usr.getAttribute("Email"))
 						.withVerified(true)

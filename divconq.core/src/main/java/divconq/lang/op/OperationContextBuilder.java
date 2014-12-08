@@ -25,7 +25,7 @@ import divconq.struct.RecordStruct;
 
 /*
 		<Record Id="UserCredentials">
-			<Field Name="UserName" Type="dcUser:dcUserName" Required="True" />
+			<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
 			<Field Name="Password" Type="dcUser:dcPassword" />
 			<Field Name="ConfirmationCode" Type="dcUser:dcConfirmCode" />
 			<Field Name="ThumbPrint" Type="dcTinyString" />
@@ -34,7 +34,7 @@ import divconq.struct.RecordStruct;
 		
 		<Record Id="UserContext">
 			<Field Name="UserId" Type="Id" />
-			<Field Name="UserName" Type="dcUser:dcUserName" />
+			<Field Name="Username" Type="dcUser:dcUsername" />
 			<Field Name="FullName" Type="dcSmallString" />
 			<Field Name="Email" Type="dcUser:dcEmail" />
 			<Field Name="Credentials" Type="UserCredentials" />
@@ -54,6 +54,7 @@ import divconq.struct.RecordStruct;
 			<Field Name="Origin" Type="dcSmallString" />
 			<Field Name="DebugLevel" Type="dcTinyString" />
 			<Field Name="Elevated" Type="Boolean" />
+			<Field Name="Gateway" Type="Boolean" />
 		</Record>
 
 		
@@ -86,7 +87,7 @@ import divconq.struct.RecordStruct;
 			but this user may also appear in another domain, such as ^dcRecord("dcUser#00100_000000000000001","00975_000000123000999"
 		-->
 		<Table Id="dcUser">
-			<Field Name="dcUserName" Type="dcUserName" Required="True" Indexed="True" Dynamic="True" />
+			<Field Name="dcUsername" Type="dcUsername" Required="True" Indexed="True" Dynamic="True" />
 			<Field Name="dcFirstName" Type="dcTinyString" Indexed="True" Dynamic="True" />
 			<Field Name="dcLastName" Type="dcTinyString" Indexed="True" Dynamic="True" />
 			
@@ -148,7 +149,7 @@ public class OperationContextBuilder {
 		return this
 			.withDomainId("00000_000000000000001")		// guest is part of root domain
 			.withUserId("00000_000000000000002")
-			.withUserName("guest")
+			.withUsername("guest")
 			.withFullName("Guest User")
 			.withVerified(true)
 			.withAuthTags("Guest")
@@ -160,7 +161,7 @@ public class OperationContextBuilder {
 		return this		
 			.withDomainId("00000_000000000000001")		// root is part of root domain
 			.withUserId("00000_000000000000001")
-			.withUserName("root")
+			.withUsername("root")
 			.withFullName("Root User")
 			.withVerified(true)
 			.withAuthTags("User", "PowerUser", "Admin", "SysAdmin")
@@ -174,7 +175,7 @@ public class OperationContextBuilder {
 			.withElevated(true)
 			.withDomainId("00000_000000000000001")		// root is part of root domain
 			.withUserId("00000_000000000000001")
-			.withUserName("root")
+			.withUsername("root")
 			.withFullName("Root User")
 			.withVerified(true)
 			.withAuthTags("User", "PowerUser", "Admin", "SysAdmin");
@@ -210,6 +211,11 @@ public class OperationContextBuilder {
 		this.values.setField("Elevated", v);
 		return this;
 	}
+
+	public OperationContextBuilder withGateway(boolean v) {
+		this.values.setField("Gateway", v);
+		return this;
+	}
 	
 	public OperationContext toOperationContext() {
 		return OperationContext.allocate(this);
@@ -225,8 +231,8 @@ public class OperationContextBuilder {
 		return this;
 	}
 
-	public OperationContextBuilder withUserName(String v) {
-		this.values.setField("UserName", v);
+	public OperationContextBuilder withUsername(String v) {
+		this.values.setField("Username", v);
 		return this;
 	}
 

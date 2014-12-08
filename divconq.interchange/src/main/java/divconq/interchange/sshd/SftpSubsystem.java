@@ -1277,7 +1277,8 @@ public class SftpSubsystem implements Command, Runnable, SessionAware, FileSyste
         boolean isDir = (Boolean) attributes.get(SshFile.Attribute.IsDirectory);
         boolean isLnk = (Boolean) attributes.get(SshFile.Attribute.IsSymbolicLink);
         int pf = 0;
-        EnumSet<SshFile.Permission> perms = (EnumSet<SshFile.Permission>) attributes.get(SshFile.Attribute.Permissions);
+        @SuppressWarnings("unchecked")
+		EnumSet<SshFile.Permission> perms = (EnumSet<SshFile.Permission>) attributes.get(SshFile.Attribute.Permissions);
         for (SshFile.Permission p : perms) {
             switch (p) {
                 case UserRead:      pf |= S_IRUSR; break;
@@ -1298,6 +1299,7 @@ public class SftpSubsystem implements Command, Runnable, SessionAware, FileSyste
     }
 
     protected void writeAttrs(Buffer buffer, SshFile file, boolean followLinks) throws IOException {
+    	/* TODO restore
         if (!file.doesExist()) {
             throw new FileNotFoundException(file.getAbsolutePath());
         }
@@ -1333,6 +1335,7 @@ public class SftpSubsystem implements Command, Runnable, SessionAware, FileSyste
             buffer.putInt(((Long) attributes.get(SshFile.Attribute.LastAccessTime)) / 1000);
             buffer.putInt(((Long) attributes.get(SshFile.Attribute.LastModifiedTime)) / 1000);
         }
+        */
     }
 
     protected boolean getBool(Boolean bool) {

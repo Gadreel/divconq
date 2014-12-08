@@ -49,7 +49,6 @@ import divconq.xml.XElement;
 public class Foreground {
 	static public TaskRun lastdebugrequest = null; 
 	
-	@SuppressWarnings("resource")
 	public static void main(String[] args) {
 		String deployment = (args.length > 0) ? args[0] : null;
 		String squadid = (args.length > 1) ? args[1] : null;
@@ -168,36 +167,34 @@ public class Foreground {
 						if (capi.startSession("root", "A1s2d3f4"))
 							break;
 					}
-					
-					if (StringUtil.isEmpty(sess))
-						capi = ApiSession.createLocalSession(domain);
-					else
-						capi = ApiSession.createSessionFromConfig(sess);  //  LocalSession(domain);
-					
-					//capi = CoreApi.createSessionFromConfig(domain);
-					
-					System.out.print("UserName: ");
-					String user = scan.nextLine();
-					
-					//System.out.print("Password: ");
-					//String pass = scan.nextLine();
-					
-					Console cons = null;
-					String pass = null; 
-					char[] passwd = null;
-					 
-					if ((cons = System.console()) != null &&
-					    (passwd = cons.readPassword("Password:")) != null) {
-						pass = new String(passwd);
-					}
 					else {
-						System.out.print("Password: ");
-						pass = scan.nextLine();
+						if (StringUtil.isEmpty(sess))
+							capi = ApiSession.createLocalSession(domain);
+						else
+							capi = ApiSession.createSessionFromConfig(sess);  //  LocalSession(domain);
+						
+						//capi = CoreApi.createSessionFromConfig(domain);
+						
+						System.out.print("Username: ");
+						String user = scan.nextLine();
+						
+						Console cons = null;
+						String pass = null; 
+						char[] passwd = null;
+						 
+						if ((cons = System.console()) != null &&
+						    (passwd = cons.readPassword("Password:")) != null) {
+							pass = new String(passwd);
+						}
+						else {
+							System.out.print("Password: ");
+							pass = scan.nextLine();
+						}
+				
+						if (capi.startSession(user, pass))
+							break;
 					}
-			
-					if (capi.startSession(user, pass))
-						break;
-	
+					
 					System.out.println("Failed");
 				}
 	

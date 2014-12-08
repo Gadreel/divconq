@@ -24,7 +24,7 @@ dc.user = {
 	 *	{
 	 *		Credentials: object,		// only if RememberMe - possible security hole use with care
 	 *		UserId: string,
-	 *		UserName: string,
+	 *		Username: string,
 	 *		FirstName: string,
 	 *		LastName: string,
 	 *		Email: string,
@@ -125,7 +125,7 @@ dc.user = {
 	signin : function(uname, pass, remember, callback) {
 		dc.user.signin2(
 			{
-				UserName: uname,
+				Username: uname,
 				Password: pass
 			}, 
 			remember, 
@@ -156,7 +156,7 @@ dc.user = {
 					var uinfo = {
 						Verified: true,
 						UserId: resdata.UserId,
-						UserName: resdata.UserName,
+						Username: resdata.Username,
 						FullName: resdata.FullName,
 						Email: resdata.Email,
 						AuthTags: resdata.AuthTags,

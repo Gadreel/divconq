@@ -26,7 +26,9 @@ import java.util.List;
 import divconq.io.IReader;
 import divconq.lang.chars.Utf8Decoder;
 import divconq.lang.chars.Utf8Encoder;
+import divconq.lang.op.OperationContext;
 import divconq.util.ArrayUtil;
+import divconq.util.StringUtil;
 
 /**
  * Memory is a flexible way to manipulate bytes or characters in RAM.  Memory
@@ -153,6 +155,10 @@ public class Memory implements IReader {
         this.position = value;
     }
 
+    public int readableBytes() {
+    	return this.length - this.position;
+    }
+    
     protected MemoryChunk linkPositionToBuffer() {
         int idx = (int)(this.position / this.chunkSize);
 
@@ -485,6 +491,11 @@ public class Memory implements IReader {
 	 * @param ch character to write
 	 */
 	public void writeChar(int ch) {
+		if (StringUtil.isRestrictedChar(ch)) {
+			OperationContext.get().error("MEMORY got a bad char");		// TODO throw exception or something
+			return;
+		}
+		
 		this.write(Utf8Encoder.encode(ch));
 	}
 	
@@ -494,11 +505,21 @@ public class Memory implements IReader {
 	 * @param str string to write
 	 */
 	public void write(CharSequence str) {
+		if (StringUtil.containsRestrictedChars(str)) {
+			OperationContext.get().error("MEMORY got a bad string");		// TODO throw exception or something
+			return;
+		}
+		
 		// TODO this could be more efficient - encode <= 64 bytes at a time and add
 		this.write(Utf8Encoder.encode(str));
 	}
 	
 	public void writeLine(CharSequence str) {
+		if (StringUtil.containsRestrictedChars(str)) {
+			OperationContext.get().error("MEMORY got a bad string");		// TODO throw exception or something
+			return;
+		}
+		
 		// TODO this could be more efficient - encode <= 64 bytes at a time and add
 		this.write(Utf8Encoder.encode(str));
 		this.writeChar('\n');
@@ -593,7 +614,7 @@ public class Memory implements IReader {
         int dstpos = 0;
 
         for (MemoryChunk chunk : this.buffers) {
-            int write = chunk.getLength();
+            int write = Math.min(chunk.getLength(), count - dstpos);
             
             if (!ArrayUtil.blockCopy(chunk.getBuffer(), 0, outBuffer, dstpos, write)) 
             	break;

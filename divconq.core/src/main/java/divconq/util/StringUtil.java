@@ -796,6 +796,20 @@ public class StringUtil {
 			
 			return false;
 		}
+
+		/**
+		 * check characters to see if they contain restricted characters.  character x7F is not
+		 * allowed.  characters x00 - x08 are not allowed.  characters x0E - x1F are not allowed.
+		 * 
+		 * @param ch character to check
+		 * @return true if any restricted characters are present
+		 */
+		public static boolean isRestrictedChar(int ch) {
+            if ((ch < (int)0x9) || ((ch < (int)0x20) && (ch > (int)0xD)) || (ch == (int)0x7F)) 
+            	return true;
+			
+			return false;
+		}
 	
 		
 		/**

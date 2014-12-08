@@ -126,7 +126,7 @@ public class Backend implements ILocalCommandLine {
 					String to = scan.nextLine();
 					
 					Message msg = new Message("Status", "Tickle", "Test");
-					msg.setToHub(to);
+					msg.withToHub(to);
 					api.sendForgetMessage(msg);
 					break;
 				}
@@ -139,7 +139,7 @@ public class Backend implements ILocalCommandLine {
 					String data = scan.nextLine();
 					
 					Message msg = new Message("Status", "Echo", "Test", data + " - av73Dw??gT80Hgt");
-					msg.setToHub(to);
+					msg.withToHub(to);
 					api.sendMessage(msg, new DumpCallback("Echo"));
 					break;
 				}

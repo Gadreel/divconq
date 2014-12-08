@@ -241,14 +241,14 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 	
 	public boolean startSession(String user, String pass) {
 		return this.startSession(new RecordStruct(
-				new FieldStruct("UserName", user),
+				new FieldStruct("Username", user),
 				new FieldStruct("Password", pass)
 			));
 	}
 	
 	public boolean startSession(String user, String pass, String code) {
 		return this.startSession(new RecordStruct(
-				new FieldStruct("UserName", user),
+				new FieldStruct("Username", user),
 				new FieldStruct("Password", pass),
 				new FieldStruct("ConfirmationCode", code)
 			));

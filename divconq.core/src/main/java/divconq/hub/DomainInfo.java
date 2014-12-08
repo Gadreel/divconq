@@ -16,10 +16,8 @@
 ************************************************************************ */
 package divconq.hub;
 
-import divconq.lang.Memory;
 import divconq.struct.RecordStruct;
 import divconq.util.BasicSettingsObfuscator;
-import divconq.util.HexUtil;
 import divconq.util.ISettingsObfuscator;
 import divconq.util.StringUtil;
 import divconq.xml.XAttribute;
@@ -67,7 +65,8 @@ public class DomainInfo {
 		XElement clock1 = Hub.instance.getConfig().find("Clock");
 		
 		if (clock1 != null) {
-			obclass = clock1.getAttribute("FilterClass");
+			// do not use configured class here - we need domains to be portable so stick only to the db settings or std
+			//obclass = clock1.getAttribute("FilterClass");
 			obid = clock1.getAttribute("Id");
 		}
 		
@@ -83,15 +82,12 @@ public class DomainInfo {
 		if (this.obfuscator == null)
 			this.obfuscator = new BasicSettingsObfuscator();
 		
+		// in hex
 		String seed = info.getFieldAsString("ObscureSeed");
-		
-		Memory msd = new Memory(300);
-		msd.write(seed);
-		msd.setPosition(0);
 		
 		this.obfuscator.init(new XElement("Clock",
 				new XAttribute("Id", obid),
-				new XAttribute("Feed", HexUtil.bufferToHex(msd))
+				new XAttribute("Feed", seed)
 		));		
 	}
 	

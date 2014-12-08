@@ -31,11 +31,11 @@
 		<Entry Token="_code_124" Value="User not confirmed" />
 		<Entry Token="_code_125" Value="Password may not be blank" />
 		<Entry Token="_code_126" Value="Password cannot be used, does not meet policy" />
-		<Entry Token="_code_127" Value="UserName may not be blank" />
-		<Entry Token="_code_128" Value="UserName may not be blank" />
+		<Entry Token="_code_127" Value="Username may not be blank" />
+		<Entry Token="_code_128" Value="Username may not be blank" />
 		<Entry Token="_code_129" Value="User not found" />
-		<Entry Token="_code_130" Value="UserName and UserId may not be blank" />
-		<Entry Token="_code_131" Value="UserName not valid" />
+		<Entry Token="_code_130" Value="Username and UserId may not be blank" />
+		<Entry Token="_code_131" Value="Username not valid" />
 		<Entry Token="_code_132" Value="Unable to monitor local file store: {$1}" />
 		<Entry Token="_code_133" Value="No bundle resource found for path: {$1}" />
 		<Entry Token="_code_134" Value="Unable to process bundle resource {$1} as xml, error: {$2}" />

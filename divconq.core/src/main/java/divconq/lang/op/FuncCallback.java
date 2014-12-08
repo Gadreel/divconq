@@ -38,6 +38,10 @@ abstract public class FuncCallback<T> extends OperationCallback {
 	public FuncCallback(TimeoutPlan plan) {
 		super(plan);
 	}
+		
+	public FuncCallback(OperationContext ctx) {
+		super(ctx);
+	}
 	  
 	  /**
 	 * @return function result if call was a success

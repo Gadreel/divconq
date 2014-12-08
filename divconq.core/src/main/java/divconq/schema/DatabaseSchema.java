@@ -16,8 +16,10 @@
 ************************************************************************ */
 package divconq.schema;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import divconq.lang.op.OperationResult;
 import divconq.util.StringUtil;
@@ -27,6 +29,7 @@ import divconq.xml.XElement;
 public class DatabaseSchema {
 	protected SchemaManager man = null;
 	protected HashMap<String, DbProc> procs = new HashMap<String, DbProc>();
+	protected HashMap<String, List<DbTrigger>> triggers = new HashMap<String, List<DbTrigger>>();
 	protected HashMap<String, DbFilter> recfilters = new HashMap<String, DbFilter>();
 	protected HashMap<String, DbFilter> whrfilters = new HashMap<String, DbFilter>();
 	protected HashMap<String, DbFilter> reccomposers = new HashMap<String, DbFilter>();
@@ -93,34 +96,38 @@ public class DatabaseSchema {
 			else {
 				dt = this.man.loadDataType(or, schema, dtel);
 				
-				// automatically add Id, Retired, etc to tables 
-				dt.load(or,
-						new XElement("Table",
-								new XElement("Field",
-										new XAttribute("Name", "Id"),
-										new XAttribute("Type", "Id")
-								),
-								new XElement("Field",
-										new XAttribute("Name", "Retired"),
-										new XAttribute("Type", "Boolean")
-								),
-								new XElement("Field",
-										new XAttribute("Name", "From"),
-										new XAttribute("Type", "BigDateTime"),
-										new XAttribute("Indexed", "True")
-								),
-								new XElement("Field",
-										new XAttribute("Name", "To"),
-										new XAttribute("Type", "BigDateTime"),
-										new XAttribute("Indexed", "True")
-								),
-								new XElement("Field",
-										new XAttribute("Name", "Tags"),
-										new XAttribute("Type", "dcTinyString"),
-										new XAttribute("List", "True")										
-								)
+				XElement autoSchema = new XElement("Table",
+						new XElement("Field",
+								new XAttribute("Name", "Id"),
+								new XAttribute("Type", "Id")
+						),
+						new XElement("Field",
+								new XAttribute("Name", "Retired"),
+								new XAttribute("Type", "Boolean")
+						),
+						new XElement("Field",
+								new XAttribute("Name", "From"),
+								new XAttribute("Type", "BigDateTime"),
+								new XAttribute("Indexed", "True")
+						),
+						new XElement("Field",
+								new XAttribute("Name", "To"),
+								new XAttribute("Type", "BigDateTime"),
+								new XAttribute("Indexed", "True")
+						),
+						new XElement("Field",
+								new XAttribute("Name", "Tags"),
+								new XAttribute("Type", "dcTinyString"),
+								new XAttribute("List", "True")										
 						)
 				);
+
+				
+				// automatically add Id, Retired, etc to tables 
+				dt.load(or, autoSchema);
+
+				for (XElement fel : autoSchema.selectAll("Field")) 
+					tab.addField(fel, dt);
 			}
 
 			for (XElement fel : dtel.selectAll("Field")) 
@@ -155,6 +162,27 @@ public class DatabaseSchema {
 				if (resp != null)
 					opt.response = this.man.loadDataType(or, schema, resp);
 			}			
+		}			
+		
+		for (XElement procel : db.selectAll("Trigger")) {
+			String sname = procel.getAttribute("Table");
+			
+			if (StringUtil.isEmpty(sname))
+				continue;			
+			
+			DbTrigger opt = new DbTrigger();
+			opt.op = procel.getAttribute("Operation");
+			opt.execute = procel.getAttribute("Execute");
+			opt.table = sname;
+			
+			List<DbTrigger> ll = this.triggers.get(sname);
+			
+			if (ll == null) {
+				ll = new ArrayList<>();
+				this.triggers.put(sname, ll);
+			}
+			
+			ll.add(opt);
 		}			
 		
 		for (XElement procel : db.selectAll("RecordFilter")) {
@@ -288,6 +316,20 @@ public class DatabaseSchema {
 		DbTable tbl = this.tables.get(table);
 		
 		return tbl.fields.get(field);
+	}
+	
+	public List<DbTrigger> getTriggers(String table, String operation) {
+		if (StringUtil.isEmpty(table))
+			return null;
+		
+		List<DbTrigger> ret = new ArrayList<>();
+		List<DbTrigger> tbl = this.triggers.get(table);
+		
+		for (DbTrigger t : tbl)
+			if (t.op.equals(operation))
+				ret.add(t);
+		
+		return ret;
 	}
 	
 	public DbProc getProc(String name) {

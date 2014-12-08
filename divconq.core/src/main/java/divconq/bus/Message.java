@@ -45,28 +45,46 @@ public class Message extends RecordStruct {
 			this.setField("Body", body);
 	}
 	
-	public void setToHub(String v) {
+	public RecordStruct bodyRecord() {
+		RecordStruct ret = new RecordStruct();
+		this.setField("Body", ret);		
+		return ret;
+	}
+	
+	public ListStruct bodyList() {
+		ListStruct ret = new ListStruct();
+		this.setField("Body", ret);		
+		return ret;
+	}
+	
+	public Message withToHub(String v) {
     	this.setField("ToHub", v);
+    	return this;
 	}
 	
-	public void setFromHub(String v) {
+	public Message withFromHub(String v) {
     	this.setField("FromHub", v);
+    	return this;
 	}
 	
-	public void setService(String v) {
+	public Message withService(String v) {
     	this.setField("Service", v);
+    	return this;
 	}
 	
-	public void setFeature(String v) {
+	public Message withFeature(String v) {
     	this.setField("Feature", v);
+    	return this;
 	}
 	
-	public void setOp(String v) {
+	public Message withOp(String v) {
     	this.setField("Op", v);
+    	return this;
 	}
 	
-	public void setTag(String v) {
+	public Message withTag(String v) {
     	this.setField("Tag", v);
+    	return this;
 	}
 
 	public boolean hasErrors() {

@@ -121,7 +121,7 @@ public class WebModule extends ModuleBase {
 			        ChannelFuture bfuture = b.bind(httpport).sync();
 			        
 			        if (bfuture.isSuccess()) {
-			        	Logger.info("Web Server listening");
+			        	Logger.info("Web Server listening - now listening for HTTP on TCP port " + httpport);
 				        this.activelisteners.put(httpport, bfuture.channel());
 			        }
 			        else
