@@ -98,48 +98,48 @@ public class RequestFactory {
 			);
 	}
 	
-	static public DataRequest removeFromSet(String table, String field, String id, ListStruct subids) {
-		return removeFromSet(table, field, new ListStruct(id), subids);
+	static public DataRequest removeFromSet(String table, String field, String id, ListStruct values) {
+		return removeFromSet(table, field, new ListStruct(id), values);
 	}
 	
-	static public DataRequest removeFromSet(String table, String field, ListStruct recs, ListStruct subids) {
+	static public DataRequest removeFromSet(String table, String field, ListStruct recs, ListStruct values) {
 		return new ReplicatedDataRequest("dcUpdateSet")
 			.withParams(new RecordStruct()
 					.withField("Operation", "RemoveFromSet")
 					.withField("Table", table)
 					.withField("Records", recs)
 					.withField("Field", field)
-					.withField("SubIds", subids)
+					.withField("Values", values)
 			);
 	}
 	
-	static public DataRequest addToSet(String table, String field, String id, ListStruct subids) {
-		return addToSet(table, field, new ListStruct(id), subids);
+	static public DataRequest addToSet(String table, String field, String id, ListStruct values) {
+		return addToSet(table, field, new ListStruct(id), values);
 	}
 	
-	static public DataRequest addToSet(String table, String field, ListStruct recs, ListStruct subids) {
+	static public DataRequest addToSet(String table, String field, ListStruct recs, ListStruct values) {
 		return new ReplicatedDataRequest("dcUpdateSet")
 			.withParams(new RecordStruct()
 					.withField("Operation", "AddToSet")
 					.withField("Table", table)
 					.withField("Records", recs)
 					.withField("Field", field)
-					.withField("SubIds", subids)
+					.withField("Values", values)
 			);
 	}
 	
-	static public DataRequest makeSet(String table, String field, String id, ListStruct subids) {
-		return makeSet(table, field, new ListStruct(id), subids);
+	static public DataRequest makeSet(String table, String field, String id, ListStruct values) {
+		return makeSet(table, field, new ListStruct(id), values);
 	}
 	
-	static public DataRequest makeSet(String table, String field, ListStruct recs, ListStruct subids) {
+	static public DataRequest makeSet(String table, String field, ListStruct recs, ListStruct values) {
 		return new ReplicatedDataRequest("dcUpdateSet")
 			.withParams(new RecordStruct()
 					.withField("Operation", "MakeSet")
 					.withField("Table", table)
 					.withField("Records", recs)
 					.withField("Field", field)
-					.withField("SubIds", subids)
+					.withField("Values", values)
 			);
 	}
 	

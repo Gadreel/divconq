@@ -18,13 +18,13 @@ package w3.html;
 
 import java.io.PrintStream;
 
-import divconq.view.Attributes;
-import divconq.view.Element;
-import divconq.view.ICodeTag;
-import divconq.view.Node;
-import divconq.view.Nodes;
-import divconq.view.html.HtmlUtil;
-import divconq.web.ViewInfo;
+import divconq.web.dcui.Attributes;
+import divconq.web.dcui.Element;
+import divconq.web.dcui.HtmlUtil;
+import divconq.web.dcui.ICodeTag;
+import divconq.web.dcui.Node;
+import divconq.web.dcui.Nodes;
+import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 
@@ -39,7 +39,7 @@ public class Br extends Element implements ICodeTag {
 	}
 
 	@Override
-	public void parseElement(ViewInfo view, Nodes nodes, XElement xel) {
+	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 
         this.myArguments = new Object[] { attrs };

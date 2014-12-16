@@ -18,6 +18,7 @@ package divconq.db.common;
 import divconq.db.update.ConditionalValue;
 import divconq.db.update.UpdateRecordRequest;
 import divconq.struct.CompositeStruct;
+import divconq.struct.ListStruct;
 import divconq.util.StringUtil;
 
 /**
@@ -38,6 +39,7 @@ public class UpdateUserRequest extends UpdateRecordRequest {
 	protected ConditionalValue confirmed = new ConditionalValue();
 	protected ConditionalValue confirmcode = new ConditionalValue();
 	protected ConditionalValue desc = new ConditionalValue();
+	protected ListStruct tags = null;
 			
 	public void setUsername(String v) {
 		this.username.setValue(v);
@@ -45,6 +47,22 @@ public class UpdateUserRequest extends UpdateRecordRequest {
 	
 	public void setDescription(String v) {
 		this.desc.setValue(v);
+	}
+	
+	public void setAuthorizationTags(ListStruct tags) {
+		this.tags = tags;
+	}
+	
+	public void emptyAuthorizationTags(ListStruct tags) {
+		this.tags = new ListStruct();
+	}
+	
+	public void addAuthorizationTag(String... tags) {
+		if (this.tags == null) 
+			this.tags = new ListStruct();
+		
+		for (String name : tags)
+			this.tags.addItem(name);
 	}
 	
 	public void setFirstName(String v) {
@@ -126,6 +144,10 @@ public class UpdateUserRequest extends UpdateRecordRequest {
 		// OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex
 		if (this.password.isSet())
 			this.withSetField("dcPassword", pword);
+
+		// warning - setting an empty list removes all tags
+		if (this.tags != null)
+			this.withReplaceList("dcAuthorizationTag", this.tags);
 		
 		return super.buildParams();	
 	}

@@ -49,7 +49,9 @@ import divconq.db.ObjectResult;
 import divconq.db.DataRequest;
 import divconq.db.common.KeyQueryRequest;
 import divconq.db.common.RequestFactory;
+import divconq.db.query.ListDirectRequest;
 import divconq.db.query.LoadRecordRequest;
+import divconq.db.query.SelectField;
 import divconq.db.query.SelectFields;
 import divconq.db.rocks.RocksInterface;
 import divconq.db.rocks.DatabaseManager;
@@ -93,7 +95,7 @@ public class FileStoreClient implements ILocalCommandLine {
 	public void run(final Scanner scan, final ApiSession api) {
 		boolean running = true;
 
-		String fsService = "dcTestFileServer";		
+		String fsService = "dcFileServer";		
 		
 		XElement cliset = Hub.instance.getConfig().selectFirst("CommandLine/Settings");
 		
@@ -1654,13 +1656,15 @@ public class FileStoreClient implements ILocalCommandLine {
 			    		.withOp("MyUpdateDomain");
 			    	
 			    	msg.bodyRecord()
-						.withField("Description", "Website for Betty Example 2");
+						.withField("Description", "Website for Betty Example 2")
+			    		.withField("Names", new ListStruct("admin.betty.com", "www.betty.com", "two.awww.com"));
 			    	
 			    	api.sendMessage(msg, new DumpCallback("UpdateDomain Result") {
 			    		@Override
 			    		public void callback() {
 			    			super.callback();
-			    			
+			    		
+			    			/*
 					    	Message msg = new Message()
 					    		.withService("dcCoreDataServices")
 					    		.withFeature("Domains")
@@ -1670,13 +1674,90 @@ public class FileStoreClient implements ILocalCommandLine {
 					    	msg.bodyRecord()
 								.withField("Names", new ListStruct("mail.betty.com", "www.betty.com"));
 					    	
-					    	api.sendMessage(msg, new DumpCallback("SetDomainNames Result"));						    			
+					    	api.sendMessage(msg, new DumpCallback("SetDomainNames Result"));
+					    	*/						    			
 			    		}
 			    	});			    	
 			    	
 					break;
 				}
 				
+				case 235: {
+					// run as admin
+			    	Message msg = new Message()
+			    		.withService("dcCoreDataServices")
+			    		.withFeature("Users")
+			    		.withOp("AddUser");
+			    	
+			    	msg.bodyRecord()
+							.withField("Username", "mblack")
+							.withField("Email", "mblack@mandy.com")
+							.withField("FirstName", "Mandy")
+							.withField("LastName", "Black")
+							.withField("Password", "BlackCat")
+							.withField("AuthorizationTags", new ListStruct("Admin", "PowerUser"));
+			    	
+			    	api.sendMessage(msg, new DumpCallback("AddUser Result") );			    	
+	
+					break;					
+				}
+				
+				case 236: {
+					// run as admin
+			    	Message msg = new Message()
+			    		.withService("dcCoreDataServices")
+			    		.withFeature("Users")
+			    		.withOp("ListUsers");
+			    	
+			    	api.sendMessage(msg, new DumpCallback("ListUsers Result") );			    	
+	
+					break;					
+				}
+				
+				case 237: {
+					// run as admin
+			    	Message msg = new Message()
+			    		.withService("dcCoreDataServices")
+			    		.withFeature("Users")
+			    		.withOp("RetireUser");
+			    	
+			    	msg.bodyRecord()
+			    		.withField("Id", "00100_000000000000001");
+			    	
+			    	api.sendMessage(msg, new DumpCallback("RetireUser Result") );
+					
+					break;
+				}
+				
+				case 238: {
+					// run as admin
+			    	Message msg = new Message()
+			    		.withService("dcCoreDataServices")
+			    		.withFeature("Users")
+			    		.withOp("ReviveUser");
+			    	
+			    	msg.bodyRecord()
+			    		.withField("Id", "00100_000000000000001");
+			    	
+			    	api.sendMessage(msg, new DumpCallback("ReviveUser Result") );
+					
+					break;
+				}
+				
+				
+				case 239: {
+					ListDirectRequest req = new ListDirectRequest("dcUser", new SelectField()
+						.withField("dcUsername"));
+					
+					Hub.instance.getDatabase().submit(req, new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result) {
+							System.out.println("ListDirectRequest returned: " + result);
+						}
+					});
+					
+					break;
+				}
 				
 				}
 			}

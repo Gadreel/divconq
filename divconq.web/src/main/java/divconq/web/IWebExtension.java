@@ -23,8 +23,6 @@ import divconq.session.Session;
 
 public interface IWebExtension extends IExtension {
 	String getAppName();
-	IWebDomain getDomain(String id);
 	OperationResult handle(Session sess, HttpContext hctx);
 	Bundle getBundle();
-	void online();
 }

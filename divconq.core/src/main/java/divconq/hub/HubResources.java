@@ -461,7 +461,7 @@ public class HubResources {
 	}
 	
 	// optimize common path with file path map...
-	public Path getPackageWebFile(String pkg, CommonPath path) {		// TODO support ZIP packagse
+	public Path getPackageWebFile(String pkg, CommonPath path) {		// TODO support ZIP packages
 		if (path.hasFileExtension()) {
 			Path fl = Paths.get("./packages/" + pkg + "/www" + path);		// must be absolute path
 			

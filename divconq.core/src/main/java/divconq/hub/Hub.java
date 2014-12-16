@@ -118,7 +118,9 @@ public class Hub {
 	protected WorkQueue workqueue = new WorkQueue(); 
 	protected Scheduler scheduler = new Scheduler();
 	protected SqlManager sqldbman = new SqlManager();
-	protected LocalFileStore filestore = null;
+	protected LocalFileStore packagefilestore = null;
+	protected LocalFileStore publicfilestore = null;
+	protected LocalFileStore privatefilestore = null;
 	protected Sessions sessions = new Sessions();
 	protected HubResources resources = null;
 	protected SecurityPolicy policy = new SecurityPolicy();
@@ -360,8 +362,16 @@ public class Hub {
 		return this.ctp;
 	}
 	
-	public LocalFileStore getLocalFileStore() {
-		return this.filestore;
+	public LocalFileStore getPackageFileStore() {
+		return this.packagefilestore;
+	}
+	
+	public LocalFileStore getPublicFileStore() {
+		return this.publicfilestore;
+	}
+	
+	public LocalFileStore getPrivateFileStore() {
+		return this.privatefilestore;
 	}
 	
 	public ActivityManager getActivityManager() {
@@ -701,12 +711,24 @@ public class Hub {
 			return or;
 		}
 		
-		XElement fstore = config.find("LocalFileStore");
+		this.packagefilestore = new LocalFileStore();
+		or.debug(0, "Initializing package file store");		
+		this.packagefilestore.start(or, new XElement("PackageFileStore"));		
+		
+		XElement fstore = config.find("PublicFileStore");
 		
 		if (fstore != null) {
-			this.filestore = new LocalFileStore();
-			or.debug(0, "Initializing local file store");		
-			this.filestore.start(or);		
+			this.publicfilestore = new LocalFileStore();
+			or.debug(0, "Initializing public file store");		
+			this.publicfilestore.start(or, fstore);		
+		}
+		
+		XElement pvfstore = config.find("PrivateFileStore");
+		
+		if (pvfstore != null) {
+			this.privatefilestore = new LocalFileStore();
+			or.debug(0, "Initializing private file store");		
+			this.privatefilestore.start(or, pvfstore);		
 		}
 		
 		if (or.hasErrors()) {
@@ -789,18 +811,22 @@ public class Hub {
 					if (!Hub.instance.isStopping())  {
 						FileUtil.cleanupTemp();
 					
-						RecordStruct params = new RecordStruct(
-								new FieldStruct("ExpireThreshold", new DateTime().minusMinutes(5)),
-								new FieldStruct("LongExpireThreshold", new DateTime().minusMinutes(30))
-						);
+						IDatabaseManager db = Hub.instance.getDatabase();
 						
-						Hub.instance.getDatabase().submit(new DataRequest("dcCleanup").withParams(params), new ObjectResult() {
-							@Override
-							public void process(CompositeStruct result) {
-								if (this.hasErrors())
-									Logger.errorTr(114);
-							}
-						});
+						if (db != null) {
+							RecordStruct params = new RecordStruct(
+									new FieldStruct("ExpireThreshold", new DateTime().minusMinutes(5)),
+									new FieldStruct("LongExpireThreshold", new DateTime().minusMinutes(30))
+							);
+							
+							db.submit(new DataRequest("dcCleanup").withParams(params), new ObjectResult() {
+								@Override
+								public void process(CompositeStruct result) {
+									if (this.hasErrors())
+										Logger.errorTr(114);
+								}
+							});
+						}
 					}
 					
 					reporter.setStatus("After cleaning contexts and temp files");
@@ -963,9 +989,19 @@ public class Hub {
 		or.debug(0, "Stopping count manager");
 		this.countman.stop(or);
 		
-		if (this.filestore != null) {
-			or.debug(0, "Stopping local file store");		
-			this.filestore.stop(or);		
+		if (this.packagefilestore != null) {
+			or.debug(0, "Stopping package file store");		
+			this.packagefilestore.stop(or);		
+		}
+		
+		if (this.publicfilestore != null) {
+			or.debug(0, "Stopping public file store");		
+			this.publicfilestore.stop(or);		
+		}
+		
+		if (this.privatefilestore != null) {
+			or.debug(0, "Stopping private file store");		
+			this.privatefilestore.stop(or);		
 		}
 		
 		or.debug(0, "Stopping work pool");

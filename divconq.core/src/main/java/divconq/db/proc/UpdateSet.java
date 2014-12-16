@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import divconq.db.DatabaseAdapter;
+import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.db.IStoredProc;
@@ -24,9 +24,9 @@ public class UpdateSet implements IStoredProc {
 		String op = params.getFieldAsString("Operation");
 		
 		ListStruct records = params.getFieldAsList("Records");
-		ListStruct subids = params.getFieldAsList("SubIds");
+		ListStruct subids = params.getFieldAsList("Values");
 		
-		DatabaseAdapter db = new DatabaseAdapter(conn, task);
+		TablesAdapter db = new TablesAdapter(conn, task);
 		
 		BigDateTime when = BigDateTime.nowDateTime();		// TODO store in params for replication - use same when 
 

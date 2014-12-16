@@ -80,6 +80,15 @@ abstract public class DatabaseInterface {
 		return ByteUtil.extractValue(this.get(key));
 	}
 	
+	public byte[] getRaw(Object... list) throws DatabaseException {
+		if ((list == null) || (list.length < 1))
+			throw new IllegalArgumentException("GET list missing or too small");
+		
+		byte[] key = ByteUtil.buildKey(list, 0, list.length);
+
+		return this.get(key);
+	}
+	
 	public boolean isSet(Object... list) throws DatabaseException {
 		if ((list == null) || (list.length < 1))
 			throw new IllegalArgumentException("GET list missing or too small");

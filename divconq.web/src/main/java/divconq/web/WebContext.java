@@ -35,8 +35,8 @@ import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
 import divconq.session.Session;
 import divconq.util.StringUtil;
-import divconq.view.ContentPlaceholder;
-import divconq.view.Node;
+import divconq.web.dcui.ContentPlaceholder;
+import divconq.web.dcui.Node;
 
 public class WebContext {
 	protected HttpContext innerctx = null;
@@ -45,6 +45,7 @@ public class WebContext {
 	
 	protected LocaleInfo selectedlocale = null;
 	protected String theme = null;
+	protected boolean preview = false;
 	protected boolean completed = false;
 	protected Map<String, ContentPlaceholder> holders = new HashMap<String, ContentPlaceholder>();
 	protected Map<String, String> innerparams = new HashMap<String, String>();
@@ -109,7 +110,7 @@ public class WebContext {
 	
 	public String getInternalParam(String name) {		
 		if ("dcmVersion".equals(name))
-			return "0.7.1";
+			return "0.9.6";
 		
 		UserContext uc = this.innerctx.getSession().getUser();
 		
@@ -144,25 +145,27 @@ public class WebContext {
 				  String grp = m.group();
 				  
 				  String macro = grp.substring(1, grp.length() - 1);
+				  String[] parts = macro.split("|");
 				  
 				  String val = null;
 				  
-				  // params from external
-				  if (val == null)
-					  val = this.getExternalParam(macro);
+				  // TODO check size of parts
 				  
-				  // params from internal
-				  if (val == null)
-					  val = this.getInternalParam(macro);
-				  
+				  // params on this tree
+				  if ("param".equals(parts[0]))
+					  val = this.getExternalParam(parts[1]);
+				  else if ("ctx".equals(parts[0]))
+					  val = this.getInternalParam(parts[1]);
 				  // definitions in the dictionary
-				  if (val == null) 
-					  val = OperationContext.get().tr(macro);		// TODO what about web domain dictionaries...
+				  else if ("tr".equals(parts[0]))
+					  val = this.getDomain().tr(this.selectedlocale, parts[1]);		// TODO support tr params 
+				  
+				  // TODO support macro providers registered to context...
 				  
 				  if (val == null) {
 					  String[] mparts = macro.split("\\|");
 					  
-					  IWebMacro macroproc = WebSiteManager.instance.getMacro(mparts[0]);
+					  IWebMacro macroproc = this.innerctx.getSiteman().getMacro(mparts[0]);
 					  
 					  if (macroproc != null)
 						  val = macroproc.process(this, mparts); 
@@ -218,15 +221,20 @@ public class WebContext {
 
 		if (ck != null)
 			this.theme = ck.getValue();
+
+		ck = this.innerctx.getRequest().getCookie("dcmPreview");
+
+		if (ck != null)
+			this.preview = "true".equals(ck.getValue().toLowerCase());
 		
 		// TODO get default theme from WebExtension 
 		
 		// TODO add device override support too
 		
-		DomainInfo domaininfo = WebSiteManager.instance.resolveDomainInfo(this.innerctx.getRequest());
+		DomainInfo domaininfo = this.innerctx.getSiteman().resolveDomainInfo(this.innerctx.getRequest());
 		
 		if (domaininfo != null)
-			this.domain = ext.getDomain(domaininfo.getId());
+			this.domain = this.innerctx.getSiteman().getDomain(domaininfo.getId());
 	}
 
 	/*
@@ -297,7 +305,7 @@ public class WebContext {
 	}
 	
 	public String getHost() {
-		return WebSiteManager.instance.resolveHost(this.innerctx.getRequest());
+		return this.innerctx.getSiteman().resolveHost(this.innerctx.getRequest());
 	}
 	
 	public Collection<String> getThemeSearch() {
@@ -333,5 +341,9 @@ public class WebContext {
 	
 	public void closeChannel() {
 		this.innerctx.close();
+	}
+
+	public boolean isPreview() {
+		return this.preview;
 	}
 }

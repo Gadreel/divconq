@@ -17,29 +17,28 @@
 package divconq.web;
 
 import divconq.filestore.CommonPath;
-import divconq.io.FileStoreEvent;
-import divconq.lang.op.FuncResult;
-import divconq.lang.op.OperationResult;
-import divconq.view.Nodes;
+import divconq.hub.DomainInfo;
+import divconq.locale.LocaleInfo;
+import divconq.web.dcui.Nodes;
+import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public interface IWebDomain {
-	IWebExtension getExtension();
 	String getId();
+	String getAlias();
+    CommonPath getHomePath();
+    CommonPath getMainPath();
 	
-	void init(IWebExtension ext, String id);
+	void init(DomainInfo domain);
+	String tr(LocaleInfo locale, String token, Object... params);
 	
-	void fileNotify(FileStoreEvent result);
 	void siteNotify();
-	//void load(RecordStruct site);
-	OperationResult execute(WebContext ctx);
+	void execute(WebContext ctx);
 	
+	IOutputAdapter findFile(WebContext ctx, CommonPath path);
+
 	// TODO re-organize this class interface
-	FuncResult<ViewInfo> getView(WebContext ctx, CommonPath path, String type);
-	Class<? extends IViewBuilder> getBuilder(String format);
-	Class<? extends IContentInfo> getContentLoader(String fmt);
-	//IViewParser getFormatParser(String fmt);
-    Nodes parseXml(String format, ViewInfo view, XElement container);
-    Nodes parseElement(String format, ViewInfo view, XElement xel);
-    void parseElement(String format, ViewInfo view, Nodes nodes, XElement xel);
+    Nodes parseXml(ViewOutputAdapter view, XElement container);
+    Nodes parseElement(ViewOutputAdapter view, XElement xel);
+    void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel);
 }

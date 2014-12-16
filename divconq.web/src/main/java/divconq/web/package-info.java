@@ -18,7 +18,7 @@
  /**
  * This package provides the fundamentals for processing a GET request on
  * the DivConq server.  It was originally designed to support the View
- * templating system: {@link divconq.view}.
+ * templating system: {@link divconq.web.dcui}.
  * 
  * However now it currently processes only static file requests and .gas
  * dynamic files - .gas files are very simple Groovy scripts that do not 

@@ -86,8 +86,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
     protected HttpContext context = null; 
     protected WebSocketServerHandshaker handshaker = null;		// TODO when handshaker completes then set context.session to a different session adaptor (direct messages to client instead of queue)
     
-    public ServerHandler(XElement config) {
-    	this.context = new HttpContext(config);
+    public ServerHandler(XElement config, WebSiteManager siteman) {
+    	this.context = new HttpContext(config, siteman);
     	//System.out.println("new server handler!!");
     }
 
@@ -351,7 +351,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		
 		String domainid = null;
 		
-		DomainInfo dinfo = WebSiteManager.instance.resolveDomainInfo(req.getHeader("Host"));
+		DomainInfo dinfo = this.context.getSiteman().resolveDomainInfo(req.getHeader("Host"));
 		
 		if (dinfo != null)
 			domainid = dinfo.getId();
@@ -730,12 +730,12 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 			String ext = req.pathEquals("/") ? "local" : req.getPath().getName(0);
 			
 			IWebExtension ex = "local".equals(ext) 
-					? WebSiteManager.instance.getDefaultExtension()
-					: WebSiteManager.instance.getExtension(ext);
+					? this.context.getSiteman().getDefaultExtension()
+					: this.context.getSiteman().getExtension(ext);
 			
 			// still cannot figure it out, use default
 			if (ex == null)
-				ex = WebSiteManager.instance.getDefaultExtension();
+				ex = this.context.getSiteman().getDefaultExtension();
 					
 			// then have extension handle it
 			if (ex != null) {

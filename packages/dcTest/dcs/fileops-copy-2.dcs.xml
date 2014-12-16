@@ -2,11 +2,11 @@
 <Main>
 	<CtpSession Name="MySession" Host="localhost" />
 	
-	<CtpUpload Session="$MySession" Service="dcTestFileServer" 
+	<CtpUpload Session="$MySession" Service="dcFileServer" 
 		Source="/Work/Temp/Source/deploy2.png" Dest="/dest3/deploy2.png" />
 	
 	<!--
-	<CtpDownload Session="$MySession" Service="dcTestFileServer" 
+	<CtpDownload Session="$MySession" Service="dcFileServer" 
 		Dest="/Work/Temp/Dest/smallish.tgz" Source="/dest2/brake/small.tgz" />
 	-->
 </Main>

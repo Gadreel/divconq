@@ -52,6 +52,7 @@ public class DomainsService extends ExtensionBase implements IService {
 						
 						res.addItem(new RecordStruct(
 								new FieldStruct("Id", mdomain.getAttribute("Id")),
+								new FieldStruct("Alias", mdomain.getAttribute("Alias")),
 								new FieldStruct("Title", mdomain.getAttribute("Title")),
 								new FieldStruct("Names", names),
 								new FieldStruct("Settings", Struct.objectToStruct(mdomain.find("Settings")))
@@ -78,6 +79,7 @@ public class DomainsService extends ExtensionBase implements IService {
 							new RecordStruct(
 									new FieldStruct("Id", "00000_000000000000001"),
 									new FieldStruct("Title", "root"),
+									new FieldStruct("Alias", "root"),
 									new FieldStruct("Names", names)
 							)
 					));

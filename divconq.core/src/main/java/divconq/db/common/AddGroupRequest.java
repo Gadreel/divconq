@@ -53,8 +53,7 @@ public class AddGroupRequest extends InsertRecordRequest {
 	}
 	
 	public AddGroupRequest(String name) {
-		super("dcGroup");
-		
+		this.withTable("dcGroup");
 		this.setName(name);
 	}
 	

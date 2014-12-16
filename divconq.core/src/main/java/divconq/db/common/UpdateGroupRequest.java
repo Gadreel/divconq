@@ -19,6 +19,7 @@ package divconq.db.common;
 import divconq.db.update.ConditionalValue;
 import divconq.db.update.UpdateRecordRequest;
 import divconq.struct.CompositeStruct;
+import divconq.struct.ListStruct;
 
 /**
  * Update a group record.  Name is required.
@@ -29,9 +30,26 @@ import divconq.struct.CompositeStruct;
 public class UpdateGroupRequest extends UpdateRecordRequest {
 	protected ConditionalValue name = new ConditionalValue();
 	protected ConditionalValue desc = new ConditionalValue();
+	protected ListStruct tags = null;
 			
 	public void setName(String v) {
 		this.name.setValue(v);
+	}
+	
+	public void setAuthorizationTags(ListStruct tags) {
+		this.tags = tags;
+	}
+	
+	public void emptyAuthorizationTags(ListStruct tags) {
+		this.tags = new ListStruct();
+	}
+	
+	public void addAuthorizationTag(String... tags) {
+		if (this.tags == null) 
+			this.tags = new ListStruct();
+		
+		for (String name : tags)
+			this.tags.addItem(name);
 	}
 	
 	public void setDescription(String v) {
@@ -47,6 +65,10 @@ public class UpdateGroupRequest extends UpdateRecordRequest {
 	public CompositeStruct buildParams() {
 		this.withSetField("dcName", this.name);
 		this.withSetField("dcDescription", this.desc);
+
+		// warning - setting an empty list removes all tags
+		if (this.tags != null)
+			this.withReplaceList("dcAuthorizationTag", this.tags);
 		
 		this.parameters = super.buildParams();	
 		

@@ -315,6 +315,7 @@
 		
 		<Record Id="dcDbCall">
 			<Field Name="Table" Type="dcTinyString" Required="True" />
+			<Field Name="When" Type="BigDateTime" />
 			<Field Name="Filter" Type="dcTinyString" />
 			<Field Name="Extra" Type="Any" />
 		</Record>
@@ -419,6 +420,7 @@
 		<Record Id="dcLoadDomainsResponse">
 			<Field Name="Id" Type="Id" />
 			<Field Name="Title" Type="dcDomain:dcTitle" />
+			<Field Name="Alias" Type="dcDomain:dcAlias" />
 			<Field Name="Names">
 				<List Type="dcDomain:dcName" />
 			</Field>
@@ -876,7 +878,6 @@
 									<Field Name="Password" Type="dcUser:dcPassword" Required="IfPresent" />
 									<Field Name="Chronology" Type="dcUser:dcChronology" />
 									<Field Name="Locale" Type="dcUser:dcLocale" />
-									<Field Name="Description" Type="dcUser:dcDescription" />
 								</Record>
 							</Field>
 						</Request>
@@ -947,6 +948,9 @@
 									<Field Name="Locale" Type="dcUser:dcLocale" />
 									<Field Name="Description" Type="dcUser:dcDescription" />
 									<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
+									<Field Name="AuthorizationTags">
+										<List Type="dcUser:dcAuthorizationTag" />
+									</Field>
 								</Record>
 							</Field>
 						</Request>
@@ -1145,6 +1149,9 @@
 									<Field Name="Id" Type="dcGroup:Id" Required="True" />
 									<Field Name="Name" Type="dcGroup:dcName" Required="IfPresent" />
 									<Field Name="Description" Type="dcGroup:dcDescription" />
+									<Field Name="AuthorizationTags">
+										<List Type="dcGroup:dcAuthorizationTag" />
+									</Field>
 								</Record>
 							</Field>
 						</Request>
@@ -1354,6 +1361,9 @@
 								<Record>
 									<Field Name="Title" Type="dcDomain:dcTitle" Required="IfPresent" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
+									<Field Name="Names">
+										<List Type="dcDomain:dcName" />
+									</Field>
 								</Record>
 							</Field>
 						</Request>
@@ -1427,6 +1437,7 @@
 								<Record>
 									<Field Name="Id" Type="dcDomain:Id" />
 									<Field Name="Title" Type="dcDomain:dcTitle" />
+									<Field Name="Alias" Type="dcDomain:dcAlias" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
 									<Field Name="Names">
 										<List Type="dcDomain:dcName" />
@@ -1445,6 +1456,9 @@
 									<Field Name="Id" Type="dcDomain:Id" Required="True" />
 									<Field Name="Title" Type="dcDomain:dcTitle" Required="IfPresent" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
+									<Field Name="Names">
+										<List Type="dcDomain:dcName" />
+									</Field>
 								</Record>
 							</Field>
 						</Request>
@@ -1458,6 +1472,7 @@
 							<Field Name="Body" Required="True">
 								<Record>
 									<Field Name="Title" Type="dcDomain:dcTitle" Required="IfPresent" />
+									<Field Name="Alias" Type="dcDomain:dcAlias" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
 									<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
 									<Field Name="Names">
@@ -1559,6 +1574,7 @@
 									<Record>
 										<Field Name="Id" Type="dcDomain:Id" />
 										<Field Name="Title" Type="dcDomain:dcTitle" />
+										<Field Name="Alias" Type="dcDomain:dcAlias" />
 										<Field Name="Description" Type="dcDomain:dcDescription" />
 										<Field Name="Names">
 											<List Type="dcDomain:dcName" />

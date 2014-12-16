@@ -18,6 +18,7 @@
 		
 		<Table Id="dcDomain">
 			<Field Name="dcTitle" Type="dcSmallString" Required="True" />
+			<Field Name="dcAlias" Type="dcSmallString" Required="True" />
 			<Field Name="dcName" Type="dcSmallString" Required="True" List="True" />
 			<Field Name="dcDescription" Type="String" />
 			
@@ -226,6 +227,7 @@
 				</Request>
 				<Response Any="True" />
 			</Procedure>
+			<!-- 
 			<Procedure Name="dcSelect" Execute="divconq.db.proc.SelectAdvanced">
 				<Description>
 					Load an ordered list of records applying a Select,
@@ -245,7 +247,7 @@
 					<Field Name="Collector">
 						<Record>
 							<Field Name="Name" Type="dcTinyString" />
-							<!-- or -->
+							<!-- or >
 							<Field Name="Field" Type="dcTinyString" />
 							<Field Name="From" Type="Any" />
 							<Field Name="To" Type="Any" />
@@ -289,7 +291,7 @@
 					<Field Name="Collector">
 						<Record>
 							<Field Name="Name" Type="dcTinyString" />
-							<!-- or -->
+							<!-- or >
 							<Field Name="Field" Type="dcTinyString" />
 							<Field Name="From" Type="Any" />
 							<Field Name="To" Type="Any" />
@@ -314,6 +316,7 @@
 					</Field>
 				</RecResponse>
 			</Procedure>
+			-->
 			<Procedure Name="dcSelectDirect" Execute="divconq.db.proc.SelectDirect">
 				<Description>
 					Load an ordered list of records applying a Select,
@@ -406,6 +409,16 @@
 				<Request Inherits="dcDbCall">
 					<Field Name="Id" Type="Id" Required="True" />
 					<Field Name="Fields" Type="AnyRecord" Required="True" />
+					<Field Name="Sets">
+						<List>
+							<Record>
+								<Field Name="Field" Type="dcSmallString" Required="True" />
+								<Field Name="Values" Required="True">
+									<List Type="dcSmallString" />
+								</Field>
+							</Record>
+						</List>
+					</Field>
 				</Request>
 			</Procedure>
 			<Procedure Name="dcUpdateSet" Execute="divconq.db.proc.UpdateSet">
@@ -413,12 +426,11 @@
 				</Description>
 				<Request Inherits="dcDbCall">
 					<Field Name="Operation" Type="dcSmallString" Required="True" />
-					<Field Name="Table" Type="dcSmallString" Required="True" />
 					<Field Name="Records" Required="True">
 						<List Type="Id" />
 					</Field>
 					<Field Name="Field" Type="dcSmallString" Required="True" />
-					<Field Name="SubIds" Required="True">
+					<Field Name="Values" Required="True">
 						<List Type="dcSmallString" />
 					</Field>
 				</Request>

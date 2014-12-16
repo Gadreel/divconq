@@ -37,7 +37,8 @@ import divconq.util.StringUtil;
  *
  */
 abstract public class DbRecordRequest extends ReplicatedDataRequest {
-	protected List<DbField> fields = new ArrayList<DbField>();	
+	protected List<DbField> fields = new ArrayList<>();	
+	protected ListStruct sets = new ListStruct();
 	
 	protected String table = null;
 	protected String id = null;
@@ -437,6 +438,15 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		return this;
 	}
 
+	public DbRecordRequest withReplaceList(String name, ListStruct values) {
+		this.sets.addItem(new RecordStruct()
+			.withField("Field", name)
+			.withField("Values", values)
+		);
+		
+		return this;
+	}
+
 	public DbRecordRequest withCopyList(String name, boolean valueAsSubkey, ListStruct list) {
 		if (list != null) {
 			for (Struct item : list.getItems()) 
@@ -473,6 +483,18 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 					this.withFields(new ListField(dname, valueAsSubkey ? item.toString() : null, item));					
 			}			
 		}
+		
+		return this;
+	}
+
+	public DbRecordRequest withConditionallyReplaceList(RecordStruct source, String sname, String dname) {
+		if (!source.hasField(sname))
+			return this;
+		
+		this.sets.addItem(new RecordStruct()
+			.withField("Field", dname)
+			.withField("Values", source.getFieldAsList(sname))
+		);
 		
 		return this;
 	}
@@ -591,6 +613,11 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		
 		if (this.extra != null)
 			params.setField("Extra", this.extra);
+		
+		params.setField("When", this.when);
+		
+		if (this.sets.getSize() > 0)
+			params.setField("Sets", this.sets);
 		
 		this.parameters = params;
 		

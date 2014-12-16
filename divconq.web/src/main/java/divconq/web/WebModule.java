@@ -46,11 +46,12 @@ public class WebModule extends ModuleBase {
 	protected SslContextFactory ssl = new SslContextFactory(); 
 	protected ConcurrentHashMap<Integer, Channel> activelisteners = new ConcurrentHashMap<>();
     protected ReentrantLock listenlock = new ReentrantLock();
+    protected WebSiteManager siteman = new WebSiteManager();
 
 	@Override
 	public void start() {
 		// prepare the web site manager from settings in module config
-		WebSiteManager.instance.start(this, this.config.find("ViewSettings"));
+		this.siteman.start(this, this.config.find("ViewSettings"));
 		
 		this.ssl.init(this.config);
 		
@@ -111,7 +112,7 @@ public class WebModule extends ModuleBase {
 		    	        // this can also be a cached & compressed response that way
 		    	        //pipeline.addLast("deflater", new HttpContentCompressor());
 		    	        
-		    	        pipeline.addLast("handler", new ServerHandler(httpconfig));
+		    	        pipeline.addLast("handler", new ServerHandler(httpconfig, WebModule.this.siteman));
 					}        	 
 		        });
 	
@@ -139,8 +140,10 @@ public class WebModule extends ModuleBase {
 			this.listenlock.unlock();
 		}
 		
-		for (IWebExtension ext : WebSiteManager.instance.extensions.values())
-			ext.online();
+		this.siteman.online();
+		
+		//for (IWebExtension ext : WebSiteManager.instance.extensions.values())
+		//	ext.online();
 	}
 	
 	public void goOffline() {

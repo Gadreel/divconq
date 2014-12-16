@@ -1,0 +1,200 @@
+<dcui Title="DivConq Home">
+	<Layout>
+		<h4>Default Home</h4>
+
+		<p>
+			You are seeing this because no home page is configured for this domain.
+		</p>
+	</Layout>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+			
+			if (this.Params.Path)
+				entry.Store.Path = this.Params.Path;
+			else
+				entry.Store.Path = '/';
+		
+			$('#lstFiles th a').click(function(e) {
+				entry.Store.SortField = $(this).attr('data-fname');
+				entry.call('LoadList');
+				
+				e.preventDefault();
+				return false;
+			});
+			
+			this.call('LoadList');
+	]]></Function>
+	<Function Name="LoadList"><![CDATA[
+			var entry = this;
+		
+			$('#lstFilesBody').empty();
+			
+			dc.comm.sendMessage({ 
+				Service: 'dcFileServer',
+				Feature: 'FileStore',
+				Op: 'ListFiles',
+				Body: { 
+					FolderPath: entry.Store.Path
+				}
+			}, function(resp) {
+				if (resp.Result > 0) {
+					dc.pui.Popup.alert(resp.Message);
+					return;
+				}
+				
+				var list = $('#lstFilesBody');
+
+				// add current folder				
+				list.append('<tr><td><img src="/dcf/img/folder-16.png" /></td><td>.</td><td></td><td></td></tr>');
+				
+				// add paren folder
+				if (entry.Store.Path.length > 1) {
+					var litm = $('<tr></tr>');
+					
+					litm.append('<td><img src="/dcf/img/folder-16.png" /></td>');
+				
+					var uncell = $('<td></td>');							
+					var anchr = $('<a href="#">.. [parent]</a>');
+					
+					anchr.click(item, function(e) {
+						var curr = entry.Store.Path;
+						
+						if (curr.length == 1)
+							return;
+							
+						var path = curr.substr(0, curr.lastIndexOf('/'));
+						
+						dc.pui.Loader.loadPage('/dcf/Main', { Path: path });	
+						
+						e.preventDefault();
+						return false;
+					});
+					
+					uncell.append(anchr);
+					litm.append(uncell);
+					
+					list.append(litm);
+				}
+				
+				var items = resp.Body;
+				var sfield = entry.Store.SortField ? entry.Store.SortField : 'FileName';
+
+				// add calculated fields
+				//for (var i = 0; i < items.length; i++) {
+				//	var item = items[i];
+					
+					//item.TotalCharges = item.Sales + item.Shipping;
+				//}
+				
+				// sort
+				items.sort(dc.util.List.sortObjects(sfield));
+				
+				// display
+				for (var i = 0; i < items.length; i++) {
+					var item = items[i];
+					
+					var litm = $('<tr></tr>');
+
+					if (item.IsFolder) 					
+						litm.append('<td><img src="/dcf/img/folder-16.png" /></td>');
+					else
+						litm.append('<td><img src="/dcf/img/file-16.png" /></td>');
+					
+					var uncell = $('<td></td>');							
+					var anchr = $('<a href="#">' + String.escapeHtml(item.FileName) + '</a>');
+					
+					anchr.click(item, function(e) {
+						var path = '/' + e.data.FileName;
+					
+						if (entry.Store.Path.length > 1)
+							path = entry.Store.Path + '/' + e.data.FileName;
+								
+						if (e.data.IsFolder) {
+							dc.pui.Loader.loadPage('/dcf/Main', { Path: path });	
+						}
+						else {
+							// TODO move all this to dcf.download.FUNC
+							
+							dc.util.Cookies.deleteCookie('fileDownload');
+							
+							var tmsg = { 
+								Service: 'dcFileServer',
+								Feature: 'FileStore',
+								Op: 'StartDownload',
+								Body: {
+									FilePath: path
+								}
+							};
+							
+							var cmsg = { 
+								Service: 'Session',
+								Feature: 'DataChannel',
+								Op: 'Establish',
+								Body: {
+									Title: "Downloading " + path,
+									StreamRequest: tmsg
+								}
+							};
+							
+							dc.comm.sendMessage(cmsg, function(rmsg) {
+								if (rmsg.Result == 0) { 
+									var binding = rmsg.Body;
+									
+									$.fileDownload('/download/' + binding.ChannelId, {
+										httpMethod: 'GET', 
+										successCallback: function(url) {
+											// only means that it started, not finished
+											console.log('download worked!');
+										},
+										failCallback: function(html, url) {
+											console.log('download failed!');
+										}
+									});
+								}
+								else {			
+									dc.pui.Popup.alert('Error requesting upload channel.');
+								}
+							});
+						}
+						
+						e.preventDefault();
+						return false;
+					});
+					
+					uncell.append(anchr);
+					litm.append(uncell);
+					
+					if (item.IsFolder) 					
+						litm.append('<td></td>');
+					else
+						litm.append('<td>' + dcf.upload.fmtFileSize(item.Size) + '</td>');
+					
+					if (item.LastModified) 
+						litm.append('<td>' + dc.util.Date.formatZLocalMedium(item.LastModified) + '</td>');
+					else
+						litm.append('<td></td>');
+					
+					list.append(litm);
+				}
+				
+				$('#lstFiles').table('refresh').promise().then(function() {
+					$('#lstFiles td .ui-table-cell-label a').click(function(e) {
+						entry.Store.SortField = $(this).attr('data-fname');
+						entry.call('LoadList');
+						
+						e.preventDefault();
+						return false;
+					});
+				});
+			});	
+	]]></Function>
+	<Function Name="DoRefresh"><![CDATA[
+			this.call('LoadList');
+	]]></Function>
+	<Function Name="DoAddFolder"><![CDATA[
+			dc.pui.Loader.loadPage('/dcf/AddFolder', { Path: this.Store.Path });	
+	]]></Function>
+	<Function Name="DoUpload"><![CDATA[
+			dc.pui.Loader.loadPage('/dcf/UploadFile', { Path: this.Store.Path });	
+	]]></Function>
+</dcui>

@@ -16,39 +16,39 @@
 ************************************************************************ */
 package divconq.io;
 
-import java.io.File;
-import java.util.concurrent.ConcurrentHashMap;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import divconq.filestore.CommonPath;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationResult;
+import divconq.xml.XElement;
 import net.contentobjects.jnotify.JNotify;
 import net.contentobjects.jnotify.JNotifyListener;
 
 public class LocalFileStore {
 	protected Integer watchID = null;
-	protected ConcurrentHashMap<String, CopyOnWriteArrayList<FuncCallback<FileStoreEvent>>> listeners = new ConcurrentHashMap<String, CopyOnWriteArrayList<FuncCallback<FileStoreEvent>>>();
+	protected Path path = null;
+	protected String spath = null;
 	
-	public void register(String pname, FuncCallback<FileStoreEvent> callback) {
-		CopyOnWriteArrayList<FuncCallback<FileStoreEvent>> cblist = this.listeners.get(pname);
-		
-		if (cblist == null) {
-			cblist = new CopyOnWriteArrayList<FuncCallback<FileStoreEvent>>();
-			CopyOnWriteArrayList<FuncCallback<FileStoreEvent>> x = this.listeners.putIfAbsent(pname, cblist);
-			
-			if (x != null)
-				cblist = x;
-		}
-		
-		cblist.add(callback);
+	protected CopyOnWriteArrayList<FuncCallback<FileStoreEvent>> listeners = new CopyOnWriteArrayList<>();
+
+	public String getPath() {
+		return this.spath;
 	}
 
-	public void unregister(String pname, FuncCallback<FileStoreEvent> callback) {
-		CopyOnWriteArrayList<FuncCallback<FileStoreEvent>> cblist = this.listeners.get(pname);
-		
-		if (cblist != null) 
-			cblist.remove(callback);
+	public Path getFilePath() {
+		return this.path;
+	}
+	
+	public void register(FuncCallback<FileStoreEvent> callback) {
+		this.listeners.add(callback);
+	}
+
+	public void unregister(FuncCallback<FileStoreEvent> callback) {
+		this.listeners.remove(callback);
 	}
 	
 	public void fireEvent(String fname, boolean deleted) {
@@ -61,26 +61,38 @@ public class LocalFileStore {
 		
 		FileStoreEvent evnt = new FileStoreEvent();
 		
-		evnt.packagename = p.getName(0);
-		evnt.path = p.subpath(1);
+		evnt.path = p;  
 		evnt.delete = deleted;		
 		
-		CopyOnWriteArrayList<FuncCallback<FileStoreEvent>> cblist = this.listeners.get(evnt.packagename);
-		
-		if (cblist != null) {
-			for (FuncCallback<FileStoreEvent> cb : cblist) {
-				cb.setResult(evnt);
-				cb.complete();
-			}
+		for (FuncCallback<FileStoreEvent> cb : this.listeners) {
+			cb.setResult(evnt);
+			cb.complete();
 		}
 	}
 
-	public void start(OperationResult or) {
-		new File("/Work/Temp/Watch").mkdirs(); 
+	public void start(OperationResult or, XElement fstore) {
+		String fpath = fstore.hasAttribute("FolderPath") 
+				? fstore.getAttribute("FolderPath")
+				: fstore.getName().equals("PrivateFileStore") 
+					? "./private" 
+					: fstore.getName().equals("PackageFileStore")
+						? "./packages"
+						: "./public";
+		
+		this.path = Paths.get(fpath);
+			
+		if (Files.exists(this.path) && !Files.isDirectory(this.path)) {
+			or.error("File Store cannot be mounted: " + fpath);
+			return;
+		}
 		
 		try {
+			Files.createDirectories(this.path);
+			
+			this.spath = this.path.toString();
+			
 			this.watchID = JNotify.addWatch(
-					"/Work/Temp/Watch", 
+					this.spath, 
 					JNotify.FILE_CREATED | JNotify.FILE_DELETED | JNotify.FILE_MODIFIED | JNotify.FILE_RENAMED, 
 					true, 
 					new JNotifyListener() {

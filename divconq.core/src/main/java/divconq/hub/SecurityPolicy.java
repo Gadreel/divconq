@@ -81,7 +81,7 @@ public class SecurityPolicy {
 		if (cspReport)
 			report = "-Report-Only";
 		
-		if (!resp.headers().contains("Content-Security-Policy") || cspForce) {
+		if (!resp.headers().contains("Content-Security-Policy" + report) || cspForce) {
 			if ("Strict".equals(mode)) {
 				resp.headers().set("Content-Security-Policy" + report, 
 					"default-src 'self'; img-src 'self' data:; media-src mediastream:; frame-ancestors 'self'; connect-src *;");

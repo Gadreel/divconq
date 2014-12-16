@@ -16,7 +16,7 @@
 ************************************************************************ */
 
  /**
- * This package provides HTML support the View  templating system: {@link divconq.view}.
+ * This package provides HTML support the View  templating system: {@link divconq.web.dcui}.
  */
 package w3.html;
 

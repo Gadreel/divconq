@@ -31,6 +31,10 @@ public class DomainInfo {
 		return this.info.getFieldAsString("Id");
 	}
 	
+	public String getAlias() {
+		return this.info.getFieldAsString("Alias");
+	}
+	
 	public String getTitle() {
 		return this.info.getFieldAsString("Title");
 	}

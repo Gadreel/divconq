@@ -3,7 +3,7 @@ package divconq.db.proc;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 
-import divconq.db.DatabaseAdapter;
+import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.db.IStoredProc;
@@ -34,7 +34,7 @@ public class LoadRecord implements IStoredProc {
 		// TODO add db filter option
 		//d runFilter("Query") quit:Errors  ; if any violations in filter then do not proceed
 		
-		DatabaseAdapter db = new DatabaseAdapter(conn, task); 
+		TablesAdapter db = new TablesAdapter(conn, task); 
 		ICompositeBuilder out = task.getBuilder();
 		
 		try {
@@ -48,7 +48,7 @@ public class LoadRecord implements IStoredProc {
 	}
 	
 	public void writeRecord(DatabaseInterface conn, DatabaseTask task, OperationResult log, ICompositeBuilder out,
-			DatabaseAdapter db, String table, String id, BigDateTime when, ListStruct select,  
+			TablesAdapter db, String table, String id, BigDateTime when, ListStruct select,  
 			boolean compact, boolean skipWriteRec, boolean historical) throws Exception 
 	{		
 		if (!db.isCurrent(table, id, when, historical))
@@ -78,7 +78,7 @@ public class LoadRecord implements IStoredProc {
 	}
 	
 	public void writeField(DatabaseInterface conn, DatabaseTask task, OperationResult log, ICompositeBuilder out,
-			DatabaseAdapter db, String table, String id, BigDateTime when, ListStruct select, RecordStruct field, 
+			TablesAdapter db, String table, String id, BigDateTime when, ListStruct select, RecordStruct field, 
 			boolean historical, boolean compact) throws Exception 
 	{		
 		// some fields may request full details even if query is not in general

@@ -110,8 +110,13 @@ public class CoreDataServices extends ExtensionBase implements IService {
 				if (rec.hasField("Confirmed")) 
 					req.setConfirmed(rec.getFieldAsBoolean("Confirmed"));
 				
+				// not allowed for Self (see schema)
 				if (rec.hasField("Description")) 
 					req.setDescription(rec.getFieldAsString("Description"));
+				
+				// not allowed for Self (see schema)
+				if (rec.hasField("AuthorizationTags"))
+					req.setAuthorizationTags(rec.getFieldAsList("AuthorizationTags"));
 				
 				db.submit(req, new ObjectFinalResult(request));
 				
@@ -264,7 +269,8 @@ public class CoreDataServices extends ExtensionBase implements IService {
 					.withTable("dcDomain")
 					.withId("MyUpdateDomain".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id"))
 					.withConditionallySetField(rec, "Title", "dcTitle")
-					.withConditionallySetField(rec, "Description", "dcDescription");
+					.withConditionallySetField(rec, "Description", "dcDescription")
+					.withConditionallyReplaceList(rec, "Names", "dcName");
 				
 				db.submit(req, new ObjectFinalResult(request));
 				
@@ -368,6 +374,9 @@ public class CoreDataServices extends ExtensionBase implements IService {
 				
 				if (rec.hasField("Description")) 
 					req.setDescription(rec.getFieldAsString("Description"));
+				
+				if (rec.hasField("AuthorizationTags"))
+					req.setAuthorizationTags(rec.getFieldAsList("AuthorizationTags"));
 				
 				db.submit(req, new ObjectFinalResult(request));
 				

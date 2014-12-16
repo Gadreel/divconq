@@ -1,0 +1,294 @@
+/* ************************************************************************
+#
+#  DivConq
+#
+#  http://divconq.com/
+#
+#  Copyright:
+#    Copyright 2014 eTimeline, LLC. All rights reserved.
+#
+#  License:
+#    See the license.txt file in the project's top-level directory for details.
+#
+#  Authors:
+#    * Andy White
+#
+************************************************************************ */
+body {
+	height: 100%;
+	font-size: 1em;
+	color: #000000;
+	background: #fff;
+	font-family: 'Molengo', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	color: #dd9018;
+	margin: 14px 0px 4px 0px;
+	font-family: 'Open Sans', sans-serif;
+	font-weight: 400;
+	letter-spacing: 2px;
+}
+
+h1 { font-size: 120%; }
+h2 { font-size: 120%; }
+h3 { font-size: 110%; }
+h4 { font-size: 110%; }
+h5 { font-size: 100%; }
+h6 { font-size: 100%; }
+
+div {
+	position: relative;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+	
+a:link, a:visited { 
+	color: #888; 
+}
+
+a:hover, a:active { 
+	color: #222; 
+}
+
+.ui-bar-a a.ui-link, .ui-bar-a a.ui-link:visited {
+	color: #dd9018;
+	font-weight: normal;
+}
+
+.ui-bar-a a.ui-link:hover, .ui-bar-a a.ui-link:active {
+	color: #7c7c7c;
+}
+
+.ui-page-theme-a .ui-link {
+	color: #dd9018;
+	font-weight: normal;
+}
+
+.ui-page-theme-a .ui-link:hover {
+	color: #7c7c7c;
+}
+
+.ui-btn:visited /*, .ui-btn a.ui-link-inherit */ {
+	color: #888;
+}
+
+.ui-overlay-a {
+	background: #fff;
+}
+
+.ui-page-theme-a .ui-btn, html .ui-bar-a .ui-btn, html .ui-body-a .ui-btn, html body .ui-group-theme-a .ui-btn, html head+body .ui-btn.ui-btn-a, 
+.ui-page-theme-a .ui-btn:visited, html .ui-bar-a .ui-btn:visited, html .ui-body-a .ui-btn:visited, 
+html body .ui-group-theme-a .ui-btn:visited, html head+body .ui-btn.ui-btn-a:visited {
+	background: white;
+	color: #888;
+}
+
+.ui-page-theme-a .ui-btn:hover, html .ui-bar-a .ui-btn:hover, html .ui-body-a .ui-btn:hover, 
+html body .ui-group-theme-a .ui-btn:hover, html head+body .ui-btn.ui-btn-a:hover {
+	background: #ddd;
+	font-weight: normal;
+	color: #222;
+	text-shadow: none;
+	background-image: none;
+}
+
+.ui-page-theme-a, .ui-bar-a {
+	background: #fff;
+	font-family: 'Molengo', sans-serif;
+	text-shadow: none;
+}
+
+.ui-page-theme-a, .ui-bar-a {
+	font-size: 1em;
+	color: #000000;
+	font-weight: normal;
+}
+
+.ui-listview .ui-bar-b {
+	border: 1px solid #bbb;
+	background: gray;
+	color: white;
+	font-weight: 700;
+	text-shadow: none;
+	background-image: none;
+}
+
+.ui-listview>li h2 {
+	color: #2f3e46;
+	
+	font-size: .9em;
+	font-weight: normal;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.ui-page-theme-a .ui-listview .ui-btn, .ui-page-theme-a .ui-btn, html head+body .ui-btn.ui-btn-a {
+	border: 1px solid #ccc;
+	background: white;
+	font-weight: normal;
+	color: #888;
+	text-shadow: none;
+	background-image: none;
+}
+
+.ui-page-theme-a .ui-btn  button {
+	color: #888;
+}
+
+.ui-page-theme-a .ui-btn.ui-radio-on {
+	background: #888;
+	color: #fff;
+}
+
+.ui-page-theme-a .ui-listview .ui-btn p {
+	color: #222;
+	text-shadow: none;
+	background-image: none;
+}
+
+.ui-page-theme-a .ui-listview .ui-btn:hover, .ui-btn:hover {
+	border: 1px solid #bbb;
+	background: #ddd;
+	font-weight: 700;
+	color: #222;
+	text-shadow: none;
+	background-image: none;
+}
+
+.ui-page-theme-a .ui-btn.ui-shadow {
+	box-shadow: none;
+}
+
+.ui-page {
+	background: #fff;
+	min-height: 615px;
+	background-image: none;
+}
+
+.ui-mobile .ui-page-active {
+	overflow: visible;
+}
+
+.ui-page .ui-header {
+	position: relative;
+	color: #202020;	
+	background: #fff;
+	border-bottom: 2px solid #dd9018;
+	border-top: none;
+	text-shadow: none;
+	box-shadow: none;
+	font-weight: normal;
+}
+
+.ui-mobile [data-role=page], .ui-page {
+	position: relative;
+}
+
+html head+body .ui-btn.ui-btn-a.green {
+	background: #599B50;
+	color: #fff;
+}
+
+.ui-overlay-a, .ui-page-theme-a, .ui-page-theme-a .ui-panel-wrapper {
+	background-color: white;
+}
+
+/*** header **/
+
+.header-logo, #pageLblTitle {
+	display: inline-block;
+	float: left;
+	margin: 9px;
+}
+
+.sign-out {
+	display: inline-block;
+	float: right;
+	margin: 9px;
+}
+
+.btn-notify {
+	display: inline-block;
+	float: right;
+	margin: 9px;
+}
+
+/*** content **/
+	
+.ui-content {
+	padding: 5px 15px 15px 15px;
+	min-height: 200px;
+}
+
+#pageContent {
+	min-height: 300px;
+}
+
+/*** footer **/
+
+.ui-page .ui-footer {
+	position: relative;
+	background: #fff;
+	border-top: 2px solid #dd9018;
+	border-bottom: none;
+	text-shadow: none;
+	box-shadow: none;
+	font-weight: normal;
+}
+
+.ui-page-theme-a a:link, html .ui-bar-a a:link, html .ui-body-a a:link,
+.ui-page-theme-a a:visited, html .ui-bar-a a:visited, html .ui-body-a a:visited {
+	color: #dd9018; 
+}
+
+.ui-page-theme-a a:active, html .ui-bar-a a:active, html .ui-body-a a:active,
+.ui-page-theme-a a:hover, html .ui-bar-a a:hover, html .ui-body-a a:hover {
+	color: #7c7c7c; 
+}
+
+.ui-page .ui-footer .ui-grid-a .ui-block-a, .ui-footer .ui-grid-a .ui-block-b {
+	text-align: center;
+}
+
+.ui-page .ui-footer.ui-bar-a a.ui-link {
+	font-size: 100%;
+}
+
+.formbuttons {
+	text-align: right;
+}
+
+label.error {
+	color: red;
+	float: right;
+}
+
+.ui-popup, .ui-popup-container {
+	padding: 15px;
+}
+
+/* =============== table layouts ================== */
+
+/* thinner tables with 1 to 3 columns */
+@media (min-width: 660px) {
+	/* Show the table header rows and set all cells to display: table-cell */
+	.table-thin-breakpoint td,
+	.table-thin-breakpoint th,
+	.table-thin-breakpoint tbody th,
+	.table-thin-breakpoint tbody td,
+	.table-thin-breakpoint thead td,
+	.table-thin-breakpoint thead th {
+		display: table-cell;
+		margin: 0;
+	}
+	
+	/* Hide the labels in each cell */
+	.table-thin-breakpoint td .ui-table-cell-label,
+	.table-thin-breakpoint th .ui-table-cell-label {
+		display: none;
+	}
+}
+

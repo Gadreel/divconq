@@ -2318,6 +2318,7 @@ if ( !$.support.boxShadow ) {
 
 			// Trigger the hashchange with state provided by the user
 			// that altered the hash
+			/* APW - never, ever, do anything when the hash changes....
 			$win.trigger( newEvent, {
 				// Users that want to fully normalize the two events
 				// will need to do history management down the stack and
@@ -2326,6 +2327,7 @@ if ( !$.support.boxShadow ) {
 				//      to be fired before this value is set to avoid event timing issues
 				state: event.hashchangeState || {}
 			});
+			*/
 		},
 
 		// TODO We really only want to set this up once

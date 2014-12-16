@@ -16,9 +16,9 @@
 ************************************************************************ */
 package w3.html;
 
-import divconq.view.Attributes;
-import divconq.view.Element;
-import divconq.view.Node;
+import divconq.web.dcui.Attributes;
+import divconq.web.dcui.Element;
+import divconq.web.dcui.Node;
 
 public class LtrDiv extends Div {
 	public LtrDiv() {

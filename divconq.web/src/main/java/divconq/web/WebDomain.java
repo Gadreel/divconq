@@ -16,13 +16,9 @@
 ************************************************************************ */
 package divconq.web;
 
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyObject;
-import io.netty.handler.codec.http.HttpResponseStatus;
-
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,6 +67,7 @@ import w3.html.Select;
 import w3.html.Span;
 import w3.html.Style;
 import w3.html.TBody;
+import w3.html.THead;
 import w3.html.Table;
 import w3.html.Td;
 import w3.html.TextArea;
@@ -80,286 +77,123 @@ import w3.html.Tr;
 import w3.html.U;
 import w3.html.Ul;
 import divconq.filestore.CommonPath;
+import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
-import divconq.io.ByteBufWriter;
-import divconq.io.FileStoreEvent;
-import divconq.lang.op.FuncResult;
-import divconq.lang.op.OperationResult;
+import divconq.io.LocalFileStore;
+import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
 import divconq.locale.Localization;
-import divconq.log.Logger;
-import divconq.net.NetUtil;
 import divconq.util.StringUtil;
-import divconq.view.ICodeTag;
-import divconq.view.IncludeHolder;
-import divconq.view.IncludeParam;
-import divconq.view.IncludePart;
-import divconq.view.LiteralText;
-import divconq.view.Nodes;
-import divconq.view.html.AssetImage;
-import divconq.view.html.Html5Head;
-import divconq.view.html.HyperLink;
+import divconq.web.asset.AssetOutputAdapter;
+import divconq.web.dcui.AdvElement;
+import divconq.web.dcui.AdvForm;
+import divconq.web.dcui.AssetImage;
+import divconq.web.dcui.ButtonLink;
+import divconq.web.dcui.Document;
+import divconq.web.dcui.FormButton;
+import divconq.web.dcui.Html5Head;
+import divconq.web.dcui.HyperLink;
+import divconq.web.dcui.ICodeTag;
+import divconq.web.dcui.IncludeHolder;
+import divconq.web.dcui.IncludeParam;
+import divconq.web.dcui.IncludePart;
+import divconq.web.dcui.LiteralText;
+import divconq.web.dcui.Nodes;
+import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 import divconq.xml.XNode;
 import divconq.xml.XText;
-import divconq.xml.XmlReader;
 
 public class WebDomain implements IWebDomain {
 	protected String id = null;
-	protected IWebExtension extension = null;
-	protected Map<String, ViewInfo> views = new HashMap<String, ViewInfo>();	
+	protected String alias = null;
+	protected CommonPath homepath = null;
+	protected CommonPath mainpath = null;
+	
+	protected Map<String, IOutputAdapter> paths = new HashMap<>();
+	protected Map<String, IOutputAdapter> previewpaths = new HashMap<>();
 	
 	protected Localization dictionary = null;
 	
-	protected Map<String,Class<? extends IViewBuilder>> builderClasses = new HashMap<String,Class<? extends IViewBuilder>>();
-	protected Map<String,Class<? extends IContentInfo>> contentClasses = new HashMap<String,Class<? extends IContentInfo>>();
-	//protected Map<String,IViewParser> formatParsers = new HashMap<String,IViewParser>();
+	protected Map<String, Class<? extends ICodeTag>> codetags = new HashMap<String, Class<? extends ICodeTag>>();
 	
-	protected Map<String, Map<String, Class<? extends ICodeTag>>> codetags = new HashMap<String, Map<String,Class<? extends ICodeTag>>>();
+	protected String[] specialExtensions = new String[] { ".dcui.xml", ".gas", ".pui.xml", ".html" };	
 	
 	@Override
 	public String getId() {
 		return this.id;
 	}
 	
-	public Class<? extends ICodeTag> getCodeTag(String format, String name) {
-		Map<String, Class<? extends ICodeTag>> fmt = this.codetags.get(format);
-		
-		if (fmt != null) 
-			return fmt.get(name);
-					
-		return null;
+	@Override
+	public String getAlias() {
+		return this.alias;
 	}
 	
 	@Override
-	public IWebExtension getExtension() {
-		return this.extension;
+	public CommonPath getHomePath() {
+		return this.homepath;
+	}
+	
+	@Override
+	public CommonPath getMainPath() {
+		return this.mainpath;
 	}
 
 	@Override
-	public void init(IWebExtension ext, String id) {
-		this.id = id;
-		this.extension = ext;
+	public void init(DomainInfo domain) {
+		this.id = domain.getId();
+		this.alias = domain.getAlias();
 		
 		this.initialTags();
-
-		XElement settings = this.extension.getLoader().getSettings();
 		
-		if (settings != null) {		
-			for (XElement builder : settings.selectAll("Format")) {
-				String fmt = builder.getAttribute("Name");
-				
-				if (StringUtil.isEmpty(fmt))
-					continue;
-				
-				String bname = builder.getAttribute("BuilderClass");
-				
-				if (StringUtil.isNotEmpty(bname)) {
-					Class<?> cls = this.extension.getLoader().getClass(bname);
-					
-					if (cls != null) {
-						Class<? extends IViewBuilder> tcls = cls.asSubclass(IViewBuilder.class);
-						
-						if (tcls != null) 
-							this.builderClasses.put(fmt, tcls);
-					} 
-	
-					// TODO log
-					//System.out.println("unable to load class: " + cname);
+		XElement config = domain.getSettings();
+		
+		this.homepath = new CommonPath("/dcw/index.html");
+		this.mainpath = new CommonPath("/dcw/index.html");
+		
+		if (config != null) {
+			XElement web = config.selectFirst("Web");
+			
+			if (web != null) {
+				if (web.hasAttribute("Advanced") && "true".equals(web.getAttribute("Advanced").toLowerCase())) {
+					this.homepath = new CommonPath("/dcw/Home");
+					this.mainpath = new CommonPath("/dcw/Main");
 				}
 				
-				String cname = builder.getAttribute("ContentClass");
-				
-				if (StringUtil.isNotEmpty(cname)) {
-					Class<?> cls = this.extension.getLoader().getClass(cname);
-					
-					if (cls != null) {
-						Class<? extends IContentInfo> tcls = cls.asSubclass(IContentInfo.class);
-						
-						if (tcls != null) 
-							this.contentClasses.put(fmt, tcls);
-					} 
-	
-					// TODO log
-					//System.out.println("unable to load class: " + cname);
+				if (web.hasAttribute("HomePath")) {
+					this.homepath = new CommonPath(web.getAttribute("HomePath"));
 				}
 				
-				/*
-				String pname = builder.getAttribute("ParserClass");
-				
-				if (StringUtil.isNotEmpty(pname)) {
-					Class<?> cls = this.extension.getLoader().getClass(pname);
-					
-					if (cls != null) {
-						Class<? extends IViewParser> tcls = cls.asSubclass(IViewParser.class);
-						
-						if (tcls != null)
-							try {
-								this.formatParsers.put(fmt, tcls.newInstance());
-							} 
-							catch (Exception x) {
-								// TODO log
-							}
-					} 
-	
-					// TODO log
-					//System.out.println("unable to load class: " + pname);
+				if (web.hasAttribute("MainPath")) {
+					this.mainpath = new CommonPath(web.getAttribute("MainPath"));
 				}
-				*/
-			}
-		}		
-		
-		// load the site as provided in the file store
-		/* TODO restore domain level files
-		File fsview = new File("./files/" + this.extension.getAppName() + "/" + id + "/View");
-		
-		if (fsview.exists() && fsview.isDirectory()) {
-			Collection<File> files = FileUtils.listFiles(fsview, new String[] { "xml" }, true);
-			
-			String fsname = fsview.getPath();
-			
-			for (File f : files) {
-				String fname = f.getPath(); 
-				
-				if (fname.endsWith(".view.xml") || fname.endsWith(".part.xml"))
-					this.compileLocalView(fname.substring(fsname.length() - 5).replace('\\', '/'), f.toPath());
 			}
 		}
-		*/
 		
-		// load as though a site
-		
-		this.siteNotify();		
+		//this.siteNotify();		
 	}
 
-	public void addCodeTag(String kind, String tag, Class<? extends ICodeTag> classdef) {
-		Map<String, Class<? extends ICodeTag>> tagmap = this.codetags.get(kind);
-		
-		if (tagmap == null) {
-			tagmap = new HashMap<String, Class<? extends ICodeTag>>();
-			this.codetags.put(kind, tagmap);
-		}
-		
-		tagmap.put(tag, classdef);
-	}
-
-	public void compileLocalView(String path, Path view) {
-		try {
-			FuncResult<XElement> xres = XmlReader.loadFile(view.toFile(), true);
-			
-			if (xres.hasErrors()) {
-				System.out.println("Error compiling local view: " + xres.getMessages());
-				return;
-			}
-			
-			this.compileView(path, xres.getResult()); 
-		}
-		catch (Exception x) {
-			// TODO log
-			System.out.println("Error on View file (" + path + "): " + x);
-		}
-	}
-	
-	public void compileView(String path, XElement doc) {
-		if (doc == null)
-			doc = new XElement("HtmlOutput",
-					new XElement("Content", 
-							new XElement("html", 
-									new XElement("body", "Parse Error!!")
-							)
-					)
-			);
-		
-		try {			
-			ViewInfo info = new ViewInfo(this);
-			
-			if (!info.load(doc)) {
-				doc = new XElement("HtmlOutput",
-						new XElement("Content", 
-								new XElement("html", 
-										new XElement("body", "Compile Error!!")
-								)
-						)
-				);
-				
-				info.load(doc);
-			}
-			
-			this.views.put(path, info);
-		}
-		catch (Exception x) {
-			// TODO log
-			System.out.println("Compile error on View (" + path + "): " + x);
-		}
+	public void addCodeTag(String tag, Class<? extends ICodeTag> classdef) {
+		this.codetags.put(tag, classdef);
 	}
 
 	/*
-	public void load(RecordStruct site) {
-		// no default behavior
-	}
-	*/
-
 	@Override
 	public void fileNotify(FileStoreEvent result) {
 		CommonPath p = result.getPath();
 		
-		// check for views only, we don't cache others yet
-		if ((p.getNameCount() < 6) || !p.getFileName().endsWith(".view.xml")) 
-			return;
-
-		if (!"View".equals(p.getName(1)))
-			return;
-		
-		if (result.isDeleted()) {
-			System.out.println("Forget: " + p);
-			this.views.remove(p.getName(1));
-		}
-		
-		else {
-			System.out.println("Update: " + p);
-			
-			this.compileLocalView(p.subpath(1).toString(), result.getFile());
-		}
+		System.out.println("Forget: " + p);
+		this.paths.remove(p.getName(1));
 	}
-
+	*/
+	
 	// load web site from local files
 	
 	@Override
 	public void siteNotify() {
-		/*
-		 * 
-		 *  TODO
-		try {
-			File site = new File("./files/" + this.extension.getAppName() + "/Site_" + this.id + ".xml");
-			
-			if (site.exists()) {
-				InputStream dstrm = new FileInputStream(site);
-				RecordStruct res = (RecordStruct) CompositeParser.parseXml(dstrm);
-				dstrm.close();
-				
-				if (res != null)
-					this.load(res);
-			}
-		}
-		catch (Exception x) {
-			// TODO
-		}
-					*/
-	}
-	
-	public Class<? extends IViewBuilder> getBuilder(String format) {
-		if (this.builderClasses.containsKey(format))
-			return this.builderClasses.get(format);
-		
-		return WebSiteManager.instance.getBuilder(format);
-	}
-	
-	public Class<? extends IContentInfo> getContentLoader(String fmt) {
-		if (this.contentClasses.containsKey(fmt))
-			return this.contentClasses.get(fmt);
-		
-		return WebSiteManager.instance.getContentLoader(fmt);
+		this.paths.clear();			// force check file system again
+		this.previewpaths.clear();
 	}
 
 	public String tr(LocaleInfo locale, String token, Object... params) {
@@ -378,429 +212,301 @@ public class WebDomain implements IWebDomain {
 	public void translatePath(WebContext ctx) {
 		CommonPath path = ctx.getRequest().getPath();
 		
-		if (path.getNameCount() < 2) 
-			ctx.getRequest().setPath(new CommonPath("/dcw/index.html"));
+		if (path.getNameCount() < 2) {
+			ctx.getRequest().setPath(this.homepath);
+		}
 	}
 	
 	public CommonPath getNotFound() {
+		if (this.homepath != null)
+			return this.homepath;
+
 		return new CommonPath("/dcw/notfound.html");
 	}
 	
 	@Override
-	public OperationResult execute(WebContext ctx) {
-		OperationResult res = new OperationResult();
-		
+	public void execute(WebContext ctx) {
 		this.translatePath(ctx);
 		
 		CommonPath path = ctx.getRequest().getPath();
-		
-		//System.out.println("h3: ");
 	
-		if (path.getNameCount() < 2) {
-			res.errorTr(150001);			
-		}
-		else {
-			/* phase out Asset/View concept
-			String source = path.getName(1);
-			
-			//System.out.println("h4: ");
-			
-			if (source.startsWith("View")) 
-				res.copyMessages(this.executeView(ctx));
-			else if (source.startsWith("Asset")) 
-				res.copyMessages(this.executeAsset(ctx));
-			else
-			*/
-			
-			this.executeFile(ctx);
+		if (path.getNameCount() < 2) { 
+			OperationContext.get().errorTr(150001);
+			return;
 		}
 		
-		return res;
-	}
+		IOutputAdapter output = this.findFile(ctx);
 
-	public OperationResult executeView(WebContext ctx) {
-		OperationResult res = new OperationResult();
-		
-		FuncResult<ViewInfo> infores = this.getView(ctx, ctx.getRequest().getPath(), "view");
-
-		if (infores.hasErrors()) {
-			res.errorTr(150001);	
-			
-			infores = this.getView(ctx, this.getNotFound(), "view");
-			
-			if (infores.hasErrors()) 
-				return res;
+		if (OperationContext.get().hasErrors() || (output == null)) {
+			OperationContext.get().errorTr(150001);			
+			return;
 		}
-
+		
 		try {
-			infores.getResult().getBuilder().execute(ctx);
+			output.execute(ctx);
 		} 
 		catch (Exception x) {
-			res.errorTr(150006, x);
+			System.out.println("Unable to process web file: " + x);
+			x.printStackTrace();
 		}
 		
-		return res;
-	}
-	
-	protected ViewInfo findView(String path, WebContext ctx) {
-		return this.views.get(path);
-	}
-
-	// type = only "view" or "part" allowed
-	@Override
-	public FuncResult<ViewInfo> getView(WebContext ctx, CommonPath path, String type) {
-		FuncResult<ViewInfo> res = new FuncResult<ViewInfo>();
-
-		int pdepth = path.getNameCount() - 1;
-		
-		while (pdepth > 0) {
-			String fpath = path.subpath(1, pdepth) + "." + type + ".xml";
-			
-			ViewInfo info = this.findView(fpath, ctx);
-			
-			if (info != null)  {
-				res.setResult(info);
-				return res;
-			}
-							
-			// if not in the domain, then go look in the JAR
-			
-			try {
-				FuncResult<XElement> xmlres = this.extension.getBundle().getResourceAsXml(fpath, true);
-				
-				if (xmlres.hasErrors()) {
-					// don't log 133, just means not found
-					if (xmlres.getCode() != 133) {
-						System.out.println("Parse error loading: " + fpath + "\nMessage: " + xmlres.getMessage());		// TODO logging
-						res.errorTr(150009, fpath);
-					}
-				}
-				else {
-					info = new ViewInfo(this);
-	
-					// TODO switch to FuncResult model
-					if (!info.load(xmlres.getResult())) {
-						System.out.println("Compile error loading: " + fpath);  // TODO logging
-						res.errorTr(150009, fpath);
-					}
-					else {
-						this.views.put(fpath, info);
-						res.setResult(info);
-						return res;
-					}
-				}
-			}
-			catch (Exception x) {
-				System.out.println("Compile error loading: " + fpath + "\nMessage: " + x.getMessage());  // TODO logging
-				res.errorTr(150009, x);
-			}
-			
-			pdepth--;
-		}
-		
-		res.errorTr(150008);		
-		return res;
-	}
-
-	/*
-	public OperationResult executeAsset(WebContext ctx) {
-		OperationResult res = new OperationResult();
-		
-		FuncResult<AssetInfo> assres = this.getAsset(ctx);
-
-		if (assres.hasErrors()) {
-			res.errorTr(150001);			
-			return res;
-		}
-		
-		res.copyMessages(this.writeFile(ctx, assres.getResult()));
-		
-		return res;
-	}
-	
-	protected AssetInfo findAsset(String path, WebContext ctx) {
-		return null;
-	}
-
-	public FuncResult<AssetInfo> getAsset(WebContext ctx) {
-		FuncResult<AssetInfo> res = new FuncResult<AssetInfo>();
-		
-		CommonPath path = ctx.getRequest().getPath();		
-		int pdepth = path.getNameCount();
-		
-		while (pdepth > 0) {
-			CommonPath fpath = path.subpathAbs(1, pdepth);
-			
-			String sfpath = fpath.toString();
-			
-			// look at in memory assets
-			
-			AssetInfo info = this.findAsset(sfpath, ctx);
-			
-			if (info != null)  {
-				res.setResult(info);
-				return res;
-			}
-			
-			// TODO consider compressing files
-			
-			// look in the domain's file system
-			
-			Path fass = Paths.get("./files/" + this.extension.getAppName() + "/" + this.id + sfpath);
-			
-			if (Files.exists(fass))
-				try {
-					AssetInfo ai = new AssetInfo(ctx, path, fass, Files.getLastModifiedTime(fass).toMillis());
-					this.embellishDiskAsset(ai);
-					res.setResult(ai);
-					return res;
-				} 
-				catch (IOException x) {
-				}
-
-			// if not in the domain, then go look in the JAR 
-
-			if (this.extension.getBundle().hasFileEntry(sfpath)) {
-				byte[] mem = this.extension.getBundle().findFileEntry(sfpath);
-				AssetInfo ai = new AssetInfo(fpath, mem, WebSiteManager.instance.getModule().startTime());
-				this.embellishDiskAsset(ai);
-				res.setResult(ai);
-				return res;
-			}
-			
-			pdepth--;
-		}
-		
-		res.errorTr(150005);		
-		return res;
-	}
-	*/
-
-	protected void embellishDiskAsset(AssetInfo ai) {
-	}
-
-	public OperationResult executeFile(WebContext ctx) {
-		OperationResult res = new OperationResult();
-		
-		FuncResult<AssetInfo> assres = this.getFile(ctx);
-
-		if (assres.hasErrors()) {
-			res.errorTr(150001);			
-			return res;
-		}
-		
-		this.writeFile(ctx, assres.getResult());
-		
-		return res;
 	}
 
 	/**
-	 * File paths come in as /ncc/demo but really they are in -  
+	 * File paths come in as /dcf/index.html but really they are in -  
 	 * 
-	 * Domain Cache:
-	 * 		-
+	 * Domain Path Map:
+	 * 		"/dcf/index.html"
 	 * 
-	 * Domain:
-	 * 		./domain/[domain id]/www/ncc/demo.html				- addition of /ncc reduces conflict between file names in different extensions 
+	 * Domain Private Phantom Files:							(draft/preview mode files)
+	 * 		./private/dcw/[domain id]/phantom/www/dcf/index.html
 	 * 
-	 * Cache
-	 * 		-
+	 * Domain Private Override Files:
+	 * 		./private/dcw/[domain id]/static/www/dcf/index.html
 	 * 
-	 * Package:
-	 * 		./[package id]/www/ncc/demo.html          (or .jss or .css or .js or .php, etc)
+	 * Domain Phantom Files:                           			(draft/preview mode files)
+	 * 		./public/dcw/[domain id]/phantom/www/dcf/index.html
 	 * 
-	 * JAR:
-	 * 		./[jar file - extension lib]/www/ncc/demo.html
+	 * Domain Override Files:
+	 * 		./public/dcw/[domain id]/static/www/dcf/index.html
+	 * 
+	 * Package Files:
+	 * 		./packages/[package id]/www/dcf/index.html
+	 * 
+	 * Example:
+	 * - ./private/dcw/filetransferconsulting/phantom/www/dcf/index.html
+	 * - ./private/dcw/filetransferconsulting/static/www/dcf/index.html
+	 * - ./public/dcw/filetransferconsulting/phantom/www/dcf/index.html
+	 * - ./public/dcw/filetransferconsulting/static/www/dcf/index.html
+	 * - ./packages/zCustomPublic/www/dcf/index.html
+	 * - ./packages/dc/dcFilePublic/www/dcf/index.html
+	 * - ./packages/dcWeb/www/dcf/index.html
+	 * 
 	 * 
 	 * @param ctx
-	 * @return
-	 */
+	 * @return an adapter that can execute to generate web response
+	 */	
+	public IOutputAdapter findFile(WebContext ctx) {		
+		return this.findFile(ctx, ctx.getRequest().getPath());
+	}
 	
-	// TODO consider compressing files
-	public FuncResult<AssetInfo> getFile(WebContext ctx) {		
-		FuncResult<AssetInfo> res = new FuncResult<AssetInfo>();
+	@Override
+	public IOutputAdapter findFile(WebContext ctx, CommonPath path) {
+		LocalFileStore pubfs = Hub.instance.getPublicFileStore();
+		LocalFileStore pacfs = Hub.instance.getPackageFileStore();
+		LocalFileStore prifs = Hub.instance.getPrivateFileStore();
 		
-		CommonPath path = ctx.getRequest().getPath();
-		//CommonPath fpath = path.subpathAbs(1);
+		// =====================================================
+		//  if request has an extension do specific file lookup
+		// =====================================================
 		
-		/*
-		// loop in the domain's file system
-		// TODO review loading from domain
-		
-		String sfpath = fpath.toString();
-		Path fass = Paths.get("./files/" + this.extension.getAppName() + "/" + this.id + sfpath);
-		
-		if (Files.exists(fass))
-			try {
-				res.setResult(new AssetInfo(ctx, fpath, fass, Files.getLastModifiedTime(fass).toMillis()));
-			} 
-			catch (IOException x) {
-			}
-		*/
-		
-		
-		// if not in the domain, then go look in the packages 
-
-		if (res.getResult() == null) {
-			for (XElement pel :  this.extension.getLoader().getConfig().selectAll("Package")) {
-				Path wpath = Hub.instance.getResources().getPackageWebFile(pel.getAttribute("Id"), path);
+		// if we have an extension then we don't have to do the search below
+		// never go up a level past a file (or folder) with an extension
+		if (path.hasFileExtension()) {
+			// check path map first
+			IOutputAdapter ioa = ctx.isPreview() ? this.previewpaths.get(path.toString()) :  this.paths.get(path.toString());
+			
+			if (ioa != null)
+				return ioa;
+			
+			if (prifs != null) {
+				// look in the domain's phantom file system
+				if (ctx.isPreview()) {
+					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/phantom/www", path);
+					
+					if (wpath != null) 
+						return this.pathToAdapter(ctx, path, wpath);
+				}
 				
-				if (wpath != null) {
-					try {
-						String wpathname = wpath.getFileName().toString();
-						
-						if (wpathname.endsWith(".pui.xml"))
-							res.setResult(new PuiAssetInfo(ctx, path, wpath, Files.getLastModifiedTime(wpath).toMillis()));
-						else if (wpathname.endsWith(".gas")) {
-							GroovyClassLoader loader = new GroovyClassLoader();
-							Class<?> groovyClass = loader.parseClass(wpath.toFile());
-							Method runmeth = null;
-							
-							for (Method m : groovyClass.getMethods()) {
-								if (!m.getName().startsWith("run"))
-									continue;
-								
-								runmeth = m;
-								break;
-							}
-							
-							if (runmeth == null) {
-								res.error("Unable to execute script!");
-							}
-							else {
-								ByteBufWriter mem = ByteBufWriter.createLargeHeap();
-								AssetInfo info = new AssetInfo(path, mem, System.currentTimeMillis());
-								info.setMime("text/html");
-								
-								GroovyObject groovyObject = (GroovyObject) groovyClass.newInstance();
-								Object[] args2 = { ctx, mem, info };
-								
-								groovyObject.invokeMethod("run", args2);
-								
-								res.setResult(info);
-							}
-							
-							loader.close();
-						}
-						else {
-							res.setResult(new AssetInfo(ctx, path, wpath, Files.getLastModifiedTime(wpath).toMillis()));
-						}
-						
-						// stop on first match
-						break;
-					} 
-					catch (Exception x) {
-						Logger.error("Error loading resource: " + path + " - error: " + x);
-					}
+				// look in the domain's static file system
+				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/static/www", path);
+				
+				if (wpath != null) 
+					return this.pathToAdapter(ctx, path, wpath);
+			}
+			
+			if (pubfs != null) {
+				// look in the domain's phantom file system
+				if (ctx.isPreview()) {
+					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/phantom/www", path);
+					
+					if (wpath != null) 
+						return this.pathToAdapter(ctx, path, wpath);
+				}
+				
+				// look in the domain's static file system
+				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/static/www", path);
+				
+				if (wpath != null) 
+					return this.pathToAdapter(ctx, path, wpath);
+			}
+			
+			if (pacfs != null) {
+				// if not in the domain, then go look in the packages 
+				for (XElement pel :  ctx.getExtension().getLoader().getConfig().selectAll("Package")) {
+					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Id") + "/www", path);
+					
+					if (wpath != null) 
+						return this.pathToAdapter(ctx, path, wpath);
 				}
 			}
-		}		
-
-		/*
-		// if not in the packges, then go look in the JAR 
-		// TODO review loading from JARs
-
-		if (res.getResult() == null) {
-			if (this.extension.getBundle().hasFileEntry(sfpath)) {
-				byte[] mem = this.extension.getBundle().findFileEntry(sfpath);
-				res.setResult(new AssetInfo(fpath, mem, WebSiteManager.instance.getModule().startTime()));
-			}
+			
+			// TODO not found file!!
+			OperationContext.get().errorTr(150007);		
+			return null;
 		}
-		*/
 		
-		if (res.getResult() == null) 		
-			res.errorTr(150007);
+		// =====================================================
+		//  if request does not have an extension look for files
+		//  that might match this path or one of its parents
+		//  using the special extensions
+		// =====================================================
 		
-		return res;
+		// we get here if we have no extension - thus we need to look for path match with specials
+		int pdepth = path.getNameCount();
+		
+		// check path maps first - hopefully the request has been mapped
+		while (pdepth > 0) {
+			CommonPath ppath = path.subpath(0, pdepth);
+
+			if (ctx.isPreview()) {
+				IOutputAdapter ioa = this.paths.get(ppath.toString());
+				
+				if (ioa != null)
+					return ioa;
+			}
+			
+			IOutputAdapter ioa = this.paths.get(ppath.toString());
+			
+			if (ioa != null)
+				return ioa;
+			
+			pdepth--;
+		}
+
+		// not in paths so check now on the file system
+		pdepth = path.getNameCount();
+		
+		// check file system
+		while (pdepth > 0) {
+			CommonPath ppath = path.subpath(0, pdepth);
+			
+			if (prifs != null) {
+				if (ctx.isPreview()) {
+					// look in the domain's phantom file system
+					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/phantom/www", ppath);
+					
+					if (wpath != null) 
+						return this.pathToAdapter(ctx, ppath, wpath);
+				}
+				
+				// look in the domain's static file system
+				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/static/www", ppath);
+				
+				if (wpath != null) 
+					return this.pathToAdapter(ctx, ppath, wpath);
+			}
+			
+			if (pubfs != null) {
+				if (ctx.isPreview()) {
+					// look in the domain's phantom file system
+					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/phantom/www", ppath);
+					
+					if (wpath != null) 
+						return this.pathToAdapter(ctx, ppath, wpath);
+				}
+				
+				// look in the domain's static file system
+				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/static/www", ppath);
+				
+				if (wpath != null) 
+					return this.pathToAdapter(ctx, ppath, wpath);
+			}
+			
+			if (pacfs != null) {
+				// if not in the domain, then go look in the packages 
+				for (XElement pel :  ctx.getExtension().getLoader().getConfig().selectAll("Package")) {
+					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Id") + "/www", ppath);
+					
+					if (wpath != null) 
+						return this.pathToAdapter(ctx, ppath, wpath);
+				}
+			}
+			
+			pdepth--;
+		}
+		
+		OperationContext.get().errorTr(150007);		
+		return null;
 	}
 	
-	public OperationResult writeFile(WebContext ctx, AssetInfo asset) {
-		OperationResult res = new OperationResult();
+	public Path getWebFile(LocalFileStore lfs, String prefix, CommonPath path) {		// TODO support ZIP packages
+		if (path.isRoot())
+			return null;
 		
-		String fpath = asset.getPath().toString();
+		Path fl = Paths.get(lfs.getPath() + prefix + path);		// must be absolute path
 		
-		if ((fpath == null) || (asset.getSize() == -1)) {
-			res.errorTr(150001);
-			return res;
-		}
-
-		// certain resource types cannot be delivered
-		if ((fpath.endsWith(".class") || fpath.endsWith(".view.xml") || fpath.endsWith(".part.xml"))){
-			res.errorTr(150001);
-			return res;
-		}
-
-		Response resp = ctx.getResponse(); 
-		
-		resp.setHeader("Content-Type", asset.getMime());
-		resp.setDateHeader("Date", System.currentTimeMillis());
-		resp.setDateHeader("Last-Modified", asset.getWhen());
-		resp.setHeader("X-UA-Compatible", "IE=Edge,chrome=1");
-		
-		if (ctx.getRequest().hasHeader("If-Modified-Since")) {
-			long dd = asset.getWhen() - ctx.getRequest().getDateHeader("If-Modified-Since");  
-
-			// getDate does not return consistent results because milliseconds
-			// are not cleared correctly see:
-			// https://sourceforge.net/tracker/index.php?func=detail&aid=3162870&group_id=62369&atid=500353
-			// so ignore differences of less than 1000, they are false positives
-			if (dd < 1000) {
-				resp.setStatus(HttpResponseStatus.NOT_MODIFIED);
-				ctx.send();
-				return res;
+		try {
+			if (path.hasFileExtension()) {
+				if (Files.exists(fl) && !Files.isDirectory(fl) || !Files.isHidden(fl) && Files.isReadable(fl)) 
+					return fl;
+				
+				return null;
+			}
+			
+			Path fld = fl.getParent();
+				
+			if (Files.notExists(fld)) 
+				return null;
+			
+			for (String ext : this.specialExtensions) {
+				String sppath = path.getFileName() + ext;
+				
+				fl = fld.resolve(sppath);
+				
+				if (Files.exists(fl)) {
+					try {
+						if (!Files.isDirectory(fl) && !Files.isHidden(fl) && Files.isReadable(fl))
+							return fl;
+					}
+					catch (Exception x) {
+					}
+					
+					return null;
+				}
 			}
 		}
-		
-		if (asset.getCompressed())
-			resp.setHeader("Content-Encoding", "gzip");
-		
-		String attach = asset.getAttachmentName();
-		
-		if (StringUtil.isNotEmpty(attach))
-			resp.setHeader("Content-Disposition", "attachment; filename=\"" + NetUtil.urlEncodeUTF8(attach) + "\"");
-		
-		// TODO send HttpResponse with content length...then push the file directly from here instead of setting body first and using memory 
-		//ctx.getResponse().setBody(content);
-		
-		//System.out.println("Sending: " + fpath + " as: " + asset.getSize());
-		ctx.sendStart(asset.getSize());
-		
-		// TODO
-		if (asset.isRegion()) {
-			//System.out.println("Sending: " + fpath + " as chunks ");
-			ctx.send(asset.getChunks());
+		catch (Exception x) {
 		}
-		else {
-			//System.out.println("Sending: " + fpath + " as buffer ");
-			ctx.send(asset.getBuffer().getByteBuf());
-		}
-		
-		//System.out.println("Sending: " + fpath + " as end");
-		ctx.sendEnd();
-		
-		return res;
-		
-		/*
-		byte[] bis = this.extension.getBundle().findFileEntry(fpath);
-		
-		// TODO make sure there is some way to flush responses in Simple					
-		if (bis != null) 
-			this.response.getOutputStream().write(bis);
-		else
-			notfound = true;
-			*/
-		
+			
+		return null;
 	}
 
+	public IOutputAdapter pathToAdapter(WebContext ctx, CommonPath path, Path filepath) {
+		String wpathname = filepath.getFileName().toString();
+
+		// .part.xml ok, this is how we get it for IncludePart
+		IOutputAdapter ioa = (wpathname.endsWith(".dcui.xml") || wpathname.endsWith(".part.xml"))
+				? new ViewOutputAdapter(this, path, filepath, ctx.getExtension())
+				: new AssetOutputAdapter(path, filepath);
+		
+		if (ctx.isPreview())
+			this.previewpaths.put(path.toString(), ioa);
+		else
+			this.paths.put(path.toString(), ioa);
+		
+		return ioa;
+	}
+	
 	// Html, Qx, Xml parsing
 	
 	@Override
-    public Nodes parseXml(String format, ViewInfo view, XElement container) {
+    public Nodes parseXml(ViewOutputAdapter view, XElement container) {
     	Nodes nodes = new Nodes();
     	
     	for (XNode xnode : container.getChildren()) {
     		if (xnode instanceof XElement) {
-    			this.parseElement(format, view, nodes, (XElement)xnode);
+    			this.parseElement(view, nodes, (XElement)xnode);
     		}
     		else if (xnode instanceof XText) {
     			String content = ((XText)xnode).getRawValue();
@@ -815,19 +521,19 @@ public class WebDomain implements IWebDomain {
     
     // parses the children of container
 	@Override
-    public Nodes parseElement(String format, ViewInfo view, XElement xel) {
+    public Nodes parseElement(ViewOutputAdapter view, XElement xel) {
     	Nodes nodes = new Nodes();
-    	this.parseElement(format, view, nodes, xel);
+    	this.parseElement(view, nodes, xel);
     	return nodes;
     }
     
     // parses the children of container
 	@Override
-    public void parseElement(String format, ViewInfo view, Nodes nodes, XElement xel) {
+    public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
 		if (xel == null)
 			return;
 		
-		Class<? extends ICodeTag> tag = this.getCodeTag(format, xel.getName());
+		Class<? extends ICodeTag> tag = this.codetags.get(xel.getName());
 		
 		if (tag != null)
 			try {
@@ -840,102 +546,108 @@ public class WebDomain implements IWebDomain {
     }	
 	
 	protected void initialTags() {
-		Map<String, Class<? extends ICodeTag>> html = new HashMap<String, Class<? extends ICodeTag>>();
+		this.codetags.put("a", A.class);
+		this.codetags.put("article", Article.class);
 		
-		this.codetags.put("HtmlOutput", html);
+		this.codetags.put("b", B.class);
+		this.codetags.put("blockquote", BlockQuote.class);
+		this.codetags.put("body", Body.class);
+		this.codetags.put("button", Button.class);
+		this.codetags.put("br", Br.class);
+		this.codetags.put("brlf", BrLf.class);		
 		
-		html.put("a", A.class);
-		html.put("article", Article.class);
+		this.codetags.put("div", Div.class);
 		
-		html.put("b", B.class);
-		html.put("blockquote", BlockQuote.class);
-		html.put("body", Body.class);
-		html.put("button", Button.class);
-		html.put("br", Br.class);
-		html.put("brlf", BrLf.class);		
+		this.codetags.put("em", Em.class);
 		
-		html.put("div", Div.class);
+		this.codetags.put("fieldset", FieldSet.class);
+		this.codetags.put("footer", Footer.class);
+		this.codetags.put("form", Form.class);
 		
-		html.put("em", Em.class);
+		this.codetags.put("h1", H1.class);
+		this.codetags.put("h2", H2.class);
+		this.codetags.put("h3", H3.class);
+		this.codetags.put("h4", H4.class);
+		this.codetags.put("h5", H5.class);
+		this.codetags.put("h6", H6.class);		
+		this.codetags.put("head", Head.class);
+		this.codetags.put("header", Header.class);
+		this.codetags.put("html", Html.class);
+		this.codetags.put("hr", Hr.class);
 		
-		html.put("fieldset", FieldSet.class);
-		html.put("footer", Footer.class);
-		html.put("form", Form.class);
+		this.codetags.put("i", I.class);
+		this.codetags.put("iframe", IFrame.class);
+		this.codetags.put("img", Img.class);
+		this.codetags.put("input", Input.class);
 		
-		html.put("h1", H1.class);
-		html.put("h2", H2.class);
-		html.put("h3", H3.class);
-		html.put("h4", H4.class);
-		html.put("h5", H5.class);
-		html.put("h6", H6.class);		
-		html.put("head", Head.class);
-		html.put("header", Header.class);
-		html.put("html", Html.class);
-		html.put("hr", Hr.class);
+		this.codetags.put("label", Label.class);
+		this.codetags.put("legend", Legend.class);
+		this.codetags.put("li", Li.class);		
+		this.codetags.put("link", Link.class);
 		
-		html.put("i", I.class);
-		html.put("iframe", IFrame.class);
-		html.put("img", Img.class);
-		html.put("input", Input.class);
+		this.codetags.put("meta", Meta.class);
 		
-		html.put("label", Label.class);
-		html.put("legend", Legend.class);
-		html.put("li", Li.class);		
-		html.put("link", Link.class);
+		this.codetags.put("nbsp", NbSp.class);
+		this.codetags.put("nav", Nav.class);
 		
-		html.put("meta", Meta.class);
+		this.codetags.put("ol", Ol.class);		
+		this.codetags.put("optgroup", OptGroup.class);
+		this.codetags.put("option", Option.class);
 		
-		html.put("nbsp", NbSp.class);
-		html.put("nav", Nav.class);
+		this.codetags.put("p", P.class);
+		this.codetags.put("pre", Pre.class);
 		
-		html.put("ol", Ol.class);		
-		html.put("optgroup", OptGroup.class);
-		html.put("option", Option.class);
+		this.codetags.put("section", Section.class);		
+		this.codetags.put("select", Select.class);
+		this.codetags.put("script", Script.class);
+		this.codetags.put("style", Style.class);		
+		this.codetags.put("strong", B.class);
+		this.codetags.put("span", Span.class);
 		
-		html.put("p", P.class);
-		html.put("pre", Pre.class);
-		
-		html.put("section", Section.class);		
-		html.put("select", Select.class);
-		html.put("script", Script.class);
-		html.put("style", Style.class);		
-		html.put("strong", B.class);
-		html.put("span", Span.class);
-		
-		html.put("table", Table.class);
-		html.put("tbody", TBody.class);		
-		html.put("td", Td.class);		
-		html.put("th", Th.class);
-		html.put("tr", Tr.class);
-		html.put("textarea", TextArea.class);
-		html.put("title", Title.class);
+		this.codetags.put("table", Table.class);
+		this.codetags.put("tbody", TBody.class);		
+		this.codetags.put("td", Td.class);		
+		this.codetags.put("th", Th.class);
+		this.codetags.put("thead", THead.class);		
+		this.codetags.put("tr", Tr.class);
+		this.codetags.put("textarea", TextArea.class);
+		this.codetags.put("title", Title.class);
 
-		html.put("u", U.class);
-		html.put("ul", Ul.class);
+		this.codetags.put("u", U.class);
+		this.codetags.put("ul", Ul.class);
 		
 		// ==============================================================
 		// above this point are std HTML tags, below are our enhanced tags
 		// ==============================================================
 
-		html.put("HyperLink", HyperLink.class);
-		html.put("AssetImage", AssetImage.class);
-		html.put("LiteralText", LiteralText.class);
-		html.put("Html5Head", Html5Head.class);		
-		html.put("IncludePart", IncludePart.class);
-		html.put("IncludeHolder", IncludeHolder.class);
-		html.put("IncludeParam", IncludeParam.class);
-		html.put("Style", Style.class);
-		html.put("Script", Script.class);
+		this.codetags.put("dcui", Document.class);		
 		
-		html.put("jqmDocument", jqm.Document.class);
-		html.put("jqmPage", jqm.Page.class);
-		html.put("jqmForm", jqm.form.Form.class);
-		html.put("jqmTextField", jqm.form.TextField.class);
-		html.put("jqmTextArea", jqm.form.TextArea.class);
-		html.put("jqmSelect", jqm.form.Select.class);
-		html.put("jqmYesNoField", jqm.form.YesNo.class);
-		html.put("jqmRadioSelect", jqm.form.RadioSelect.class);
-		html.put("jqmFileField", jqm.form.FileField.class);
-		html.put("jqmFormButtons", jqm.form.FormButtons.class);
+		this.codetags.put("AssetImage", AssetImage.class);
+		this.codetags.put("Button", ButtonLink.class);
+		this.codetags.put("WideButton", ButtonLink.class);
+		this.codetags.put("SubmitButton", FormButton.class);
+		this.codetags.put("Form", AdvForm.class);
+		this.codetags.put("Html5Head", Html5Head.class);		
+		this.codetags.put("HyperLink", HyperLink.class);
+		this.codetags.put("IncludePart", IncludePart.class);
+		this.codetags.put("IncludeHolder", IncludeHolder.class);
+		this.codetags.put("IncludeParam", IncludeParam.class);
+		this.codetags.put("LiteralText", LiteralText.class);
+		this.codetags.put("Style", Style.class);
+		this.codetags.put("Script", Script.class);
+
+		// TODO these should eventually be migrated so they can be shown in html mode too
+		// though they wouldn't work correctly, it would just be for show (unless we do a lot more)
+		this.codetags.put("FieldContainer", AdvElement.class);
+		this.codetags.put("TextInput", AdvElement.class);
+		this.codetags.put("PasswordInput", AdvElement.class);
+		this.codetags.put("YesNo", AdvElement.class);
+		this.codetags.put("HorizRadioGroup", AdvElement.class);
+		this.codetags.put("RadioButton", AdvElement.class);
+		this.codetags.put("RadioSelect", AdvElement.class);
+		this.codetags.put("Range", AdvElement.class);
+		this.codetags.put("Select", AdvElement.class);
+		this.codetags.put("TextArea", AdvElement.class);
+		this.codetags.put("HiddenInput", AdvElement.class);
 	}
 }

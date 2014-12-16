@@ -1,6 +1,6 @@
 package divconq.db.trigger;
 
-import divconq.db.DatabaseAdapter;
+import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.db.IStoredProc;
@@ -22,7 +22,7 @@ public class BeforeDomainInsert implements IStoredProc {
 			.withField("Data", StringUtil.buildSecurityCode(64))
 		);
 		
-		DatabaseAdapter db = new DatabaseAdapter(conn, task); 
+		TablesAdapter db = new TablesAdapter(conn, task); 
 		
 		FuncResult<String> ires = db.createRecord("dcDomain");
 		

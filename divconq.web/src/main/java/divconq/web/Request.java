@@ -37,6 +37,7 @@ import io.netty.handler.codec.http.QueryStringDecoder;
 
 public class Request {
 	protected CommonPath path = null;
+	protected CommonPath orgpath = null;
 	protected HttpHeaders headers = null;
 	protected HttpMethod method = null;
 	protected Map<String, List<String>> parameters = null;
@@ -64,6 +65,10 @@ public class Request {
     	DateParser parser = new DateParser();
     	return parser.convert(value);
     }
+    
+    public CommonPath getOriginalPath() {
+		return this.orgpath;
+	}
     
     public CommonPath getPath() {
 		return this.path;
@@ -136,6 +141,7 @@ public class Request {
         QueryStringDecoder decoderQuery = new QueryStringDecoder(req.getUri());        
         this.parameters = decoderQuery.parameters();        
         this.path = new CommonPath(decoderQuery.path());
+        this.orgpath = this.path;
         
         this.contentType = new ContentTypeParser(this.headers.get(Names.CONTENT_TYPE));
 	}

@@ -21,10 +21,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.Adler32;
+import java.util.concurrent.ConcurrentHashMap;
 
+import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
+import divconq.io.FileStoreEvent;
+import divconq.io.LocalFileStore;
+import divconq.lang.op.FuncCallback;
 import divconq.mod.Bundle;
 import divconq.mod.ExtensionLoader;
 import divconq.mod.IExtension;
@@ -34,17 +38,16 @@ import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
 public class WebSiteManager {
-	static public final WebSiteManager instance = new WebSiteManager(); 
-	
 	protected WebModule module = null;
 	protected Map<String,IWebExtension> extensions = new HashMap<String,IWebExtension>();
 	protected String defaultExtension = null;
 	
+	protected ConcurrentHashMap<String, IWebDomain> dsitemap = new ConcurrentHashMap<String, IWebDomain>();
+	
 	protected String version = null;
 	
 	// TODO when module is unloaded, clean up all references to classes
-	protected Map<String,Class<? extends IViewBuilder>> builderClasses = new HashMap<String,Class<? extends IViewBuilder>>();
-	protected Map<String,Class<? extends IContentInfo>> contentClasses = new HashMap<String,Class<? extends IContentInfo>>();
+
 	protected Map<String,IWebMacro> macros = new HashMap<String,IWebMacro>();
 	protected ValuesMacro vmacros = new ValuesMacro();
 	
@@ -70,68 +73,6 @@ public class WebSiteManager {
 			MimeUtil.load(config);
 			
 			this.devices = config.selectAll("DeviceRule");
-			
-			for (XElement builder : config.selectAll("Format")) {
-				String fmt = builder.getAttribute("Name");
-				
-				if (StringUtil.isEmpty(fmt))
-					continue;
-				
-				String bname = builder.getAttribute("BuilderClass");
-				
-				if (StringUtil.isNotEmpty(bname)) {
-					Class<?> cls = this.module.getLoader().getClass(bname);
-					
-					if (cls != null) {
-						Class<? extends IViewBuilder> tcls = cls.asSubclass(IViewBuilder.class);
-						
-						if (tcls != null) 
-							this.builderClasses.put(fmt, tcls);
-					} 
-	
-					// TODO log
-					//System.out.println("unable to load class: " + cname);
-				}
-				
-				String cname = builder.getAttribute("ContentClass");
-				
-				if (StringUtil.isNotEmpty(cname)) {
-					Class<?> cls = this.module.getLoader().getClass(cname);
-					
-					if (cls != null) {
-						Class<? extends IContentInfo> tcls = cls.asSubclass(IContentInfo.class);
-						
-						if (tcls != null) 
-							this.contentClasses.put(fmt, tcls);
-					} 
-	
-					// TODO log
-					//System.out.println("unable to load class: " + cname);
-				}
-				
-				/*
-				String pname = builder.getAttribute("ParserClass");
-				
-				if (StringUtil.isNotEmpty(pname)) {
-					Class<?> cls = this.module.getLoader().getClass(pname);
-					
-					if (cls != null) {
-						Class<? extends IViewParser> tcls = cls.asSubclass(IViewParser.class);
-						
-						if (tcls != null)
-							try {
-								this.formatParsers.put(fmt, tcls.newInstance());
-							} 
-							catch (Exception x) {
-								// TODO log
-							}
-					} 
-	
-					// TODO log
-					//System.out.println("unable to load class: " + pname);
-				}
-				*/
-			}
 			
 			for (XElement macros : config.selectAll("Macro")) {
 				String name = macros.getAttribute("Name");
@@ -170,7 +111,9 @@ public class WebSiteManager {
 		// prepare extensions (web apps)
 	
 		XElement lcf = module.getLoader().getConfig();
+		/* TODO try to recreate this concept
 		Adler32 ad = new Adler32();
+		*/
 		
 		if (lcf != null)
 	    	for(XElement node : lcf.selectAll("Extension")) {
@@ -187,7 +130,9 @@ public class WebSiteManager {
 	    			return;
 	    		
 	    		// only compute if this is a web extension
+	    		/* TODO try to recreate this concept
 	    		bundle.adler(ad);
+	    		*/
 	    		
 	    		IWebExtension sm = (IWebExtension)ex;
 
@@ -197,8 +142,83 @@ public class WebSiteManager {
 	    			this.defaultExtension = name;
 	    	}
 		
+		/* TODO try to recreate this concept
 		this.version = Long.toHexString(ad.getValue());
+		*/
+		
+		// ========================================================================
+		
 
+		/**
+		 * - ./private/dcw/filetransferconsulting/phantom/www/dcf/index.html
+		 * - ./private/dcw/filetransferconsulting/static/www/dcf/index.html
+		 * - ./public/dcw/filetransferconsulting/phantom/www/dcf/index.html
+		 * - ./public/dcw/filetransferconsulting/static/www/dcf/index.html
+		 */			
+
+		FuncCallback<FileStoreEvent> localfilestorecallback = new FuncCallback<FileStoreEvent>() {
+			@Override
+			public void callback() {
+				this.resetCalledFlag();
+				
+				CommonPath p = this.getResult().getPath();
+				
+				//System.out.println(p);
+				
+				// only notify on www updates
+				if (p.getNameCount() < 5) 
+					return;
+				
+				// must be inside a domain or we don't care
+				String mod = p.getName(0);
+				String domain = p.getName(1);
+				String section = p.getName(3);
+				
+				if (!"dcw".equals(mod) || !"www".equals(section))
+					return;
+				
+				for (IWebDomain wdomain : WebSiteManager.this.dsitemap.values()) {
+					if (domain.equals(wdomain.getAlias())) {
+						wdomain.siteNotify();
+						break;
+					}
+				}
+			}
+		};
+		
+		// register for file store events
+		LocalFileStore pubfs = Hub.instance.getPublicFileStore();
+		
+		if (pubfs != null) 
+			pubfs.register(localfilestorecallback);
+		
+		LocalFileStore privfs = Hub.instance.getPrivateFileStore();
+		
+		if (privfs != null) 
+			privfs.register(localfilestorecallback);
+
+		/**
+		 * - ./packages/zCustomPublic/www/dcf/index.html
+		 * - ./packages/dc/dcFilePublic/www/dcf/index.html
+		 * - ./packages/dcWeb/www/dcf/index.html
+		 */			
+
+		FuncCallback<FileStoreEvent> localpackagecallback = new FuncCallback<FileStoreEvent>() {
+			@Override
+			public void callback() {
+				for (IWebDomain domain : WebSiteManager.this.dsitemap.values())
+					domain.siteNotify();
+				
+				this.resetCalledFlag();
+			}
+		};
+		
+		// register for file store events
+		LocalFileStore packfs = Hub.instance.getPackageFileStore();
+		
+		if (packfs != null) 
+			packfs.register(localpackagecallback);
+		
 		/* TODO
 		Hub.instance.listenOnline(new OperationCallback() {
 			@Override
@@ -211,6 +231,32 @@ public class WebSiteManager {
 		*/	
 	}
 	
+	public IWebDomain getDomain(String id) {
+		DomainInfo di = Hub.instance.getDomainInfo(id);
+		
+		if (di != null) {
+			IWebDomain domain = this.dsitemap.get(di.getId());
+			
+			if (domain != null)
+				return domain; 
+			
+			for (DomainInfo d : Hub.instance.getDomains()) {
+				if (d.getId().equals(id)) {
+					domain = new WebDomain();
+					domain.init(d);
+					this.dsitemap.put(id, domain);
+					
+					return domain;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	public void online() {
+		this.dsitemap.clear();
+	}	
 	public String resolveHost(Request req) {
 		return this.resolveHost(req.getHeader("Host"));
 	}
@@ -294,25 +340,5 @@ public class WebSiteManager {
 		
 		return res;
 	}
-	
-	public Class<? extends IViewBuilder> getBuilder(String format) {
-		if (StringUtil.isEmpty(format))
-			return null;
-		
-		return this.builderClasses.get(format);
-	}
-	
-	public Class<? extends IContentInfo> getContentLoader(String format) {
-		if (StringUtil.isEmpty(format))
-			return null;
-		
-		return this.contentClasses.get(format);
-	}
-
-	/*
-	public IViewParser getFormatParser(String fmt) {
-		return this.formatParsers.get(fmt);
-	}
-	*/
 	
 }

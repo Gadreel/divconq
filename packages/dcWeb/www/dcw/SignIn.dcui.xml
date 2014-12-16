@@ -1,0 +1,41 @@
+<dcui Title="Sign In">
+	<Layout>
+		<h1>Sign In</h1>
+		
+		<Form Name="SignIn">
+			<FieldContainer Label="Username:">
+				<TextInput Name="Username" Required="true" />
+			</FieldContainer>
+			<FieldContainer Label="Password:">
+				<PasswordInput Name="Password" Required="true" />
+			</FieldContainer>
+			<FieldContainer Label="Remember Me:">
+				<YesNo Name="RememberMe" />
+			</FieldContainer>
+			<div class="formbuttons">
+				<SubmitButton Label="Sign In" Icon="forward" /> 
+			</div> 
+		</Form>
+	</Layout>
+	<Function Name="LoadRecord" Params="e">
+			var info = dc.user.getUserInfo();
+			
+			if (info.Credentials) {
+				e.Data = $.extend(true, { RememberMe: info.RememberMe }, info.Credentials);
+				this.form().query('Password').focus();
+			}
+			else {
+				this.form().query('Username').focus();
+			}
+	</Function>
+	<Function Name="Save" Params="e">
+			var values = dc.pui.Page.getFormValues('SignIn');
+			
+			dc.user.signin(values.Username, values.Password, values.RememberMe, function(msg) { 
+				if (dc.user.isVerified())
+					dc.pui.Loader.loadDestPage();
+				else
+					dc.pui.Popup.alert('Invalid sign in');
+			});
+	</Function>
+</dcui>

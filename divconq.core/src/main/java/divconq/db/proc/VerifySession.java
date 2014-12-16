@@ -1,6 +1,6 @@
 package divconq.db.proc;
 
-import divconq.db.DatabaseAdapter;
+import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.lang.BigDateTime;
@@ -16,7 +16,7 @@ public class VerifySession extends LoadRecord {
 	@Override
 	public void execute(DatabaseInterface conn, DatabaseTask task, OperationResult log) {
 		ICompositeBuilder out = task.getBuilder();
-		DatabaseAdapter db = new DatabaseAdapter(conn, task); 
+		TablesAdapter db = new TablesAdapter(conn, task); 
 		String did = task.getDomain();
 		BigDateTime when = BigDateTime.nowDateTime();
 		

@@ -1,6 +1,6 @@
 package divconq.db.proc;
 
-import divconq.db.DatabaseAdapter;
+import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.db.IStoredProc;
@@ -18,7 +18,7 @@ public class ReviveRecord implements IStoredProc {
 		// TODO add db filter option
 		//d runFilter("Retire") quit:Errors  ; if any violations in filter then do not proceed
 		
-		DatabaseAdapter db = new DatabaseAdapter(conn, task); 
+		TablesAdapter db = new TablesAdapter(conn, task); 
 
 		db.setStaticScalar(table, id, "Retired", false);
 		

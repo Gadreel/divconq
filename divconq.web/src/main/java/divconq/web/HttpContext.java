@@ -43,6 +43,7 @@ public class HttpContext {
     protected Request request = null;
     protected Response response = null;
     protected Session session = null;
+    protected WebSiteManager siteman = null;
     
     protected boolean isWebsocket = false;
     
@@ -60,6 +61,10 @@ public class HttpContext {
     
     public Session getSession() {
 		return this.session;
+	}
+    
+    public WebSiteManager getSiteman() {
+		return this.siteman;
 	}
     
     public void isWebSocket(boolean v) {
@@ -101,8 +106,9 @@ public class HttpContext {
 		this.decoder = v;
 	}
 	
-	public HttpContext(XElement config) {
+	public HttpContext(XElement config, WebSiteManager siteman) {
 		this.config = config;
+		this.siteman = siteman;
 	}
 	
 	public void offerContent(HttpContent v) {
@@ -231,7 +237,7 @@ public class HttpContext {
 					this.chan.writeAndFlush(new TextWebSocketFrame(m.toString()));  //.sync();   we do not need to sync - HTTP is one request, one response.  we would not pile messages on this channel
 				else {
 					// include the version hash for the current deployed files
-					m.setField("DeployVersion", WebSiteManager.instance.getVersion());
+					m.setField("DeployVersion", this.siteman.getVersion());
 					
 					// we are always using UTF 8, charset is required with any "text/*" mime type that is not ANSI text 
 					this.response.setHeader(Names.CONTENT_TYPE, MimeUtil.getMimeType("json") + "; charset=utf-8");

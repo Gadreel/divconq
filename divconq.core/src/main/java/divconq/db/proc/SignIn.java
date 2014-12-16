@@ -1,7 +1,7 @@
 package divconq.db.proc;
 
 import static divconq.db.Constants.*;
-import divconq.db.DatabaseAdapter;
+import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.db.util.ByteUtil;
@@ -19,7 +19,7 @@ public class SignIn extends LoadRecord {
 	public void execute(DatabaseInterface conn, DatabaseTask task, OperationResult log) {
 		RecordStruct params = task.getParamsAsRecord();
 		ICompositeBuilder out = task.getBuilder();
-		DatabaseAdapter db = new DatabaseAdapter(conn, task); 
+		TablesAdapter db = new TablesAdapter(conn, task); 
 		String did = task.getDomain();
 		BigDateTime when = BigDateTime.nowDateTime();
 				
@@ -68,6 +68,12 @@ public class SignIn extends LoadRecord {
 			}
 			
 			if (StringUtil.isEmpty(uid)) {
+				log.errorTr(123);
+				task.complete();
+				return;
+			}
+			
+			if (!db.isCurrent("dcUser", uid, when, false)) {
 				log.errorTr(123);
 				task.complete();
 				return;

@@ -54,6 +54,10 @@ public class ModuleLoader extends Bundle {
 	public ExtensionLoader getExtension(String name) {
 		return this.extensions.get(name);
 	}
+	
+	public List<ExtensionLoader> getExtensions() {
+		return this.orderedExts;
+	}
 
 	public ModuleLoader(ClassLoader cloader) {
 		super(cloader);
