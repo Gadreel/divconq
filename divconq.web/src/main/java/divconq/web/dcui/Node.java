@@ -180,7 +180,7 @@ abstract public class Node {
 				  if (macro.startsWith("val|"))
 					  val = this.getParam(macro.substring(4));
 				  else 
-					  val = this.getContext().expandMacros(macro);
+					  val = this.getContext().expandMacro(macro);
 				  
 				  // if any of these, then replace and check (expand) again 
 				  if (val != null) {

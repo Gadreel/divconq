@@ -16,8 +16,8 @@
 ************************************************************************ */
 package divconq.hub;
 
+import divconq.lang.op.OperationContext;
 import divconq.struct.RecordStruct;
-import divconq.util.BasicSettingsObfuscator;
 import divconq.util.ISettingsObfuscator;
 import divconq.util.StringUtil;
 import divconq.xml.XAttribute;
@@ -54,49 +54,39 @@ public class DomainInfo {
 	public DomainInfo(RecordStruct info) {
 		this.info = info;
 				
-		String obclass = info.getFieldAsString("ObscureClass");
-		String obid = null;
-		
-		if (StringUtil.isNotEmpty(obclass)) {
-			try {
-				this.obfuscator = (ISettingsObfuscator) Hub.instance.getInstance(obclass);  
-			}
-			catch (Exception x) {
-				// TODO or.error(208, obclass);
-			}
-		}
-		
-		XElement clock1 = Hub.instance.getConfig().find("Clock");
-		
-		if (clock1 != null) {
-			// do not use configured class here - we need domains to be portable so stick only to the db settings or std
-			//obclass = clock1.getAttribute("FilterClass");
-			obid = clock1.getAttribute("Id");
-		}
-		
-		if (StringUtil.isNotEmpty(obclass)) {
-			try {
-				this.obfuscator = (ISettingsObfuscator) Hub.instance.getInstance(obclass);  
-			}
-			catch (Exception x) {
-				// TODO or.error(208, obclass);
-			}
-		}
-
-		if (this.obfuscator == null)
-			this.obfuscator = new BasicSettingsObfuscator();
-		
-		// in hex
-		String seed = info.getFieldAsString("ObscureSeed");
-		
-		this.obfuscator.init(new XElement("Clock",
-				new XAttribute("Id", obid),
-				new XAttribute("Feed", seed)
-		));		
+		this.obfuscator = DomainInfo.prepDomainObfuscator(
+				info.getFieldAsString("ObscureClass"), 
+				info.getFieldAsString("ObscureSeed"));
 	}
 	
 	@Override
 	public String toString() {
 		return this.getTitle();
+	}
+	
+	static public ISettingsObfuscator prepDomainObfuscator(String obclass, String seed) {
+		ISettingsObfuscator obfuscator = null;
+		
+		if (StringUtil.isEmpty(obclass)) 
+			obclass = "divconq.util.BasicSettingsObfuscator";
+			
+		try {
+			obfuscator = (ISettingsObfuscator) Hub.instance.getInstance(obclass);  
+		}
+		catch (Exception x) {
+			OperationContext.get().error("Bad Settings Obfuscator");
+			return null;
+		}
+		
+		XElement clock1 = Hub.instance.getConfig().find("Clock");
+		
+		String obid = (clock1 != null) ? clock1.getAttribute("Id") : null;
+		
+		obfuscator.init(new XElement("Clock",
+				new XAttribute("Id", obid),
+				new XAttribute("Feed", seed)
+		));
+		
+		return obfuscator;
 	}
 }

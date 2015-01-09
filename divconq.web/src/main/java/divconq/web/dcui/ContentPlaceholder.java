@@ -64,6 +64,22 @@ public class ContentPlaceholder extends Element {
             fromon = false;
         }
     }
+	
+	@Override
+	public boolean writeDynamic(PrintStream buffer, String tabs, boolean first) {
+    	if (this.held.size() > 0) 
+    		this.doBuild();
+    	
+        if (this.children.size() == 0) 
+        	return false;
+        
+		for (Node child : this.children) {
+			if (child.writeDynamic(buffer, tabs, first)) 
+				first = false;
+		}
+		
+		return true;
+	}
 
 	public void addChildren(Object... nn) {
 		this.held.addAll(Arrays.asList(nn));

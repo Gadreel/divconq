@@ -18,6 +18,7 @@ package divconq.web.dcui;
 
 import divconq.lang.op.OperationResult;
 import divconq.web.WebContext;
+import divconq.xml.XElement;
 
 
 public class PartBuilder extends Fragment implements IViewExecutor {
@@ -38,7 +39,11 @@ public class PartBuilder extends Fragment implements IViewExecutor {
 		String mode = this.getContext().getExternalParam("_dcui");
 
 		boolean dyn = ("dyn".equals(mode) || "dyn".equals(mode));
-    	
+		
+		for (XElement func : this.view.source.selectAll("Function")) {
+			this.getContext().addFunction(func);
+		}
+		
     	// fine to catch, this part just won't show...
     	try {
     		this.build(this.view.getOutput(this, this.getContext(), dyn));

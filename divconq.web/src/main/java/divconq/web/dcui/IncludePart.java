@@ -51,6 +51,12 @@ public class IncludePart extends FragmentProxy implements ICodeTag {
 	}
 	
 	@Override
+	public void setParent(Element value) {
+		// TODO Auto-generated method stub
+		super.setParent(value);
+	}
+	
+	@Override
 	protected void doCopy(Node n) {
 		super.doCopy(n);
 		
@@ -71,7 +77,7 @@ public class IncludePart extends FragmentProxy implements ICodeTag {
 			if (iel.hasAttribute("Name"))
 				cparams.put(iel.getRawAttribute("Name"), view.getDomain().parseXml(view, iel));
     	
-    	this.src = xel.getRawAttribute("Src");
+    	this.src = xel.getRawAttribute("Path");
 		
 		this.setComplexParams(cparams);
 		this.setParams(params);

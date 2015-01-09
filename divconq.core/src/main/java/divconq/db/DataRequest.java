@@ -19,6 +19,7 @@ package divconq.db;
 import divconq.db.IDatabaseRequest;
 import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
+import divconq.util.StringUtil;
 
 /**
  * Assemble a generic Query request for the database.  A query request should not
@@ -33,15 +34,25 @@ import divconq.struct.RecordStruct;
 public class DataRequest implements IDatabaseRequest {
 	protected CompositeStruct parameters = null;	
 	protected String proc = null;
-	protected boolean rootdomain = false;
+	protected String domain = null;
 	
 	@Override
-	public boolean isRootDomain() {		
-		return this.rootdomain;
+	public boolean hasDomain() {		
+		return StringUtil.isNotEmpty(this.domain);
 	}
 	
-	public DataRequest withRootDomain(boolean v) {
-		this.rootdomain = v;
+	@Override
+	public String getDomain() {
+		return this.domain;
+	}
+	
+	public DataRequest withRootDomain() {
+		this.domain = Constants.DB_GLOBAL_ROOT_DOMAIN;
+		return this;
+	}
+	
+	public DataRequest withDomain(String v) {
+		this.domain = v;
 		return this;
 	}
 	

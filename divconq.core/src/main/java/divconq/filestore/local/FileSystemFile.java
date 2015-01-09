@@ -45,6 +45,7 @@ import divconq.filestore.IFileStoreFile;
 import divconq.filestore.IFileStoreScanner;
 import divconq.filestore.IFileStoreStreamDriver;
 import divconq.hub.Hub;
+import divconq.lang.Memory;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationCallback;
@@ -855,6 +856,34 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 				callback.complete();
 			}
 		});
+	}
+	
+	@Override
+	public void readAllText(FuncCallback<String> callback) {
+		FuncResult<CharSequence> txtres = IOUtil.readEntireFile(this.localpath);
+		
+		if (txtres.isNotEmptyResult())
+			callback.setResult(txtres.getResult().toString());
+		
+		callback.complete();
+	}
+	
+	@Override
+	public void writeAllText(String v, OperationCallback callback) {
+		IOUtil.saveEntireFile2(this.localpath, v);
+		callback.complete();
+	}
+	
+	@Override
+	public void readAllBinary(FuncCallback<Memory> callback) {
+		callback.setResult(IOUtil.readEntireFileToMemory(this.localpath));
+		callback.complete();
+	}
+	
+	@Override
+	public void writeAllBinary(Memory v, OperationCallback callback) {
+		IOUtil.saveEntireFile2(this.localpath, v);
+		callback.complete();
 	}
 
 	@Override

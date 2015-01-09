@@ -139,8 +139,8 @@ public class Request {
         }
         
         QueryStringDecoder decoderQuery = new QueryStringDecoder(req.getUri());        
-        this.parameters = decoderQuery.parameters();        
-        this.path = new CommonPath(decoderQuery.path());
+        this.parameters = decoderQuery.parameters();        // TODO decode
+        this.path = new CommonPath(QueryStringDecoder.decodeComponent(decoderQuery.path()));
         this.orgpath = this.path;
         
         this.contentType = new ContentTypeParser(this.headers.get(Names.CONTENT_TYPE));

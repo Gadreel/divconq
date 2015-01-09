@@ -51,8 +51,12 @@ public class Translations {
 		return this.strings.keySet();
 	}
 
-	// TODO remove locale part of name
 	public String getLanguage() {
+		int pos = this.name.indexOf('/');
+		
+		if (pos != -1)
+			return this.name.substring(0, pos);
+		
 		return this.name;
 	}
 	

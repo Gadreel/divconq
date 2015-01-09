@@ -41,4 +41,6 @@ public interface IWebDomain {
     Nodes parseXml(ViewOutputAdapter view, XElement container);
     Nodes parseElement(ViewOutputAdapter view, XElement xel);
     void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel);
+	String getLocale();
+	LocaleInfo getDefaultLocaleInfo();
 }

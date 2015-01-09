@@ -29,7 +29,7 @@ public class DomainsService extends ExtensionBase implements IService {
 		if ("Manager".equals(feature)) {
 			if ("LoadAll".equals(op)) {
 				DataRequest req = new DataRequest("dcLoadDomains")
-					.withRootDomain(true);	// use root for this request
+					.withRootDomain();	// use root for this request
 				
 				db.submit(req, new ObjectFinalResult(request));
 				return;

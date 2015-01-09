@@ -866,8 +866,8 @@ public class TablesAdapter {
 				if (stmp != null) {
 					Object stamp = ByteUtil.extractValue(stmp);
 					
-					if (!this.conn.getAsBooleanOrFalse(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, subid, stamp, "Retired")) {
-						BigDateTime from = this.conn.getAsBigDateTime(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, subid, stamp, "From");
+					if (!this.conn.getAsBooleanOrFalse(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, sid, stamp, "Retired")) {
+						BigDateTime from = this.conn.getAsBigDateTime(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, sid, stamp, "From");
 						
 						if (from == null) 
 							from = Struct.objectToBigDateTime(this.getStaticScalar(table, id, "From"));

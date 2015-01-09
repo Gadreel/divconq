@@ -170,10 +170,9 @@ public class AddUserRequest extends InsertRecordRequest {
 		// this works for insert, but Set approach works with both insert and update - see UpdateUserRequest
 		this.withCopyList("dcAuthorizationTag", true, this.tags);
 		
-		// password crypto handled in stored proc
-		// OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex
+		// password crypto 
 		if (this.password.isSet())
-			this.withSetField("dcPassword", pword);
+			this.withSetField("dcPassword", OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(pword));
 		
 		return super.buildParams();	
 	}

@@ -58,6 +58,7 @@ public class CoreDataServices extends ExtensionBase implements IService {
 				LoadRecordRequest req = new LoadRecordRequest()
 					.withTable("dcUser")
 					.withId("LoadUser".equals(op) ? rec.getFieldAsString("Id") : uc.getUserId())
+					.withNow()
 					.withSelect(new SelectFields()
 						.withField("Id")
 						.withField("dcUsername", "Username")
@@ -70,9 +71,8 @@ public class CoreDataServices extends ExtensionBase implements IService {
 						.withField("dcChronology", "Chronology")
 						.withField("dcDescription", "Description")
 						.withField("dcConfirmed", "Confirmed")
-						.withComposer("dcAuthorizationTags", "AuthorizationTags")
+						.withField("dcAuthorizationTag", "AuthorizationTags")
 					);  
-				
 				
 				db.submit(req, new ObjectFinalResult(request));
 				
@@ -252,12 +252,18 @@ public class CoreDataServices extends ExtensionBase implements IService {
 				LoadRecordRequest req = new LoadRecordRequest()
 					.withTable("dcDomain")
 					.withId("MyLoadDomain".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id"))
+					.withNow()
 					.withSelect(new SelectFields()
 						.withField("Id")
 						.withField("dcTitle", "Title")
+						.withField("dcAlias", "Alias")
 						.withField("dcDescription", "Description")
+						.withField("dcObscureClass", "ObscureClass")
+						.withField("dcCompiledSettings", "Settings")
 						.withField("dcName", "Names")
 					);
+				
+				req.withDomain("MyLoadDomain".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id"));
 				
 				db.submit(req, new ObjectFinalResult(request));
 				
@@ -269,8 +275,13 @@ public class CoreDataServices extends ExtensionBase implements IService {
 					.withTable("dcDomain")
 					.withId("MyUpdateDomain".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id"))
 					.withConditionallySetField(rec, "Title", "dcTitle")
+					.withConditionallySetField(rec, "Alias", "dcAlias")
 					.withConditionallySetField(rec, "Description", "dcDescription")
+					.withConditionallySetField(rec, "ObscureClass", "dcObscureClass")
+					.withConditionallySetField(rec, "Settings", "dcCompiledSettings")
 					.withConditionallyReplaceList(rec, "Names", "dcName");
+				
+				req.withDomain("MyUpdateDomain".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id"));
 				
 				db.submit(req, new ObjectFinalResult(request));
 				
@@ -281,8 +292,10 @@ public class CoreDataServices extends ExtensionBase implements IService {
 				ReplicatedDataRequest req = new InsertRecordRequest()
 					.withTable("dcDomain")
 					.withConditionallySetField(rec, "Title", "dcTitle")
+					.withConditionallySetField(rec, "Alias", "dcAlias")
 					.withConditionallySetField(rec, "Description", "dcDescription")
 					.withConditionallySetField(rec, "ObscureClass", "dcObscureClass")				
+					.withConditionallySetField(rec, "Settings", "dcCompiledSettings")
 					.withCopyList("dcName", true, rec.getFieldAsList("Names"));
 				
 				db.submit(req, new ObjectFinalResult(request));
@@ -291,17 +304,18 @@ public class CoreDataServices extends ExtensionBase implements IService {
 			}
 			
 			if ("RetireDomain".equals(op)) {
-				db.submit(new RetireRecordRequest("dcDomain", rec.getFieldAsString("Id")), new ObjectFinalResult(request));
+				db.submit(new RetireRecordRequest("dcDomain", rec.getFieldAsString("Id")).withDomain(rec.getFieldAsString("Id")), new ObjectFinalResult(request));
 				
 				return ;
 			}
 			
 			if ("ReviveDomain".equals(op)) {
-				db.submit(new ReviveRecordRequest("dcDomain", rec.getFieldAsString("Id")), new ObjectFinalResult(request));
+				db.submit(new ReviveRecordRequest("dcDomain", rec.getFieldAsString("Id")).withDomain(rec.getFieldAsString("Id")), new ObjectFinalResult(request));
 				
 				return ;
 			}
 			
+			/* TODO restore with correct domain id
 			if ("SetDomainNames".equals(op) || "MySetDomainNames".equals(op)) {
 				String did = "MySetDomainNames".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id");
 				ListStruct names = rec.getFieldAsList("Names");
@@ -335,6 +349,7 @@ public class CoreDataServices extends ExtensionBase implements IService {
 					new SelectDirectRequest("dcDomain", new SelectFields()
 						.withField("Id")
 						.withField("dcTitle", "Title")
+						.withField("dcAlias", "Alias")
 						.withField("dcDescription", "Description")
 						.withField("dcName", "Names")
 					), 
@@ -342,6 +357,7 @@ public class CoreDataServices extends ExtensionBase implements IService {
 				
 				return ;
 			}
+			*/
 		}
 		
 		// =========================================================
@@ -353,6 +369,7 @@ public class CoreDataServices extends ExtensionBase implements IService {
 				LoadRecordRequest req = new LoadRecordRequest()
 					.withTable("dcGroup")
 					.withId(rec.getFieldAsString("Id"))
+					.withNow()
 					.withSelect(new SelectFields()
 						.withField("Id")
 						.withField("dcName", "Name")

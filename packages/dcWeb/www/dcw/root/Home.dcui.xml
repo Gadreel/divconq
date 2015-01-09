@@ -1,0 +1,81 @@
+<dcui Title="Domains Manager">
+	<Layout>
+		<IncludePart Path="/dcw/app/Header" />
+
+		<div class="dcappWrapper">
+			<article id="dcappMain">
+				<h1>App Menu</h1>
+			
+				<WideButton Label="Add Domain" Icon="plus" Page="/dcw/root/EditDomain" /> 
+				<WideButton Label="Sign Out" Icon="sign-out" Click="DoSignOut" />
+				
+				<div id="areaDomains" data-role="collapsible" data-inset="true" data-collapsed="false">
+					<h4>Domains</h4>
+					
+					<ul id="lstDomains" data-role="listview" data-inset="true" data-count-theme="a" />					
+				</div>			 
+			</article>
+		</div>
+
+		<IncludePart Path="/dcw/app/Footer" />
+	</Layout>
+	<Function Name="Load"><![CDATA[
+				dc.pui.Loader.__appTitle = 'Domains Manager';
+				dc.pui.Loader.__appHome = '/dcw/root/Home';
+				
+				this.call('hdrLoadReal');
+				
+				if (!dc.user.isVerified()) {
+					dc.pui.Loader.loadPage('/dcw/SignIn');	
+					return;				
+				}				
+				
+				var list = $('#lstDomains');		
+		
+				list.empty();
+				list.append('<li><h3><i class="fa fa-spinner fa-spin"></i></h3></li>');
+					
+				list.listview('refresh');
+				
+				dc.comm.sendMessage({ 
+					Service: 'dcDomains',
+					Feature: 'Manager',
+					Op: 'LoadAll'
+				}, function(rmsg) {
+					if (rmsg.Result > 0) {
+						dc.pui.Popup.alert('Unable to list domains: ' + rmsg.Message);
+						return;
+					}
+
+					var domains = rmsg.Body;			
+					list.empty();
+
+					for (var i = 0; i < domains.length; i++) {
+						var item = domains[i];
+						
+						var litm = $('<li></li>');
+						
+						var anchr = $('<a href="#"><h2>' + String.escapeHtml(item.Title) + '</h2>'
+								+ '<p><strong>Alias: ' + String.escapeHtml(item.Alias) + '</strong></p>'
+								+ '<p>Names: ' + String.escapeHtml(item.Names.join(',')) + '</p>'
+								+ '<p class="ui-li-aside"><strong>' + item.Id + '</strong></p></a>')
+						
+						anchr.click(item, function(e) {
+							dc.pui.Loader.loadPage('/dcw/root/EditDomain', { Id: e.data.Id });
+							
+							e.preventDefault();
+							return false;
+						});
+						
+						litm.append(anchr);
+						list.append(litm);
+					}
+					
+					list.listview('refresh');
+					
+				});				
+	]]></Function>
+	<Function Name="DoSignOut"><![CDATA[
+				dc.pui.Loader.signout();
+	]]></Function>
+</dcui>

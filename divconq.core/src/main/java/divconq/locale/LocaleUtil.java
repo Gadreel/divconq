@@ -117,6 +117,18 @@ public class LocaleUtil {
 		return null;
 	}
 	
+	static public LocaleInfo getStrictLocaleInfo(String ll) {		
+		if (StringUtil.isEmpty(ll)) 
+			return null;
+		
+		Localization loc = Hub.instance.getDictionary();
+		
+		if (loc != null)
+			return loc.getStrictLocalization(ll);
+		
+		return null;
+	}
+	
 	/*
 	// TODO include region - TODO get aspects of this idea working
 	public static ViewLocale lookup(String lang) {

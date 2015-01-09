@@ -43,7 +43,7 @@ public class Localization {
 		return this.locales.values();
 	}
 	
-	// TODO this should look in TaskContext too
+	// TODO this should look in TaskContext too (and domain?)
 	public LocaleInfo getLocalization(String locale) {
 		if (StringUtil.isEmpty(locale))
 			return this.locales.get(this.defaultLocale);
@@ -57,6 +57,21 @@ public class Localization {
 		
 		if (tr == null) 
 			tr = this.locales.get(this.defaultLocale);
+		
+		return tr;
+	}
+
+	// don't change languages
+	public LocaleInfo getStrictLocalization(String locale) {
+		if (StringUtil.isEmpty(locale))
+			return null;
+		
+		LocaleInfo tr = this.locales.get(locale);
+		
+		if ((tr == null) && (locale.indexOf("-") > -1)) {
+			locale = locale.substring(0, locale.indexOf("-"));
+			tr = this.locales.get(locale);
+		}
 		
 		return tr;
 	}

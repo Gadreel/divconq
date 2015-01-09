@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
 
+import divconq.hub.DomainInfo;
+import divconq.hub.Hub;
 import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationResult;
 import divconq.util.StringUtil;
@@ -37,6 +39,34 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
 	
     @Override
     public void doBuild() {
+		DomainInfo domain = Hub.instance.getDomainInfo(this.context.getDomain().getId());
+		
+		XElement domconfig = domain.getSettings();
+		
+		if (domconfig!= null) {
+			XElement web = domconfig.selectFirst("Web");
+			
+			if (web != null) {
+				if (web.hasAttribute("MainPath")) 
+					this.addParams("MainPath", web.getAttribute("MainPath"));
+				
+				if (web.hasAttribute("SignInPath")) 
+					this.addParams("SignInPath", web.getAttribute("SignInPath"));
+				
+				if (web.hasAttribute("HomePath")) 
+					this.addParams("HomePath", web.getAttribute("HomePath"));
+				
+				if (web.hasAttribute("SiteTitle")) 
+					this.addParams("SiteTitle", web.getRawAttribute("SiteTitle"));
+				
+				if (web.hasAttribute("SiteAuthor")) 
+					this.addParams("SiteAuthor", web.getRawAttribute("SiteAuthor"));
+				
+				if (web.hasAttribute("SiteCopyright")) 
+					this.addParams("SiteCopyright", web.getRawAttribute("SiteCopyright"));
+			}
+		}
+    	
     	try {
 			Nodes content = this.view.getOutput(this, this.context, this.dynamic);  
 	
@@ -72,6 +102,30 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
 			ps.println("\t],");
 			
 			boolean first = true;
+			
+			// ==============================================
+			//  Styles
+			// ==============================================
+			
+			ps.print("\tRequireStyles: [");
+			
+			for (XElement func : this.view.source.selectAll("RequireStyle")) {
+				if (!func.hasAttribute("Path"))
+					continue;
+				
+				if (first)
+					first = false;
+				else
+					ps.print(",");
+				
+				ps.print(" '");				
+				Node.writeDynamicJsString(ps, func.getAttribute("Path"));				
+				ps.print("'");
+			}
+			
+			ps.println(" ], ");
+			
+			first = true;
 			
 			// ==============================================
 			//  Libs
@@ -119,9 +173,55 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
 				ps.print("\t\t}");
 			}
 			
+			for (XElement func : this.context.getFunctions()) {
+				if (!func.hasAttribute("Name") || "Load".equals(func.getAttribute("Mode")))
+					continue;
+				
+				if (first)
+					first = false;
+				else
+					ps.println(",");
+				
+				ps.print("\t\t" + func.getAttribute("Name") + ": function(" + func.getAttribute("Params", "") + ") {");
+				
+				ps.print(func.getText());
+				
+				ps.print("\t\t}");
+			}
+			
 			ps.println();
 			
-			ps.println("\t}");
+			ps.println("\t}, ");
+			
+			// ==============================================
+			//  Load Functions
+			// ==============================================
+			
+			first = true;
+			
+			ps.println("\tLoadFunctions: [");
+			
+			for (XElement func : this.context.getFunctions()) {
+				if (!func.hasAttribute("Name") || !"Load".equals(func.getAttribute("Mode")))
+					continue;
+				
+				if (first)
+					first = false;
+				else
+					ps.println(",");
+				
+				ps.print("\t\t function(" + func.getAttribute("Params", "") + ") {");
+				
+				ps.print("\t\t\t // func " + func.getAttribute("Name"));
+				
+				ps.print(func.getText());
+				
+				ps.print("\t\t}");
+			}
+			
+			ps.println();
+			
+			ps.println("\t]");
 			
 			ps.println("});");
 			

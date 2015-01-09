@@ -78,7 +78,7 @@ public class AssetOutputAdapter implements IOutputAdapter {
 		}
 
 		// certain resource types cannot be delivered
-		if ((fpath.endsWith(".class") || fpath.endsWith(".dcui.xml"))){
+		if (fpath.endsWith(".class") || fpath.endsWith(".dcui.xml")) {
 			res.errorTr(150001);
 			return res;
 		}

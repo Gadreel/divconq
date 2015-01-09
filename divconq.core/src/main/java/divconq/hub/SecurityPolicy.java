@@ -52,7 +52,7 @@ public class SecurityPolicy {
 		
 		XElement csp = http.find("ContentSecurityPolicy");
 		
-		String hsts = http.getAttribute("Hsts", "SelfPlus");
+		String hsts = http.getAttribute("Hsts", "None");
 		boolean hstsForce = Struct.objectToBoolean(http.getAttribute("HstsForce", "False"));
 
 		if (!resp.headers().contains("Strict-Transport-Security") || hstsForce) {

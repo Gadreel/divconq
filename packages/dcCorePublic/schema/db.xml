@@ -22,6 +22,8 @@
 			<Field Name="dcName" Type="dcSmallString" Required="True" List="True" />
 			<Field Name="dcDescription" Type="String" />
 			
+			<Field Name="dcCompiledSettings" Type="Xml" />
+			
 			<!-- crypto support -->
 			<Field Name="dcObscureClass" Type="dcSmallString" />
 			<Field Name="dcObscureSeed" Type="dcSmallString" />
@@ -247,7 +249,7 @@
 					<Field Name="Collector">
 						<Record>
 							<Field Name="Name" Type="dcTinyString" />
-							<!-- or >
+							< - or - >
 							<Field Name="Field" Type="dcTinyString" />
 							<Field Name="From" Type="Any" />
 							<Field Name="To" Type="Any" />
@@ -291,7 +293,7 @@
 					<Field Name="Collector">
 						<Record>
 							<Field Name="Name" Type="dcTinyString" />
-							<!-- or >
+							< - or - >
 							<Field Name="Field" Type="dcTinyString" />
 							<Field Name="From" Type="Any" />
 							<Field Name="To" Type="Any" />

@@ -19,10 +19,15 @@ package divconq.db.rocks;
 import static divconq.db.Constants.*;
 
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.rocksdb.BackupableDB;
+import org.rocksdb.BackupableDBOptions;
+import org.rocksdb.CompactionStyle;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
@@ -34,13 +39,16 @@ import divconq.db.IDatabaseRequest;
 import divconq.db.DatabaseResult;
 import divconq.db.IStoredProc;
 import divconq.db.util.ByteUtil;
+import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
 import divconq.lang.op.OperationContext;
 import divconq.schema.DbProc;
 import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
+import divconq.util.ISettingsObfuscator;
 import divconq.util.StringUtil;
+import divconq.xml.XAttribute;
 import divconq.xml.XElement;
 
 /**
@@ -74,7 +82,14 @@ public class DatabaseManager implements IDatabaseManager {
 		
 		RocksDB.loadLibrary();
 		
-		this.options = new Options().setCreateIfMissing(true);
+		this.options = new Options().setCreateIfMissing(true)
+			//.createStatistics()
+			//.setWriteBufferSize(8 * SizeUnit.KB)
+			//.setMaxWriteBufferNumber(3)
+			// TODO .setCompressionType(CompressionType.SNAPPY_COMPRESSION)
+			// .setMaxBackgroundCompactions(3)
+			// .setCompactionStyle(CompactionStyle.UNIVERSAL)
+				;
 		
 				/* TODO enable merge operator for inc support, see inc below
 				 * 
@@ -93,15 +108,29 @@ public class DatabaseManager implements IDatabaseManager {
 		String dbpath = config.getAttribute("Path", "./DataStore");
 
 		try {
+			Files.createDirectories(Paths.get(dbpath));
+			
 			this.db = RocksDB.open(this.options, dbpath);		
 			
 			// TODO look into adding auto backup support
-			//BackupableDB x = new BackupableDBOptions(path, shareTableFiles, sync, destroyOldData, backupLogFiles, backupRateLimit, restoreRateLimit);
+			//BackupableDBOptions bdb = new BackupableDBOptions("./DSBak", true, true, false, true, 0, 0);
+			
+			// TODO be sure compacting is working
 			
 			// make sure we always have an alphaa and an omega present
 			byte[] x = this.db.get(DB_OMEGA_MARKER_ARRAY);
 			
 			if (x == null) {
+				String obclass = "divconq.util.BasicSettingsObfuscator";
+				String obseed = StringUtil.buildSecurityCode(64); 
+				
+				ISettingsObfuscator obfuscator = DomainInfo.prepDomainObfuscator(obclass, obseed);
+				
+				if (obfuscator == null) {
+					or.error("dcDatabase prep error, obfuscator bad");
+					return;
+				}
+			
 				RocksInterface dbconn = new RocksInterface(this);
 				
 				dbconn.put(DB_ALPHA_MARKER_ARRAY, DB_ALPHA_MARKER_ARRAY);
@@ -112,10 +141,36 @@ public class DatabaseManager implements IDatabaseManager {
 				// insert root domain title
 				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcTitle", stamp, "Data", "Root Domain");
 				
+				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcAlias", stamp, "Data", "root");
+				
 				// insert root domain name
 				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcName", "root", stamp, "Data", "root");
 				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcName", "localhost", stamp, "Data", "localhost");
+				
+				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcObscureClass", stamp, "Data", obclass);
+				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcObscureSeed", stamp, "Data", obseed);
 
+				XElement domainsettings = new XElement("Settings",
+						new XElement("Web", 
+								new XAttribute("UI", "Custom"),
+								new XAttribute("SiteTitle", "Root Domain Manager"),
+								new XAttribute("SiteAuthor", "DivConq"),
+								new XAttribute("SiteCopyright", new DateTime().getYear() + ""),
+								new XAttribute("HomePath", "/dcw/root/Home.dcui.xml"),								
+								new XElement("Package", 
+										new XAttribute("Name", "dcWeb")
+								),
+								new XElement("Global", 
+										new XAttribute("Style", "/dcw/css/app.css")
+								),
+								new XElement("Global", 
+										new XAttribute("Script", "/dcw/js/root.js")
+								)
+						)
+				);
+				
+				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcCompiledSettings", stamp, "Data", domainsettings);
+				
 				// insert root domain index
 				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcDomainIndex", DB_GLOBAL_ROOT_DOMAIN, stamp, "Data", DB_GLOBAL_ROOT_DOMAIN);
 				
@@ -140,7 +195,7 @@ public class DatabaseManager implements IDatabaseManager {
 				dbconn.set(DB_GLOBAL_INDEX_2, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcEmail", "awhite@filetransferconsulting.com", DB_GLOBAL_ROOT_USER, "awhite@filetransferconsulting.com", stamp, null);
 				
 				// insert root user password (not hashed/protected initially)
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcUser", DB_GLOBAL_ROOT_USER, "dcPassword", "0", stamp, "Data", "A1s2d3f4");
+				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcUser", DB_GLOBAL_ROOT_USER, "dcPassword", "0", stamp, "Data", obfuscator.hashStringToHex("A1s2d3f4"));
 				
 				// insert root user auth tags
 				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcUser", DB_GLOBAL_ROOT_USER, "dcAuthorizationTag", "SysAdmin", stamp, "Data", "SysAdmin");
@@ -231,7 +286,7 @@ public class DatabaseManager implements IDatabaseManager {
 		req.setField("Name", name);
 		req.setField("Stamp", this.allocateStamp(0));
 		req.setField("Params", params);
-		req.setField("Domain", request.isRootDomain() ? "00000_000000000000001" : cb.getContext().getUserContext().getDomainId());
+		req.setField("Domain", request.hasDomain() ? request.getDomain() : cb.getContext().getUserContext().getDomainId());
 
 		cb.trace(0, "dcDb call prepared for procedure: " + name);
 		

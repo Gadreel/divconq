@@ -70,8 +70,7 @@ public class Fragment extends Element {
 	}
 
 	@Override
-	public void stream(PrintStream strm, String indent, boolean firstchild,
-			boolean fromblock) {
+	public void stream(PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
 		if (this.children.size() == 0)
 			return;
 
@@ -84,13 +83,25 @@ public class Fragment extends Element {
 			if (node.getBlockIndent() && !lastblock && !fromon)
 				this.print(strm, "", true, "");
 
-			node.stream(strm, indent, (firstch || lastblock),
-					this.getBlockIndent());
+			node.stream(strm, indent, (firstch || lastblock), this.getBlockIndent());
 
 			lastblock = node.getBlockIndent();
 			firstch = false;
 			fromon = false;
 		}
+	}
+	
+	@Override
+	public boolean writeDynamic(PrintStream buffer, String tabs, boolean first) {
+        if (this.children.size() == 0) 
+        	return false;
+        
+		for (Node child : this.children) {
+			if (child.writeDynamic(buffer, tabs, first)) 
+				first = false;
+		}
+		
+		return true;
 	}
 
 	public void incrementFuture() {

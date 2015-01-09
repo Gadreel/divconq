@@ -118,11 +118,8 @@ dc.pui = {
 		__devmode: false,
 		__hashes: { },
 		__pages: { },
-		__libs: { },
-		__mainPage: '/dcw/Main',
-		__homePage: '/dcw/Home',
-		__signInPage: '/dcw/SignIn',
-		__destPage: '/dcw/Home',
+		__mainPage: '/dcw/pages/Main',
+		__signInPage: '/dcw/pages/SignIn',
 		
 		init: function() {
 			dc.pui.Loader.__content = document.getElementById('pageContent');
@@ -130,10 +127,7 @@ dc.pui = {
 			$(window).on('hashchange', function() {
 				var hash = location.hash.substring(1); 
 				
-				if (hash)
-					dc.pui.Loader.manifestPage(dc.pui.Loader.__hashes[hash]);
-				
-				return false;
+				dc.pui.Loader.manifestPage(dc.pui.Loader.__hashes[hash]);
 			});
 			
 			/* no swipe!!
@@ -165,22 +159,6 @@ dc.pui = {
     			
     			return false;
 			}, 'Invalid JSON.');
-    		
-    		$('#pageBtnHome').click(function(e) {
-    			dc.pui.Loader.loadPage(dc.pui.Loader.__homePage);    			
-    			e.preventDefault();
-    			return false;
-    		});
-    		
-    		$('#pageBtnSignOut').click(function(e) {
-    			dc.user.signout();
-    			e.preventDefault();
-    			return false;
-    		});
-		},
-		
-		setHomePage: function(v) {
-			dc.pui.Loader.__homePage = v;
 		},
 		
 		setMainPage: function(v) {
@@ -191,8 +169,25 @@ dc.pui = {
 			dc.pui.Loader.__signInPage = v;
 		},
 		
-		loadDestPage: function() {
-			dc.pui.Loader.loadPage(dc.pui.Loader.__destPage);
+		loadMainPage: function() {
+			/*
+				TODO lookup user's landing page
+				
+			var msg = {
+				Op: "SignIn",
+				Credentials: creds
+			};
+			
+			dc.comm.sendMessage(msg, function(rmsg) { 
+				if (rmsg.Result == 0) {
+					var resdata = '/dct/pages/SignIn';  // rmsg.Body.;
+					
+					dc.pui.Loader.loadPage('/dct/pages/SignIn', { PTag: 'super' });
+				}
+			});
+			*/
+
+			dc.pui.Loader.loadPage(dc.pui.Loader.__mainPage);
 		},
 		
 		loadPage: function(page, params) {
@@ -229,72 +224,17 @@ dc.pui = {
 			}
 			
 			var script = document.createElement('script');
-			script.src = page + '?_dcui=dyn&nocache=' + dc.util.Crypto.makeSimpleKey();
+			script.src = page + '?nocache=' + dc.util.Crypto.makeSimpleKey();
 			script.id = 'page' + page.replace(/\//g,'.');
-			
-			// .async=false will be needed when loading additional libraries, we can inject a final fake script that echos 
-			// a param (e.g. ?opid=3345) to us saying that it is loaded and hence all preceding scripts are also loaded
-			
 			document.head.appendChild(script);
 		},
 		
 		resumePageLoad: function() {
-			var entry = dc.pui.Loader.__hashes[dc.pui.Loader.__loadPageHash];
-			
-			// TODO error
-			if (!entry)
-				return;
-			
-			var page = dc.pui.Loader.__pages[entry.Name];
-			
-			if (page.RequireLibs && (page.RequireLibs.length > 0)) {
-				var needWait = false;
-				
-				for (var i = 0; i < page.RequireLibs.length; i++) {
-					var path = page.RequireLibs[i];
-					
-					if (dc.pui.Loader.__libs[path])
-						continue;
-					
-					var script = document.createElement('script');
-					script.src = path + '?nocache=' + dc.util.Crypto.makeSimpleKey();
-					script.id = 'req' + path.replace(/\//g,'.');					
-					script.async = false;  	// needed when loading additional libraries, we can inject a final fake script that echos 
-											// a param (e.g. ?opid=3345) to us saying that it is loaded and hence all preceding scripts are also loaded
-					
-					document.head.appendChild(script);
-					
-					dc.pui.Loader.__libs[path] = true;		// not really yet, but as good as we can reasonably get
-					needWait = true;
-				}
-				
-				if (needWait) {
-					var key = dc.util.Crypto.makeSimpleKey();
-					
-					var script = document.createElement('script');
-					script.src = '/dcw/RequireLib?_dcui=dyn&nocache=' + key;
-					script.id = 'lib' + key;					
-					script.async = false;  	// needed when loading additional libraries, we can inject a final fake script that echos 
-											// a param (e.g. ?opid=3345) to us saying that it is loaded and hence all preceding scripts are also loaded
-					
-					document.head.appendChild(script);
-					
-					return;
-				}
-			}
-			
 			window.location.hash = dc.pui.Loader.__loadPageHash;				
 		},
 		
-		failedPageLoad: function(reason) {
-			dc.pui.Loader.__destPage = dc.pui.Loader.__hashes[dc.pui.Loader.__loadPageHash].Name;
-			
-			if (reason == 1)
-				dc.pui.Loader.loadPage(dc.pui.Loader.__signInPage);
-		},
-		
 		addPageEntry: function(entry) {
-			var hash = entry.Name + '@' + dc.util.Uuid.create().replace(/-/g,'');
+			var hash = dc.util.Uuid.create().replace(/-/g,'');
 			
 			entry.Hash = hash;
 			
@@ -311,9 +251,6 @@ dc.pui = {
 		},
 		
 		manifestPage: function(entry) {
-			if (!entry)
-				return;
-			
 			dc.pui.Loader.__current = entry;
 			
 			var page = dc.pui.Loader.__pages[entry.Name];
@@ -391,7 +328,7 @@ dc.pui = {
 					var node = null;
 
 					// TODO move some of these down into dc.pui.Controls
-					if (child.Element == 'Button') {
+					if (child.Element == 'Link') {
 						node = $('<a href="#" data-role="button" data-theme="a" data-mini="true" data-inline="true"></a>');
 						
 						if (dc.util.String.isString(child.Label))
@@ -409,7 +346,7 @@ dc.pui = {
 								return false;
 							});
 					}
-					else if (child.Element == 'WideButton') {
+					else if (child.Element == 'WideLink') {
 						node = $('<a href="#" data-role="button" data-theme="a" data-iconpos="right" data-mini="true"></a>');
 						
 						if (dc.util.String.isString(child.Label))
@@ -428,7 +365,7 @@ dc.pui = {
 							});
 					}
 					else if (child.Element == 'SubmitButton') {
-						node = $('<input type="submit" data-theme="a" data-mini="true" data-inline="true">');
+						node = $('<input type="submit" data-theme="a" data-mini="true" data-inline="true"></a>');
 						
 						if (dc.util.String.isString(child.Label))
 							node.attr('value', child.Label);
@@ -1574,8 +1511,6 @@ dc.pui = {
 			$('#puConfirm').enhanceWithin().popup();
 			
 			$('#btnConfirmPopup').click(function(e) {
-				$('#puConfirm').popup('close');
-				
 				if (dc.pui.Popup.__cb)
 					dc.pui.Popup.__cb();
 					
@@ -1608,9 +1543,6 @@ dc.pui = {
 
 $(document).on('mobileinit', function () { 
 	$.mobile.ajaxEnabled = false; 
-	$.mobile.pushStateEnabled  = false;
-	$.mobile.hashListeningEnabled = false;
-	$.mobile.changePage.defaults.changeHash = false;
 });
 
 $(document).ready(function() { 
@@ -1618,63 +1550,8 @@ $(document).ready(function() {
 	dc.pui.Loader.init();
 	
 	dc.comm.setDoneHandler(function() {
-		console.log('done!!');
-		//window.location = '/';
+		window.location = '/';
 	});
-
-	// stop with Googlebot.  Googlebot may load page and run script, but no further than this so indexing is correct (index this page)
-	if (navigator.userAgent.indexOf('Googlebot') > -1) 
-		return;
-	
-	var dmode = dc.util.Http.getParam('_dcui');
-	
-	if ((dmode == 'html') || (dmode == 'print'))
-		return;
-	
-	// if we are not at this page using the correct Main then switch main
-	var mpath = $('html').attr('data-dcw-Main');
-	
-	if (!mpath)
-		mpath = dc.pui.Loader.__mainPage;
-	
-	var hash = location.hash;
-	
-	if (hash) {
-		var atpos = hash.indexOf('@');
-		
-		if (atpos > -1)
-			hash = hash.substring(1, atpos);
-		else
-			hash = hash.substring(1);
-	}
-	
-	// if path does not contain / or if it contains only / then skip url as home hint 
-	if ((hash == '/') || (hash.indexOf('/') == -1))
-		hash = '';
-	
-	var hpath = hash ? hash : location.pathname;
-
-	// if path does not contain / or if it contains only / then skip url as home hint 
-	if ((hpath == '/') || (hpath.indexOf('/') == -1) || (hpath == mpath))
-		hpath = '';
-	
-	// look for home hint in html attr
-	if (!hpath)
-		hpath = $('html').attr('data-dcw-Home');
-	
-	if (!hpath)
-		hpath = dc.pui.Loader.__homePage;
-
-	if (mpath && (location.pathname != mpath)) {
-		if (hpath)
-			window.location = mpath + "#" + hpath;
-		else
-			window.location = mpath;
-		
-		return;
-	}
-	
-	dc.pui.Loader.__destPage = hpath;
 	
 	dc.comm.init(function() {
 		/*
@@ -1688,10 +1565,13 @@ $(document).ready(function() {
 
 		if (info.Credentials) {
 			dc.user.signin(info.Credentials.Username, info.Credentials.Password, info.RememberMe, function(msg) { 
-				dc.pui.Loader.loadDestPage();
+				if (dc.user.isVerified())
+					dc.pui.Loader.loadMainPage();
+				else 
+					dc.pui.Loader.loadPage(dc.pui.Loader.__signInPage);		
 			});
 		}
-		else
-			dc.pui.Loader.loadDestPage();
+		else 
+			dc.pui.Loader.loadPage(dc.pui.Loader.__signInPage);		
 	});
 });

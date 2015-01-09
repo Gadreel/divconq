@@ -31,8 +31,16 @@ public class LoadDomains extends LoadRecord {
 						new FieldStruct("Name", "Title")
 				),
 				new RecordStruct(
+						new FieldStruct("Field", "dcAlias"),
+						new FieldStruct("Name", "Alias")
+				),
+				new RecordStruct(
 						new FieldStruct("Field", "dcName"),
 						new FieldStruct("Name", "Names")
+				),
+				new RecordStruct(
+						new FieldStruct("Field", "dcCompiledSettings"),
+						new FieldStruct("Name", "Settings")
 				)
 		);		
 		
@@ -41,7 +49,7 @@ public class LoadDomains extends LoadRecord {
 		
 		if (!OperationContext.get().isGateway()) {
 			select.addItem(
-					new RecordStruct(
+				new RecordStruct(
 						new FieldStruct("Field", "dcObscureClass"),
 						new FieldStruct("Name", "ObscureClass")
 				),

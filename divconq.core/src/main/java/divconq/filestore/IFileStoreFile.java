@@ -20,6 +20,7 @@ import org.joda.time.DateTime;
 
 import divconq.ctp.stream.IStreamDest;
 import divconq.ctp.stream.IStreamSource;
+import divconq.lang.Memory;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationCallback;
 import divconq.script.StackEntry;
@@ -75,4 +76,10 @@ public interface IFileStoreFile {
 	
 	IStreamDest allocDest();
 	IStreamSource allocSrc();
+	
+	void readAllText(FuncCallback<String> callback);
+	void readAllBinary(FuncCallback<Memory> callback);
+	
+	void writeAllText(String v, OperationCallback callback);
+	void writeAllBinary(Memory v, OperationCallback callback);
 }

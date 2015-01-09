@@ -24,6 +24,7 @@ import java.util.Map;
 
 import w3.html.A;
 import w3.html.Article;
+import w3.html.Aside;
 import w3.html.B;
 import w3.html.BlockQuote;
 import w3.html.Body;
@@ -92,7 +93,7 @@ import divconq.web.dcui.AssetImage;
 import divconq.web.dcui.ButtonLink;
 import divconq.web.dcui.Document;
 import divconq.web.dcui.FormButton;
-import divconq.web.dcui.Html5Head;
+import divconq.web.dcui.Html5AppHead;
 import divconq.web.dcui.HyperLink;
 import divconq.web.dcui.ICodeTag;
 import divconq.web.dcui.IncludeHolder;
@@ -100,6 +101,7 @@ import divconq.web.dcui.IncludeParam;
 import divconq.web.dcui.IncludePart;
 import divconq.web.dcui.LiteralText;
 import divconq.web.dcui.Nodes;
+import divconq.web.dcui.PagePart;
 import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 import divconq.xml.XNode;
@@ -108,9 +110,11 @@ import divconq.xml.XText;
 public class WebDomain implements IWebDomain {
 	protected String id = null;
 	protected String alias = null;
+	protected String locale = null;		// domain level locale
 	protected CommonPath homepath = null;
 	protected CommonPath mainpath = null;
 	
+	protected XElement webconfig = null;
 	protected Map<String, IOutputAdapter> paths = new HashMap<>();
 	protected Map<String, IOutputAdapter> previewpaths = new HashMap<>();
 	
@@ -151,22 +155,30 @@ public class WebDomain implements IWebDomain {
 		
 		this.homepath = new CommonPath("/dcw/index.html");
 		this.mainpath = new CommonPath("/dcw/index.html");
+		this.locale = LocaleUtil.getDefaultLocale();
 		
 		if (config != null) {
-			XElement web = config.selectFirst("Web");
+			this.webconfig = config.selectFirst("Web");
 			
-			if (web != null) {
-				if (web.hasAttribute("Advanced") && "true".equals(web.getAttribute("Advanced").toLowerCase())) {
-					this.homepath = new CommonPath("/dcw/Home");
+			if (this.webconfig != null) {
+				// UI = app or customer uses builder
+				// UI = basic is just 'index.html' approach
+				if (this.webconfig.hasAttribute("UI") && 
+						("app".equals(this.webconfig.getAttribute("UI").toLowerCase()))) {
+					this.homepath = new CommonPath("/dcw/Home");		// TODO load from config?
 					this.mainpath = new CommonPath("/dcw/Main");
 				}
 				
-				if (web.hasAttribute("HomePath")) {
-					this.homepath = new CommonPath(web.getAttribute("HomePath"));
+				if (this.webconfig.hasAttribute("HomePath")) {
+					this.homepath = new CommonPath(this.webconfig.getAttribute("HomePath"));
 				}
 				
-				if (web.hasAttribute("MainPath")) {
-					this.mainpath = new CommonPath(web.getAttribute("MainPath"));
+				if (this.webconfig.hasAttribute("MainPath")) {
+					this.mainpath = new CommonPath(this.webconfig.getAttribute("MainPath"));
+				}
+				
+				if (this.webconfig.hasAttribute("Locale")) {
+					this.locale = this.webconfig.getAttribute("Locale");
 				}
 			}
 		}
@@ -196,6 +208,16 @@ public class WebDomain implements IWebDomain {
 		this.previewpaths.clear();
 	}
 
+	@Override
+	public String getLocale() {
+		 return this.locale;
+	}
+
+	@Override
+	public LocaleInfo getDefaultLocaleInfo() {
+		return new LocaleInfo(this.locale);
+	}
+	
 	public String tr(LocaleInfo locale, String token, Object... params) {
 		Localization dict = this.dictionary;
 		
@@ -212,9 +234,8 @@ public class WebDomain implements IWebDomain {
 	public void translatePath(WebContext ctx) {
 		CommonPath path = ctx.getRequest().getPath();
 		
-		if (path.getNameCount() < 2) {
+		if (path.getNameCount() < 1) 
 			ctx.getRequest().setPath(this.homepath);
-		}
 	}
 	
 	public CommonPath getNotFound() {
@@ -230,7 +251,7 @@ public class WebDomain implements IWebDomain {
 		
 		CommonPath path = ctx.getRequest().getPath();
 	
-		if (path.getNameCount() < 2) { 
+		if (path.getNameCount() < 1) { 
 			OperationContext.get().errorTr(150001);
 			return;
 		}
@@ -243,6 +264,8 @@ public class WebDomain implements IWebDomain {
 		}
 		
 		try {
+			ctx.setAdapter(output);
+			
 			output.execute(ctx);
 		} 
 		catch (Exception x) {
@@ -321,6 +344,9 @@ public class WebDomain implements IWebDomain {
 				// look in the domain's static file system
 				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/static/www", path);
 				
+				if ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))
+						wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/static/", path);
+				
 				if (wpath != null) 
 					return this.pathToAdapter(ctx, path, wpath);
 			}
@@ -337,14 +363,17 @@ public class WebDomain implements IWebDomain {
 				// look in the domain's static file system
 				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/static/www", path);
 				
+				if ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))
+						wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/static/", path);
+				
 				if (wpath != null) 
 					return this.pathToAdapter(ctx, path, wpath);
 			}
 			
-			if (pacfs != null) {
+			if ((pacfs != null) && (this.webconfig != null)) {
 				// if not in the domain, then go look in the packages 
-				for (XElement pel :  ctx.getExtension().getLoader().getConfig().selectAll("Package")) {
-					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Id") + "/www", path);
+				for (XElement pel :  this.webconfig.selectAll("Package")) {
+					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Name") + "/www", path);
 					
 					if (wpath != null) 
 						return this.pathToAdapter(ctx, path, wpath);
@@ -423,10 +452,10 @@ public class WebDomain implements IWebDomain {
 					return this.pathToAdapter(ctx, ppath, wpath);
 			}
 			
-			if (pacfs != null) {
+			if ((pacfs != null) && (this.webconfig != null)) {
 				// if not in the domain, then go look in the packages 
-				for (XElement pel :  ctx.getExtension().getLoader().getConfig().selectAll("Package")) {
-					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Id") + "/www", ppath);
+				for (XElement pel :  this.webconfig.selectAll("Package")) {
+					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Name") + "/www", ppath);
 					
 					if (wpath != null) 
 						return this.pathToAdapter(ctx, ppath, wpath);
@@ -485,8 +514,7 @@ public class WebDomain implements IWebDomain {
 	public IOutputAdapter pathToAdapter(WebContext ctx, CommonPath path, Path filepath) {
 		String wpathname = filepath.getFileName().toString();
 
-		// .part.xml ok, this is how we get it for IncludePart
-		IOutputAdapter ioa = (wpathname.endsWith(".dcui.xml") || wpathname.endsWith(".part.xml"))
+		IOutputAdapter ioa = (wpathname.endsWith(".dcui.xml"))
 				? new ViewOutputAdapter(this, path, filepath, ctx.getExtension())
 				: new AssetOutputAdapter(path, filepath);
 		
@@ -548,6 +576,7 @@ public class WebDomain implements IWebDomain {
 	protected void initialTags() {
 		this.codetags.put("a", A.class);
 		this.codetags.put("article", Article.class);
+		this.codetags.put("aside", Aside.class);
 		
 		this.codetags.put("b", B.class);
 		this.codetags.put("blockquote", BlockQuote.class);
@@ -555,6 +584,8 @@ public class WebDomain implements IWebDomain {
 		this.codetags.put("button", Button.class);
 		this.codetags.put("br", Br.class);
 		this.codetags.put("brlf", BrLf.class);		
+		
+		this.codetags.put("canvas", AdvElement.class);
 		
 		this.codetags.put("div", Div.class);
 		
@@ -627,14 +658,15 @@ public class WebDomain implements IWebDomain {
 		this.codetags.put("WideButton", ButtonLink.class);
 		this.codetags.put("SubmitButton", FormButton.class);
 		this.codetags.put("Form", AdvForm.class);
-		this.codetags.put("Html5Head", Html5Head.class);		
-		this.codetags.put("HyperLink", HyperLink.class);
+		this.codetags.put("Html5Head", Html5AppHead.class);		
 		this.codetags.put("IncludePart", IncludePart.class);
 		this.codetags.put("IncludeHolder", IncludeHolder.class);
 		this.codetags.put("IncludeParam", IncludeParam.class);
+		this.codetags.put("Link", HyperLink.class);
 		this.codetags.put("LiteralText", LiteralText.class);
 		this.codetags.put("Style", Style.class);
 		this.codetags.put("Script", Script.class);
+		this.codetags.put("PagePart", PagePart.class);
 
 		// TODO these should eventually be migrated so they can be shown in html mode too
 		// though they wouldn't work correctly, it would just be for show (unless we do a lot more)
@@ -643,7 +675,9 @@ public class WebDomain implements IWebDomain {
 		this.codetags.put("PasswordInput", AdvElement.class);
 		this.codetags.put("YesNo", AdvElement.class);
 		this.codetags.put("HorizRadioGroup", AdvElement.class);
+		this.codetags.put("RadioGroup", AdvElement.class);
 		this.codetags.put("RadioButton", AdvElement.class);
+		this.codetags.put("RadioCheck", AdvElement.class);
 		this.codetags.put("RadioSelect", AdvElement.class);
 		this.codetags.put("Range", AdvElement.class);
 		this.codetags.put("Select", AdvElement.class);

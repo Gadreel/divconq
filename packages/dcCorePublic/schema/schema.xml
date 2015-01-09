@@ -1344,7 +1344,10 @@
 								<Record>
 									<Field Name="Id" Type="dcDomain:Id" />
 									<Field Name="Title" Type="dcDomain:dcTitle" />
+									<Field Name="Alias" Type="dcDomain:dcAlias" />
+									<Field Name="Settings" Type="String" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
+									<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
 									<Field Name="Names">
 										<List Type="dcDomain:dcName" />
 									</Field>
@@ -1360,6 +1363,8 @@
 							<Field Name="Body" Required="True">
 								<Record>
 									<Field Name="Title" Type="dcDomain:dcTitle" Required="IfPresent" />
+									<Field Name="Alias" Type="dcDomain:dcAlias" />
+									<Field Name="Settings" Type="String" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
 									<Field Name="Names">
 										<List Type="dcDomain:dcName" />
@@ -1438,7 +1443,9 @@
 									<Field Name="Id" Type="dcDomain:Id" />
 									<Field Name="Title" Type="dcDomain:dcTitle" />
 									<Field Name="Alias" Type="dcDomain:dcAlias" />
+									<Field Name="Settings" Type="String" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
+									<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
 									<Field Name="Names">
 										<List Type="dcDomain:dcName" />
 									</Field>
@@ -1455,7 +1462,10 @@
 								<Record>
 									<Field Name="Id" Type="dcDomain:Id" Required="True" />
 									<Field Name="Title" Type="dcDomain:dcTitle" Required="IfPresent" />
+									<Field Name="Alias" Type="dcDomain:dcAlias" />
+									<Field Name="Settings" Type="String" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
+									<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
 									<Field Name="Names">
 										<List Type="dcDomain:dcName" />
 									</Field>
@@ -1473,6 +1483,7 @@
 								<Record>
 									<Field Name="Title" Type="dcDomain:dcTitle" Required="IfPresent" />
 									<Field Name="Alias" Type="dcDomain:dcAlias" />
+									<Field Name="Settings" Type="String" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
 									<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
 									<Field Name="Names">

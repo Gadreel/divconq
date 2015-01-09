@@ -49,10 +49,12 @@ public interface IDatabaseRequest {
 	String getProcedure();
 
 	/**
-	 * Most calls to the database are for the current domain, but some calls are for the
-	 * root domain.  A request can mark a request destined for the root using this property.
+	 * Most calls to the database are for the current domain, but some calls are for other
+	 * domains.  A request can mark a request destined for another domain using this property.
 	 * 
 	 * @return true if this request is root domain specific
 	 */
-	boolean isRootDomain();
+	boolean hasDomain();
+	
+	String getDomain();
 }

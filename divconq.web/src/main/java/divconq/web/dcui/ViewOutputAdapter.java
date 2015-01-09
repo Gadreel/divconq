@@ -79,12 +79,9 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 			throw new IllegalArgumentException("Bad file path: cannot parse");
 		}
 		
-		this.source = xres.getResult();
+		this.adapter = ViewBuilder.class;
 		
-		if (filepath.toString().endsWith(".part.xml"))
-			this.adapter = PartBuilder.class;
-		else
-			this.adapter = ViewBuilder.class;
+		this.source = xres.getResult();
 		
 		if (this.source == null) {
 			this.source = new XElement("dcui",
@@ -152,7 +149,11 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 		}
 		
 		//this.contenttemplate = new Nodes(new Html5Head(el));
-		this.pagetemplate = domain.parseElement(this, root);
+		
+		if ("dcui".equals(root.getName()))
+			this.pagetemplate = domain.parseElement(this, root);
+		else
+			this.contenttemplate = domain.parseXml(this, el);		
 		
 		return true;
 		
@@ -220,10 +221,11 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 			if (this.pagebuilder != null)
 				return this.pagebuilder.newInstance().getContent(ctx, this, frag);
 			
-			if (dynamic && (this.contenttemplate != null))
-					return this.contenttemplate.deepCopy();
-			else if (!dynamic && (this.pagetemplate != null))
-					return this.pagetemplate.deepCopy();
+			if (!dynamic && (this.pagetemplate != null))
+				return this.pagetemplate.deepCopy();
+			
+			if (this.contenttemplate != null)
+				return this.contenttemplate.deepCopy();
 		} 
 		catch (Exception x) {
 			// TODO Auto-generated catch block

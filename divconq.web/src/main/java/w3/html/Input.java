@@ -82,6 +82,12 @@ public class Input extends MixedElement implements ICodeTag {
 		
 		if (xel.hasAttribute("value"))
 			attrs.add("value", xel.getRawAttribute("value"));
+		
+		if (xel.hasAttribute("min"))
+			attrs.add("min", xel.getRawAttribute("min"));
+		
+		if (xel.hasAttribute("max"))
+			attrs.add("max", xel.getRawAttribute("max"));
 
         this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
 		

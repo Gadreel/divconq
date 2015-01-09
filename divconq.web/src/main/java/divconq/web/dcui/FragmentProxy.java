@@ -52,6 +52,19 @@ public class FragmentProxy extends Element  {
             fromon = false;
         }
     }
+	
+	@Override
+	public boolean writeDynamic(PrintStream buffer, String tabs, boolean first) {
+        if (this.children.size() == 0) 
+        	return false;
+        
+		for (Node child : this.children) {
+			if (child.writeDynamic(buffer, tabs, first)) 
+				first = false;
+		}
+		
+		return true;
+	}
 
 	public void addChild(Node... nn) {
 		for (Node n : nn) {

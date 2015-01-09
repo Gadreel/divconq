@@ -6,6 +6,7 @@ import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.db.util.ByteUtil;
 import divconq.lang.BigDateTime;
+import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.session.Session;
 import divconq.struct.FieldStruct;
@@ -29,7 +30,7 @@ public class SignIn extends LoadRecord {
 		//DateTime at = params.getFieldAsDateTime("At");
 		String password = params.getFieldAsString("Password");
 		String uname = params.getFieldAsString("Username");
-		String code = params.getFieldAsString("Code");
+		//String code = params.getFieldAsString("Code");
 		// TODO part of Trust monitoring -- boolean suspect = params.getFieldAsBooleanOrFalse("Suspect");	
 		
 		try {			
@@ -53,16 +54,28 @@ public class SignIn extends LoadRecord {
 							// hash to do compare
 							//params.setField("Password", OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(this.password.trim()));
 							
+							String password2 = OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(password.trim());
+							
 							// otherwise do plain text compare
-							if (!password.equals(fndpass))
+							if (!password2.equals(fndpass)) {
+								// TODO if recover is not expired
+								//. i recoverExpire]]$$get1^dcDb("dcUser",uid,"dcRecoverAt") q
+								
+								fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
+								
+								if (!password.equals(fndpass)) 
+									uid = null;
+							}
+						}
+						else {
+							// TODO if recover is not expired
+							//. i recoverExpire]]$$get1^dcDb("dcUser",uid,"dcRecoverAt") q
+							
+							fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
+							
+							if (!password.equals(fndpass)) 
 								uid = null;
-						}					
-					}
-					else if (StringUtil.isNotEmpty(code)) {
-						// TODO
-						 //i 'fnd d    ; if we get here then recoverExpire must be set
-						 //. i recoverExpire]]$$get1^dcDb("dcUser",uid,"dcRecoverAt") q
-						 //. i (code'="")&($$get1^dcDb("dcUser",uid,"dcConfirmCode")=code) s fnd=1		; we won't clear out the code or rAt fields - they naturally expire
+						}
 					}
 				}
 			}

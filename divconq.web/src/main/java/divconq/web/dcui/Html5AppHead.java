@@ -38,21 +38,23 @@ import w3.html.Title;
  * 		
  * 
  */
-public class Html5Head extends Head implements ICodeTag {
+public class Html5AppHead extends Head implements ICodeTag {
 	protected divconq.xml.XElement source = null;
+	protected divconq.xml.XElement domconfig = null;
 	
-    public Html5Head() {
+    public Html5AppHead() {
     	super();
 	}
 	
-    public Html5Head(divconq.xml.XElement source, Object... args) {
+    public Html5AppHead(divconq.xml.XElement source, XElement domconfig, Object... args) {
     	super(args);
     	this.source = source;
+    	this.domconfig = domconfig;
 	}
     
 	@Override
 	public Node deepCopy(Element parent) {
-		Html5Head cp = new Html5Head(this.source);
+		Html5AppHead cp = new Html5AppHead(this.source, this.domconfig);
 		cp.setParent(parent);
 		this.doCopy(cp);
 		return cp;
@@ -89,10 +91,9 @@ public class Html5Head extends Head implements ICodeTag {
 					new Meta(new Attributes("name", "robots", "content", "index,follow"))
 			);
 		
-		//if ("True".equals(this.source.getAttribute("Mobile")))
-			earlyadditional.add(
-					new Meta(new Attributes("name", "viewport", "content", "width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"))
-			);
+		earlyadditional.add(
+				new Meta(new Attributes("name", "viewport", "content", "width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"))
+		);
 		
 		String title = "@val|PageTitle@ - @val|SiteTitle@";
 		
@@ -100,6 +101,8 @@ public class Html5Head extends Head implements ICodeTag {
 			earlyadditional.add(
 					new Title(title)
 			);
+		
+		// TODO go with defaults
 		
 		String icon = this.source.getRawAttribute("Icon");
 		
@@ -159,13 +162,15 @@ public class Html5Head extends Head implements ICodeTag {
 			);
 		
 		earlyadditional.add(
-				new Style("/dcw/css/jquery.mobile-1.4.5.min.css"),
-				new Style("/dcw/css/jqm-icon-pack-ltd.css"),
-				new Style("/dcw/css/dc.ui.main.css"),
-				new Style("/dcw/css/dc.zcustom.css"),
+				new Style("/dcw/css/normalize.css"),
+				new Style("/dcw/css/font-awesome.min.css"),
+
+				new Style("/dcw/css/jquery.mobile-1.4.5.cust.css"),
+				new Style("/dcw/css/jqm-icon-pack-ltd.css"),		// TODO need a better way to generalize
+				new Style("/dcw/css/app-specific.css"),
 				
 				new Script("/dcw/js/aes.js"),
-				new Script("/dcw/js/openpgp.min.js"),
+				//new Script("/dcw/js/openpgp.min.js"),
 				new Script("/dcw/js/moment.min.js"),
 				new Script("/dcw/js/numeral/numeral.min.js"),
 				new Script("/dcw/js/numeral/languages.min.js"),
@@ -177,10 +182,20 @@ public class Html5Head extends Head implements ICodeTag {
 				new Script("/dcw/js/schema.js"),		// TODO replace with /schema
 				new Script("/dcw/js/dc.user.js"),
 				new Script("/dcw/js/dc.comm.js"),
-				new Script("/dcw/js/dc.ui.packed.js"),
-				new Script("/dcw/js/dc.zcustom.js"),
-				new Script("/dcw/js/jquery.mobile-1.4.5.min.js")
+				new Script("/dcw/js/dc.ui.js"),
+				new Script("/dcw/js/jquery.mobile-1.4.5.cust.js")
 		);
+		
+		XElement web = this.domconfig.selectFirst("Web");
+		
+		if (web != null) {
+			for (XElement gel : web.selectAll("Global")) {
+				if (gel.hasAttribute("Style"))
+					earlyadditional.add(new Style(gel.getAttribute("Style")));
+				else
+					earlyadditional.add(new Script(gel.getAttribute("Script")));
+			}
+		}
 		
 		// additional scripts/styles
 		

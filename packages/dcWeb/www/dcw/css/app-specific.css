@@ -1,0 +1,203 @@
+
+/* 
+	flex 
+	
+	hints from: 
+	http://css-tricks.com/snippets/css/a-guide-to-flexbox/
+	http://css-tricks.com/autoprefixer/
+	http://the-echoplex.net/flexyboxes/
+*/
+
+.dcappWrapper {
+	display: -webkit-box;
+	display: -moz-box;
+	display: -ms-flexbox;
+	display: -webkit-flex;
+	display: flex;  
+
+	-webkit-box-direction: normal;
+	-moz-box-direction: normal;
+	-webkit-box-orient: horizontal;
+	-moz-box-orient: horizontal;
+	-webkit-flex-direction: row;
+	-ms-flex-direction: row;
+	flex-direction: row;
+	
+	-webkit-flex-wrap: wrap;
+	-ms-flex-wrap: wrap;
+	flex-wrap: wrap;
+
+	text-align: center;
+
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+.dcappWrapper > * {
+	padding: 10px;
+	
+	-webkit-box-flex: 1 100%;
+	-moz-box-flex:  1 100%;
+	-webkit-flex: 1 100%;
+	-ms-flex:  1 100%;
+	flex: 1 100%;
+}
+
+/* -----------------------------------------------
+	header grid
+----------------------------------------------- */
+
+#dcappHeader {
+	background: #948679;
+}
+
+#dcappHeaderGrid {
+	background-image: url(/dcw/img/logo32.png);
+	background-repeat: no-repeat;
+	background-position: top center; 
+}
+
+#dcappLogo {
+	min-height: 40px;
+	display: block;
+	text-decoration: none;
+}
+
+#dcappLogo a, #dcappLogo a:visited {
+	letter-spacing: 1px;
+	color: rgb(255,255,255);
+	text-decoration: none;
+}
+
+#dcappLogo a:hover, #dcappLogo a:focus {
+	color: rgb(188,221,221);
+}
+
+/* top menu nav */
+
+#dcappTopMenu ul {
+	margin: 0; 
+
+	display: -webkit-box;
+	display: -moz-box;
+	display: -ms-flexbox;
+	display: -webkit-flex;
+	display: flex;
+
+	-webkit-box-direction: normal;
+	-moz-box-direction: normal;
+	-webkit-box-orient: horizontal;
+	-moz-box-orient: horizontal;
+	-webkit-flex-direction: row;
+	-ms-flex-direction: row;
+	flex-direction: row;
+	
+	-webkit-flex-wrap: wrap;
+	-ms-flex-wrap: wrap;
+	flex-wrap: wrap;
+	
+	-webkit-box-pack: justify;
+	-moz-box-pack: justify;
+	-webkit-justify-content: space-around;
+	-ms-flex-pack: justify;
+	justify-content: space-around;
+
+	padding-left: 0;
+}
+
+#dcappTopMenu ul,
+#dcappTopMenu ol {
+	list-style: none;
+	list-style-image: none;
+}
+
+#dcappTopMenu ul li a, #dcappTopMenu ul li a:visited {
+	display: block;
+	letter-spacing: 1px;
+	color: rgb(255,255,255);
+	text-decoration: none;
+	padding: 1rem;
+	font-family: 'Arial Bold', Arial, sans-serif; 
+	font-size: 11px;
+}
+
+#dcappTopMenu ul li a:hover, #dcappTopMenu ul li a:focus {
+	color: rgb(188,221,221);
+}
+
+#dcappTopMenu ul li a { 
+	padding: 1px 1rem;
+}
+
+/* -----------------------------------------------
+	main content 
+----------------------------------------------- */
+
+#dcappMain {
+	text-align: left;
+}
+
+/* -----------------------------------------------
+	footer content 
+----------------------------------------------- */
+
+#dcappFooter {
+	background-color: rgb(239,235,226);
+	padding: 16px;
+	text-align: left;
+	font-size: 12px;  
+	line-height: 24px;
+}
+
+/* -----------------------------------------------
+	inputs 
+----------------------------------------------- */
+
+.formbuttons {
+	text-align: right;
+}
+
+.error {
+	color: red;
+}
+
+html head+body .ui-btn.ui-btn-a, html head+body .ui-btn.ui-btn-a:visited {
+	text-shadow: none;
+	
+	background-color:#948679;
+	border:1px solid #29447E;
+	color:#fffff3;
+}
+
+/* ========== Upload ========= */
+
+#frmUploadFile .progress {
+	height: 28px;	
+	border: 1px solid #606060;
+	background-color: #000;
+}
+
+#frmUploadFile .pbar {
+	background-color: #dd9018;
+	height: 100%;
+	width: 0%;
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+#frmUploadFile .pbarlabel {
+	height: 100%;
+	width: 100%;
+	position: absolute;
+	color: white;
+	top: 0;
+	left: 0;
+	padding-top: 5px;
+	vertical-align: middle;
+	text-align: center;
+}
+
+#dcappMain table i {
+	font-size: 22px;
+}

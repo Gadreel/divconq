@@ -11,6 +11,8 @@ public class BeforeUserInsert implements IStoredProc {
 		if (task.isReplicating())
 			return;
 		
+		// TODO make sure that user insert and update keep Username unique
+		
 		/*
 		
 		<RecordFilter Name="dcIsAccountTaken" Execute="acctTaken^dcUser">

@@ -1,0 +1,38 @@
+<dcuip>
+	<Layout>
+	  <header id="dcappHeader">
+		<div class="dcappWrapper">
+			<div id="dcappHeaderGrid">
+				<div id="dcappLogo"><h1><Link id="dcappHomeBtn1" Click="hdrDoAppHome" Label="@val|SiteTitle@" /></h1></div>
+				
+				<div id="dcappHeaderMenus">
+					<div id="dcappTopMenu">
+						<ul>
+						  <li><Link id="dcappHomeBtn2" Click="hdrDoAppHome" Label="App Menu" /></li>
+						  <li><Link id="dcappRootBtn" Click="hdrDoWebHome" Label="Go to Website" /></li>
+						  <li><Link id="dcappSignOutBtn" Click="hdrDoSignOut" Label="Sign Out" /></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	  </header>
+	</Layout>
+	<Function Name="hdrLoad" Mode="Load"><![CDATA[
+				this.call('hdrLoadReal');
+	]]></Function>
+	<Function Name="hdrLoadReal"><![CDATA[
+				if (dc.pui.Loader.__appTitle) {
+					$('#dcappHomeBtn1').text(dc.pui.Loader.__appTitle);
+				}
+	]]></Function>
+	<Function Name="hdrDoAppHome"><![CDATA[
+				dc.pui.Loader.loadPage(dc.pui.Loader.__appHome);
+	]]></Function>
+	<Function Name="hdrDoWebHome"><![CDATA[
+				dc.pui.Loader.loadPage($('html').attr('data-dcw-home'));
+	]]></Function>
+	<Function Name="hdrDoSignOut"><![CDATA[
+				dc.pui.Loader.signout();
+	]]></Function>
+</dcuip>

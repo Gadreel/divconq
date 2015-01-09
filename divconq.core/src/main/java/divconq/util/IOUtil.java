@@ -169,6 +169,18 @@ public class IOUtil {
 		
 		return true;
 	}
+    
+	public static boolean saveEntireFile2(Path dest, Memory content) {
+		try {
+			Files.createDirectories(dest.getParent());
+			Files.write(dest, content.toArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+		} 
+		catch (Exception x) {
+			return false;
+		}
+		
+		return true;
+	}
 
     /*
 	public static File safeSave(InputStream in, String dest) {

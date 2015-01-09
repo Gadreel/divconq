@@ -17,6 +17,7 @@ package divconq.db.common;
 
 import divconq.db.update.ConditionalValue;
 import divconq.db.update.UpdateRecordRequest;
+import divconq.lang.op.OperationContext;
 import divconq.struct.CompositeStruct;
 import divconq.struct.ListStruct;
 import divconq.util.StringUtil;
@@ -122,11 +123,6 @@ public class UpdateUserRequest extends UpdateRecordRequest {
 	
 	@Override
 	public CompositeStruct buildParams() {		
-		String pword = ((String) this.password.getValue()).trim();
-		
-		if (AddUserRequest.meetsPasswordPolicy(pword, false).hasErrors())
-			return null;		
-		
 		if (this.username.isSet())
 			this.withSetField("dcUsername", ((String) this.username.getValue()).trim().toLowerCase());
 		
@@ -140,11 +136,16 @@ public class UpdateUserRequest extends UpdateRecordRequest {
 		this.withSetField("dcConfirmed", this.confirmed);
 		this.withSetField("dcConfirmCode", this.confirmcode);
 		
-		// password crypto handled in stored proc
-		// OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex
-		if (this.password.isSet())
-			this.withSetField("dcPassword", pword);
-
+		// password crypto 
+		if (this.password.isSet()) {
+			String pword = ((String) this.password.getValue()).trim();
+			
+			if (AddUserRequest.meetsPasswordPolicy(pword, false).hasErrors())
+				return null;		
+			
+			this.withSetField("dcPassword", OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(pword));
+		}
+		
 		// warning - setting an empty list removes all tags
 		if (this.tags != null)
 			this.withReplaceList("dcAuthorizationTag", this.tags);

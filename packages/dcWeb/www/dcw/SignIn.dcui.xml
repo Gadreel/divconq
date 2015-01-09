@@ -1,23 +1,33 @@
 <dcui Title="Sign In">
 	<Layout>
-		<h1>Sign In</h1>
-		
-		<Form Name="SignIn">
-			<FieldContainer Label="Username:">
-				<TextInput Name="Username" Required="true" />
-			</FieldContainer>
-			<FieldContainer Label="Password:">
-				<PasswordInput Name="Password" Required="true" />
-			</FieldContainer>
-			<FieldContainer Label="Remember Me:">
-				<YesNo Name="RememberMe" />
-			</FieldContainer>
-			<div class="formbuttons">
-				<SubmitButton Label="Sign In" Icon="forward" /> 
-			</div> 
-		</Form>
+		<IncludePart Path="/dcw/app/Header" />
+
+		<div class="dcappWrapper">
+			<article id="dcappMain">
+				<h1>Sign In</h1>
+				
+				<Form Name="SignIn">
+					<FieldContainer Label="Username:">
+						<TextInput Name="Username" Required="true" />
+					</FieldContainer>
+					<FieldContainer Label="Password:">
+						<PasswordInput Name="Password" Required="true" />
+					</FieldContainer>
+					<FieldContainer Label="Remember Me:">
+						<YesNo Name="RememberMe" />
+					</FieldContainer>
+					<div class="formbuttons">
+						<SubmitButton Label="Sign In" Icon="forward" /> 
+					</div> 
+				</Form>
+			</article>
+		</div>
+
+		<IncludePart Path="/dcw/app/Footer" />
 	</Layout>
 	<Function Name="LoadRecord" Params="e">
+			dc.pui.Loader.setDestPage(dc.pui.Loader.__appHome);
+				
 			var info = dc.user.getUserInfo();
 			
 			if (info.Credentials) {

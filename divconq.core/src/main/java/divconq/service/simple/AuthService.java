@@ -278,7 +278,20 @@ public class AuthService extends ExtensionBase implements IService {
 		public boolean verify(String username, String password) {
 			XElement usr = this.cachedIndex.get(username);
 			
-			return ((usr != null) && password.equals(usr.getAttribute("Password")));
+			if (usr == null)
+				return false;
+			
+			String upass = usr.getAttribute("Password");
+			
+			// any setting in the config file is set with Hub crypto not domain crypto
+			String passwd = Hub.instance.getClock().getObfuscator().hashStringToHex(password);
+
+			// if they are the same length then xml file must have hashed value too, use it
+			if ((passwd != null) && (passwd.length() == upass.length()))
+				return passwd.equals(upass);
+			
+			// if not same length then xml file is probably plain text, use that
+			return password.equals(upass);
 		}
 		
 		public UserContext context(String username, String token) {

@@ -18,6 +18,7 @@ package divconq.web.dcui;
 
 import java.io.PrintStream;
 
+import divconq.util.StringUtil;
 import divconq.xml.XElement;
 import w3.html.A;
 
@@ -28,6 +29,7 @@ public class ButtonLink extends A {
     protected String label = null;
     protected String icon = null;
     protected String click = null;
+    protected String page = null;
     protected boolean wide = false;
 
     public ButtonLink() {
@@ -54,6 +56,11 @@ public class ButtonLink extends A {
     	return this;
     }
     
+    public ButtonLink withPage(String v) {
+    	this.page = v;
+    	return this;
+    }
+    
 	@Override
 	public Node deepCopy(Element parent) {
 		ButtonLink cp = new ButtonLink();
@@ -67,6 +74,7 @@ public class ButtonLink extends A {
 		super.doCopy(n);
 		((ButtonLink)n).id = this.id;
 		((ButtonLink)n).to = this.to;
+		((ButtonLink)n).page = this.page;
 		((ButtonLink)n).label = this.label;
 		((ButtonLink)n).icon = this.icon;
 		((ButtonLink)n).click = this.click;
@@ -85,6 +93,10 @@ public class ButtonLink extends A {
 		this.label = xel.getRawAttribute("Label");
 		this.icon = xel.getRawAttribute("Icon");
 		this.click = xel.getRawAttribute("Click");
+		this.page = xel.getRawAttribute("Page");
+		
+		if (StringUtil.isNotEmpty(this.page))
+			this.to = this.page;
 		
 		this.wide = "WideButton".equals(xel.getName());
 	}
@@ -92,10 +104,8 @@ public class ButtonLink extends A {
     @Override
     public void build(Object... args) {
     	Attributes attrs = this.wide 
-			? new Attributes("href", this.to, "data-role", "button", "data-theme", "a", "data-icon", this.icon,
-					"data-mini", "true", "data-iconpos", "right", "data-dcw-click", this.click)
-			: new Attributes("href", this.to, "data-role", "button", "data-theme", "a", "data-icon", this.icon, 
-				"data-mini", "true", "data-inline", "true", "data-dcw-click", this.click);
+			? new Attributes("href", this.to, "class", "ui-button ui-button-wide ui-theme-a")
+			: new Attributes("href", this.to, "class", "ui-button ui-theme-a");
 		
 		if (this.id != null)
 			attrs.add("id", this.id);
@@ -108,6 +118,8 @@ public class ButtonLink extends A {
     	this.name = this.wide ? "WideButton" : "Button";
     	
     	this.attributes.put("Click", this.click);
+    	this.attributes.put("Page", this.page);
+    	this.attributes.put("Icon", this.icon);
     	
     	return super.writeDynamic(buffer, tabs, first);
     }

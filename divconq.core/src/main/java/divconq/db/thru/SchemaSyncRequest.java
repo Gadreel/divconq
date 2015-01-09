@@ -16,6 +16,7 @@
 ************************************************************************ */
 package divconq.db.thru;
 
+import divconq.db.Constants;
 import divconq.db.IDatabaseRequest;
 import divconq.hub.Hub;
 import divconq.locale.LocaleInfo;
@@ -45,8 +46,13 @@ import divconq.util.StringUtil;
  */
 public class SchemaSyncRequest implements IDatabaseRequest {
 	@Override
-	public boolean isRootDomain() {
+	public boolean hasDomain() {
 		return true;
+	}
+	
+	@Override
+	public String getDomain() {
+		return Constants.DB_GLOBAL_ROOT_DOMAIN;
 	}
 	
 	public SchemaSyncRequest() {

@@ -1,0 +1,156 @@
+/* -----------------------------------------------
+	basic typography 
+----------------------------------------------- */
+
+html {
+	font-size: 12px;
+	font-family: Arial, sans-serif; 
+}
+
+h1,h2 {
+	font-family: 'sansumiregular', Arial, sans-serif; 
+	color: rgb(178, 96, 28);
+}
+
+h1 {
+	font-size: 3rem;
+	padding: 2rem 0;
+	margin: 0;
+	text-shadow: 1px 1px 10px rgba(0,0,0,0.8);
+	text-align: center;
+}
+
+h2 {
+	font-size: 2.6rem;
+	margin-top: 45px; 
+}
+
+h3 .fa {
+	font-size: 2.6rem;
+}
+
+p {
+	font-size: 1.6rem;
+	line-height: 1.4;
+	letter-spacing: 0.1rem;
+}
+
+li {
+	padding-bottom: 1rem;
+}
+
+/* -----------------------------------------------
+	basic layout
+----------------------------------------------- */
+
+section {
+	padding: 0 1%;
+}
+
+article {
+	padding: 1rem;
+}
+
+body {
+	padding: 0; 
+	background-color: rgb(255,255,243);
+}
+
+
+/*
+	adjusted for mobile
+*/
+@media all and (min-width: 801px) {
+	#dcappHeaderGrid {
+		display: -webkit-box;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: -webkit-flex;
+		display: flex;  
+		
+		background-position: 16px center; 
+	}
+
+	#dcappLogo {
+		min-height: 40px;
+		-webkit-box-flex: 2;
+		-moz-box-flex: 2;
+		-webkit-flex: 2;
+		-ms-flex: 2;
+		flex: 2;
+	}
+
+	#dcappHeaderMenus {
+		-webkit-box-flex: 2;
+		-moz-box-flex: 2;
+		-webkit-flex: 2;
+		-ms-flex: 2;
+		flex: 2;
+
+		display: -webkit-box;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: -webkit-flex;
+		display: flex;  
+		
+		-webkit-box-direction: normal;
+		-moz-box-direction: normal;
+		-webkit-box-orient: vertical;
+		-moz-box-orient: vertical;
+		-webkit-flex-direction: column;
+		-ms-flex-direction: column;
+		flex-direction: column;
+		
+		-webkit-flex-wrap: nowrap;
+		-ms-flex-wrap: nowrap;
+		flex-wrap: nowrap;
+    
+		-webkit-box-pack: justify;
+		-moz-box-pack: justify;
+		-webkit-justify-content: space-between;
+		-ms-flex-pack: justify;
+		justify-content: space-between;
+	}
+
+	#dcappTopMenu {
+		-webkit-box-flex: 1;
+		-moz-box-flex: 1;
+		-webkit-flex: 1;
+		-ms-flex: 1;
+		flex: 1;
+		display: block;
+	}
+
+	#dcappTopMenu ul {
+		-webkit-box-pack: end;
+		-moz-box-pack: end;
+		-webkit-justify-content: flex-end;
+		-ms-flex-pack: end;
+		justify-content: flex-end;
+	}
+}
+
+
+
+/* =============== table layouts ================== */
+
+/* thinner tables with 1 to 3 columns */
+@media (min-width: 660px) {
+	/* Show the table header rows and set all cells to display: table-cell */
+	.table-thin-breakpoint td,
+	.table-thin-breakpoint th,
+	.table-thin-breakpoint tbody th,
+	.table-thin-breakpoint tbody td,
+	.table-thin-breakpoint thead td,
+	.table-thin-breakpoint thead th {
+		display: table-cell;
+		margin: 0;
+	}
+	
+	/* Hide the labels in each cell */
+	.table-thin-breakpoint td .ui-table-cell-label,
+	.table-thin-breakpoint th .ui-table-cell-label {
+		display: none;
+	}
+}
+

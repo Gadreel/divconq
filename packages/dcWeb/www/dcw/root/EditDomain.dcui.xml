@@ -1,0 +1,114 @@
+<Pui Title="Edit Domain">
+	<Layout>
+		<IncludePart Path="/dcw/app/Header" />
+
+		<div class="dcappWrapper">
+			<article id="dcappMain">
+				<h1>Edit Domain</h1>
+				
+				<Form Name="EditDomain">
+					<FieldContainer Label="Title:">
+						<TextInput Name="Title" Required="true" />
+					</FieldContainer>
+					<FieldContainer Label="Alias:">
+						<TextInput Name="Alias" Required="true" Pattern="[\w-]+" />
+					</FieldContainer>
+					<FieldContainer Label="Names">
+						<TextInput Name="Names" Required="true" />
+					</FieldContainer>
+					<FieldContainer Label="ObscureClass">
+						<TextInput Name="ObscureClass" Required="true" />
+					</FieldContainer>
+					<FieldContainer Label="Description:">
+						<TextArea Name="Description" />
+					</FieldContainer>
+					<FieldContainer Label="Settings (XML):">
+						<TextArea Name="Settings" Required="true" />
+					</FieldContainer>
+					
+					<div class="formbuttons">
+						<!-- not a good idea
+						<Link Click="DoDelete" Label="Delete" Icon="minus" />
+						-->
+						<SubmitButton Label="Save" Icon="check" /> 
+					</div> 
+				</Form>
+			</article>
+		</div>
+
+		<IncludePart Path="/dcw/app/Footer" />
+	</Layout>
+	<Function Name="Load"><![CDATA[
+			this.form().query('Title').focus();				
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			if (this.Params.Id) {
+				e.Message = { 
+					Service: 'dcCoreDataServices',
+					Feature: 'Domains',
+					Op: 'LoadDomain',
+					Body: { Id: this.Params.Id }
+				};
+			}
+			else {
+				e.AsNew = true;
+				e.Data = {
+					ObscureClass: 'divconq.util.BasicSettingsObfuscator'
+				};
+			}
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			if (e.Data && e.Data.Names) {
+				e.Data.Names = e.Data.Names.join(',')
+			}
+	]]></Function>	
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			if (this.Params.Id) 
+				e.Data.Id = this.Params.Id;
+				
+			// if names changed
+			if (e.Data.Names) {
+				e.Data.Names = e.Data.Names.split(',');
+				
+				for (var i = 0; i < e.Data.Names.length; i++)
+					e.Data.Names[i] = e.Data.Names[i].trim();
+			}
+			
+			e.Message = { 
+				Service: 'dcCoreDataServices',
+				Feature: 'Domains',
+				Op: this.Params.Id ? 'UpdateDomain' : 'AddDomain',
+				Body: e.Data
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			window.history.back();
+	]]></Function>
+	<Function Name="DoDelete"><![CDATA[
+			var entry = this;
+			
+			if (!entry.Params.Id) {
+				window.history.back();
+				return;
+			}
+			
+			dc.pui.Popup.confirm('Are you sure you want to delete this Domain?', function() {
+				//console.log('delete');
+				dc.comm.sendMessage({ 
+					Service: 'sdBackend',
+					Feature: 'Domain',
+					Op: 'Delete',
+					Body: { 
+						Id: entry.Params.Id
+					}
+				}, function(resp) {
+					if (resp.Result > 0) {
+						dc.pui.Popup.alert(resp.Message);
+						return;
+					}
+				
+					window.history.back();
+				});
+			});
+	]]></Function>
+</Pui>

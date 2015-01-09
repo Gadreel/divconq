@@ -37,18 +37,22 @@ import divconq.session.Session;
 import divconq.util.StringUtil;
 import divconq.web.dcui.ContentPlaceholder;
 import divconq.web.dcui.Node;
+import divconq.xml.XElement;
 
 public class WebContext {
 	protected HttpContext innerctx = null;
 	protected IWebExtension extension = null; // originating extension
 	protected IWebDomain domain = null;  // originating domain
 	
+	protected IOutputAdapter adapter = null;
 	protected LocaleInfo selectedlocale = null;
 	protected String theme = null;
 	protected boolean preview = false;
 	protected boolean completed = false;
 	protected Map<String, ContentPlaceholder> holders = new HashMap<String, ContentPlaceholder>();
 	protected Map<String, String> innerparams = new HashMap<String, String>();
+	
+	protected List<XElement> functions = new ArrayList<>();
 
 	public ContentPlaceholder getHolder(String name) {
 		synchronized (this.holders) {
@@ -60,6 +64,14 @@ public class WebContext {
 		}
 
 		return this.holders.get(name);
+	}
+	
+	public void addFunction(XElement func) {
+		this.functions.add(func);
+	}
+	
+	public List<XElement> getFunctions() {
+		return this.functions;
 	}
 
 	public String getExternalParam(String name) {
@@ -81,6 +93,14 @@ public class WebContext {
 		return null;
 	}
 
+	public void setAdapter(IOutputAdapter v) {
+		this.adapter = v;
+	}
+	
+	public IOutputAdapter getAdapter() {
+		return this.adapter;
+	}
+	
 	public void putInternalParam(String name, String value) {
 		this.innerparams.put(name, value);
 	}
@@ -145,31 +165,8 @@ public class WebContext {
 				  String grp = m.group();
 				  
 				  String macro = grp.substring(1, grp.length() - 1);
-				  String[] parts = macro.split("|");
 				  
-				  String val = null;
-				  
-				  // TODO check size of parts
-				  
-				  // params on this tree
-				  if ("param".equals(parts[0]))
-					  val = this.getExternalParam(parts[1]);
-				  else if ("ctx".equals(parts[0]))
-					  val = this.getInternalParam(parts[1]);
-				  // definitions in the dictionary
-				  else if ("tr".equals(parts[0]))
-					  val = this.getDomain().tr(this.selectedlocale, parts[1]);		// TODO support tr params 
-				  
-				  // TODO support macro providers registered to context...
-				  
-				  if (val == null) {
-					  String[] mparts = macro.split("\\|");
-					  
-					  IWebMacro macroproc = this.innerctx.getSiteman().getMacro(mparts[0]);
-					  
-					  if (macroproc != null)
-						  val = macroproc.process(this, mparts); 
-				  }
+				  String val = this.expandMacro(macro);
 				  
 				  // if any of these, then replace and check (expand) again 
 				  if (val != null) {
@@ -181,8 +178,54 @@ public class WebContext {
 		  
 		  return value;
 	  }
+	  
+	  public String expandMacro(String macro) {
+		  String[] parts = macro.split("\\|");
+		  
+		  String val = null;
+		  
+		  // TODO check size of parts
+		  
+		  // params on this tree
+		  if ("param".equals(parts[0]))
+			  val = this.getExternalParam(parts[1]);
+		  else if ("ctx".equals(parts[0]))
+			  val = this.getInternalParam(parts[1]);
+		  // definitions in the dictionary
+		  else if ("tr".equals(parts[0]))
+			  val = this.getDomain().tr(this.getLocale(), parts[1]);		// TODO support tr params 
+		  else {
+			  IWebMacro macroproc = this.innerctx.getSiteman().getMacro(parts[0]);
+			  
+			  if (macroproc != null)
+				  val = macroproc.process(this, parts); 
+		  }
+		  
+		  return val;
+	  }
 
 	public LocaleInfo getLocale() {
+		if (this.selectedlocale == null) {
+			// TODO look at supported languages also, std http headers
+
+			OperationContext tc = OperationContext.get();
+			
+			String locale = tc.getUserContext().getLocale();
+			
+			Cookie ck = this.innerctx.getRequest().getCookie("dcmLocale");
+			
+			if (ck != null)
+				locale = ck.getValue(); 
+			
+			// TODO if different
+			//tc.getUserContext().setLocale(locale);	
+	
+			this.selectedlocale = LocaleUtil.getStrictLocaleInfo(locale);
+			
+			if (this.selectedlocale == null)
+				this.selectedlocale = this.domain.getDefaultLocaleInfo();
+		}
+		
 		return this.selectedlocale;
 	}
 
@@ -198,26 +241,7 @@ public class WebContext {
 		this.innerctx = httpctx;
 		this.extension = ext;		
 		
-		OperationContext tc = OperationContext.get();
-		
-		// TODO look at supported languages also, std http headers
-
-		String locale = tc.getUserContext().getLocale();
-		
-		Cookie ck = this.innerctx.getRequest().getCookie("dcmLocale");
-		
-		if (ck != null)
-			locale = ck.getValue(); 
-		
-		// TODO if different
-		//tc.getUserContext().setLocale(locale);	
-
-		this.selectedlocale = LocaleUtil.getLocaleInfo(locale);
-		
-		if (this.selectedlocale == null)
-			this.selectedlocale = LocaleUtil.getDefaultLocaleInfo();
-
-		ck = this.innerctx.getRequest().getCookie("dcmTheme");
+		Cookie ck = this.innerctx.getRequest().getCookie("dcmTheme");
 
 		if (ck != null)
 			this.theme = ck.getValue();
@@ -263,15 +287,15 @@ public class WebContext {
 	}
 
 	public boolean isRightToLeft() {
-		if (this.selectedlocale != null)
-			return this.selectedlocale.isRightToLeft();
+		if (this.getLocale() != null)
+			return this.getLocale().isRightToLeft();
 
 		return false;
 	}
 
 	public String getLanguage() {
-		if (this.selectedlocale != null)
-			return this.selectedlocale.getLanguage();
+		if (this.getLocale() != null)
+			return this.getLocale().getLanguage();
 
 		return null;
 	}
