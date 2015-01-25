@@ -19,6 +19,7 @@ package divconq.web.asset;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import io.netty.handler.codec.http.HttpChunkedInput;
 import io.netty.handler.codec.http.HttpContent;
@@ -36,10 +37,11 @@ public class AssetInfo {
 	
 	protected ByteBufWriter buffer = null;
 	
-	protected ChunkedInput<HttpContent> chunks = null;
 	protected long chunkSize = -1;
 	
 	protected CommonPath path= null;
+	protected Path fpath = null;
+	protected boolean region = false;
 	protected long when = 0;
 	protected String mime = null; 
 	protected boolean compressed = false;
@@ -70,11 +72,18 @@ public class AssetInfo {
 	}
 	
 	public boolean isRegion() {
-		return (this.chunks != null);
+		return this.region;
 	}
 	
 	public ChunkedInput<HttpContent> getChunks() {
-		return this.chunks;
+		try {
+			return new HttpChunkedInput(new ChunkedNioFile(this.fpath.toFile()));
+		} 
+		catch (IOException x) {
+			// TODO improve support
+		}
+		
+		return null;
 	}
 	
 	public void setRegionSize(long regionSize) {
@@ -95,30 +104,16 @@ public class AssetInfo {
 		return this.when;
 	}
 	
-	public AssetInfo(WebContext ctx, CommonPath path, Path content, long when) {
-		try {
-			this.path = path;
-			this.when = when;
-			
-			String fname = content.getFileName().toString();
-			
-			this.setMimeForFile(fname);
-			
-			if (fname.endsWith(".html")) {
-				this.buffer = ByteBufWriter.createLargeHeap();
-				
-				Files.lines(content).forEach(line -> {
-					this.buffer.writeLine(ctx.expandMacros(line));
-				});
-			}
-			else {
-				this.chunkSize = Files.size(content);
-				this.chunks = new HttpChunkedInput(new ChunkedNioFile(content.toFile()));
-			}
-		} 
-		catch (IOException x) {
-			// TODO improve support
-		}
+	public AssetInfo(CommonPath path, Path content, long when) {
+		this.path = path;
+		this.when = when;
+		this.fpath = content;
+		
+		String fname = content.getFileName().toString();
+		
+		this.setMimeForFile(fname);
+		
+		this.region = !fname.endsWith(".html") && !fname.endsWith(".js");		// TODO we need these until we support nxxUploader with translations
 	}
 	
 	public AssetInfo(CommonPath path, long when) {
@@ -130,6 +125,36 @@ public class AssetInfo {
 		this.path = path;
 		this.buffer = content;
 		this.when = when;
+	}
+	
+	public void load(WebContext ctx) {
+		// if file path then we haven't processed content yet
+		// note that buffer can be set once and then used as cache
+		if ((this.fpath != null) && (this.buffer == null)) {
+			try {
+				// region does its own thing for content loading, seeabove
+				if (this.region) {
+					this.chunkSize = Files.size(this.fpath);
+				}
+				else {
+					System.out.println("expand 1: " + System.currentTimeMillis());
+					
+					this.buffer = ByteBufWriter.createLargeHeap();
+					
+					try (Stream<String> strm = Files.lines(this.fpath)) {
+						strm.forEach(line -> {
+							this.buffer.writeLine(ctx.expandMacros(line));
+						});
+					}
+					
+					System.out.println("expand 2: " + System.currentTimeMillis());
+					
+				}
+			} 
+			catch (IOException x) {
+				// TODO improve support
+			}
+		}
 	}
 	
 	public void setMimeForFile(String fname) {

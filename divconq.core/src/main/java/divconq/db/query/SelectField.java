@@ -108,6 +108,11 @@ public class SelectField implements ISelectField {
 		return this;
 	}
 	
+	public SelectField withFull(boolean v) {
+		this.column.setField("Full", v);		
+		return this;
+	}
+	
 	@Override
 	public Struct getParams() {
 		return this.column;

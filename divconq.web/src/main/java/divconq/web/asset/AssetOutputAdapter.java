@@ -68,11 +68,12 @@ public class AssetOutputAdapter implements IOutputAdapter {
 		}
 
 		if (asset == null)
-			asset = new AssetInfo(ctx, this.webpath, this.filepath, Files.getLastModifiedTime(this.filepath).toMillis());
+			asset = new AssetInfo(this.webpath, this.filepath, Files.getLastModifiedTime(this.filepath).toMillis());
 		
 		String fpath = asset.getPath().toString();
 		
-		if ((fpath == null) || (asset.getSize() == -1)) {
+		//if ((fpath == null) || (asset.getSize() == -1)) {
+		if (fpath == null) {
 			res.errorTr(150001);
 			return res;
 		}
@@ -103,6 +104,8 @@ public class AssetOutputAdapter implements IOutputAdapter {
 				return res;
 			}
 		}
+		
+		asset.load(ctx);
 		
 		if (asset.getCompressed())
 			resp.setHeader("Content-Encoding", "gzip");

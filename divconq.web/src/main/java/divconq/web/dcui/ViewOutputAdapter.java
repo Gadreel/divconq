@@ -22,30 +22,29 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 
 import divconq.filestore.CommonPath;
+import divconq.hub.Hub;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.util.IOUtil;
 import divconq.web.IOutputAdapter;
-import divconq.web.IWebDomain;
-import divconq.web.IWebExtension;
+import divconq.web.WebDomain;
 import divconq.web.WebContext;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
 
 public class ViewOutputAdapter implements IOutputAdapter  {
 	protected XElement source = null;
-	protected IWebDomain domain = null;
+	protected WebDomain domain = null;
 	protected CommonPath webpath = null;
-	//protected Path filepath = null;
 	protected String[] auth = null;
 
+	protected boolean isPreview = false;
+	
 	// content info
 	protected Nodes pagetemplate = null; 
 	public Nodes contenttemplate = null;
 	protected Class<? extends IContentBuilder> pagebuilder = null;
-	//protected List<Style> styletemplate = new ArrayList<Style>();
-	//protected List<Script> scripttemplate = new ArrayList<Script>();
 	
 	// content building
 	protected Class<? extends IViewExecutor> adapter = null;
@@ -54,14 +53,18 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 		return this.source;
 	}
 	
-	public IWebDomain getDomain() {
+	public WebDomain getDomain() {
 		return this.domain;
 	}
 	
-	public ViewOutputAdapter(IWebDomain domain, CommonPath webpath, Path filepath, IWebExtension ext) {
+	public boolean isPreview() {
+		return this.isPreview;
+	}
+	
+	public ViewOutputAdapter(WebDomain domain, CommonPath webpath, Path filepath, boolean isPreview) {
 		this.domain = domain;
 		this.webpath = webpath;
-		//this.filepath = filepath;
+		this.isPreview = isPreview;
 		
 		FuncResult<CharSequence> rres = IOUtil.readEntireFile(filepath);
 		
@@ -85,7 +88,7 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 		
 		if (this.source == null) {
 			this.source = new XElement("dcui",
-					new XElement("Layout", 
+					new XElement("Skeleton", 
 							new XElement("h1", "Parse Error!!")
 					)
 			);
@@ -96,7 +99,8 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 
 		if (this.source.hasAttribute("ViewClass")) {
 			try {
-				Class<?> cls = ext.getBundle().getClass(this.source.getAttribute("ViewClass"));
+				// TODO ideally this would come from web extension or web module...
+				Class<?> cls = Hub.instance.getClass(this.source.getAttribute("ViewClass"));
 				
 				// TODO improve tracing
 				if (cls != null) 
@@ -108,35 +112,26 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 			}
 		}
 		else {
-			if (!this.load(ext, this.source)) {
+			if (!this.load(this.source)) {
 				this.source = new XElement("dcui",
-						new XElement("Layout", 
+						new XElement("Skeleton", 
 								new XElement("h1", "Compile Error!!")
 						)
 				);
 				
-				this.load(ext, this.source);
+				this.load(this.source);
 			}
-		}
-		
-		/*
-		catch (Exception x) {
-			// TODO log
-			System.out.println("Compile error on View (" + this.filepath + "): " + x);
-		}
-		*/
-		
+		}		
 	}
 	
 	// ContentInfo migration
-	public boolean load(IWebExtension ext, XElement root) {
-		IWebDomain domain = this.getDomain();
+	public boolean load(XElement root) {
+		WebDomain domain = this.getDomain();
 		
-		XElement el = root.find("Layout");
-		
-		if (el.hasAttribute("LayoutClass")) {
+		if (root.hasAttribute("SkeletonClass")) {
 			try {
-				Class<?> cls = ext.getBundle().getClass(el.getAttribute("LayoutClass"));
+				// TODO ideally this would come from web extension or web module...
+				Class<?> cls = Hub.instance.getClass(root.getAttribute("SkeletonClass"));
 				
 				// TODO improve tracing
 				if (cls != null) 
@@ -144,80 +139,20 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 			}
 			catch (Exception x) {
 				// TODO improve tracing
-				System.out.println("Could not load Layout class: " + el.getAttribute("LayoutClass"));
+				System.out.println("Could not load Layout class: " + root.getAttribute("SkeletonClass"));
 			}
 		}
-		
-		//this.contenttemplate = new Nodes(new Html5Head(el));
 		
 		if ("dcui".equals(root.getName()))
 			this.pagetemplate = domain.parseElement(this, root);
 		else
-			this.contenttemplate = domain.parseXml(this, el);		
+			this.contenttemplate = domain.parseXml(this, root.find("Skeleton"));		
 		
 		return true;
-		
-		/*
-		for (XElement stel : el.selectAll("Style")) 		
-			this.styletemplate.add((Style)domain.parseElement(info, stel).getFirst());
-		
-		for (XElement scel : el.selectAll("Script")) 		
-			this.scripttemplate.add((Script)domain.parseElement(info, scel).getFirst());
-		
-		for (XElement tmpel : el.selectAll("Template")) {
-			if (!tmpel.hasAttribute("Id"))
-				continue;
-			
-			String tid = tmpel.getAttribute("Id");
-			
-			try {
-				if (tmpel.hasAttribute("ContentClass")) {
-					try {
-						Class<?> cls = domain.getExtension().getBundle().getClass(tmpel.getAttribute("ContentClass"));
-						
-						// TODO improve tracing
-						if (cls != null) 
-							this.templatebuilder.put(tid, cls.asSubclass(IContentBuilder.class)); 
-					}
-					catch (Exception x) {
-						// TODO improve tracing
-						System.out.println("could not load class: " + el.getAttribute("ContentClass"));
-					}
-				}
-				else
-					this.templatemap.put(tid, domain.parseXml(info, tmpel));
-			}
-			catch (Exception x) {
-				// TODO trace
-			}
-		}
-		*/
 	}
 	
 	public Nodes getOutput(Fragment frag, WebContext ctx, boolean dynamic) {
-		try {			
-			/*
-			if (this.styletemplate.size() > 0) {
-			    	ContentPlaceholder ph = ctx.getHolder("Styles");
-			    	
-		    		for (Style nds : this.styletemplate) {
-		    			Style cds = (Style)nds.deepCopy(ph);
-		    			cds.setPartRoot(frag);
-		    			ph.addChildren(cds);
-		    		}
-			}
-			
-			if (this.scripttemplate.size() > 0) {
-		    	ContentPlaceholder ph = ctx.getHolder("Scripts");
-		    	
-	    		for (Script nds : this.scripttemplate) {
-	    			Script cds = (Script)nds.deepCopy(ph);
-	    			cds.setPartRoot(frag);
-	    			ph.addChildren(cds);
-	    		}
-			}
-			*/
-		
+		try {
 			if (this.pagebuilder != null)
 				return this.pagebuilder.newInstance().getContent(ctx, this, frag);
 			
@@ -249,7 +184,7 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 			}
 			else {
 				ctx.getResponse().setStatus(HttpResponseStatus.FOUND);
-				ctx.getResponse().setHeader("Location", ctx.getDomain().getMainPath().toString());
+				ctx.getResponse().setHeader("Location", "/");
 				ctx.send();
 			}
 			

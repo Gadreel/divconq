@@ -25,4 +25,6 @@ public class HubEvents {
 	
 	final static public int BusConnected = 100;
 	final static public int BusDisconnected = 101;
+	
+	final static public int DomainConfigChanged = 200;
 }

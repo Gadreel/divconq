@@ -1,5 +1,5 @@
 <dcui Title="Web Appliction Shell" Icon="/dcw/img/logo">
-	<Layout>
+	<Skeleton>
 		... loading ...
-	</Layout>
+	</Skeleton>
 </dcui>

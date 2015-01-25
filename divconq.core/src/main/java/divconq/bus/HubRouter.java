@@ -496,12 +496,14 @@ public class HubRouter {
 			
 			//System.out.println("Gateway request passed checks z: " + msg);
     	}
+    	/*
     	// TODO temp - show me messages coming into gateway from server 
     	else if (!looksLikeReply) {
 			System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
 			System.out.println("Server request passed checks z: " + msg);
 			System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
     	}
+    	*/
     	
     	// =====================================================================
     	
@@ -906,6 +908,7 @@ public class HubRouter {
 		        if (StringUtil.isNotEmpty(pathid)) {
 					StreamPath sp = new StreamPath();
 					sp.direct = sess;
+					sp.id = pathid;
 
 					// lock so we are not interfering with cleanup (see below)
 					// if we get to here though our path is not a candidate for cleanup yet so
@@ -932,6 +935,7 @@ public class HubRouter {
 	        if (StringUtil.isNotEmpty(pathid)) {
 				StreamPath sp = new StreamPath();
 				sp.tunneled = tunnel;
+				sp.id = pathid;
 				
 				// lock so we are not interfering with cleanup (see below)
 				// if we get to here though our path is not a candidate for cleanup yet so
@@ -980,6 +984,7 @@ public class HubRouter {
 	}
 	
 	public class StreamPath {
+		protected String id = null;
 		protected StreamSession direct = null;
 		protected HubRouter tunneled = null;
 		protected long touched = System.currentTimeMillis();
@@ -1017,7 +1022,7 @@ public class HubRouter {
 			}
 			
 			for (StreamPath path : cleanlist)
-				this.streampaths.remove(path);
+				this.streampaths.remove(path.id);
 		}
 		finally {
 			this.sessionlock.unlock();

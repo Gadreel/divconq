@@ -221,6 +221,9 @@ public class ByteUtil {
 		// return as string as this is most commonly how the XML will be consumed
 		if (type == Constants.DB_TYPE_XML)
 			return ByteUtil.dbStringToString(val);
+
+		if (type == Constants.DB_TYPE_COMPOSITE) 
+			return ByteUtil.dbCompositeToComposite(val);
 		
 		// TODO support more		
 		

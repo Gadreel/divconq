@@ -131,15 +131,15 @@ public class AuthService extends ExtensionBase implements IService {
 				String authToken = uc.getAuthToken();
 				
 				if (StringUtil.isNotEmpty(authToken)) {
-					System.out.println("---------- Token not empty");
+					//System.out.println("---------- Token not empty");
 					
 					if (this.xmlMode) {
 						Session sess = Hub.instance.getSessions().lookup(request.getContext().getSessionId());
 						
-						System.out.println("---------- Xml Mode");
+						//System.out.println("---------- Xml Mode");
 						
 						if ((sess != null) && authToken.equals(sess.getUser().getAuthToken())) {
-							System.out.println("---------- Token verified");
+							//System.out.println("---------- Token verified");
 							
 							// verified
 							request.complete();
@@ -154,7 +154,7 @@ public class AuthService extends ExtensionBase implements IService {
 					}
 				}				
 				
-				System.out.println("---------- Token empty or bad");
+				//System.out.println("---------- Token empty or bad");
 				
 				// else try to authenticate
 				RecordStruct creds = uc.getCredentials();  // msg.getFieldAsRecord("Credentials");
@@ -166,13 +166,13 @@ public class AuthService extends ExtensionBase implements IService {
 					return;
 				}
 				
-				System.out.println("---------- Using Creds");
+				//System.out.println("---------- Using Creds");
 				
 				String uname = creds.getFieldAsString("Username"); 
 				String passwd = creds.getFieldAsString("Password");
 				
 				if (this.xmlMode) {
-					System.out.println("---------- Xml Mode");
+					//System.out.println("---------- Xml Mode");
 					
 					DomainUsers du = this.xmlData.get(uc.getDomainId());
 					
@@ -206,7 +206,7 @@ public class AuthService extends ExtensionBase implements IService {
 				this.random.nextBytes(feedbuff);
 				String token = HexUtil.bufferToHex(feedbuff);
 				
-				System.out.println("---------- Verified and token");
+				//System.out.println("---------- Verified and token");
 				
 				// create the new context
 				if (this.xmlMode) 
@@ -218,14 +218,15 @@ public class AuthService extends ExtensionBase implements IService {
 				OperationContext.switchUser(request.getContext(), uc);
 				
 				if (this.xmlMode) {
-					Session ss = Hub.instance.getSessions().findOrCreateTether(request.getContext());
-					System.out.println("---------- Session added: " + ss);
+					//Session ss = 
+					Hub.instance.getSessions().findOrCreateTether(request.getContext());
+					//System.out.println("---------- Session added: " + ss);
 				}
 				else {
 					this.sessions.add(token);
 				}
 				
-				System.out.println("verify new");
+				//System.out.println("verify new");
 				
 				request.complete();
 				return;
@@ -236,7 +237,7 @@ public class AuthService extends ExtensionBase implements IService {
 				
 				if (this.xmlMode) {
 					Hub.instance.getSessions().terminate(request.getContext().getSessionId());
-					System.out.println("---------- Session removed");
+					//System.out.println("---------- Session removed");
 				}
 				else if (StringUtil.isNotEmpty(authToken)) 
 					this.sessions.remove(authToken);

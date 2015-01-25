@@ -41,6 +41,11 @@ public interface IDatabaseManager {
 	void init(XElement config);
 	
 	/**
+	 * Online full operation, including doing backups
+	 */
+	void start();
+	
+	/**
 	 * Gracefully stop the database pool, allowing for up to 1 minute for shutdown.
 	 */
 	void stop();

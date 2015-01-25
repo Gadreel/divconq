@@ -50,6 +50,7 @@ import divconq.util.TimeUtil;
 import divconq.work.ISynchronousWork;
 import divconq.work.TaskRun;
 import divconq.work.Task;
+import divconq.xml.XElement;
 
 // TODO needs a plan system for what to do when session ends/times out/etc 
 public class Session {
@@ -188,12 +189,22 @@ Context: {
 		this.lastAccess = System.currentTimeMillis();
 
 		//System.out.println("Session touched: " + this.id);
-		
 		// keep any tethered sessions alive by pinging them at least once every minute
 		if ((this.lastAccess - this.lastTetherAccess > 59000)		// if tether was last updated a minute or more ago  
 				&& this.user.isAuthenticated()						// if this is an authenticated user
 		) {
-			if (Hub.instance.getResources().isGateway()) {			// if we are a gateway
+			XElement config = Hub.instance.getConfig();
+			
+			boolean useTether = true;
+			
+			if (config != null) {
+				XElement sessions = config.find("Sessions");
+				
+				if (sessions != null) 
+					useTether = Struct.objectToBooleanOrFalse(sessions.getAttribute("Tether", "True"));
+			}
+			
+			if (useTether && Hub.instance.getResources().isGateway()) {			// if we are a gateway
 				// at least for now, gateways are only ever tethered to 1 hub, so if we find that hub we have the dest
 				String tid = Hub.instance.getBus().getTetherId();
 				
@@ -208,7 +219,7 @@ Context: {
 						Message msg = new Message("Session", "Manager", "Touch",
 								new RecordStruct(new FieldStruct("Id", this.id)));
 	
-						System.out.println("Session pinging tethered: " + this.id);
+						//System.out.println("Session pinging tethered: " + this.id);
 						
 				    	msg.setField("ToHub", tid);
 						

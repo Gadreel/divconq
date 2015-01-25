@@ -29,6 +29,7 @@ import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.net.NetUtil;
+import divconq.net.ssl.SslHandler;
 import divconq.session.DataStreamChannel;
 import divconq.session.ISessionAdapter;
 import divconq.session.IStreamDriver;
@@ -37,6 +38,7 @@ import divconq.struct.CompositeParser;
 import divconq.struct.CompositeStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.util.StringUtil;
 import divconq.web.HttpBodyRequestDecoder;
 import divconq.web.HttpContext;
 import divconq.web.IContentDecoder;
@@ -44,6 +46,7 @@ import divconq.web.IWebExtension;
 import divconq.web.Request;
 import divconq.web.Response;
 import divconq.web.RpcHandler;
+import divconq.web.WebDomain;
 import divconq.web.WebSiteManager;
 import divconq.xml.XElement;
 import io.netty.buffer.ByteBuf;
@@ -57,6 +60,7 @@ import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObject;
@@ -349,12 +353,24 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		
 		// TODO use X-Forwarded-For  if available, maybe a plug in approach to getting client's IP?
 		
-		String domainid = null;
-		
 		DomainInfo dinfo = this.context.getSiteman().resolveDomainInfo(req.getHeader("Host"));
 		
-		if (dinfo != null)
-			domainid = dinfo.getId();
+		if (dinfo == null) {
+        	this.context.sendForbidden();
+            return;
+		}
+		
+		WebDomain wdomain = this.context.getSiteman().getDomain(dinfo.getId());
+		
+		// check into url re-routing
+		String reroute = wdomain.route(req, (SslHandler)ctx.channel().pipeline().get("ssl"));
+		
+		if (StringUtil.isNotEmpty(reroute)) {
+			this.context.getResponse().setStatus(HttpResponseStatus.FOUND);
+			this.context.getResponse().setHeader("Location", reroute);
+			this.context.send();
+            return;
+		}
 				
 		Cookie sesscookie = req.getCookie("SessionId");
 		Session sess = null;
@@ -368,7 +384,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		}
 		
 		if (sess == null) {			
-			sess = Hub.instance.getSessions().create(origin, domainid);
+			sess = Hub.instance.getSessions().create(origin, dinfo.getId());
 			
 			Logger.info("Started new session: " + sess.getId() + " on " + req.getPath() + " for " + origin);
 			 

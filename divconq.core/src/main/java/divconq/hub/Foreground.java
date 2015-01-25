@@ -409,5 +409,7 @@ public class Foreground {
 		Bus b = Hub.instance.getBus();
 		
 		b.dumpInfo();
+		
+		Hub.instance.getScheduler().dump();
 	}
 }

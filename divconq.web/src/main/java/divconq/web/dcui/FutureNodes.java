@@ -20,10 +20,10 @@ public class FutureNodes extends Nodes {
 	protected boolean done = false;
 	protected FuturePlaceholder placeholder = null;
 	
-	public void signal() {
+	public void complete() {
 		synchronized (this) {
 			this.done = true;
-			this.complete();
+			this.finish();
 		}
 	}
 
@@ -32,11 +32,11 @@ public class FutureNodes extends Nodes {
 			this.placeholder = placeholder;
 			
 			if (this.done) 
-				this.complete();			
+				this.finish();			
 		}
 	}
 	
-	private void complete() {
+	private void finish() {
 		if (this.placeholder == null) 
 			return;
 		

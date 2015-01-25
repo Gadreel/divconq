@@ -123,15 +123,16 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 		this.setField("Name", this.localpath.getFileName().toString());
 		
 		String cwd = this.driver.getFieldAsString("RootFolder");
-		String fpath = this.localpath.normalize().toString();
+		//String fpath = this.localpath.normalize().toString();
+		String fpath = this.localpath.toString();
 		
 		// common path format in "absolute" relative to mount (TODO not relative to WF - fix instead relative to RootFolder)
 		// also, since fpath may be absolute - only do substring thing if cwd is above fpath in folder chain TODO
 		
 		if (fpath.length() == cwd.length())
-		this.setField("Path", "/");
+			this.setField("Path", "/");
 		else
-		this.setField("Path", "/" + fpath.substring(cwd.length() + 1).replace('\\', '/'));
+			this.setField("Path", "/" + fpath.substring(cwd.length() + 1).replace('\\', '/'));
 		
 		this.setField("FullPath", fpath);
 

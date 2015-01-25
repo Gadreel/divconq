@@ -325,9 +325,10 @@ public class DatabaseSchema {
 		List<DbTrigger> ret = new ArrayList<>();
 		List<DbTrigger> tbl = this.triggers.get(table);
 		
-		for (DbTrigger t : tbl)
-			if (t.op.equals(operation))
-				ret.add(t);
+		if (tbl != null)
+			for (DbTrigger t : tbl)
+				if (t.op.equals(operation))
+					ret.add(t);
 		
 		return ret;
 	}

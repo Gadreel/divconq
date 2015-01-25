@@ -20,23 +20,18 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ClassLoader;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.zip.Adler32;
 
 import javax.tools.JavaFileObject;
 
-import divconq.hub.Hub;
 import divconq.lang.op.FuncResult;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
 
 public class Bundle extends ClassLoader {
-	protected List<String> libraryNames = new ArrayList<String>();
-	protected List<LibLoader> libloaders = new ArrayList<LibLoader>();
+	//protected List<String> libraryNames = new ArrayList<String>();
+	//protected List<LibLoader> libloaders = new ArrayList<LibLoader>();
 	
 	public Bundle(ClassLoader parent) {
 		super(parent);
@@ -47,6 +42,7 @@ public class Bundle extends ClassLoader {
 		
 		// TODO add support for package (pck)
 		
+		/* retire??
 		this.libraryNames.add(name);
 		
 		String path = Hub.instance.getLibraryPath(name, alias);
@@ -63,7 +59,8 @@ public class Bundle extends ClassLoader {
 		}
 		else {
 			// TODO get the library from a bus service
-		}			
+		}
+		*/			
 	}
 
 	public Object getInstance(String cname) {
@@ -113,6 +110,7 @@ public class Bundle extends ClassLoader {
 	public Iterable<JavaFileObject> listPackageClasses(String packname) {
 		Map<String, JavaFileObject> files = new HashMap<String, JavaFileObject>();
 		
+		/* retire??
 		packname = "/" + packname.replace(".", "/");
 		
 		for (int i = this.libloaders.size() - 1; i >= 0; i--) {
@@ -127,17 +125,20 @@ public class Bundle extends ClassLoader {
 		}	
 		
 		// TODO list parent too if parent is a Bundle
+		*/
 		
 		return files.values();
 	}
 	
 	public byte[] findFileEntry(String name) {
+		/* retire??
 		for (LibLoader lib : this.libloaders) {
 			byte[] cd = lib.getEntry(name);
 			
 			if (cd != null)
 				return cd;
 		}		
+		*/
 		
 		ClassLoader p = this.getParent();
 		
@@ -148,9 +149,11 @@ public class Bundle extends ClassLoader {
 	}
 
 	public boolean hasFileEntry(String fpath) {
+		/* retire??
 		for (LibLoader lib : this.libloaders) 
 			if (lib.hasEntry(fpath))
 				return true;
+		*/
 		
 		ClassLoader p = this.getParent();
 		
@@ -180,8 +183,10 @@ public class Bundle extends ClassLoader {
 		return new ByteArrayInputStream(entry);
 	}
 
+	/* retire??
 	public void adler(Adler32 ad) {
 		for (LibLoader lib : this.libloaders) 
 			lib.adler(ad);
 	}
+	*/
 }

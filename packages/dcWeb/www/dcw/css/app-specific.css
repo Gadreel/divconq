@@ -169,6 +169,11 @@ html head+body .ui-btn.ui-btn-a, html head+body .ui-btn.ui-btn-a:visited {
 	color:#fffff3;
 }
 
+#puConfirmHtml {
+	padding: 24px;
+	font-size: 16px;
+}
+
 /* ========== Upload ========= */
 
 #frmUploadFile .progress {

@@ -32,7 +32,6 @@ import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
 import divconq.hub.HubEvents;
 import divconq.hub.IEventSubscriber;
-import divconq.hub.IHubEvent;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationCallback;
@@ -93,7 +92,7 @@ public class FileServerService extends ExtensionBase implements IService {
 		// load domain related details only after we are noted to be running
 		Hub.instance.subscribeToEvent(HubEvents.Running, new IEventSubscriber() {
 			@Override
-			public void eventFired(IHubEvent e) {
+			public void eventFired(Object e) {
 				for (DomainInfo domain : Hub.instance.getDomains()) {
 					XElement dset = domain.getSettings();
 					
@@ -571,7 +570,7 @@ public class FileServerService extends ExtensionBase implements IService {
 		
 		CommonPath path = new CommonPath(fpath);
 		
-		fs.addFolder(path, new OperationCallback() {
+		fs.addFolder(path, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {
 				request.complete();

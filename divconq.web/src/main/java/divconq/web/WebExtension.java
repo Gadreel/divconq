@@ -37,7 +37,7 @@ public class WebExtension extends ExtensionBase implements IService, IWebExtensi
 
 		WebContext ctx = new WebContext(hctx, this);
 		
-		IWebDomain d = ctx.getDomain();
+		WebDomain d = ctx.getDomain();
 		
 		if (d == null) 
 			res.errorTr(150003);

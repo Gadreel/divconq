@@ -1,9 +1,9 @@
 <dcuip>
-	<Layout>
+	<Skeleton>
 		<footer id="dcappFooter">
 			<div class="dcappWrapper">
 				&copy; @val|SiteCopyright@ @val|SiteAuthor@
 			</div>
 		</footer>
-	</Layout>
+	</Skeleton>
 </dcuip>

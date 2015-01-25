@@ -16,11 +16,17 @@
 ************************************************************************ */
 package divconq.web.dcui;
 
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyObject;
+
 import java.io.IOException;
+import java.lang.reflect.Method;
 
 import org.markdown4j.Markdown4jProcessor;
 
+import w3.html.Img;
 import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleInfo;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
@@ -49,7 +55,7 @@ public class PagePart extends Element implements ICodeTag {
 
 	@Override
 	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
-    	this.id = xel.getRawAttribute("Id");
+    	this.id = xel.getRawAttribute("id");
     	this.content = xel.getRawAttribute("Content");
 		
     	this.src = view.getSource();
@@ -67,7 +73,8 @@ public class PagePart extends Element implements ICodeTag {
 		String lname = li.getName();
 		
 		for (XElement pel : this.src.selectAll("PagePart")) {
-			if (this.id.equals(pel.getAttribute("Id")) && lname.equals(pel.getAttribute("Locale"))) {
+			if (this.id.equals(pel.getAttribute("For")) && (lname.equals(pel.getAttribute("Locale"))
+					|| !pel.hasAttribute("Locale"))) {
 				ppel = pel;
 				break;
 			}
@@ -77,7 +84,7 @@ public class PagePart extends Element implements ICodeTag {
 			lname = li.getLanguage();
 			
 			for (XElement pel : this.src.selectAll("PagePart")) {
-				if (this.id.equals(pel.getAttribute("Id")) && lname.equals(pel.getAttribute("Locale"))) {
+				if (this.id.equals(pel.getAttribute("For")) && lname.equals(pel.getAttribute("Locale"))) {
 					ppel = pel;
 					break;
 				}
@@ -90,7 +97,7 @@ public class PagePart extends Element implements ICodeTag {
 			lname = li.getName();
 			
 			for (XElement pel : this.src.selectAll("PagePart")) {
-				if (this.id.equals(pel.getAttribute("Id")) && lname.equals(pel.getAttribute("Locale"))) {
+				if (this.id.equals(pel.getAttribute("For")) && lname.equals(pel.getAttribute("Locale"))) {
 					ppel = pel;
 					break;
 				}
@@ -100,7 +107,7 @@ public class PagePart extends Element implements ICodeTag {
 				lname = li.getLanguage();
 				
 				for (XElement pel : this.src.selectAll("PagePart")) {
-					if (this.id.equals(pel.getAttribute("Id")) && lname.equals(pel.getAttribute("Locale"))) {
+					if (this.id.equals(pel.getAttribute("For")) && lname.equals(pel.getAttribute("Locale"))) {
 						ppel = pel;
 						break;
 					}
@@ -109,7 +116,7 @@ public class PagePart extends Element implements ICodeTag {
 		}
 		
 		if (ppel != null) {
-			Nodes nl = new Nodes();
+			Nodes nl = null;
 			
 			if ("pre".equals(ppel.getAttribute("Format"))) {
 				this.name = "pre"; 
@@ -145,16 +152,54 @@ public class PagePart extends Element implements ICodeTag {
 				
 				System.out.println("html: " + html);
 				
+				nl = new Nodes();
 				nl.add(new UnescapedText(true, html));
 				
 				//nl = view.getDomain().parseXml(view, ppel);
 			}
+			else if ("image".equals(ppel.getAttribute("Format"))) {
+				this.name = "div"; 
+				
+				System.out.println("image: " + ppel.getText());
+				
+				nl = new Nodes();
+				nl.add(new Img(new Attributes("src", "/galleries/" 
+						+ ppel.getText() + ".v/" + ppel.getAttribute("Variation") + ".jpg")));
+			}
+			else if ("groovy".equals(ppel.getAttribute("Format"))) {
+				this.name = "div"; 
+				
+				System.out.println("script: " + ppel.getText());
+				
+				try (GroovyClassLoader loader = new GroovyClassLoader()) {
+					Class<?> groovyClass = loader.parseClass(ppel.getText());
+					Method runmeth = null;
+					
+					for (Method m : groovyClass.getMethods()) {
+						if (!m.getName().startsWith("run"))
+							continue;
 						
-			// TODO shouldn't need this
-			//for (Node n : nl.getList())
-			//	n.setParent(this);
+						runmeth = m;
+						break;
+					}
+					
+					if (runmeth != null) {
+				    	FutureNodes future = new FutureNodes();
+						
+						GroovyObject groovyObject = (GroovyObject) groovyClass.newInstance();
+						Object[] args2 = { this.getContext(), future };
+						
+						groovyObject.invokeMethod("run", args2);
+						
+						nl = future;
+					}
+				}
+				catch (Exception x) {
+					OperationContext.get().error("Unable to execute script!");
+				}
+			}
 			
-			this.myArguments = new Object[] { nl };
+			this.myArguments = new Object[] { new Attributes("id", this.id), nl };
 		}
 		
         super.doBuild();

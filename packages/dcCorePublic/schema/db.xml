@@ -399,6 +399,16 @@
 				</Description>
 				<Request Inherits="dcDbCall">
 					<Field Name="Fields" Type="AnyRecord" Required="True" />
+					<Field Name="Sets">
+						<List>
+							<Record>
+								<Field Name="Field" Type="dcSmallString" Required="True" />
+								<Field Name="Values" Required="True">
+									<List Type="dcSmallString" />
+								</Field>
+							</Record>
+						</List>
+					</Field>
 				</Request>
 				<Response>
 					<Field Name="Id" Type="Id" />

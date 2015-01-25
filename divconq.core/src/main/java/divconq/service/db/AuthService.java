@@ -38,7 +38,7 @@ public class AuthService extends ExtensionBase implements IService {
 			return;
 		}
 		
-		System.out.println("Auth: " + feature + " - " + op);
+		//System.out.println("Auth: " + feature + " - " + op);
 		
 		if ("Authentication".equals(feature)) {
 			if ("SignIn".equals(op)) {
@@ -86,7 +86,7 @@ public class AuthService extends ExtensionBase implements IService {
 								request.errorTr(442);
 							}
 							else {
-								System.out.println("verify existing");
+								//System.out.println("verify existing");
 	
 								OperationContext.switchUser(ctx, ctx.getUserContext().toBuilder() 
 										.withVerified(true)
@@ -111,7 +111,7 @@ public class AuthService extends ExtensionBase implements IService {
 					return;
 				}
 				
-				System.out.println("auth 1: " + request.getContext().isElevated());
+				//System.out.println("auth 1: " + request.getContext().isElevated());
 				
 				DataRequest tp1 = RequestFactory.signInRequest(creds.getFieldAsString("Username"), 
 						creds.getFieldAsString("Password"), creds.getFieldAsString("ConfirmationCode"));
@@ -123,14 +123,14 @@ public class AuthService extends ExtensionBase implements IService {
 						RecordStruct sirec = (RecordStruct) result;
 						OperationContext ctx = request.getContext();
 						
-						System.out.println("auth 2: " + request.getContext().isElevated());
+						//System.out.println("auth 2: " + request.getContext().isElevated());
 						
 						if (request.hasErrors() || (sirec == null)) {
 							AuthService.this.clearUserContext(ctx);
 							request.errorTr(442);
 						}
 						else {
-							System.out.println("verify new");
+							//System.out.println("verify new");
 
 							RecordStruct urec = sirec.getFieldAsRecord("UserInfo");
 							
@@ -151,6 +151,8 @@ public class AuthService extends ExtensionBase implements IService {
 									.withAuthTags(atags)
 									.toUserContext()
 							);
+							
+							Hub.instance.getSessions().findOrCreateTether(request.getContext());
 						}
 						
 						request.complete();
@@ -164,6 +166,8 @@ public class AuthService extends ExtensionBase implements IService {
 				db.submit(RequestFactory.signOutRequest(uc.getAuthToken()), new ObjectResult() {
 					@Override
 					public void process(CompositeStruct result) {
+						Hub.instance.getSessions().terminate(request.getContext().getSessionId());
+						
 						AuthService.this.clearUserContext(request.getContext());
 						request.complete();
 					}

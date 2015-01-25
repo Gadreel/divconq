@@ -20,7 +20,9 @@ import static divconq.db.Constants.*;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.joda.time.DateTime;
@@ -28,6 +30,7 @@ import org.joda.time.DateTimeZone;
 import org.rocksdb.BackupableDB;
 import org.rocksdb.BackupableDBOptions;
 import org.rocksdb.CompactionStyle;
+import org.rocksdb.CompressionType;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
@@ -39,16 +42,13 @@ import divconq.db.IDatabaseRequest;
 import divconq.db.DatabaseResult;
 import divconq.db.IStoredProc;
 import divconq.db.util.ByteUtil;
-import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
 import divconq.lang.op.OperationContext;
 import divconq.schema.DbProc;
 import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
-import divconq.util.ISettingsObfuscator;
 import divconq.util.StringUtil;
-import divconq.xml.XAttribute;
 import divconq.xml.XElement;
 
 /**
@@ -62,7 +62,7 @@ public class DatabaseManager implements IDatabaseManager {
 	protected DatabaseAudit auditlevel = DatabaseAudit.Stamps;
 	protected boolean replicate = false;
 	
-	protected RocksDB db = null;
+	protected BackupableDB db = null;
 	protected Options options = null;
 	
 	@Override
@@ -86,135 +86,96 @@ public class DatabaseManager implements IDatabaseManager {
 			//.createStatistics()
 			//.setWriteBufferSize(8 * SizeUnit.KB)
 			//.setMaxWriteBufferNumber(3)
-			// TODO .setCompressionType(CompressionType.SNAPPY_COMPRESSION)
-			// .setMaxBackgroundCompactions(3)
-			// .setCompactionStyle(CompactionStyle.UNIVERSAL)
-				;
+			.setCompressionType(CompressionType.SNAPPY_COMPRESSION)
+			.setMaxBackgroundCompactions(1)
+			.setCompactionStyle(CompactionStyle.UNIVERSAL);
 		
-				/* TODO enable merge operator for inc support, see inc below
+				/* TODO enable merge operator for inc support, see inc in this class below
 				 * 
-				 * possibly just make everything work with uint64add builtin to Rocks
-		.setMergeOperator(new MergeOperator() {			
-			@Override
-			public long newMergeOperatorHandle() {
-				// TODO Auto-generated method stub
-				return 0;
-			}
-		});
-		*/
+				 * will work like uint64add, builtin to Rocks - we need to add C code for this
+				.setMergeOperator(new MergeOperator() {			
+					@Override
+					public long newMergeOperatorHandle() {
+						// TODO Auto-generated method stub
+						return 0;
+					}
+				});
+				*/
 		
 		this.db = null;
 		
-		String dbpath = config.getAttribute("Path", "./DataStore");
+		String dbpath = config.getAttribute("Path", "./datastore/default");
+		Path dbp = Paths.get(dbpath);
+		
+		String dbbakpath = config.getAttribute("BackupPath", "./datastore-bak/" + dbp.getFileName().toString());
+		Path dbbakp = Paths.get(dbbakpath);
+		
+		BackupableDBOptions bdb = new BackupableDBOptions(dbbakpath, true, true, false, true, 0, 0);
 
 		try {
-			Files.createDirectories(Paths.get(dbpath));
+			Files.createDirectories(dbp);
+			Files.createDirectories(dbbakp);
 			
-			this.db = RocksDB.open(this.options, dbpath);		
+			//this.db = RocksDB.open(this.options, dbpath);		
 			
-			// TODO look into adding auto backup support
-			//BackupableDBOptions bdb = new BackupableDBOptions("./DSBak", true, true, false, true, 0, 0);
+			this.db = BackupableDB.open(this.options, bdb, dbpath);
 			
 			// TODO be sure compacting is working
 			
-			// make sure we always have an alphaa and an omega present
+			// make sure we always have an alpha and an omega present
 			byte[] x = this.db.get(DB_OMEGA_MARKER_ARRAY);
 			
 			if (x == null) {
-				String obclass = "divconq.util.BasicSettingsObfuscator";
-				String obseed = StringUtil.buildSecurityCode(64); 
-				
-				ISettingsObfuscator obfuscator = DomainInfo.prepDomainObfuscator(obclass, obseed);
-				
-				if (obfuscator == null) {
-					or.error("dcDatabase prep error, obfuscator bad");
-					return;
-				}
-			
 				RocksInterface dbconn = new RocksInterface(this);
 				
 				dbconn.put(DB_ALPHA_MARKER_ARRAY, DB_ALPHA_MARKER_ARRAY);
 				dbconn.put(DB_OMEGA_MARKER_ARRAY, DB_OMEGA_MARKER_ARRAY);
-				
-				BigDecimal stamp = this.allocateStamp(0);
-				
-				// insert root domain title
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcTitle", stamp, "Data", "Root Domain");
-				
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcAlias", stamp, "Data", "root");
-				
-				// insert root domain name
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcName", "root", stamp, "Data", "root");
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcName", "localhost", stamp, "Data", "localhost");
-				
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcObscureClass", stamp, "Data", obclass);
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcObscureSeed", stamp, "Data", obseed);
-
-				XElement domainsettings = new XElement("Settings",
-						new XElement("Web", 
-								new XAttribute("UI", "Custom"),
-								new XAttribute("SiteTitle", "Root Domain Manager"),
-								new XAttribute("SiteAuthor", "DivConq"),
-								new XAttribute("SiteCopyright", new DateTime().getYear() + ""),
-								new XAttribute("HomePath", "/dcw/root/Home.dcui.xml"),								
-								new XElement("Package", 
-										new XAttribute("Name", "dcWeb")
-								),
-								new XElement("Global", 
-										new XAttribute("Style", "/dcw/css/app.css")
-								),
-								new XElement("Global", 
-										new XAttribute("Script", "/dcw/js/root.js")
-								)
-						)
-				);
-				
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcCompiledSettings", stamp, "Data", domainsettings);
-				
-				// insert root domain index
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcDomainIndex", DB_GLOBAL_ROOT_DOMAIN, stamp, "Data", DB_GLOBAL_ROOT_DOMAIN);
-				
-				// insert hub domain record id sequence
-				dbconn.set(DB_GLOBAL_RECORD_META, "dcDomain", "Id", "00000", 1);
-				
-				// insert root domain record count
-				dbconn.set(DB_GLOBAL_RECORD_META, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", "Count", 1);
-						
-				// insert root user name
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcUser", DB_GLOBAL_ROOT_USER, "dcUsername", "root", stamp, "Data", "root");
-				// increment index count
-				dbconn.inc(DB_GLOBAL_INDEX_2, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcUsername", "root");					
-				// set the new index new
-				dbconn.set(DB_GLOBAL_INDEX_2, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcUsername", "root", DB_GLOBAL_ROOT_USER, "root", stamp, null);
-
-				// insert root user email
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcUser", DB_GLOBAL_ROOT_USER, "dcEmail", "awhite@filetransferconsulting.com", stamp, "Data", "awhite@filetransferconsulting.com");
-				// increment index count
-				dbconn.inc(DB_GLOBAL_INDEX_2, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcEmail", "awhite@filetransferconsulting.com");					
-				// set the new index new
-				dbconn.set(DB_GLOBAL_INDEX_2, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcEmail", "awhite@filetransferconsulting.com", DB_GLOBAL_ROOT_USER, "awhite@filetransferconsulting.com", stamp, null);
-				
-				// insert root user password (not hashed/protected initially)
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcUser", DB_GLOBAL_ROOT_USER, "dcPassword", "0", stamp, "Data", obfuscator.hashStringToHex("A1s2d3f4"));
-				
-				// insert root user auth tags
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcUser", DB_GLOBAL_ROOT_USER, "dcAuthorizationTag", "SysAdmin", stamp, "Data", "SysAdmin");
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcUser", DB_GLOBAL_ROOT_USER, "dcAuthorizationTag", "Admin", stamp, "Data", "Admin");
-				dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcUser", DB_GLOBAL_ROOT_USER, "dcAuthorizationTag", "PowerUser", stamp, "Data", "PowerUser");
-				
-				// insert hub domain record id sequence - set to 2 because root and guest are both users - guest just isn't entered
-				dbconn.set(DB_GLOBAL_RECORD_META, "dcUser", "Id", "00000", 2);
-				
-				// insert root domain record count
-				dbconn.set(DB_GLOBAL_RECORD_META, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "Count", 1);
 			}
 		} 
 		catch (Exception x) {
 			or.error("dcDatabase error: " + x);
 		}
 		
-		or.info(0, "dcDatabase Started");
+		or.info(0, "dcDatabase Initialized");
     }
+
+	@Override
+	public void start() {
+		OperationContext or = OperationContext.get();
+
+		/* TODO
+		ISchedule sched = new CommonSchedule();
+		
+		XElement schedule = new XElement("CommonSchedule", 
+				new XAttribute("View", "Daily"),
+				new XElement("Daily", new XElement("Schedule", 
+						new XAttribute("At", value), 
+						new XAttribute("RunIfMissed", "True")
+				))
+		 		/*  		Method="None,Standard,Script,Class	* /
+		);
+				
+		sched.init(schedule);
+		
+		sched.setTask(new Task()
+			.withId(Task.nextTaskId("ScheduleLoader"))
+			.withTitle("Scheduled Task Loader: Backup Database")
+			.withRootContext()
+			.withWork(trun -> {
+					DatabaseManager.this.backup();
+					
+					sched.
+					
+					// we are done, no need to wait 
+					trun.complete();
+			})
+		);
+		
+		Hub.instance.getScheduler().addNode(sched);		
+		*/
+		
+		or.info(0, "dcDatabase Started");
+	}
 	
 	protected boolean isOffline() {
 		// TODO check db instance directly
@@ -361,15 +322,23 @@ public class DatabaseManager implements IDatabaseManager {
 		return new RocksInterface(this);
 	}
 	
+	public BackupableDB dbDirect() {
+		return this.db;
+	}
+	
 	public boolean isAuditDisabled() {
 		return (this.auditlevel == DatabaseAudit.None);
+	}
+	
+	public String allocateSubkey() {
+		return UUID.randomUUID().toString().replace("-", "");
 	}
 	
 	/**
 	 * @param offset in seconds from now
 	 * @return a valid timestamp for use in dcDb auditing
 	 */
-	protected BigDecimal allocateStamp(int offset) {
+	public BigDecimal allocateStamp(int offset) {
 		if (this.auditlevel == DatabaseAudit.None)
 			return BigDecimal.ZERO;
 		
@@ -389,7 +358,7 @@ public class DatabaseManager implements IDatabaseManager {
 		BigDecimal ret = new BigDecimal("-" + new DateTime(DateTimeZone.UTC).plusSeconds(offset).getMillis() + "." + 
 			StringUtil.leftPad(ns + "", 4, "0") + OperationContext.getHubId());
 		
-		System.out.println("new stamp: " + ret.toPlainString());
+		//System.out.println("new stamp: " + ret.toPlainString());
 		
 		return ret;
 	}
@@ -406,5 +375,9 @@ public class DatabaseManager implements IDatabaseManager {
 		this.db.put(key, ByteUtil.buildValue(id));
 
 		return id;
+	}
+
+	public void backup() throws RocksDBException {
+		this.db.createNewBackup(true);
 	}
 }

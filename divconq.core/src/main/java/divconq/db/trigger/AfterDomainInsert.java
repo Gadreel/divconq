@@ -14,6 +14,8 @@ import divconq.db.DatabaseException;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.db.IStoredProc;
+import divconq.db.TablesAdapter;
+import divconq.lang.BigDateTime;
 import divconq.lang.op.OperationResult;
 
 public class AfterDomainInsert implements IStoredProc {
@@ -41,22 +43,37 @@ public class AfterDomainInsert implements IStoredProc {
 			BigDecimal stamp = task.getStamp();
 			String did = task.getDomain();
 			
+			String unamesub = conn.allocateSubkey();
+			
 			// insert root user name
-			conn.set(DB_GLOBAL_RECORD, did, "dcUser", DB_GLOBAL_ROOT_USER, "dcUsername", "root", stamp, "Data", "root");
+			conn.set(DB_GLOBAL_RECORD, did, "dcUser", DB_GLOBAL_ROOT_USER, "dcUsername", unamesub, stamp, "Data", "root");
 			// increment index count
 			conn.inc(DB_GLOBAL_INDEX_2, did, "dcUser", "dcUsername", "root");					
 			// set the new index new
-			conn.set(DB_GLOBAL_INDEX_2, did, "dcUser", "dcUsername", "root", DB_GLOBAL_ROOT_USER, "root", stamp, null);
+			conn.set(DB_GLOBAL_INDEX_2, did, "dcUser", "dcUsername", "root", DB_GLOBAL_ROOT_USER, unamesub, stamp, null);
 
 			// TODO enhance to take email from root domain's root user
 			String email = "awhite@filetransferconsulting.com";
+
+			task.pushDomain(DB_GLOBAL_ROOT_DOMAIN);
+			
+			TablesAdapter db = new TablesAdapter(conn, task); 
+			
+			Object rdemail = db.getDynamicScalar("dcUser", DB_GLOBAL_ROOT_USER, "dcEmail", new BigDateTime());
+
+			if (rdemail != null)
+				email = (String)rdemail;
+
+			task.popDomain();
+			
+			String emailsub = conn.allocateSubkey();
 			
 			// insert root user email
-			conn.set(DB_GLOBAL_RECORD, did, "dcUser", DB_GLOBAL_ROOT_USER, "dcEmail", email, stamp, "Data", email);
+			conn.set(DB_GLOBAL_RECORD, did, "dcUser", DB_GLOBAL_ROOT_USER, "dcEmail", emailsub, stamp, "Data", email);
 			// increment index count
 			conn.inc(DB_GLOBAL_INDEX_2, did, "dcUser", "dcEmail", email);					
 			// set the new index new
-			conn.set(DB_GLOBAL_INDEX_2, did, "dcUser", "dcEmail", email, DB_GLOBAL_ROOT_USER, email, stamp, null);
+			conn.set(DB_GLOBAL_INDEX_2, did, "dcUser", "dcEmail", email, DB_GLOBAL_ROOT_USER, emailsub, stamp, null);
 			
 			// TODO enhance how confirm code is generated/returned
 			
@@ -66,7 +83,6 @@ public class AfterDomainInsert implements IStoredProc {
 			
 			// insert root user auth tags
 			conn.set(DB_GLOBAL_RECORD, did, "dcUser", DB_GLOBAL_ROOT_USER, "dcAuthorizationTag", "Admin", stamp, "Data", "Admin");
-			conn.set(DB_GLOBAL_RECORD, did, "dcUser", DB_GLOBAL_ROOT_USER, "dcAuthorizationTag", "PowerUser", stamp, "Data", "PowerUser");
 			
 			// insert root domain record count
 			conn.set(DB_GLOBAL_RECORD_META, did, "dcUser", "Count", 1);

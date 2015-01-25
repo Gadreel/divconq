@@ -71,6 +71,11 @@ public class RocksInterface extends DatabaseInterface {
 		
 		return ret;
 	}
+	
+	@Override
+	public String allocateSubkey() {
+		return this.dbman.allocateSubkey();
+	}
 
 	@Override
 	public boolean hasAny(byte[] key) throws DatabaseException {

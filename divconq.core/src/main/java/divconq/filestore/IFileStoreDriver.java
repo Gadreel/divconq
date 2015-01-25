@@ -47,7 +47,7 @@ public interface IFileStoreDriver {
 	//void setRootFolder(String path);
 	
 	// add a folder - if path starts with / then relative to root, else relative to working folder
-	void addFolder(CommonPath path, OperationCallback callback);
+	void addFolder(CommonPath path, FuncCallback<IFileStoreFile> callback);
 	
 	// remove a folder - if path starts with / then relative to root, else relative to working folder
 	void removeFolder(CommonPath path, OperationCallback callback);

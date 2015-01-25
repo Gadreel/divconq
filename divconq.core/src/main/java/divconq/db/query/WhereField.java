@@ -48,17 +48,11 @@ public class WhereField implements IWhereField {
 			this.column.setField("Format", format);
 	}
 	
-	/* (non-Javadoc)
-	 * @see divconq.db.query.IWhereField#getParams()
-	 */
 	@Override
 	public Struct getParams() {
 		return this.column;
 	}
 	
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString() {
 		return this.column.toString();

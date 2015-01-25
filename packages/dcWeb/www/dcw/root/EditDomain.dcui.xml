@@ -1,5 +1,5 @@
 <Pui Title="Edit Domain">
-	<Layout>
+	<Skeleton>
 		<IncludePart Path="/dcw/app/Header" />
 
 		<div class="dcappWrapper">
@@ -37,7 +37,7 @@
 		</div>
 
 		<IncludePart Path="/dcw/app/Footer" />
-	</Layout>
+	</Skeleton>
 	<Function Name="Load"><![CDATA[
 			this.form().query('Title').focus();				
 	]]></Function>

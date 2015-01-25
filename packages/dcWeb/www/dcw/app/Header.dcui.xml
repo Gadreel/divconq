@@ -1,5 +1,5 @@
 <dcuip>
-	<Layout>
+	<Skeleton>
 	  <header id="dcappHeader">
 		<div class="dcappWrapper">
 			<div id="dcappHeaderGrid">
@@ -17,7 +17,7 @@
 			</div>
 		</div>
 	  </header>
-	</Layout>
+	</Skeleton>
 	<Function Name="hdrLoad" Mode="Load"><![CDATA[
 				this.call('hdrLoadReal');
 	]]></Function>

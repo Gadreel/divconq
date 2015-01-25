@@ -42,7 +42,7 @@ import divconq.xml.XElement;
 public class WebContext {
 	protected HttpContext innerctx = null;
 	protected IWebExtension extension = null; // originating extension
-	protected IWebDomain domain = null;  // originating domain
+	protected WebDomain domain = null;  // originating domain
 	
 	protected IOutputAdapter adapter = null;
 	protected LocaleInfo selectedlocale = null;
@@ -233,7 +233,7 @@ public class WebContext {
 		return this.extension;
 	}
 	
-	public IWebDomain getDomain() {
+	public WebDomain getDomain() {
 		return this.domain;
 	}
 	

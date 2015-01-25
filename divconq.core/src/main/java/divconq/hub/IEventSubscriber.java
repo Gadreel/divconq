@@ -17,5 +17,5 @@
 package divconq.hub;
 
 public interface IEventSubscriber {
-	void eventFired(IHubEvent e);
+	void eventFired(Object e);
 }

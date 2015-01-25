@@ -55,6 +55,8 @@ public class RpcHandler implements IBodyCallback {
 			return;
 		}
 		
+		this.context.getSession().setContext();
+		
 		RecordStruct mrec = (RecordStruct) croot;
 		
 		// check that the request conforms to the schema for RpcMessage

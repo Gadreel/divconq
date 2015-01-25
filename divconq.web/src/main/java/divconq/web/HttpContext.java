@@ -26,8 +26,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.stream.ChunkedInput;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import divconq.bus.Message;
 import divconq.session.Session;
 import divconq.util.MimeUtil;
@@ -201,7 +199,10 @@ public class HttpContext {
 
 	public void send(ChunkedInput<HttpContent> content) {
 		if (this.chan != null)  
-			this.chan.write(content).addListener(new GenericFutureListener<Future<? super Void>>() {
+			this.chan.write(content);
+		
+		/* TODO we don't need this?
+		.addListener(new GenericFutureListener<Future<? super Void>>() {
 				@Override
 				public void operationComplete(Future<? super Void> future)
 						throws Exception {
@@ -209,6 +210,7 @@ public class HttpContext {
 					//HttpContext.this.response.writeEnd(HttpContext.this.chan);
 				}
 			});
+			*/
 	}
 	
 	public void sendEnd() {

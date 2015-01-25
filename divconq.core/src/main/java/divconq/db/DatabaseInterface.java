@@ -188,4 +188,5 @@ abstract public class DatabaseInterface {
 	
 	abstract public boolean isAuditDisabled();
 
+	abstract public String allocateSubkey();
 }

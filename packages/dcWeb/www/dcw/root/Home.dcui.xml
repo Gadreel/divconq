@@ -1,5 +1,5 @@
 <dcui Title="Domains Manager">
-	<Layout>
+	<Skeleton>
 		<IncludePart Path="/dcw/app/Header" />
 
 		<div class="dcappWrapper">
@@ -18,7 +18,7 @@
 		</div>
 
 		<IncludePart Path="/dcw/app/Footer" />
-	</Layout>
+	</Skeleton>
 	<Function Name="Load"><![CDATA[
 				dc.pui.Loader.__appTitle = 'Domains Manager';
 				dc.pui.Loader.__appHome = '/dcw/root/Home';

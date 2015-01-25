@@ -24,7 +24,7 @@ abstract public class WhereExpression {
 	protected RecordStruct params = new RecordStruct();
 	
 	public WhereExpression(String name) {
-		this.params.setField("Name", name);
+		this.params.setField("Expression", name);
 	}
 	
 	public void addValue(String part, Object v) {

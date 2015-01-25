@@ -47,9 +47,6 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
 			XElement web = domconfig.selectFirst("Web");
 			
 			if (web != null) {
-				if (web.hasAttribute("MainPath")) 
-					this.addParams("MainPath", web.getAttribute("MainPath"));
-				
 				if (web.hasAttribute("SignInPath")) 
 					this.addParams("SignInPath", web.getAttribute("SignInPath"));
 				

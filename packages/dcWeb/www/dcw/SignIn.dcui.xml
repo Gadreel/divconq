@@ -1,5 +1,5 @@
 <dcui Title="Sign In">
-	<Layout>
+	<Skeleton>
 		<IncludePart Path="/dcw/app/Header" />
 
 		<div class="dcappWrapper">
@@ -24,7 +24,7 @@
 		</div>
 
 		<IncludePart Path="/dcw/app/Footer" />
-	</Layout>
+	</Skeleton>
 	<Function Name="LoadRecord" Params="e">
 			dc.pui.Loader.setDestPage(dc.pui.Loader.__appHome);
 				

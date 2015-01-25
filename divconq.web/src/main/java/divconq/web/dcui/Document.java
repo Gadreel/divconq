@@ -1,9 +1,11 @@
 package divconq.web.dcui;
 
+import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
 import divconq.lang.op.OperationContext;
 import divconq.util.StringUtil;
+import divconq.web.IOutputAdapter;
 import divconq.xml.XElement;
 import w3.html.Body;
 import w3.html.Html;
@@ -56,9 +58,6 @@ public class Document extends Html {
 				XElement web = domconfig.selectFirst("Web");
 				
 				if (web != null) {
-					if (web.hasAttribute("MainPath")) 
-						attrs.add("data-dcw-Main", "@val|MainPath@");
-					
 					if (web.hasAttribute("SignInPath")) 
 						attrs.add("data-dcw-SignIn", "@val|SignInPath@");
 					
@@ -71,7 +70,21 @@ public class Document extends Html {
 			}
 		}		
 
-		view.contenttemplate = view.getDomain().parseXml(view, xel.find("Layout"));		
+		if (xel.hasAttribute("Skeleton")) {
+			String tpath = xel.getAttribute("Skeleton");
+			
+			CommonPath pp = new CommonPath(tpath + ".dcuis.xml");		
+			
+			IOutputAdapter sf = view.getDomain().findFile(view.isPreview(), pp, null);
+			
+			if (sf instanceof ViewTemplateAdapter) {
+				XElement layout = ((ViewTemplateAdapter)sf).getSource();				
+				view.contenttemplate = view.getDomain().parseXml(view, layout.find("Skeleton"));
+			}
+		}
+		else {
+			view.contenttemplate = view.getDomain().parseXml(view, xel.find("Skeleton"));
+		}
 		
 		if (xel.hasAttribute("Title")) 
 			this.addParams("PageTitle", xel.getRawAttribute("Title"));
@@ -84,17 +97,6 @@ public class Document extends Html {
         this.myArguments = new Object[] { attrs, hd, bd };
 		
 		nodes.add(this);
-	}
-	
-    @Override
-	public void build(Object... args) {		
-	    super.build(args);
-	    
-	    /*
-    	ContentPlaceholder ph = this.getContext().getHolder("Scripts");
-
-    	ph.addChildren(new Script(new LiteralText(sb.toString())));
-    	*/
 	}
     
 	/*

@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
@@ -346,7 +347,13 @@ public class FileStoreClient implements ILocalCommandLine {
 					
 					final long start = System.currentTimeMillis();
 					
-					final Path[] genfiles = Files.list(genfldr).toArray(Path[]::new);
+					Path[] flist = null;
+					
+					try (Stream<Path> strm = Files.list(genfldr)) {
+						flist = strm.toArray(Path[]::new);
+					}
+					
+					final Path[] genfiles = flist; 
 
 					runupload.set(new Runnable() {						
 						@Override

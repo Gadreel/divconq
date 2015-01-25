@@ -26,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
+import divconq.hub.HubEvents;
+import divconq.hub.IEventSubscriber;
 import divconq.io.FileStoreEvent;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncCallback;
@@ -42,7 +44,7 @@ public class WebSiteManager {
 	protected Map<String,IWebExtension> extensions = new HashMap<String,IWebExtension>();
 	protected String defaultExtension = null;
 	
-	protected ConcurrentHashMap<String, IWebDomain> dsitemap = new ConcurrentHashMap<String, IWebDomain>();
+	protected ConcurrentHashMap<String, WebDomain> dsitemap = new ConcurrentHashMap<String, WebDomain>();
 	
 	protected String version = null;
 	
@@ -177,7 +179,7 @@ public class WebSiteManager {
 				if (!"dcw".equals(mod) || !"www".equals(section))
 					return;
 				
-				for (IWebDomain wdomain : WebSiteManager.this.dsitemap.values()) {
+				for (WebDomain wdomain : WebSiteManager.this.dsitemap.values()) {
 					if (domain.equals(wdomain.getAlias())) {
 						wdomain.siteNotify();
 						break;
@@ -206,7 +208,7 @@ public class WebSiteManager {
 		FuncCallback<FileStoreEvent> localpackagecallback = new FuncCallback<FileStoreEvent>() {
 			@Override
 			public void callback() {
-				for (IWebDomain domain : WebSiteManager.this.dsitemap.values())
+				for (WebDomain domain : WebSiteManager.this.dsitemap.values())
 					domain.siteNotify();
 				
 				this.resetCalledFlag();
@@ -229,13 +231,25 @@ public class WebSiteManager {
 			}
 		} );	
 		*/	
+		
+		Hub.instance.subscribeToEvent(HubEvents.DomainConfigChanged, new IEventSubscriber() {			
+			@Override
+			public void eventFired(Object e) {
+				DomainInfo di = (DomainInfo) e;
+				
+				for (WebDomain domain : WebSiteManager.this.dsitemap.values()) {
+					if (di.getId().equals(domain.getId()))
+						domain.settingsNotify();
+				}
+			}
+		});
 	}
 	
-	public IWebDomain getDomain(String id) {
+	public WebDomain getDomain(String id) {
 		DomainInfo di = Hub.instance.getDomainInfo(id);
 		
 		if (di != null) {
-			IWebDomain domain = this.dsitemap.get(di.getId());
+			WebDomain domain = this.dsitemap.get(di.getId());
 			
 			if (domain != null)
 				return domain; 

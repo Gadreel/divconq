@@ -167,6 +167,7 @@ public class Html5AppHead extends Head implements ICodeTag {
 
 				new Style("/dcw/css/jquery.mobile-1.4.5.cust.css"),
 				new Style("/dcw/css/jqm-icon-pack-ltd.css"),		// TODO need a better way to generalize
+				new Style("/dcw/css/app.css"),
 				new Style("/dcw/css/app-specific.css"),
 				
 				new Script("/dcw/js/aes.js"),

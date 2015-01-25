@@ -12,13 +12,17 @@
 		<Library File="bcprov-ext-jdk15on-151.jar"/>
 		<Library File="commons-daemon-1.0.15.jar"/>
 		<Library File="commons-compress-1.9.jar" />
-		<Library File="groovy-all-2.3.7-indy.jar"/>
+		<Library File="groovy-2.4.0-indy.jar"/>
+		<Library File="groovy-nio-2.4.0-indy.jar"/>
+		<Library File="groovy-json-2.4.0-indy.jar"/>
+		<Library File="groovy-xml-2.4.0-indy.jar"/>
+		<Library File="groovy-sql-2.4.0-indy.jar"/>
 		<Library File="java-ipv6-0.15.jar"/>
 		<Library File="joda-time-2.5.jar" />
 		<Library File="jnotify-0.94.jar"/>
 		<Library File="jna-4.1.0.jar" />
 		<Library File="jna-platform-4.1.0.jar" />
-		<Library File="netty-all-4.0.24.Final.jar" />
+		<Library File="netty-all-4.0.25.Final.jar" />
 		<Library File="jsch-0.1.51.jar" />
 		<Library File="mariadb-java-client-1.1.6.jar" />
 		<Library File="h2-1.4.182.jar" />
@@ -60,6 +64,9 @@
 	</DependsOn>
 
 	<NoLongerDependsOn>
+		<Library File="netty-all-4.0.24.Final.jar" />
+		<Library File="groovy-all-2.3.7-indy.jar"/>
+		
 		<Library File="slf4j-api-1.6.4.jar"/>
 		<Library File="netty-all-4.0.19.Final.jar" />
 		<Library File="commons-compress-1.3.jar" />

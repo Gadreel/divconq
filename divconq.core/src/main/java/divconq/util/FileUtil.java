@@ -36,6 +36,7 @@ import java.util.EnumSet;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import divconq.filestore.CommonPath;
 import divconq.io.LineIterator;
@@ -230,21 +231,23 @@ public class FileUtil {
 		
 		try {
 			if (Files.exists(directory) && Files.isDirectory(directory)) {
-				Files.list(directory).forEach(file -> {
-					for (String exception : except) {
-						if (!file.getFileName().toString().equals(exception)) {
-							if (Files.isDirectory(file))
-								deleteDirectory(or, file);
-							else
-								try {
-									Files.delete(file);
-								} 
-								catch (Exception x) {
-									or.error("Unable to delete file: " + x);
-								}
+				try (Stream<Path> strm = Files.list(directory)) {
+					strm.forEach(file -> {
+						for (String exception : except) {
+							if (!file.getFileName().toString().equals(exception)) {
+								if (Files.isDirectory(file))
+									deleteDirectory(or, file);
+								else
+									try {
+										Files.delete(file);
+									} 
+									catch (Exception x) {
+										or.error("Unable to delete file: " + x);
+									}
+							}
 						}
-					}
-				});
+					});
+				}
 			}
 		} 
 		catch (IOException x) {

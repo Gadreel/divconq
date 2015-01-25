@@ -106,6 +106,18 @@ public class SelectFields {
 		return this;
 	}
 	
+	public SelectFields withField(String field, String name, String format, boolean full) {
+		SelectField sub = new SelectField()
+			.withField(field)
+			.withName(name)
+			.withFormat(format)
+			.withFull(full);
+		
+		this.fields.addItem(sub.getParams());
+		
+		return this;
+	}
+	
 	/**
 	 * @param field foreign key field name
 	 * @param fields/subqueries to use as initial values for select

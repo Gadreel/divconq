@@ -360,6 +360,13 @@ dc.pui = {
 			if (!entry)
 				return;
 			
+			if (dc.pui.Loader.__current) {
+				var page = dc.pui.Loader.__pages[dc.pui.Loader.__current.Name];
+				
+				if (page && page.Functions['onDestroy']) 
+					page.Functions['onDestroy'].call(dc.pui.Loader.__current, entry);
+			}
+			
 			dc.pui.Loader.__cache = {};
 
 			dc.pui.Loader.__current = entry;
@@ -798,7 +805,7 @@ dc.pui = {
 							node = $('<input type="range" data-mini="true" />');
 						}
 						else if (itype == 'Select') {
-							node = $('<select data-mini="true" />');
+							node = $('<select data-mini="true" data-native-menu="false" />');
 						}
 						else if (itype == 'YesNo') {
 							dtype = 'Boolean';
@@ -1087,6 +1094,12 @@ dc.pui = {
 					AsNew: form.AsNew[rname]
 				};
 
+				var funcname = form.Prefix ? form.Prefix +  'ThawRecord' : 'ThawRecord';
+				
+				// handler will change Data if necessary
+				if (page.Functions[funcname]) 
+					page.Functions[funcname].call(entry, event);
+			
 				dc.pui.Page.loadRecord.call(entry, formname, event.Record, event.Data, event.AsNew);
 					
 				// process next record in queue
@@ -1353,6 +1366,22 @@ dc.pui = {
 						if (dc.pui.Controls[iinfo.Type].IsChanged.call(this, form, iinfo))
 							changed = true;
 				}
+			}
+			
+			if (!changed) {
+				var page = dc.pui.Loader.__pages[this.Name];
+				
+				var event = {
+					Changed: false
+				};
+			
+				var funcname = form.Prefix ? form.Prefix + 'IsRecordChanged' : 'IsRecordChanged';
+				
+				if (page.Functions[funcname]) 
+					page.Functions[funcname].call(this, event);
+				
+				if (event.Changed)
+					changed = true;
 			}
 			
 			return changed;
@@ -1822,6 +1851,7 @@ dc.pui = {
 	},
 	Popup: {
 		init: function() {
+			/*
 			$('#puInfo').enhanceWithin().popup();
 			$('#puConfirm').enhanceWithin().popup();
 			
@@ -1834,6 +1864,7 @@ dc.pui = {
 				e.preventDefault();
 				return false;
 			});
+			*/
 		},
 		alert: function(msg) {
 			// TODO
@@ -1861,21 +1892,41 @@ dc.pui = {
 			//$.mobile.loading('hide');
 			
 			console.log('confirm called: ' + msg);
-
-			/*
-		<div data-role="popup" id="puConfirm" data-theme="a" class="ui-corner-all">
-			 <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
-		 
-			<form>
-				<div>
-					<div id="puConfirmHtml"></div> 
+			
+			var pi = $('#puConfirm');
+			
+			// build alert if none present
+			if (!pi.length) {
+				$('body').append('<div data-role="popup" id="puConfirm" data-theme="a" class="ui-corner-all"> \
+						<a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a> \
+						<form> \
+						<div> \
+							<div id="puConfirmHtml"></div> \
+							<button id="btnConfirmPopup" type="button" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-btn-icon-left ui-icon-check">Yes</button> \
+							<button id="btnRejectPopup" type="button" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-btn-icon-left ui-icon-delete">No</button> \
+						</div> \
+					</form> \
+				</div>');
 				
-					<button id="btnConfirmPopup" type="button" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-btn-icon-left ui-icon-check">Yes</button>
-				</div>
-			</form>
-		</div>					
-			 * 
-			 */
+				$('#puConfirm').enhanceWithin().popup();
+				
+				$('#btnConfirmPopup').click(function(e) {
+					$('#puConfirm').popup('close');
+					
+					if (dc.pui.Popup.__cb)
+						dc.pui.Popup.__cb();
+						
+					e.preventDefault();
+					return false;
+				});
+				
+				$('#btnRejectPopup').click(function(e) {
+					$('#puConfirm').popup('close');
+						
+					e.preventDefault();
+					return false;
+				});
+			}
 			
 			dc.pui.Popup.__cb = callback;
 			$('#puConfirmHtml').html(msg);
@@ -1914,10 +1965,7 @@ $(document).on('mobileready', function () {
 		return;
 	
 	// if we are not at this page using the correct Main then switch main
-	var mpath = $('html').attr('data-dcw-Main');
-	
-	if (!mpath)
-		mpath = dc.pui.Loader.__mainPage;
+	var mpath = '/'; 
 	
 	var hash = location.hash;
 	

@@ -726,6 +726,7 @@ public class TablesAdapter {
 			
 			// TODO format
 			
+			ret.setField("SubId", subid);
 			ret.setField("Data", this.conn.get(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, subid, stamp, "Data"));
 			ret.setField("Tags", this.conn.get(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, subid, stamp, "Tags"));
 			ret.setField("Retired", this.conn.get(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, subid, stamp, "Retired"));
@@ -826,6 +827,7 @@ public class TablesAdapter {
 		try {
 			RecordStruct ret = new RecordStruct();
 			
+			ret.setField("SubId", subid);
 			ret.setField("Data", this.conn.get(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, subid, stamp, "Data"));
 			ret.setField("Tags", this.conn.get(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, subid, stamp, "Tags"));
 			ret.setField("Retired", this.conn.get(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, subid, stamp, "Retired"));
@@ -967,6 +969,7 @@ public class TablesAdapter {
 		try {
 			RecordStruct ret = new RecordStruct();
 			
+			ret.setField("SubId", subid);
 			ret.setField("Data", this.conn.get(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, subid, stamp, "Data"));
 			ret.setField("Tags", this.conn.get(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, subid, stamp, "Tags"));
 			ret.setField("Retired", this.conn.get(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, subid, stamp, "Retired"));
@@ -1331,7 +1334,17 @@ public class TablesAdapter {
 				if (i >= b.size())
 					return false;
 				
-				if (ByteUtil.compareKeys(a.get(i), b.get(i)) != 0)
+				byte[] a1 = a.get(i);
+				byte[] b1 = b.get(i);
+				
+				if ((a1 == null) && (b1 == null))
+					return true;
+				
+				// rule out one being null 
+				if ((a1 == null) || (b1 == null))
+					return false;				
+				
+				if (ByteUtil.compareKeys(a1, b1) != 0)
 					return false;
 			}
 			

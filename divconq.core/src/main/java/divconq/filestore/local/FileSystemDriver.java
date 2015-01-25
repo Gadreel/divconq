@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import divconq.filestore.CommonPath;
 import divconq.filestore.IFileSelector;
@@ -33,6 +34,7 @@ import divconq.filestore.IMimeProvider;
 import divconq.filestore.select.FileSelection;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationResult;
 import divconq.script.StackEntry;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
@@ -371,17 +373,22 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver, 
 	}
 
 	@Override
-	public void addFolder(CommonPath path, OperationCallback callback) {
+	public void addFolder(CommonPath path, FuncCallback<IFileStoreFile> callback) {
+		// use or to track any errors during this call
+		OperationResult or = new OperationResult();
+		
 		Path localpath = this.resolveToLocalPath(path);
 		
 		if (Files.exists(localpath)) {
-			if (!Files.isDirectory(localpath)) {
-				callback.error("Path is not a folder: " + localpath);
-			}
+			if (!Files.isDirectory(localpath)) 
+				or.error("Path is not a folder: " + localpath);
 		}
 		else {
 			FileUtil.confirmOrCreateDir(localpath);
 		}
+		
+		if (!or.hasErrors()) 
+			callback.setResult(new FileSystemFile(this, path));
 		
 		callback.complete();
 	}
@@ -442,8 +449,8 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver, 
 		
 		List<IFileStoreFile> files = new ArrayList<>();
 		
-		try {
-			Files.list(folder).forEach(entry -> {
+		try (Stream<Path> strm = Files.list(folder)) {
+			strm.forEach(entry -> {
 				FileSystemFile f = new FileSystemFile(this, entry);
 				files.add(f);
 			});

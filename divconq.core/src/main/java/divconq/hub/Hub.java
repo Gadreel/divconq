@@ -52,7 +52,10 @@ import divconq.ctp.net.CtpServices;
 import divconq.db.IDatabaseManager;
 import divconq.db.ObjectResult;
 import divconq.db.DataRequest;
+import divconq.filestore.CommonPath;
+import divconq.io.FileStoreEvent;
 import divconq.io.LocalFileStore;
+import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.locale.LocaleUtil;
@@ -689,6 +692,7 @@ public class Hub {
 				Class<?> dbclass = Class.forName(cname);				
 				this.db = (IDatabaseManager) dbclass.newInstance();
 				this.db.init(dcdb);
+				this.db.start();
 			} 
 			catch (Exception x) {
 				or.error("Unable to load/start database class: " + x);
@@ -918,6 +922,52 @@ public class Hub {
 		
 		Hub.instance.getClock().addFastSystemWorker(monitorcounters);
 		
+		
+		// register for file store events before we start any services that might listen to these events
+		// we need to catch domain config change events 
+		if (this.publicfilestore != null) { 
+			/*	Examples:
+				./dcw/[domain alias]/static/config     holds web setting for domain
+					- settings.xml are the general settings (dcmHomePage - dcmDefaultTemplate[path]) - editable in CMS only
+					- dictionary.xml is the domain level dictionary - direct edit by web dev
+					- vars.json is the domain level variable store - direct edit by web dev
+			*/
+			
+			FuncCallback<FileStoreEvent> localfilestorecallback = new FuncCallback<FileStoreEvent>() {
+				@Override
+				public void callback() {
+					this.resetCalledFlag();
+					
+					CommonPath p = this.getResult().getPath();
+					
+					//System.out.println(p);
+					
+					// only notify on config updates
+					if (p.getNameCount() < 5) 
+						return;
+					
+					// must be inside a domain or we don't care
+					String mod = p.getName(0);
+					String domain = p.getName(1);
+					String vis = p.getName(2);
+					String section = p.getName(3);
+					
+					if (!"dcw".equals(mod) || !"static".equals(vis) || !"config".equals(section))
+						return;
+					
+					for (DomainInfo wdomain : Hub.this.dsitemap.values()) {
+						if (domain.equals(wdomain.getAlias())) {
+							wdomain.reloadSettings();
+							Hub.this.fireEvent(HubEvents.DomainConfigChanged, wdomain);
+							break;
+						}
+					}
+				}
+			};
+			
+			this.publicfilestore.register(localfilestorecallback);
+		}		
+		
 		this.removeDependency(bootdep.source);
 		
 		or.boundary("Origin", "hub:", "Op", "Run");
@@ -1091,7 +1141,7 @@ public class Hub {
 			list.remove(sub);
 	}
 	
-	public void fireEvent(Integer event, IHubEvent e) {
+	public void fireEvent(Integer event, Object e) {
 		//System.out.println("Hub Event fired: " + event);		// TODO remove
 		
 		Set<IEventSubscriber> list = this.subscribers.get(event);

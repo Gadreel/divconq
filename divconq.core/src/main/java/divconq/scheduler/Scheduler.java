@@ -203,9 +203,16 @@ public class Scheduler {
 				if (!curr.scheduler.isCanceled())
 					p.submit(curr.task, curr.scheduler);
 				
-				curr = curr.next;
+				SchedulerNode old = curr;
+				
+				curr = old.next;
 				this.first = curr;
 				this.nodeCnt--;
+				
+				// reduce references for better GC
+				old.next = null;
+				old.scheduler = null;
+				old.task = null;
 			}
 			
 			loadcnt = this.nodeCnt;
@@ -312,7 +319,7 @@ public class Scheduler {
         	this.lock.unlock();
         }
 		
-		// it is possible due to race conditions to get a mis-ordered value in the counter
+		// it is possible, due to race conditions, to get a mis-ordered value in the counter
 		// a) it doesn't matter 99.99999999% of the time, b) we cannot afford to do this in the lock
 		Hub.instance.getCountManager().allocateSetNumberCounter("dcSchedulerLoad", loadcnt);
 
@@ -328,11 +335,14 @@ public class Scheduler {
 	
 	public void dump() {
 		SchedulerNode curr = this.first;
+		int cnt = 0;
 
         while (curr != null) {
-    		Logger.info("     + " + curr.task.getTitle());
-        	
+    		//Logger.info("     + " + curr.task.getTitle());
+        	cnt++;
 			curr = curr.next;
         }
+        
+		Logger.info("Outstanding schedule nodes: " + cnt);
 	}
 }

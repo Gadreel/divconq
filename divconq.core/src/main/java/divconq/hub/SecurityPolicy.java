@@ -4,6 +4,10 @@ import io.netty.handler.codec.http.HttpResponse;
 
 import javax.net.ssl.SSLEngine;
 
+import org.joda.time.DateTime;
+import org.joda.time.Period;
+import org.joda.time.format.ISOPeriodFormat;
+
 import divconq.lang.op.OperationContext;
 import divconq.log.Logger;
 import divconq.struct.Struct;
@@ -42,57 +46,87 @@ public class SecurityPolicy {
 	}
 	
 	public void hardenHttpResponseConfig(HttpResponse resp, XElement http, boolean root) {
-		// domains don't insert defaults, only root does
-		if (!root && (http == null))
+		if (http == null)
 			return;
 
-		// if root and no config, provide a default config
-		if (http == null) 
-			http = new XElement("Http", new XAttribute("Hsts", "SelfPlus"));
+		// is Http is Strict then just set a standard template 
+		if ("Strict".equals(http.getAttribute("Mode")))
+			http = new XElement("Http", 
+					new XAttribute("Mode", "Strict"),
+					new XElement("ContentSecurityPolicy", new XAttribute("Mode", "Strict")),
+					new XElement("Hsts", new XAttribute("Mode", "Strict")),
+					new XElement("Header", new XAttribute("Name", "X-Content-Type-Options"), new XAttribute("Value", "nosniff")),
+					new XElement("Header", new XAttribute("Name", "X-XSS-Protection"), new XAttribute("Value", "1;mode=block")),
+					new XElement("Header", new XAttribute("Name", "X-Frame-Options"), new XAttribute("Value", "deny"))
+			);
+		
+		XElement hsts = http.find("Hsts");
+
+		// custom STS can use Header tags instead
+		if (hsts != null) {
+			boolean hstsForce = Struct.objectToBoolean(hsts.getAttribute("Override", "False"));
+			String mode = hsts.getAttribute("Mode", "Strict");
+	
+			if (!resp.headers().contains("Strict-Transport-Security") || hstsForce) {
+				String age = hsts.getAttribute("Age", "P5Y");
+				
+				try {
+					Period period = ISOPeriodFormat.standard().parsePeriod(age);
+					
+					long mage = new DateTime().plus(period).getMillis() / 1000;
+
+					if ("Strict".equals(mode))
+						resp.headers().set("Strict-Transport-Security", "max-age=" + mage + "; includeSubDomains");
+					else if ("Self".equals(mode))
+						resp.headers().set("Strict-Transport-Security", "max-age=" + mage + ";");
+				}
+				catch (Exception x) {
+					OperationContext.get().error("Bad age value for Strict-Transport-Security");
+				}
+			}		
+		}
 		
 		XElement csp = http.find("ContentSecurityPolicy");
 		
-		String hsts = http.getAttribute("Hsts", "None");
-		boolean hstsForce = Struct.objectToBoolean(http.getAttribute("HstsForce", "False"));
-
-		if (!resp.headers().contains("Strict-Transport-Security") || hstsForce) {
-			if ("SelfPlus".equals(hsts))
-				resp.headers().set("Strict-Transport-Security", "max-age=157680000; includeSubDomains");
-			else if ("Self".equals(hsts))
-				resp.headers().set("Strict-Transport-Security", "max-age=157680000;");
-			else if ("Custom".equals(hsts))
-				resp.headers().set("Strict-Transport-Security", http.getAttribute("HstsValue", "max-age=157680000; includeSubDomains"));
-		}		
-		
-		// domains don't insert defaults, only root does
-		if (!root && (csp == null))
-			return;
-		
 		// if root and no config, provide a default config
-		if (csp == null)
-			csp = new XElement("ContentSecurityPolicy");
-		
-		boolean cspForce = Struct.objectToBoolean(csp.getAttribute("Force", "False"));
-		boolean cspReport = Struct.objectToBoolean(csp.getAttribute("ReportOnly", "False"));
-		String mode = csp.getAttribute("Mode", "Strict");
-		
-		String report = "";
-		
-		if (cspReport)
-			report = "-Report-Only";
-		
-		if (!resp.headers().contains("Content-Security-Policy" + report) || cspForce) {
-			if ("Strict".equals(mode)) {
-				resp.headers().set("Content-Security-Policy" + report, 
-					"default-src 'self'; img-src 'self' data:; media-src mediastream:; frame-ancestors 'self'; connect-src *;");
-			}
-			else if ("Loose".equals(mode)) {
-				resp.headers().set("Content-Security-Policy" + report, 
-					"default-src 'self'; img-src *; media-src *; font-src *; style-src 'unsafe-inline' *; frame-ancestors 'self'; connect-src *;");
-			}
+		// custom CSP can use Header tags instead
+		if (csp != null) {
+			boolean cspForce = Struct.objectToBoolean(csp.getAttribute("Override", "False"));
+			boolean cspReport = Struct.objectToBoolean(csp.getAttribute("ReportOnly", "False"));
+			String mode = csp.getAttribute("Mode", "Strict");
 			
-			// TODO
-		}		
+			String name = "Content-Security-Policy";
+			
+			if (cspReport)
+				name = "-Report-Only";
+			
+			if (!resp.headers().contains(name) || cspForce) {
+				if ("Strict".equals(mode)) {
+					resp.headers().set(name, 
+						"default-src 'self'; img-src 'self' data:; media-src mediastream:; frame-ancestors 'self'; connect-src *;");
+				}
+				else if ("Loose".equals(mode)) {
+					resp.headers().set(name, 
+						"default-src 'self'; img-src *; media-src *; font-src *; style-src 'unsafe-inline' *; frame-ancestors 'self'; connect-src *;");
+				}
+			}
+		}
+		
+		for (XElement hdr : http.selectAll("Header")) {
+			boolean force = Struct.objectToBoolean(hdr.getAttribute("Override", "False"));
+			String name = hdr.getAttribute("Name");
+			String value = hdr.getAttribute("Value");
+			
+			if (StringUtil.isEmpty(name))
+				continue;
+			
+			if (!resp.headers().contains(name) || force) {
+				if (StringUtil.isEmpty(value))
+					resp.headers().remove(name);
+				else
+					resp.headers().set(name, value);
+			}
+		}
    	}
 	
 	public void hardenPublic(SSLEngine engine) {

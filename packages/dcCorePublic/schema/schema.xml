@@ -97,6 +97,14 @@
 		<StringType Id="dcSmallString">
 			<StringRestriction MaxLength="250" />
 		</StringType>
+
+		<StringType Id="dcString">
+			<StringRestriction MaxLength="4000" />
+		</StringType>
+
+		<StringType Id="dcLargeString">
+			<StringRestriction MaxLength="32000" />
+		</StringType>
 		
 		<StringType Id="dcUsername">
 			<StringRestriction MaxLength="64" />
@@ -327,6 +335,7 @@
 			<Field Name="Select">
 				<List Type="dcDbSelectField" />
 			</Field>
+			<Field Name="Full" Type="Boolean" />
 			<Field Name="ForeignField" Type="dcTinyString" />
 			<Field Name="Composer" Type="dcTinyString" />
 			<Field Name="Table" Type="dcTinyString" />
@@ -341,7 +350,7 @@
 		</Record>
 		
 		<Record Id="dcDbWhereClause">
-			<Field Name="Name" Type="dcTinyString" />
+			<Field Name="Expression" Type="dcTinyString" />
 			<Field Name="A" Type="dcDbWhereField" />
 			<Field Name="B" Type="dcDbWhereField" />
 			<Field Name="C" Type="dcDbWhereField" />
@@ -369,7 +378,7 @@
 			<Field Name="Name" Type="dcSmallString" />
 			<Field Name="Size" Type="Integer" />
 			<Field Name="Modified" Type="DateTime" />
-			<Field Name="Path" Type="dcSmallString" />
+			<Field Name="Path" Type="dcString" />
 			<Field Name="IsFolder" Type="Boolean" />
 		</Record>
 		
@@ -499,6 +508,17 @@
 			<Field Name="CurrentTry" Type="Integer" Required="True" />
 			<Field Name="AuditId" Type="Id" />
 		</Record>
+		
+		<Record Id="dcQueryResultFull">
+			<Field Name="Data" Type="Any" />
+			<Field Name="SubId" Type="dcString" />
+			<Field Name="From" Type="BigDateTime" />
+			<Field Name="To" Type="BigDateTime" />
+			<Field Name="Retired" Type="Boolean" />
+			<Field Name="Tags" Type="dcString" />
+		</Record>
+		
+		<List Id="dcQueryListResultFull" Type="dcQueryResultFull" />
 	</Shared>
 	
 	<Services>

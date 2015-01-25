@@ -85,6 +85,8 @@ import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
 import divconq.locale.Localization;
+import divconq.net.ssl.SslHandler;
+import divconq.struct.Struct;
 import divconq.util.StringUtil;
 import divconq.web.asset.AssetOutputAdapter;
 import divconq.web.dcui.AdvElement;
@@ -93,6 +95,7 @@ import divconq.web.dcui.AssetImage;
 import divconq.web.dcui.ButtonLink;
 import divconq.web.dcui.Document;
 import divconq.web.dcui.FormButton;
+import divconq.web.dcui.ServerScript;
 import divconq.web.dcui.Html5AppHead;
 import divconq.web.dcui.HyperLink;
 import divconq.web.dcui.ICodeTag;
@@ -103,16 +106,16 @@ import divconq.web.dcui.LiteralText;
 import divconq.web.dcui.Nodes;
 import divconq.web.dcui.PagePart;
 import divconq.web.dcui.ViewOutputAdapter;
+import divconq.web.dcui.ViewTemplateAdapter;
 import divconq.xml.XElement;
 import divconq.xml.XNode;
 import divconq.xml.XText;
 
-public class WebDomain implements IWebDomain {
+public class WebDomain {
 	protected String id = null;
 	protected String alias = null;
 	protected String locale = null;		// domain level locale
 	protected CommonPath homepath = null;
-	protected CommonPath mainpath = null;
 	
 	protected XElement webconfig = null;
 	protected Map<String, IOutputAdapter> paths = new HashMap<>();
@@ -124,96 +127,89 @@ public class WebDomain implements IWebDomain {
 	
 	protected String[] specialExtensions = new String[] { ".dcui.xml", ".gas", ".pui.xml", ".html" };	
 	
-	@Override
+	protected boolean appFramework = false;
+	
 	public String getId() {
 		return this.id;
 	}
 	
-	@Override
 	public String getAlias() {
 		return this.alias;
 	}
 	
-	@Override
 	public CommonPath getHomePath() {
 		return this.homepath;
 	}
 	
-	@Override
-	public CommonPath getMainPath() {
-		return this.mainpath;
+	public boolean isAppFramework() {
+		return this.appFramework;
 	}
-
-	@Override
+	
 	public void init(DomainInfo domain) {
 		this.id = domain.getId();
 		this.alias = domain.getAlias();
 		
 		this.initialTags();
+
+		this.reloadSettings();
+	}
+
+	public void reloadSettings() {
+		this.homepath = new CommonPath("/index.html");
+		this.locale = LocaleUtil.getDefaultLocale();
+		this.appFramework = false;
+		
+		DomainInfo domain = Hub.instance.getDomainInfo(this.id);
+		
+		if (domain == null)
+			return;
 		
 		XElement config = domain.getSettings();
 		
-		this.homepath = new CommonPath("/dcw/index.html");
-		this.mainpath = new CommonPath("/dcw/index.html");
-		this.locale = LocaleUtil.getDefaultLocale();
+		if (config == null)
+			return;
 		
-		if (config != null) {
-			this.webconfig = config.selectFirst("Web");
-			
-			if (this.webconfig != null) {
-				// UI = app or customer uses builder
-				// UI = basic is just 'index.html' approach
-				if (this.webconfig.hasAttribute("UI") && 
-						("app".equals(this.webconfig.getAttribute("UI").toLowerCase()))) {
-					this.homepath = new CommonPath("/dcw/Home");		// TODO load from config?
-					this.mainpath = new CommonPath("/dcw/Main");
-				}
-				
-				if (this.webconfig.hasAttribute("HomePath")) {
-					this.homepath = new CommonPath(this.webconfig.getAttribute("HomePath"));
-				}
-				
-				if (this.webconfig.hasAttribute("MainPath")) {
-					this.mainpath = new CommonPath(this.webconfig.getAttribute("MainPath"));
-				}
-				
-				if (this.webconfig.hasAttribute("Locale")) {
-					this.locale = this.webconfig.getAttribute("Locale");
-				}
-			}
-		}
+		this.webconfig = config.selectFirst("Web");
 		
-		//this.siteNotify();		
-	}
+		if (this.webconfig == null) 
+			return;
+		
+		// UI = app or customer uses builder
+		// UI = basic is just 'index.html' approach
+		this.appFramework = (this.webconfig.hasAttribute("UI") && 
+				("app".equals(this.webconfig.getAttribute("UI").toLowerCase())));
 
+		if (this.webconfig.hasAttribute("HomePath")) 
+			this.homepath = new CommonPath(this.webconfig.getAttribute("HomePath"));
+		else if (this.appFramework) 
+			this.homepath = new CommonPath("/Home");		
+	
+		if (this.webconfig.hasAttribute("Locale")) 
+			this.locale = this.webconfig.getAttribute("Locale");
+	}
+	
 	public void addCodeTag(String tag, Class<? extends ICodeTag> classdef) {
 		this.codetags.put(tag, classdef);
 	}
-
-	/*
-	@Override
-	public void fileNotify(FileStoreEvent result) {
-		CommonPath p = result.getPath();
+	
+	// something changed in the config folder	
+	public void settingsNotify() {
+		this.reloadSettings();
 		
-		System.out.println("Forget: " + p);
-		this.paths.remove(p.getName(1));
+		this.siteNotify();
 	}
-	*/
 	
-	// load web site from local files
-	
-	@Override
+	// something changed in the www folder
+	// force compiled content to reload from file system 
 	public void siteNotify() {
-		this.paths.clear();			// force check file system again
+		this.paths.clear();				
 		this.previewpaths.clear();
 	}
 
-	@Override
 	public String getLocale() {
 		 return this.locale;
 	}
 
-	@Override
 	public LocaleInfo getDefaultLocaleInfo() {
 		return new LocaleInfo(this.locale);
 	}
@@ -234,7 +230,7 @@ public class WebDomain implements IWebDomain {
 	public void translatePath(WebContext ctx) {
 		CommonPath path = ctx.getRequest().getPath();
 		
-		if (path.getNameCount() < 1) 
+		if (path.isRoot()) 
 			ctx.getRequest().setPath(this.homepath);
 	}
 	
@@ -245,13 +241,13 @@ public class WebDomain implements IWebDomain {
 		return new CommonPath("/dcw/notfound.html");
 	}
 	
-	@Override
 	public void execute(WebContext ctx) {
 		this.translatePath(ctx);
 		
 		CommonPath path = ctx.getRequest().getPath();
 	
-		if (path.getNameCount() < 1) { 
+		// translate above should take us home for root 
+		if (path.isRoot()) { 
 			OperationContext.get().errorTr(150001);
 			return;
 		}
@@ -310,11 +306,10 @@ public class WebDomain implements IWebDomain {
 	 * @return an adapter that can execute to generate web response
 	 */	
 	public IOutputAdapter findFile(WebContext ctx) {		
-		return this.findFile(ctx, ctx.getRequest().getPath());
+		return this.findFile(ctx.isPreview(), ctx.getRequest().getPath(), ctx.getExtension());
 	}
 	
-	@Override
-	public IOutputAdapter findFile(WebContext ctx, CommonPath path) {
+	public IOutputAdapter findFile(boolean isPreview, CommonPath path, IWebExtension ext) {
 		LocalFileStore pubfs = Hub.instance.getPublicFileStore();
 		LocalFileStore pacfs = Hub.instance.getPackageFileStore();
 		LocalFileStore prifs = Hub.instance.getPrivateFileStore();
@@ -327,18 +322,18 @@ public class WebDomain implements IWebDomain {
 		// never go up a level past a file (or folder) with an extension
 		if (path.hasFileExtension()) {
 			// check path map first
-			IOutputAdapter ioa = ctx.isPreview() ? this.previewpaths.get(path.toString()) :  this.paths.get(path.toString());
+			IOutputAdapter ioa = isPreview ? this.previewpaths.get(path.toString()) :  this.paths.get(path.toString());
 			
 			if (ioa != null)
 				return ioa;
 			
 			if (prifs != null) {
 				// look in the domain's phantom file system
-				if (ctx.isPreview()) {
+				if (isPreview) {
 					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/phantom/www", path);
 					
 					if (wpath != null) 
-						return this.pathToAdapter(ctx, path, wpath);
+						return this.pathToAdapter(isPreview, path, wpath);
 				}
 				
 				// look in the domain's static file system
@@ -348,16 +343,16 @@ public class WebDomain implements IWebDomain {
 						wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/static/", path);
 				
 				if (wpath != null) 
-					return this.pathToAdapter(ctx, path, wpath);
+					return this.pathToAdapter(isPreview, path, wpath);
 			}
 			
 			if (pubfs != null) {
 				// look in the domain's phantom file system
-				if (ctx.isPreview()) {
+				if (isPreview) {
 					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/phantom/www", path);
 					
 					if (wpath != null) 
-						return this.pathToAdapter(ctx, path, wpath);
+						return this.pathToAdapter(isPreview, path, wpath);
 				}
 				
 				// look in the domain's static file system
@@ -367,7 +362,7 @@ public class WebDomain implements IWebDomain {
 						wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/static/", path);
 				
 				if (wpath != null) 
-					return this.pathToAdapter(ctx, path, wpath);
+					return this.pathToAdapter(isPreview, path, wpath);
 			}
 			
 			if ((pacfs != null) && (this.webconfig != null)) {
@@ -376,7 +371,17 @@ public class WebDomain implements IWebDomain {
 					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Name") + "/www", path);
 					
 					if (wpath != null) 
-						return this.pathToAdapter(ctx, path, wpath);
+						return this.pathToAdapter(isPreview, path, wpath);
+				}
+			}
+			
+			if ((pacfs != null) && (ext != null) && (ext.getLoader().getConfig() != null)) {
+				// if not in the domain, then go look in the packages (older config used Id not Name)
+				for (XElement pel :  ext.getLoader().getConfig().selectAll("Package")) {
+					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Id") + "/www", path);
+					
+					if (wpath != null) 
+						return this.pathToAdapter(isPreview, path, wpath);
 				}
 			}
 			
@@ -398,7 +403,7 @@ public class WebDomain implements IWebDomain {
 		while (pdepth > 0) {
 			CommonPath ppath = path.subpath(0, pdepth);
 
-			if (ctx.isPreview()) {
+			if (isPreview) {
 				IOutputAdapter ioa = this.paths.get(ppath.toString());
 				
 				if (ioa != null)
@@ -421,35 +426,35 @@ public class WebDomain implements IWebDomain {
 			CommonPath ppath = path.subpath(0, pdepth);
 			
 			if (prifs != null) {
-				if (ctx.isPreview()) {
+				if (isPreview) {
 					// look in the domain's phantom file system
 					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/phantom/www", ppath);
 					
 					if (wpath != null) 
-						return this.pathToAdapter(ctx, ppath, wpath);
+						return this.pathToAdapter(isPreview, ppath, wpath);
 				}
 				
 				// look in the domain's static file system
 				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/static/www", ppath);
 				
 				if (wpath != null) 
-					return this.pathToAdapter(ctx, ppath, wpath);
+					return this.pathToAdapter(isPreview, ppath, wpath);
 			}
 			
 			if (pubfs != null) {
-				if (ctx.isPreview()) {
+				if (isPreview) {
 					// look in the domain's phantom file system
 					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/phantom/www", ppath);
 					
 					if (wpath != null) 
-						return this.pathToAdapter(ctx, ppath, wpath);
+						return this.pathToAdapter(isPreview, ppath, wpath);
 				}
 				
 				// look in the domain's static file system
 				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/static/www", ppath);
 				
 				if (wpath != null) 
-					return this.pathToAdapter(ctx, ppath, wpath);
+					return this.pathToAdapter(isPreview, ppath, wpath);
 			}
 			
 			if ((pacfs != null) && (this.webconfig != null)) {
@@ -458,7 +463,17 @@ public class WebDomain implements IWebDomain {
 					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Name") + "/www", ppath);
 					
 					if (wpath != null) 
-						return this.pathToAdapter(ctx, ppath, wpath);
+						return this.pathToAdapter(isPreview, ppath, wpath);
+				}
+			}
+			
+			if ((pacfs != null) && (ext != null) && (ext.getLoader().getConfig() != null)) {
+				// if not in the domain, then go look in the packages (older config used Id not Name)
+				for (XElement pel :  ext.getLoader().getConfig().selectAll("Package")) {
+					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Id") + "/www", path);
+					
+					if (wpath != null) 
+						return this.pathToAdapter(isPreview, path, wpath);
 				}
 			}
 			
@@ -511,24 +526,87 @@ public class WebDomain implements IWebDomain {
 		return null;
 	}
 
-	public IOutputAdapter pathToAdapter(WebContext ctx, CommonPath path, Path filepath) {
+	public IOutputAdapter pathToAdapter(boolean isPreview, CommonPath path, Path filepath) {
 		String wpathname = filepath.getFileName().toString();
 
-		IOutputAdapter ioa = (wpathname.endsWith(".dcui.xml"))
-				? new ViewOutputAdapter(this, path, filepath, ctx.getExtension())
-				: new AssetOutputAdapter(path, filepath);
+		IOutputAdapter ioa = null;
 		
-		if (ctx.isPreview())
+		if (wpathname.endsWith(".dcui.xml"))
+			ioa = new ViewOutputAdapter(this, path, filepath, isPreview);
+		else if (wpathname.endsWith(".dcuis.xml"))
+			ioa = new ViewTemplateAdapter(path, filepath);
+		else
+			ioa = new AssetOutputAdapter(path, filepath);
+		
+		if (isPreview)
 			this.previewpaths.put(path.toString(), ioa);
 		else
 			this.paths.put(path.toString(), ioa);
 		
 		return ioa;
 	}
+
+	public String route(Request req, SslHandler ssl) {
+		DomainInfo domain = Hub.instance.getDomainInfo(this.id);
+		
+		if (domain == null)
+			return null;
+		
+		XElement config = domain.getSettings();
+		
+		if (config == null)
+			return null;
+		
+		String host = req.getHeader("Host");
+		String port = "";
+		
+		if (host.contains(":")) {
+			int pos = host.indexOf(':');
+			port = host.substring(pos);
+			host = host.substring(0, pos);
+		}
+		
+		XElement web = config.selectFirst("Web");
+		
+		if (web == null)
+			return null;
+		
+		for (XElement route : web.selectAll("Route")) {
+			if (host.equals(route.getAttribute("Name"))) {
+				if (route.hasAttribute("RedirectPath"))
+					return route.getAttribute("RedirectPath");
+				
+				if (!route.hasAttribute("ForceTls") && !route.hasAttribute("RedirectName"))
+					continue;
+				
+				boolean tlsForce = Struct.objectToBoolean(route.getAttribute("ForceTls", "False"));				
+				String rname = route.getAttribute("RedirectName");
+				
+				boolean changeTls = ((ssl == null) && tlsForce);
+				
+				if (StringUtil.isNotEmpty(rname) || changeTls) {
+					String path = ((ssl != null) || tlsForce) ? "https://" : "http://";
+					
+					path += StringUtil.isNotEmpty(rname) ? rname : host;
+					
+					// if forcing a switch, use another port
+					path += changeTls ? ":" + route.getAttribute("TlsPort", "443") : port;
+					
+					return path + req.getOriginalPath(); 
+				}
+				
+				// TODO support alternate home paths - HomePath
+			}
+		}
+		
+		if ((ssl == null) && Struct.objectToBoolean(web.getAttribute("ForceTls", "False"))) 
+			return "https://" + host + ":" + web.getAttribute("TlsPort", "443") + req.getOriginalPath(); 
+		
+		return null;
+	}
 	
 	// Html, Qx, Xml parsing
 	
-	@Override
     public Nodes parseXml(ViewOutputAdapter view, XElement container) {
     	Nodes nodes = new Nodes();
     	
@@ -548,7 +626,6 @@ public class WebDomain implements IWebDomain {
     }
     
     // parses the children of container
-	@Override
     public Nodes parseElement(ViewOutputAdapter view, XElement xel) {
     	Nodes nodes = new Nodes();
     	this.parseElement(view, nodes, xel);
@@ -556,7 +633,6 @@ public class WebDomain implements IWebDomain {
     }
     
     // parses the children of container
-	@Override
     public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
 		if (xel == null)
 			return;
@@ -667,6 +743,7 @@ public class WebDomain implements IWebDomain {
 		this.codetags.put("Style", Style.class);
 		this.codetags.put("Script", Script.class);
 		this.codetags.put("PagePart", PagePart.class);
+		this.codetags.put("ServerScript", ServerScript.class);
 
 		// TODO these should eventually be migrated so they can be shown in html mode too
 		// though they wouldn't work correctly, it would just be for show (unless we do a lot more)

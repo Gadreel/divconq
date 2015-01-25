@@ -89,7 +89,7 @@ public class IncludePart extends FragmentProxy implements ICodeTag {
 	public void doBuild() {
 		CommonPath pp = new CommonPath(this.src);		
 		
-		IOutputAdapter sf = this.getContext().getDomain().findFile(this.getContext(), pp);
+		IOutputAdapter sf = this.getContext().getDomain().findFile(this.getContext().isPreview(), pp, this.getContext().getExtension());
 		
 		if (sf instanceof ViewOutputAdapter) {
 			this.getPartRoot().incrementFuture();

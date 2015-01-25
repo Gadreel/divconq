@@ -239,12 +239,15 @@ public class LoadRecord implements IStoredProc {
 		
 		// if no subquery then use "ForeignField" instead
 		if ((subselect == null) || (subselect.getSize() == 0)) {
+			if (field.hasField("ForeignField"))
+				return new ListStruct(new RecordStruct(
+						new FieldStruct("Field", field.getFieldAsString("ForeignField")),
+						new FieldStruct("Format", field.getFieldAsString("Format"))
+				));
+			
 			// TODO if no ForeignField then select all
 			
-			return new ListStruct(new RecordStruct(
-					new FieldStruct("Field", field.getFieldAsString("ForeignField")),
-					new FieldStruct("Format", field.getFieldAsString("Format"))
-			));
+			return null;
 		}
 		
 		return subselect;

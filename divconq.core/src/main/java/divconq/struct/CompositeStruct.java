@@ -161,7 +161,7 @@ abstract public class CompositeStruct extends Struct implements ICompositeOutput
 	}
 	
 	public void toSerialMemory(Memory res) throws BuilderStateException {
-		ByteBuf buf = Hub.instance.getBufferAllocator().buffer(16 * 1024, 16 * 1024 * 1024);
+		ByteBuf buf = Hub.instance.getBufferAllocator().heapBuffer(16 * 1024, 16 * 1024 * 1024);
 		
 		CompositeToBufferBuilder rb = new CompositeToBufferBuilder(buf);		
 		this.toBuilder(rb);		
@@ -172,7 +172,7 @@ abstract public class CompositeStruct extends Struct implements ICompositeOutput
 	}
 	
 	public Memory toSerialMemory() throws BuilderStateException {
-		ByteBuf buf = Hub.instance.getBufferAllocator().buffer(16 * 1024, 16 * 1024 * 1024);
+		ByteBuf buf = Hub.instance.getBufferAllocator().heapBuffer(16 * 1024, 16 * 1024 * 1024);
 		
 		CompositeToBufferBuilder rb = new CompositeToBufferBuilder(buf);		
 		this.toBuilder(rb);		

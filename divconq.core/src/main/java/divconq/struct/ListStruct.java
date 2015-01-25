@@ -510,9 +510,6 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see divconq.struct.CompositeStruct#clear()
-	 */
 	@Override
 	public void clear() {
 		this.items.clear();
