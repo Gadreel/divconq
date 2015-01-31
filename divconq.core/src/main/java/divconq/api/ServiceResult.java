@@ -43,11 +43,20 @@ abstract public class ServiceResult extends divconq.bus.ServiceResult {
 	
 	@Override
 	public boolean abandon() {
-		if (super.abandon()) {
-			this.capi.getReplyService().clearReply(this.replytag);
+		ApiSession api = this.capi;
+		
+		if (super.abandon() && (api != null)) {
+			api.getReplyService().clearReply(this.replytag);
 			return true;
 		}
 		
 		return false;
+	}
+	
+	@Override
+	public void complete() {
+		super.complete();
+		
+		this.capi = null;  // keep circular refs down
 	}
 }

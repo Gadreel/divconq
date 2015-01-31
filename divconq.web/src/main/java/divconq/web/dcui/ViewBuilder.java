@@ -53,6 +53,9 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
 				if (web.hasAttribute("HomePath")) 
 					this.addParams("HomePath", web.getAttribute("HomePath"));
 				
+				if (web.hasAttribute("PortalPath")) 
+					this.addParams("PortalPath", web.getAttribute("PortalPath"));
+				
 				if (web.hasAttribute("SiteTitle")) 
 					this.addParams("SiteTitle", web.getRawAttribute("SiteTitle"));
 				
@@ -98,15 +101,43 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
 			ps.println();
 			ps.println("\t],");
 			
-			boolean first = true;
-			
 			// ==============================================
 			//  Styles
 			// ==============================================
 			
+			boolean first = true;
+			
 			ps.print("\tRequireStyles: [");
 			
 			for (XElement func : this.view.source.selectAll("RequireStyle")) {
+				if (!func.hasAttribute("Path"))
+					continue;
+				
+				if (first)
+					first = false;
+				else
+					ps.print(",");
+				
+				ps.print(" '");				
+				Node.writeDynamicJsString(ps, func.getAttribute("Path"));				
+				ps.print("'");
+			}
+			
+			for (XElement func : this.view.getStyles()) {
+				if (!func.hasAttribute("Path"))
+					continue;
+				
+				if (first)
+					first = false;
+				else
+					ps.print(",");
+				
+				ps.print(" '");				
+				Node.writeDynamicJsString(ps, func.getAttribute("Path"));				
+				ps.print("'");
+			}
+			
+			for (XElement func : this.context.getStyles()) {
 				if (!func.hasAttribute("Path"))
 					continue;
 				
@@ -131,6 +162,34 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
 			ps.print("\tRequireLibs: [");
 			
 			for (XElement func : this.view.source.selectAll("RequireLib")) {
+				if (!func.hasAttribute("Path"))
+					continue;
+				
+				if (first)
+					first = false;
+				else
+					ps.print(",");
+				
+				ps.print(" '");				
+				Node.writeDynamicJsString(ps, func.getAttribute("Path"));				
+				ps.print("'");
+			}
+			
+			for (XElement func : this.view.getLibs()) {
+				if (!func.hasAttribute("Path"))
+					continue;
+				
+				if (first)
+					first = false;
+				else
+					ps.print(",");
+				
+				ps.print(" '");				
+				Node.writeDynamicJsString(ps, func.getAttribute("Path"));				
+				ps.print("'");
+			}
+			
+			for (XElement func : this.context.getLibs()) {
 				if (!func.hasAttribute("Path"))
 					continue;
 				

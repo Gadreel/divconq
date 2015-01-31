@@ -36,7 +36,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
 
-import org.joda.time.DateTime;
 import org.rocksdb.BackupInfo;
 import org.rocksdb.BackupableDBOptions;
 import org.rocksdb.RestoreBackupableDB;
@@ -350,6 +349,7 @@ public class HubUtil implements ILocalCommandLine {
 						dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcObscureClass", stamp, "Data", obfclass);
 						dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcObscureSeed", stamp, "Data", obfseed);
 	
+						/*
 						XElement domainsettings = new XElement("Settings",
 								new XElement("Web", 
 										new XAttribute("UI", "Custom"),
@@ -365,8 +365,9 @@ public class HubUtil implements ILocalCommandLine {
 										)
 								)
 						);
+						*/
 						
-						dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcCompiledSettings", stamp, "Data", domainsettings);
+						//dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcCompiledSettings", stamp, "Data", domainsettings);
 						
 						// insert root domain index
 						dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcDomainIndex", DB_GLOBAL_ROOT_DOMAIN, stamp, "Data", DB_GLOBAL_ROOT_DOMAIN);

@@ -20,6 +20,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import divconq.filestore.CommonPath;
 import divconq.hub.Hub;
@@ -46,11 +48,47 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 	public Nodes contenttemplate = null;
 	protected Class<? extends IContentBuilder> pagebuilder = null;
 	
+	protected List<XElement> functions = new ArrayList<>();
+	protected List<XElement> libs = new ArrayList<>();
+	protected List<XElement> styles = new ArrayList<>();
+	
 	// content building
 	protected Class<? extends IViewExecutor> adapter = null;
 	
 	public XElement getSource() {
 		return this.source;
+	}
+	
+	public void addFunction(XElement func) {
+		this.functions.add(func);
+	}
+	
+	public List<XElement> getFunctions() {
+		return this.functions;
+	}
+	
+	public void addLib(XElement func) {
+		this.libs.add(func);
+	}
+	
+	public void addLibs(List<XElement> func) {
+		this.libs.addAll(func);
+	}
+
+	public List<XElement> getLibs() {
+		return this.libs;
+	}
+	
+	public void addStyle(XElement func) {
+		this.styles.add(func);
+	}
+	
+	public void addStyles(List<XElement> func) {
+		this.styles.addAll(func);
+	}
+
+	public List<XElement> getStyles() {
+		return this.styles;
 	}
 	
 	public WebDomain getDomain() {

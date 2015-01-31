@@ -34,6 +34,15 @@ public class DomainsService extends ExtensionBase implements IService {
 				db.submit(req, new ObjectFinalResult(request));
 				return;
 			}			
+			
+			if ("Load".equals(op)) {
+				DataRequest req = new DataRequest("dcLoadDomain")
+					.withParams(msg.getFieldAsRecord("Body"))
+					.withRootDomain();	// use root for this request
+				
+				db.submit(req, new ObjectFinalResult(request));
+				return;
+			}			
 		}
 		
 		request.errorTr(441, this.serviceName(), feature, op);

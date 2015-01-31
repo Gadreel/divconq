@@ -42,8 +42,12 @@
 			var values = dc.pui.Page.getFormValues('SignIn');
 			
 			dc.user.signin(values.Username, values.Password, values.RememberMe, function(msg) { 
-				if (dc.user.isVerified())
-					dc.pui.Loader.loadDestPage();
+				if (dc.user.isVerified()) {
+					if (dc.pui.Loader.__destPage)
+						dc.pui.Loader.loadPage(dc.pui.Loader.__destPage);
+					else
+						dc.pui.Loader.loadPortalPage();
+				}
 				else
 					dc.pui.Popup.alert('Invalid sign in');
 			});

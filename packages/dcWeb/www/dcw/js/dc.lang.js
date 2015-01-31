@@ -96,7 +96,7 @@ String.formatMoney = function(total) {
 	
 	if (dp != -1) {
 		if (dp + 3 < ttotal.length) {
-			// round up 1 penney if 3rd decimal point is > 4
+			// round up 1 penny if 3rd decimal point is > 4
 			if ((ttotal.charAt(dp + 3) - 0) > 4) {
 				total = ttotal.substr(0, dp + 3) - 0 + 0.01;
 				ttotal = total + '';		// to string
@@ -119,6 +119,15 @@ String.formatMoney = function(total) {
 	
 	return ttotal;
 }
+
+window.requestAnimationFrame = (function(){
+  return  window.requestAnimationFrame       ||
+          window.webkitRequestAnimationFrame ||
+          window.mozRequestAnimationFrame    ||
+          function( callback ){
+            window.setTimeout(callback, 50);		// try 20 fps
+          };
+})();
 
 if (!window.location.origin) 
 	window.location.origin = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');

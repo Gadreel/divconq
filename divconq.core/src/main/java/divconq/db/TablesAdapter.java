@@ -1295,7 +1295,14 @@ public class TablesAdapter {
 			// add support for Format, this converts from byte to object, then formats object, then back to byte for compares
 			
 			if (StringUtil.isNotEmpty(pfname)) {
-				values.set(i, this.getRaw(table, id, pfname, when, historical));
+				if ("Id".equals(pfname)) {
+					ArrayList<byte[]> vl = new ArrayList<>();
+					vl.add(ByteUtil.buildValue(id));
+					values.set(i, vl);
+				}
+				else
+					values.set(i, this.getRaw(table, id, pfname, when, historical));
+				
 				continue;
 			}
 			

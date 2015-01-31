@@ -12,6 +12,7 @@ import w3.html.Html;
 
 public class Document extends Html {
 	protected XElement xel = null;
+	//protected XElement sxel = null;		// for separate skeletons
 	
 	// temp only
 	
@@ -37,6 +38,7 @@ public class Document extends Html {
     	
     	Document nn = (Document)n;
     	nn.xel = this.xel;
+    	//nn.sxel = this.sxel;
     }
 
 	@Override
@@ -64,6 +66,9 @@ public class Document extends Html {
 					if (web.hasAttribute("HomePath")) 
 						attrs.add("data-dcw-Home", "@val|HomePath@");
 					
+					if (web.hasAttribute("PortalPath")) 
+						attrs.add("data-dcw-Portal", "@val|PortalPath@");
+					
 					if (web.hasAttribute("SiteTitle")) 
 						attrs.add("data-dcw-SiteTitle", "@val|SiteTitle@");
 				}
@@ -78,7 +83,12 @@ public class Document extends Html {
 			IOutputAdapter sf = view.getDomain().findFile(view.isPreview(), pp, null);
 			
 			if (sf instanceof ViewTemplateAdapter) {
-				XElement layout = ((ViewTemplateAdapter)sf).getSource();				
+				XElement layout = ((ViewTemplateAdapter)sf).getSource();			
+				
+				//this.sxel = layout;
+		    	view.addLibs(layout.selectAll("RequireLib"));
+		    	view.addStyles(layout.selectAll("RequireStyle"));
+				
 				view.contenttemplate = view.getDomain().parseXml(view, layout.find("Skeleton"));
 			}
 		}
@@ -102,13 +112,14 @@ public class Document extends Html {
 	/*
     @Override
 	public void build(Object... args) {
-	    super.build(args);
-		
-    	ContentPlaceholder ph = this.getContext().getHolder("Scripts");
-
-    	ph.addChildren(new Script(new LiteralText(sb.toString())));
+	    if (this.sxel != null) {
+	    	this.getContext().addLibs(this.sxel.selectAll("RequireLib"));
+	    	this.getContext().addStyles(this.sxel.selectAll("RequireStyle"));
+	    }
+	    
+	    super.build(args);	    
 	}
-    */
+	*/
 	
     static public Document findDocument(Element el) {
     	while (el != null) {

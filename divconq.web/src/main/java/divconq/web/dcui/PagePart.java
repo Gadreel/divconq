@@ -74,7 +74,7 @@ public class PagePart extends Element implements ICodeTag {
 		
 		for (XElement pel : this.src.selectAll("PagePart")) {
 			if (this.id.equals(pel.getAttribute("For")) && (lname.equals(pel.getAttribute("Locale"))
-					|| !pel.hasAttribute("Locale"))) {
+					|| "default".equals(pel.getAttribute("Locale")) || !pel.hasAttribute("Locale"))) {
 				ppel = pel;
 				break;
 			}
@@ -163,8 +163,10 @@ public class PagePart extends Element implements ICodeTag {
 				System.out.println("image: " + ppel.getText());
 				
 				nl = new Nodes();
+				//nl.add(new Img(new Attributes("src", "/galleries/" 
+				//		+ ppel.getText() + ".v/" + ppel.getAttribute("Variation") + ".jpg")));
 				nl.add(new Img(new Attributes("src", "/galleries/" 
-						+ ppel.getText() + ".v/" + ppel.getAttribute("Variation") + ".jpg")));
+						+ ppel.getText())));
 			}
 			else if ("groovy".equals(ppel.getAttribute("Format"))) {
 				this.name = "div"; 

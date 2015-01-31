@@ -572,4 +572,14 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 	public boolean contains(Struct v) {
 		return this.items.contains(v);
 	}
+
+	public List<Object> toObjectList() {
+		List<Object> nlist = new ArrayList<>();
+		
+		for (Struct s : this.items) 
+			if (s instanceof ScalarStruct)
+				nlist.add(((ScalarStruct)s).getGenericValue());
+		
+		return nlist;
+	}
 }

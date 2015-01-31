@@ -48,7 +48,6 @@ import divconq.ctp.f.CtpFClient;
 import divconq.db.Constants;
 import divconq.db.ObjectResult;
 import divconq.db.DataRequest;
-import divconq.db.common.KeyQueryRequest;
 import divconq.db.common.RequestFactory;
 import divconq.db.query.ListDirectRequest;
 import divconq.db.query.LoadRecordRequest;
@@ -1446,12 +1445,16 @@ public class FileStoreClient implements ILocalCommandLine {
 				}
 				
 				case 223: {
-					Hub.instance.getDatabase().submit(new KeyQueryRequest(), new ObjectResult() {
-						@Override
-						public void process(CompositeStruct result) {
-							System.out.println("KeyQuery returned: " + result);
+					Hub.instance.getDatabase().submit(
+						new DataRequest("dcKeyQuery")
+							.withParams(new RecordStruct(new FieldStruct("Keys", new ListStruct("dcRecord", "00700_000000000000002")))),
+						new ObjectResult() {
+							@Override
+							public void process(CompositeStruct result) {
+								System.out.println("KeyQuery returned: " + result);
+							}
 						}
-					});
+					);
 					
 					break;
 				}

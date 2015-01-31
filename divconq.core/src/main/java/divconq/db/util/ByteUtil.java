@@ -22,6 +22,7 @@ import divconq.struct.Struct;
 import divconq.struct.builder.BuilderStateException;
 import divconq.struct.builder.ObjectBuilder;
 import divconq.struct.serial.BufferToCompositeParser;
+import divconq.util.ArrayUtil;
 import divconq.util.TimeUtil;
 import divconq.xml.XElement;
 
@@ -45,6 +46,21 @@ public class ByteUtil {
 			return -1;
 		
 		return 0;
+	}
+	
+	static public boolean keyStartsWith(byte[] key, byte[] part) {
+		if (part.length > key.length)
+			return false;
+		
+		for (int i = 0; i < part.length; i++) {
+			if (key[i] != part[i])
+				return false;
+		}
+		
+		if (part.length == key.length)
+			return true;
+		
+		return (key[part.length] == Constants.DB_TYPE_MARKER_ALPHA);
 	}
 	
 	// key contains a part at offset
@@ -90,6 +106,19 @@ public class ByteUtil {
 		}
 		
 		return key.toArray();
+	}
+
+	static public byte[] combineKeys(byte[] basekey, byte[] subid) {
+		if (basekey == null)
+			return subid;
+		
+		byte[] res = new byte[basekey.length + subid.length + 1];
+		
+		ArrayUtil.blockCopy(basekey, 0, res, 0, basekey.length);
+		res[basekey.length] = Constants.DB_TYPE_MARKER_ALPHA;
+		ArrayUtil.blockCopy(subid, 0, res, basekey.length + 1, subid.length);
+		
+		return res;
 	}
 	
 	static public byte[] buildValue(Object in) {
@@ -159,7 +188,7 @@ public class ByteUtil {
 		int pos = val.getPosition();
 		int type = val.readByte();
 		
-		if (type == -1)
+		if (type == Constants.DB_TYPE_MARKER_OMEGA)
 			return null;
 		
 		int mlen = 1;
@@ -171,10 +200,14 @@ public class ByteUtil {
 		else {
 			int b = val.readByte();
 			
-			while (b != Constants.DB_TYPE_MARKER_ALPHA) {
+			while ((b != -1) && (b != Constants.DB_TYPE_MARKER_ALPHA)) {
 				mlen++;
 				b = val.readByte();
 			}
+			
+			// something not right TODO
+			//if (b == -1)
+			//	return null;
 		}
 		
 		byte[] ret = new byte[mlen];

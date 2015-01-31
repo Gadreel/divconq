@@ -35,7 +35,6 @@ import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
 import divconq.session.Session;
 import divconq.util.StringUtil;
-import divconq.web.dcui.ContentPlaceholder;
 import divconq.web.dcui.Node;
 import divconq.xml.XElement;
 
@@ -49,11 +48,14 @@ public class WebContext {
 	protected String theme = null;
 	protected boolean preview = false;
 	protected boolean completed = false;
-	protected Map<String, ContentPlaceholder> holders = new HashMap<String, ContentPlaceholder>();
+	//protected Map<String, ContentPlaceholder> holders = new HashMap<String, ContentPlaceholder>();
 	protected Map<String, String> innerparams = new HashMap<String, String>();
 	
 	protected List<XElement> functions = new ArrayList<>();
+	protected List<XElement> libs = new ArrayList<>();
+	protected List<XElement> styles = new ArrayList<>();
 
+	/*
 	public ContentPlaceholder getHolder(String name) {
 		synchronized (this.holders) {
 			if (!this.holders.containsKey(name)) {
@@ -65,6 +67,7 @@ public class WebContext {
 
 		return this.holders.get(name);
 	}
+	*/
 	
 	public void addFunction(XElement func) {
 		this.functions.add(func);
@@ -72,6 +75,30 @@ public class WebContext {
 	
 	public List<XElement> getFunctions() {
 		return this.functions;
+	}
+	
+	public void addLib(XElement func) {
+		this.libs.add(func);
+	}
+	
+	public void addLibs(List<XElement> func) {
+		this.libs.addAll(func);
+	}
+
+	public List<XElement> getLibs() {
+		return this.libs;
+	}
+	
+	public void addStyle(XElement func) {
+		this.styles.add(func);
+	}
+	
+	public void addStyles(List<XElement> func) {
+		this.styles.addAll(func);
+	}
+
+	public List<XElement> getStyles() {
+		return this.styles;
 	}
 
 	public String getExternalParam(String name) {

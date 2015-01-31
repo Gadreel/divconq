@@ -1,7 +1,14 @@
 package divconq.service.db;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import org.joda.time.DateTime;
+
 import divconq.bus.IService;
 import divconq.bus.Message;
+import divconq.db.DataRequest;
 import divconq.db.IDatabaseManager;
 import divconq.db.ObjectFinalResult;
 import divconq.db.ObjectResult;
@@ -20,6 +27,8 @@ import divconq.db.update.RetireRecordRequest;
 import divconq.db.update.ReviveRecordRequest;
 import divconq.db.update.UpdateRecordRequest;
 import divconq.hub.Hub;
+import divconq.hub.HubEvents;
+import divconq.io.LocalFileStore;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationContextBuilder;
 import divconq.lang.op.UserContext;
@@ -27,7 +36,10 @@ import divconq.mod.ExtensionBase;
 import divconq.struct.CompositeStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.util.IOUtil;
 import divconq.work.TaskRun;
+import divconq.xml.XAttribute;
+import divconq.xml.XElement;
 
 public class CoreDataServices extends ExtensionBase implements IService {
 	@Override
@@ -259,7 +271,6 @@ public class CoreDataServices extends ExtensionBase implements IService {
 						.withField("dcAlias", "Alias")
 						.withField("dcDescription", "Description")
 						.withField("dcObscureClass", "ObscureClass")
-						.withField("dcCompiledSettings", "Settings")
 						.withField("dcName", "Names")
 					);
 				
@@ -278,12 +289,17 @@ public class CoreDataServices extends ExtensionBase implements IService {
 					.withConditionallySetField(rec, "Alias", "dcAlias")
 					.withConditionallySetField(rec, "Description", "dcDescription")
 					.withConditionallySetField(rec, "ObscureClass", "dcObscureClass")
-					.withConditionallySetField(rec, "Settings", "dcCompiledSettings")
 					.withConditionallyReplaceList(rec, "Names", "dcName");
 				
 				req.withDomain("MyUpdateDomain".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id"));
 				
-				db.submit(req, new ObjectFinalResult(request));
+				db.submit(req, new ObjectResult() {
+					@Override
+					public void process(CompositeStruct result) {
+						Hub.instance.fireEvent(HubEvents.DomainUpdated, rec.getFieldAsString("Id"));					
+						request.returnValue(result);
+					}
+				});
 				
 				return ;
 			}
@@ -294,11 +310,53 @@ public class CoreDataServices extends ExtensionBase implements IService {
 					.withConditionallySetField(rec, "Title", "dcTitle")
 					.withConditionallySetField(rec, "Alias", "dcAlias")
 					.withConditionallySetField(rec, "Description", "dcDescription")
-					.withConditionallySetField(rec, "ObscureClass", "dcObscureClass")				
-					.withConditionallySetField(rec, "Settings", "dcCompiledSettings")
+					.withConditionallySetField(rec, "ObscureClass", "dcObscureClass")
 					.withCopyList("dcName", true, rec.getFieldAsList("Names"));
 				
-				db.submit(req, new ObjectFinalResult(request));
+				db.submit(req, new ObjectResult() {
+					@Override
+					public void process(CompositeStruct result) {
+						LocalFileStore fs = Hub.instance.getPublicFileStore();
+						
+						if (fs != null)  {
+							Path dspath = fs.getFilePath().resolve("dcw/" + rec.getFieldAsString("Alias") + "/static");
+							
+							try {
+								Files.createDirectories(dspath.resolve("files"));
+								Files.createDirectories(dspath.resolve("galleries"));
+								Files.createDirectories(dspath.resolve("www"));
+							} 
+							catch (IOException x) {
+								request.error("Unable to create directories for new domain: " + x);
+								request.returnEmpty();
+								return;
+							}
+							
+							Path cpath = dspath.resolve("config/settings.xml");
+
+							XElement domainsettings = new XElement("Settings",
+									new XElement("Web", 
+											new XAttribute("UI", "Custom"),
+											new XAttribute("SiteTitle", rec.getFieldAsString("Title")),
+											new XAttribute("SiteAuthor", rec.getFieldAsString("Title")),
+											new XAttribute("SiteCopyright", new DateTime().getYear() + ""),
+											new XElement("Package", 
+													new XAttribute("Name", "dcWeb")
+											),
+											new XElement("Package", 
+													new XAttribute("Name", "dc/dcCms")
+											)
+									)
+							);
+
+							IOUtil.saveEntireFile(cpath, domainsettings.toString(true));							
+						}
+						
+						Hub.instance.fireEvent(HubEvents.DomainAdded, ((RecordStruct)result).getFieldAsString("Id"));
+						
+						request.returnValue(result);
+					}
+				});
 				
 				return;
 			}
@@ -313,51 +371,7 @@ public class CoreDataServices extends ExtensionBase implements IService {
 				db.submit(new ReviveRecordRequest("dcDomain", rec.getFieldAsString("Id")).withDomain(rec.getFieldAsString("Id")), new ObjectFinalResult(request));
 				
 				return ;
-			}
-			
-			/* TODO restore with correct domain id
-			if ("SetDomainNames".equals(op) || "MySetDomainNames".equals(op)) {
-				String did = "MySetDomainNames".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id");
-				ListStruct names = rec.getFieldAsList("Names");
-				
-				db.submit(RequestFactory.makeSet("dcDomain", "dcName", did, names), new ObjectFinalResult(request));
-				
-				return ;
-			}
-			
-			if ("AddDomainNames".equals(op) || "MyAddDomainNames".equals(op)) {
-				String did = "MyAddDomainNames".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id");
-				ListStruct names = rec.getFieldAsList("Names");
-				
-				db.submit(RequestFactory.addToSet("dcDomain", "dcName", did, names), new ObjectFinalResult(request));
-				
-				return ;
-			}
-			
-			if ("RemoveDomainNames".equals(op) || "MyRemoveDomainNames".equals(op)) {
-				String did = "MyRemoveDomainNames".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id");
-				ListStruct names = rec.getFieldAsList("Names");
-				
-				db.submit(RequestFactory.removeFromSet("dcDomain", "dcName", did, names), new ObjectFinalResult(request));
-				
-				return ;
-			}
-
-			// use with discretion
-			if ("ListDomains".equals(op)) {
-				db.submit(
-					new SelectDirectRequest("dcDomain", new SelectFields()
-						.withField("Id")
-						.withField("dcTitle", "Title")
-						.withField("dcAlias", "Alias")
-						.withField("dcDescription", "Description")
-						.withField("dcName", "Names")
-					), 
-					new ObjectFinalResult(request));
-				
-				return ;
-			}
-			*/
+			}			
 		}
 		
 		// =========================================================
@@ -490,6 +504,30 @@ public class CoreDataServices extends ExtensionBase implements IService {
 				return ;
 			}
 		}
+		
+		// =========================================================
+		//  groups
+		// =========================================================
+		
+		if ("Globals".equals(feature)) {
+			if ("DollarO".equals(op)) {
+				DataRequest req = new DataRequest("dcKeyQuery")
+					.withParams(rec);
+				
+				db.submit(req, new ObjectFinalResult(request));
+				
+				return ;
+			}
+			
+			if ("Kill".equals(op)) {
+				DataRequest req = new DataRequest("dcKeyKill")
+					.withParams(rec);
+				
+				db.submit(req, new ObjectFinalResult(request));
+				
+				return ;
+			}
+		}	
 		
 		request.errorTr(441, this.serviceName(), feature, op);
 		request.complete();

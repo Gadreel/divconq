@@ -84,7 +84,7 @@ public class RocksInterface extends DatabaseInterface {
 		it.seek(key);
 		
 		// found an sub match or exact match
-		boolean ret = ByteUtil.keyContains(it.key(), 0, key, key.length);
+		boolean ret = ByteUtil.keyStartsWith(it.key(), key);
 		
 		it.dispose();
 		
@@ -115,7 +115,7 @@ public class RocksInterface extends DatabaseInterface {
 		it.dispose();
 		
 		// match not found, peer key doesn't exist at all and was skipped
-		if (!ByteUtil.keyContains(fnd, 0, key, key.length))
+		if (!ByteUtil.keyStartsWith(fnd, key))
 			return null;
 		
 		mem = new Memory(fnd);
@@ -143,7 +143,7 @@ public class RocksInterface extends DatabaseInterface {
 			byte[] fnd = it.key();
 			
 			// match found, peer key exists 
-			if (ByteUtil.keyContains(fnd, 0, key, key.length)) {
+			if (ByteUtil.keyStartsWith(fnd, key)) {
 				mem = new Memory(fnd);
 				mem.setPosition(key.length + 1);
 				
@@ -167,7 +167,7 @@ public class RocksInterface extends DatabaseInterface {
 		it.dispose();
 		
 		// match found, prev peer key exists 
-		if (ByteUtil.keyContains(fnd, 0, key, key.length)) {
+		if (ByteUtil.keyStartsWith(fnd, key)) {
 			mem = new Memory(fnd);
 			mem.setPosition(key.length + 1);
 			
@@ -182,14 +182,30 @@ public class RocksInterface extends DatabaseInterface {
 	public byte[] nextPeerKey(byte[] key, byte[] peer) throws DatabaseException {
 		RocksIterator it = this.db.newIterator();
 		
-		if (peer == null)
-			peer = Constants.DB_EMPTY_ARRAY;
+		//if (peer == null)
+		//	peer = Constants.DB_EMPTY_ARRAY;
 		
-		Memory mem = new Memory(key.length + 1 + peer.length + 1);
-		mem.write(key);
-		mem.writeByte(Constants.DB_TYPE_MARKER_ALPHA);
-		mem.write(peer);
+		int len = 1;
+		
+		if (key != null)
+			len += key.length + 1;
+		
+		if (peer != null)
+			len += peer.length;
+		
+		Memory mem = new Memory(len);
+		
+		if (key != null) {
+			mem.write(key);
+			mem.writeByte(Constants.DB_TYPE_MARKER_ALPHA);
+		}
+		
+		if (peer != null) 
+			mem.write(peer);
+		
 		mem.writeByte((byte)0x01);		// forces us to look for next key - all subkeys of peer are skipped
+		
+		//System.out.println("Next on:  " + HexUtil.bufferToHex(mem.getBufferEntry(0)));
 		
 		it.seek(mem.getBufferEntry(0));
 		
@@ -200,6 +216,8 @@ public class RocksInterface extends DatabaseInterface {
 		
 		byte[] fnd = it.key();
 		
+		//System.out.println("Next fnd: " + HexUtil.bufferToHex(fnd));
+		
 		it.dispose();
 		
 		//System.out.println("looking for match: " + HexUtil.bufferToHex(key));
@@ -207,13 +225,13 @@ public class RocksInterface extends DatabaseInterface {
 		//System.out.println("              got: " + HexUtil.bufferToHex(fnd));
 		
 		// match not found, next peer key doesn't exist at all and was skipped
-		if (!ByteUtil.keyContains(fnd, 0, key, key.length))
+		if ((key != null) && !ByteUtil.keyStartsWith(fnd, key))
 			return null;
 		
 		//System.out.println("match!");
 		
 		mem = new Memory(fnd);
-		mem.setPosition(key.length + 1);
+		mem.setPosition((key == null) ? 0 : key.length + 1);
 		
 		// return just 1 part - the next peer
 		return ByteUtil.extractNextDirect(mem);
@@ -250,7 +268,7 @@ public class RocksInterface extends DatabaseInterface {
 		it.dispose();
 		
 		// match found, prev peer key exists 
-		if (ByteUtil.keyContains(fnd, 0, key, key.length)) {
+		if (ByteUtil.keyStartsWith(fnd, key)) {
 			mem = new Memory(fnd);
 			mem.setPosition(key.length + 1);
 			
@@ -271,7 +289,7 @@ public class RocksInterface extends DatabaseInterface {
 		
 		it.seek(key);
 		
-		while (ByteUtil.keyContains(it.key(), 0,key, key.length)) {
+		while (ByteUtil.keyStartsWith(it.key(), key)) {
 			try {
 				db.remove(it.key());
 			} 

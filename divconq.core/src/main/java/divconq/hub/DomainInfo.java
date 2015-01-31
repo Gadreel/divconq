@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
+import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.IOUtil;
 import divconq.util.ISettingsObfuscator;
@@ -54,6 +55,10 @@ public class DomainInfo {
 	public ISettingsObfuscator getObfuscator() {
 		return this.obfuscator;
 	}
+
+	public ListStruct getNames() {
+		return this.info.getFieldAsList("Names");
+	}
 	
 	public XElement getSettings() {
 		if (this.overrideSettings != null)
@@ -62,7 +67,7 @@ public class DomainInfo {
 		return this.info.getFieldAsXml("Settings");
 	}
 	
-	public DomainInfo(RecordStruct info) {
+	public void load(RecordStruct info) {
 		this.info = info;
 				
 		this.obfuscator = DomainInfo.prepDomainObfuscator(

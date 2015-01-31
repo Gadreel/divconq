@@ -139,23 +139,23 @@ public class SignIn extends LoadRecord {
 					),
 					new RecordStruct(
 							new FieldStruct("Field", "dcFirstName"),
-							new FieldStruct("Name", "Title")
+							new FieldStruct("Name", "FirstName")
 					),
 					new RecordStruct(
 							new FieldStruct("Field", "dcLastName"),
-							new FieldStruct("Name", "Title")
+							new FieldStruct("Name", "LastName")
 					),
 					new RecordStruct(
 							new FieldStruct("Field", "dcEmail"),
-							new FieldStruct("Name", "Title")
+							new FieldStruct("Name", "Email")
 					),
 					new RecordStruct(
 							new FieldStruct("Field", "dcLocale"),
-							new FieldStruct("Name", "Title")
+							new FieldStruct("Name", "Locale")
 					),
 					new RecordStruct(
 							new FieldStruct("Field", "dcChronology"),
-							new FieldStruct("Name", "Title")
+							new FieldStruct("Name", "Chronology")
 					),
 					new RecordStruct(
 							new FieldStruct("Field", "dcAuthorizationTag"),		

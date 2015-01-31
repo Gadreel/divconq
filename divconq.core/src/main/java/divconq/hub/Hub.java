@@ -922,52 +922,6 @@ public class Hub {
 		
 		Hub.instance.getClock().addFastSystemWorker(monitorcounters);
 		
-		
-		// register for file store events before we start any services that might listen to these events
-		// we need to catch domain config change events 
-		if (this.publicfilestore != null) { 
-			/*	Examples:
-				./dcw/[domain alias]/static/config     holds web setting for domain
-					- settings.xml are the general settings (dcmHomePage - dcmDefaultTemplate[path]) - editable in CMS only
-					- dictionary.xml is the domain level dictionary - direct edit by web dev
-					- vars.json is the domain level variable store - direct edit by web dev
-			*/
-			
-			FuncCallback<FileStoreEvent> localfilestorecallback = new FuncCallback<FileStoreEvent>() {
-				@Override
-				public void callback() {
-					this.resetCalledFlag();
-					
-					CommonPath p = this.getResult().getPath();
-					
-					//System.out.println(p);
-					
-					// only notify on config updates
-					if (p.getNameCount() < 5) 
-						return;
-					
-					// must be inside a domain or we don't care
-					String mod = p.getName(0);
-					String domain = p.getName(1);
-					String vis = p.getName(2);
-					String section = p.getName(3);
-					
-					if (!"dcw".equals(mod) || !"static".equals(vis) || !"config".equals(section))
-						return;
-					
-					for (DomainInfo wdomain : Hub.this.dsitemap.values()) {
-						if (domain.equals(wdomain.getAlias())) {
-							wdomain.reloadSettings();
-							Hub.this.fireEvent(HubEvents.DomainConfigChanged, wdomain);
-							break;
-						}
-					}
-				}
-			};
-			
-			this.publicfilestore.register(localfilestorecallback);
-		}		
-		
 		this.removeDependency(bootdep.source);
 		
 		or.boundary("Origin", "hub:", "Op", "Run");
@@ -1232,6 +1186,136 @@ public class Hub {
 			}
 		}
 		
+		Hub.instance.subscribeToEvent(HubEvents.DomainAdded, new IEventSubscriber() {			
+			@Override
+			public void eventFired(Object e) {
+				String did = (String) e;
+				
+				Hub.this.bus.sendMessage(
+						(Message) new Message("dcDomains", "Manager", "Load")
+							.withField("Body", new RecordStruct().withField("Id", did)), 
+						result -> {
+							// if this fails the hub cannot start
+							if (result.hasErrors()) {
+								Logger.error("Unable to load new domain into hub");
+								return;
+							}
+							
+							RecordStruct drec = result.getBodyAsRec();
+							
+							DomainInfo di = new DomainInfo();							
+							di.load(drec);
+							
+							Hub.this.dsitemap.put(did, di);
+							
+							ListStruct names = di.getNames();
+					
+							if (names != null)
+								for (Struct dn : names.getItems()) {
+									String n = Struct.objectToCharsStrict(dn).toString();
+									
+									Hub.this.dnamemap.put(n, did);
+								}
+						}
+					);
+			}
+		});
+		
+		Hub.instance.subscribeToEvent(HubEvents.DomainUpdated, new IEventSubscriber() {			
+			@Override
+			public void eventFired(Object e) {
+				String did = (String) e;
+				
+				Hub.this.bus.sendMessage(
+						(Message) new Message("dcDomains", "Manager", "Load")
+							.withField("Body", new RecordStruct().withField("Id", did)), 
+						result -> {
+							// if this fails the hub cannot start
+							if (result.hasErrors()) {
+								Logger.error("Unable to update domain in hub");
+								return;
+							}
+							
+							RecordStruct drec = result.getBodyAsRec();
+
+							DomainInfo di = Hub.instance.dsitemap.get(did);
+							
+							// update old
+							if (di != null) {
+								ListStruct names = di.getNames();
+
+								if (names != null)
+									for (Struct dn : names.getItems()) {
+										String n = Struct.objectToCharsStrict(dn).toString();
+										Hub.this.dnamemap.remove(n);
+									}
+								
+								di.load(drec);
+							}
+							// insert new
+							else {
+								di = new DomainInfo();
+								di.load(drec);
+								Hub.this.dsitemap.put(did, di);
+							}
+							
+							ListStruct names = di.getNames();
+					
+							if (names != null)
+								for (Struct dn : names.getItems()) {
+									String n = Struct.objectToCharsStrict(dn).toString();
+									Hub.this.dnamemap.put(n, did);
+								}
+						}
+					);
+			}
+		});
+		
+		// register for file store events before we start any services that might listen to these events
+		// we need to catch domain config change events 
+		if (this.publicfilestore != null) { 
+			/*	Examples:
+				./dcw/[domain alias]/static/config     holds web setting for domain
+					- settings.xml are the general settings (dcmHomePage - dcmDefaultTemplate[path]) - editable in CMS only
+					- dictionary.xml is the domain level dictionary - direct edit by web dev
+					- vars.json is the domain level variable store - direct edit by web dev
+			*/
+			
+			FuncCallback<FileStoreEvent> localfilestorecallback = new FuncCallback<FileStoreEvent>() {
+				@Override
+				public void callback() {
+					this.resetCalledFlag();
+					
+					CommonPath p = this.getResult().getPath();
+					
+					//System.out.println(p);
+					
+					// only notify on config updates
+					if (p.getNameCount() < 5) 
+						return;
+					
+					// must be inside a domain or we don't care
+					String mod = p.getName(0);
+					String domain = p.getName(1);
+					String vis = p.getName(2);
+					String section = p.getName(3);
+					
+					if (!"dcw".equals(mod) || !"static".equals(vis) || !"config".equals(section))
+						return;
+					
+					for (DomainInfo wdomain : Hub.this.dsitemap.values()) {
+						if (domain.equals(wdomain.getAlias())) {
+							wdomain.reloadSettings();
+							Hub.this.fireEvent(HubEvents.DomainConfigChanged, wdomain);
+							break;
+						}
+					}
+				}
+			};
+			
+			this.publicfilestore.register(localfilestorecallback);
+		}		
+		
 		this.bus.sendMessage(
 			new Message("dcDomains", "Manager", "LoadAll"), 
 			result -> {
@@ -1251,9 +1335,12 @@ public class Hub {
 					
 					String did = drec.getFieldAsString("Id");
 					
-					Hub.this.dsitemap.put(did, new DomainInfo(drec));
+					DomainInfo di = new DomainInfo();							
+					di.load(drec);
 					
-					ListStruct names = drec.getFieldAsList("Names");
+					Hub.this.dsitemap.put(did, di);
+					
+					ListStruct names = di.getNames();
 			
 					if (names != null)
 						for (Struct dn : names.getItems()) {

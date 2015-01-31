@@ -22,8 +22,6 @@
 			<Field Name="dcName" Type="dcSmallString" Required="True" List="True" />
 			<Field Name="dcDescription" Type="String" />
 			
-			<Field Name="dcCompiledSettings" Type="Xml" />
-			
 			<!-- crypto support -->
 			<Field Name="dcObscureClass" Type="dcSmallString" />
 			<Field Name="dcObscureSeed" Type="dcSmallString" />
@@ -477,24 +475,22 @@
 				</Request>
 			</Procedure>			
 			
-			<Procedure Name="dcKeyQuery" Execute="divconq.db.rocks.proc.KeyQueryProc">
+			<Procedure Name="dcKeyQuery" Execute="divconq.db.proc.KeyQuery">
+				<Description>
+					Search key patterns in the database.
+				</Description>
+				<Request Inherits="dcDollarORequest" />
+				<ListResponse Type="dcDollarOItem" />
+			</Procedure>			
+			<Procedure Name="dcKeyKill" Execute="divconq.db.proc.KeyKill">
 				<Description>
 					Search key patterns in the database.
 				</Description>
 				<Request>
-					<Field Name="BrowseMode" Type="Boolean" />
-					<Field Name="Levels">
-						<List>
-							<Record Type="Any">
-								<Field Name="LevelType" Type="dcSmallString" Required="True" />
-							</Record>
-						</List>
+					<Field Name="Keys" Required="True">
+						<List Type="dcString" />
 					</Field>
 				</Request>
-				<ListResponse>
-					<!--  list in list [ key part 1, key part 2, key part 3, value ] -->
-					<List Type="Any" />
-				</ListResponse>
 			</Procedure>			
 			
 			<!-- 
@@ -529,6 +525,15 @@
 				<ListResponse>
 					<Record Inherits="dcLoadDomainsResponse" />
 				</ListResponse>
+			</Procedure>
+			 
+			<Procedure Name="dcLoadDomain" Execute="divconq.db.proc.LoadDomain">
+				<Description>
+				</Description>
+				<Request>
+					<Field Name="Id" Type="Id" Required="True" />
+				</Request>
+				<Response Inherits="dcLoadDomainsResponse" />
 			</Procedure>
 			
 			<!-- 

@@ -1,0 +1,223 @@
+<dcui Title="Globals Explorer">
+	<Skeleton>
+		<IncludePart Path="/dcw/app/Header" />
+
+		<div class="dcappWrapper">
+			<article id="dcappMain">
+				<WideButton Label="Add Node" Icon="plus" Click="DoAddNode" /> 
+				
+				<div id="areaGlobals" data-role="collapsible" data-inset="true" data-collapsed="false">
+					<h4>Globals</h4>
+					
+					<div id="keyPath"></div>
+					
+					<ul id="lstGlobals" data-role="listview" data-inset="true" data-count-theme="a" />					
+				</div>			 
+			</article>
+		</div>
+
+		<IncludePart Path="/dcw/app/Footer" />
+	</Skeleton>
+	<Function Name="Load"><![CDATA[
+				var entry = this;
+				
+				if (!entry.Params.Keys) {
+					entry.Params.Keys = [];
+					entry.Params.DisplayKeys = [];
+				}
+				
+				if (!entry.Params.Explode)
+					entry.Params.Explode = false;
+				
+				var kpath = $('#keyPath'); 
+				
+				kpath.empty();
+				
+				var rlink = $('<a href="#" class="ui-button ui-theme-a ui-link ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-mini">/</a>');
+				
+				rlink.click(function(e) {
+					dc.pui.Loader.loadPage('/dcw/root/GlobalExplorer', { 
+						Keys: [],
+						DisplayKeys: [],
+						Explode: false
+					});
+					
+					e.preventDefault();
+					return false;
+				});
+				
+				kpath.append(rlink);
+				
+				var upclick = function(e) {
+					dc.pui.Loader.loadPage('/dcw/root/GlobalExplorer', { 
+						Keys: entry.Params.Keys.slice(0, e.data.Pos +1),
+						DisplayKeys: entry.Params.DisplayKeys.slice(0, e.data.Pos + 1),
+						Explode: (e.data.Pos >= 4)
+					});
+					
+					e.preventDefault();
+					return false;
+				};
+									
+				for (var i = 0; i < entry.Params.DisplayKeys.length; i++) {
+					var dkey = entry.Params.DisplayKeys[i];
+					
+					rlink = $('<a href="#" class="ui-button ui-theme-a ui-link ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-mini">' + dkey + '/</a>');
+					
+					rlink.click({ Pos: i }, upclick);
+					
+					kpath.append(rlink);
+				}
+				
+				entry.call('LoadList');
+	]]></Function>
+	<Function Name="LoadList" Params="skiprefresh"><![CDATA[
+				var entry = this;
+				
+				var list = $('#lstGlobals');		
+					
+				if (!skiprefresh) {
+					list.empty();
+					list.append('<li><h3><i class="fa fa-spinner fa-spin"></i></h3></li>');
+					list.listview('refresh');
+				}
+				
+				dc.comm.sendMessage({ 
+					Service: 'dcCoreDataServices',
+					Feature: 'Globals',
+					Op: 'DollarO',
+					Body: {
+						Keys: entry.Params.Keys,
+						Explode: entry.Params.Explode
+					}
+				}, function(rmsg) {
+					if (rmsg.Result > 0) {
+						dc.pui.Popup.alert('Unable to list globals: ' + rmsg.Message);
+						return;
+					}
+
+					var list = $('#lstGlobals');
+
+					var expandItem = function(item, prekey, keylist, dkeylist) {
+						keylist = $.merge([], keylist);	// copy keys
+						keylist.push(item.Key);
+						
+						dkeylist = $.merge([], dkeylist);	// copy keys
+						dkeylist.push(item.DisplayKey);
+					
+						var dkey = dc.util.String.isString(item.DisplayKey) ? String.escapeHtml(item.DisplayKey) : item.DisplayKey;
+						var dval = dc.util.String.isString(item.DisplayValue) ? String.escapeHtml(item.DisplayValue) : item.hasOwnProperty('DisplayValue') ? item.DisplayValue : ''; 
+						
+						if (dc.util.Struct.isComposite(dval))
+							dval = JSON.stringify(dval);
+						
+						if (!entry.Params.Compact || !entry.Params.Explode || item.hasOwnProperty('DisplayValue')) {
+							var litm = $('<li class="ui-li-static ui-body-inherit"></li>');
+	
+							var ditm = $('<div class="genericFlexRow"><div class="genericFlexOne"><h2>' + prekey + dkey + '</h2><p>' 
+									+ dval + '</p></div></div>')
+	
+							rlink = $('<a href="#" class="ui-button ui-theme-a ui-link ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-mini">Children</a>');
+							
+							rlink.click(item, function(e) {
+								dc.pui.Loader.loadPage('/dcw/root/GlobalExplorer', { 
+									Keys: keylist,
+									DisplayKeys: dkeylist,
+									Explode: false
+								});
+								
+								e.preventDefault();
+								return false;
+							});
+							
+							ditm.append(rlink);
+	
+							rlink = $('<a href="#" class="ui-button ui-theme-a ui-link ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-mini">Compact Explode</a>');
+							
+							rlink.click(item, function(e) {
+								dc.pui.Loader.loadPage('/dcw/root/GlobalExplorer', { 
+									Keys: keylist,
+									DisplayKeys: dkeylist,
+									Explode: true,
+									Compact: true
+								});
+								
+								e.preventDefault();
+								return false;
+							});
+							
+							ditm.append(rlink);
+	
+							rlink = $('<a href="#" class="ui-button ui-theme-a ui-link ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-mini">Detailed Explode</a>');
+							
+							rlink.click(item, function(e) {
+								dc.pui.Loader.loadPage('/dcw/root/GlobalExplorer', { 
+									Keys: keylist,
+									DisplayKeys: dkeylist,
+									Explode: true,
+									Compact: false
+								});
+								
+								e.preventDefault();
+								return false;
+							});
+							
+							ditm.append(rlink);
+	
+							rlink = $('<a href="#" class="ui-button ui-theme-a ui-link ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-mini">Kill Node</a>');
+							
+							rlink.click(item, function(e) {
+								dc.pui.Popup.confirm('Are you sure you want to kill this Node?', function() {
+									dc.comm.sendMessage({ 
+										Service: 'dcCoreDataServices',
+										Feature: 'Globals',
+										Op: 'Kill',
+										Body: {
+											Keys: keylist
+										}
+									}, function(resp) {
+										if (resp.Result > 0) {
+											dc.pui.Popup.alert(resp.Message);
+											return;
+										}
+									
+										entry.call('LoadList', true);
+									});
+								});
+								
+								e.preventDefault();
+								return false;
+							});
+							
+							ditm.append(rlink);
+							
+							litm.append(ditm);
+							list.append(litm);
+						}
+						
+						if (item.Children && item.Children.length) {
+							for (var i = 0; i < item.Children.length; i++) {
+								var subitem = item.Children[i];
+								
+								expandItem(subitem, prekey + dkey + '/', keylist, dkeylist);
+							}
+						}
+					};
+
+					var globals = rmsg.Body;			
+					list.empty();
+
+					for (var i = 0; i < globals.length; i++) {
+						var item = globals[i];
+						
+						expandItem(item, '', entry.Params.Keys, entry.Params.DisplayKeys);
+					}
+					
+					list.listview('refresh');
+					
+				});				
+	]]></Function>
+	<Function Name="DoAddNode"><![CDATA[
+				// TODO 
+	]]></Function>
+</dcui>

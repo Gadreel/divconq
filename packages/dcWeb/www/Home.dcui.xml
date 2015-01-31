@@ -1,0 +1,27 @@
+<dcui Title="Home">
+	<Skeleton>
+		<IncludePart Path="/dcw/app/Header" />
+
+		<div class="dcappWrapper">
+			<article id="dcappMain">
+				<p>
+					You are seeing this because no home page is configured for this domain.
+					You might be interested in Signing In:
+				</p>
+				
+				<WideButton Label="Sign In" Icon="user" Click="DoSignIn" /> 
+			</article>
+		</div>
+
+		<IncludePart Path="/dcw/app/Footer" />
+	</Skeleton>
+	<Function Name="Load"><![CDATA[
+				dc.pui.Loader.__appTitle = $('html').attr('data-dcw-SiteTitle');;
+				dc.pui.Loader.__appHome = '/Portal';
+				
+				this.call('hdrLoadReal');
+	]]></Function>
+	<Function Name="DoSignIn"><![CDATA[
+				dc.pui.Loader.loadSigninPage();
+	]]></Function>
+</dcui>

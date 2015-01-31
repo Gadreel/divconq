@@ -200,9 +200,9 @@ public class Html5AppHead extends Head implements ICodeTag {
 		
 		// additional scripts/styles
 		
-		lateadditional.add(new IncludeHolder("Styles"));
+		//lateadditional.add(new IncludeHolder("Styles"));
 		
-		lateadditional.add(new IncludeHolder("Scripts"));
+		//lateadditional.add(new IncludeHolder("Scripts"));
 		
 	    this.build(earlyadditional, this.myArguments, lateadditional);
 	}

@@ -120,6 +120,8 @@ public class LocalSession extends ApiSession {
 	public void sendMessage(final Message msg, final ServiceResult callback) {		
 		msg.removeField("RespondTo");		// always to Replies, no other supported
 		
+		callback.setSession(this);
+		
 		this.replies.registerForReply(msg, callback);
 
 		this.session.setContext("hub:");

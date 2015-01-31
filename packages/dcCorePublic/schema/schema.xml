@@ -435,7 +435,7 @@
 			</Field>
 			<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
 			<Field Name="ObscureSeed" Type="dcDomain:dcObscureSeed" />			
-			<Field Name="Settings" Type="Xml" />
+			<Field Name="Settings" Type="Xml" />	<!-- best to get from domain config.xml file, but here for backward compatibility -->
 		</Record>
 		
 		<Record Id="dcSearchResult">
@@ -519,6 +519,23 @@
 		</Record>
 		
 		<List Id="dcQueryListResultFull" Type="dcQueryResultFull" />
+		
+		<Record Id="dcDollarORequest">
+			<Field Name="Keys" Required="True">
+				<List Type="dcString" />
+			</Field>
+			<Field Name="Explode" Type="Boolean" />
+		</Record>
+
+		<Record Id="dcDollarOItem">
+			<Field Name="Key" Type="dcString" Required="True" />
+			<Field Name="DisplayKey" Type="Any" Required="True" />
+			<Field Name="Value" Type="String" />
+			<Field Name="DisplayValue" Type="Any" />
+			<Field Name="Children">
+				<List Type="dcDollarOItem" />
+			</Field>
+		</Record>
 	</Shared>
 	
 	<Services>
@@ -1463,7 +1480,6 @@
 									<Field Name="Id" Type="dcDomain:Id" />
 									<Field Name="Title" Type="dcDomain:dcTitle" />
 									<Field Name="Alias" Type="dcDomain:dcAlias" />
-									<Field Name="Settings" Type="String" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
 									<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
 									<Field Name="Names">
@@ -1483,7 +1499,6 @@
 									<Field Name="Id" Type="dcDomain:Id" Required="True" />
 									<Field Name="Title" Type="dcDomain:dcTitle" Required="IfPresent" />
 									<Field Name="Alias" Type="dcDomain:dcAlias" />
-									<Field Name="Settings" Type="String" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
 									<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
 									<Field Name="Names">
@@ -1501,9 +1516,8 @@
 						<Request Inherits="RequestMessage">
 							<Field Name="Body" Required="True">
 								<Record>
-									<Field Name="Title" Type="dcDomain:dcTitle" Required="IfPresent" />
-									<Field Name="Alias" Type="dcDomain:dcAlias" />
-									<Field Name="Settings" Type="String" />
+									<Field Name="Title" Type="dcDomain:dcTitle" Required="True" />
+									<Field Name="Alias" Type="dcDomain:dcAlias" Required="True" />
 									<Field Name="Description" Type="dcDomain:dcDescription" />
 									<Field Name="ObscureClass" Type="dcDomain:dcObscureClass" />
 									<Field Name="Names">
@@ -1546,74 +1560,37 @@
 						</Request>
 						<Response Inherits="ResponseMessage" />
 					</Op>
-					<Op Name="SetDomainNames">
+				</Feature>
+				<Feature Name="Globals">
+					<Op Name="DollarO">
 						<Description>
-							Set (replace) the names for each domain listed.
+							Load a list of global entries.
 						</Description>
+						
 						<Request Inherits="RequestMessage">
-							<Field Name="Body" Required="True">
-								<Record>
-									<Field Name="Id" Type="dcDomain:Id" Required="True" />
-									<Field Name="Names" Required="True">
-										<List Type="dcDomain:dcName" />
-									</Field>
-								</Record>
-							</Field>
+							<Field Name="Body" Required="True" Type="dcDollarORequest" />
 						</Request>
-						<Response Inherits="ResponseMessage" />
-					</Op>
-					<Op Name="AddDomainNames">
-						<Description>
-							Add the name for each domain listed.
-						</Description>
-						<Request Inherits="RequestMessage">
-							<Field Name="Body" Required="True">
-								<Record>
-									<Field Name="Id" Type="dcDomain:Id" Required="True" />
-									<Field Name="Names" Required="True">
-										<List Type="dcDomain:dcName" />
-									</Field>
-								</Record>
-							</Field>
-						</Request>
-						<Response Inherits="ResponseMessage" />
-					</Op>
-					<Op Name="RemoveDomainNames">
-						<Description>
-							Remove the authorization tags for each group listed.
-						</Description>
-						<Request Inherits="RequestMessage">
-							<Field Name="Body" Required="True">
-								<Record>
-									<Field Name="Id" Type="dcDomain:Id" Required="True" />
-									<Field Name="Names" Required="True">
-										<List Type="dcDomain:dcName" />
-									</Field>
-								</Record>
-							</Field>
-						</Request>
-						<Response Inherits="ResponseMessage" />
-					</Op>
-					<Op Name="ListDomains">
-						<Description>
-							Load a list all domain records, no matter how many.  Use with discretion.
-						</Description>
-						<Request Inherits="RequestMessage" />
 						<Response Inherits="ResponseMessage">
 							<Field Name="Body">
-								<List>
-									<Record>
-										<Field Name="Id" Type="dcDomain:Id" />
-										<Field Name="Title" Type="dcDomain:dcTitle" />
-										<Field Name="Alias" Type="dcDomain:dcAlias" />
-										<Field Name="Description" Type="dcDomain:dcDescription" />
-										<Field Name="Names">
-											<List Type="dcDomain:dcName" />
-										</Field>
-									</Record>
-								</List>
+								<List Type="dcDollarOItem" />
 							</Field>
 						</Response>
+					</Op>
+					<Op Name="Kill">
+						<Description>
+							remove a global entry (and any empty parents).
+						</Description>
+						
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Keys" Required="True">
+										<List Type="dcString" />
+									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage" />
 					</Op>
 				</Feature>
 			</Secure>
@@ -1631,6 +1608,21 @@
 							<Field Name="Body">
 								<List Type="dcLoadDomainsResponse" />
 							</Field>
+						</Response>
+					</Op>
+					<Op Name="Load">
+						<Description>
+							Load info about a domain.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Id" Type="Id" Required="True" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body" Type="dcLoadDomainsResponse" />
 						</Response>
 					</Op>
 				</Feature>

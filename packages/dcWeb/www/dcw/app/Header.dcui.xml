@@ -22,15 +22,21 @@
 				this.call('hdrLoadReal');
 	]]></Function>
 	<Function Name="hdrLoadReal"><![CDATA[
-				if (dc.pui.Loader.__appTitle) {
+				var page = dc.pui.Loader.__pages[this.Name];
+				
+				if (page.Title) 
+					$('#dcappHomeBtn1').text(page.Title);
+				else if (dc.pui.Loader.__appTitle) 
 					$('#dcappHomeBtn1').text(dc.pui.Loader.__appTitle);
-				}
 	]]></Function>
 	<Function Name="hdrDoAppHome"><![CDATA[
-				dc.pui.Loader.loadPage(dc.pui.Loader.__appHome);
+				if (dc.pui.Loader.__appHome)
+					dc.pui.Loader.loadPage(dc.pui.Loader.__appHome);
+				else
+					dc.pui.Loader.loadHomePage();
 	]]></Function>
 	<Function Name="hdrDoWebHome"><![CDATA[
-				dc.pui.Loader.loadPage($('html').attr('data-dcw-home'));
+				dc.pui.Loader.loadHomePage();
 	]]></Function>
 	<Function Name="hdrDoSignOut"><![CDATA[
 				dc.pui.Loader.signout();

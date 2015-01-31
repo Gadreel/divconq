@@ -22,9 +22,6 @@
 					<FieldContainer Label="Description:">
 						<TextArea Name="Description" />
 					</FieldContainer>
-					<FieldContainer Label="Settings (XML):">
-						<TextArea Name="Settings" Required="true" />
-					</FieldContainer>
 					
 					<div class="formbuttons">
 						<!-- not a good idea

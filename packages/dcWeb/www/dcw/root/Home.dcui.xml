@@ -14,6 +14,10 @@
 					
 					<ul id="lstDomains" data-role="listview" data-inset="true" data-count-theme="a" />					
 				</div>			 
+				
+				<h2>Options</h2>
+				
+				<WideButton Label="Globals Explorer" Icon="plus" Page="/dcw/root/GlobalExplorer" /> 
 			</article>
 		</div>
 

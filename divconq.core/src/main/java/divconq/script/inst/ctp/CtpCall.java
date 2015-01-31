@@ -30,6 +30,7 @@ import divconq.struct.scalar.NullStruct;
 import divconq.util.StringUtil;
 
 public class CtpCall extends Instruction {
+	@SuppressWarnings("resource")
 	@Override
 	public void run(final StackEntry stack) {
         String name = stack.stringFromSource("Name");
@@ -48,7 +49,6 @@ public class CtpCall extends Instruction {
         	return;
         }
         
-        @SuppressWarnings("resource")
 		ApiSession sess = (ApiSession) ss;
         
         Message msg = null;

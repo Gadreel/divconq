@@ -99,7 +99,6 @@ import divconq.web.dcui.ServerScript;
 import divconq.web.dcui.Html5AppHead;
 import divconq.web.dcui.HyperLink;
 import divconq.web.dcui.ICodeTag;
-import divconq.web.dcui.IncludeHolder;
 import divconq.web.dcui.IncludeParam;
 import divconq.web.dcui.IncludePart;
 import divconq.web.dcui.LiteralText;
@@ -177,7 +176,7 @@ public class WebDomain {
 		// UI = app or customer uses builder
 		// UI = basic is just 'index.html' approach
 		this.appFramework = (this.webconfig.hasAttribute("UI") && 
-				("app".equals(this.webconfig.getAttribute("UI").toLowerCase())));
+				("custom".equals(this.webconfig.getAttribute("UI").toLowerCase())));
 
 		if (this.webconfig.hasAttribute("HomePath")) 
 			this.homepath = new CommonPath(this.webconfig.getAttribute("HomePath"));
@@ -736,7 +735,7 @@ public class WebDomain {
 		this.codetags.put("Form", AdvForm.class);
 		this.codetags.put("Html5Head", Html5AppHead.class);		
 		this.codetags.put("IncludePart", IncludePart.class);
-		this.codetags.put("IncludeHolder", IncludeHolder.class);
+		//this.codetags.put("IncludeHolder", IncludeHolder.class);
 		this.codetags.put("IncludeParam", IncludeParam.class);
 		this.codetags.put("Link", HyperLink.class);
 		this.codetags.put("LiteralText", LiteralText.class);

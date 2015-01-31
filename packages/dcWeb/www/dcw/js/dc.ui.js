@@ -110,6 +110,28 @@
 			}
 		}
 			- forms data for this page 
+			
+		onResize: [
+			functions...
+		]
+		
+		onDestroy: [
+			functions...
+		]
+		
+		onFrame: [
+		]
+		
+		Timers: [
+			{
+					Title: SSS,
+					Period: N,
+					Op: func,
+					Data: any,
+					__tid: N, 			if timeout
+					__iid: N			if interval	
+			}
+		]
 	}
 */
 
@@ -121,16 +143,17 @@ dc.pui = {
 		__devmode: false,
 		__hashes: { },
 		__pages: { },
+		__stalePages: { },
 		__libs: { },
 		__styles: { },
 		__cache: { },   // only valid during page show, wiped each page transition
-		__mainPage: '/dcw/Main',
-		__homePage: '/dcw/Home',
-		__signInPage: '/dcw/SignIn',
-		__destPage: '/dcw/Home',
+		__homePage: '/Home',
+		__portalPage: '/Portal',
+		__signInPage: '/SignIn',
+		__destPage: null,
 		
 		init: function() {
-			dc.pui.Loader.__content = document.querySelector('body'); //  document.getElementById('pageContent');
+			dc.pui.Loader.__content = document.querySelector('body'); 
 			
 			$(window).on('hashchange', function() {
 				var hash = location.hash.substring(1); 
@@ -153,6 +176,12 @@ dc.pui = {
 				
 				if (page && page.Functions['onResize']) 
 					page.Functions['onResize'].apply(entry, e);
+				
+				if (entry.onResize && entry.onResize.length) {
+					for (var i = 0; i < entry.onResize.length; i++) {
+						entry.onResize[i](entry);
+					}
+				}
 			});
 			
 			/* no swipe!!
@@ -184,30 +213,48 @@ dc.pui = {
     			
     			return false;
 			}, 'Invalid JSON.');
-    		
-    		$('#pageBtnHome').click(function(e) {
-    			dc.pui.Loader.loadPage(dc.pui.Loader.__homePage);    			
-    			e.preventDefault();
-    			return false;
-    		});
-    		
-    		$('#pageBtnSignOut').click(function(e) {
-    			dc.user.signout();
-    			e.preventDefault();
-    			return false;
-    		});
 		},
 		
 		setHomePage: function(v) {
 			dc.pui.Loader.__homePage = v;
 		},
 		
-		setMainPage: function(v) {
-			dc.pui.Loader.__mainPage = v;
+		loadHomePage: function() {
+			var hpath = $('html').attr('data-dcw-Home');
+			
+			if (!hpath)
+				hpath = dc.pui.Loader.__homePage;
+			
+			if (hpath)
+				dc.pui.Loader.loadPage(hpath);
+		},
+		
+		setPortalPage: function(v) {
+			dc.pui.Loader.__portalPage = v;
+		},
+		
+		loadPortalPage: function() {
+			var hpath = $('html').attr('data-dcw-Portal');
+			
+			if (!hpath)
+				hpath = dc.pui.Loader.__portalPage;
+			
+			if (hpath)
+				dc.pui.Loader.loadPage(hpath);
 		},
 		
 		setSigninPage: function(v) {
 			dc.pui.Loader.__signInPage = v;
+		},
+		
+		loadSigninPage: function() {
+			var hpath = $('html').attr('data-dcw-SignIn');
+			
+			if (!hpath)
+				hpath = dc.pui.Loader.__signInPage;
+			
+			if (hpath)
+				dc.pui.Loader.loadPage(hpath);
 		},
 		
 		setDestPage: function(v) {
@@ -215,7 +262,10 @@ dc.pui = {
 		},
 		
 		loadDestPage: function() {
-			dc.pui.Loader.loadPage(dc.pui.Loader.__destPage);
+			if (dc.pui.Loader.__destPage)
+				dc.pui.Loader.loadPage(dc.pui.Loader.__destPage);
+			//else
+			//	dc.pui.Loader.loadPortalPage();
 		},
 		
 		signout: function() {
@@ -255,18 +305,22 @@ dc.pui = {
 			
 			dc.pui.Loader.__loadPageHash = dc.pui.Loader.addPageEntry(entry);
 		
+			//console.log('checking staleness a: ' + dc.pui.Loader.__stalePages[page])
+			
 			// if page is already loaded then show it
-			if (!dc.pui.Loader.__devmode && dc.pui.Loader.__pages[page]) {
+			if (!dc.pui.Loader.__devmode && dc.pui.Loader.__pages[page] && !dc.pui.Loader.__stalePages[page]) {
 				dc.pui.Loader.resumePageLoad();
 				return;
 			}
 			
+			delete dc.pui.Loader.__stalePages[page];		// no longer stale
+			
+			//console.log('checking staleness b: ' + dc.pui.Loader.__stalePages[page])
+			
 			var script = document.createElement('script');
 			script.src = page + '?_dcui=dyn&nocache=' + dc.util.Crypto.makeSimpleKey();
 			script.id = 'page' + page.replace(/\//g,'.');
-			
-			// .async=false will be needed when loading additional libraries, we can inject a final fake script that echos 
-			// a param (e.g. ?opid=3345) to us saying that it is loaded and hence all preceding scripts are also loaded
+			script.async = false;  	
 			
 			document.head.appendChild(script);
 		},
@@ -332,6 +386,15 @@ dc.pui = {
 			window.location.hash = dc.pui.Loader.__loadPageHash;				
 		},
 		
+		clearPageCache: function(page) {
+			//console.log('setting staleness a: ' + page)
+			
+			if (page)
+				dc.pui.Loader.__stalePages[page] = true; 
+			
+			//console.log('setting staleness b: ' + dc.pui.Loader.__stalePages[page])
+		},
+		
 		failedPageLoad: function(reason) {
 			dc.pui.Loader.__destPage = dc.pui.Loader.__hashes[dc.pui.Loader.__loadPageHash].Name;
 			
@@ -362,9 +425,33 @@ dc.pui = {
 			
 			if (dc.pui.Loader.__current) {
 				var page = dc.pui.Loader.__pages[dc.pui.Loader.__current.Name];
+
+				// clear the old timers
+				if (dc.pui.Loader.__current.Timers && dc.pui.Loader.__current.Timers.length) {
+					for (var x = 0; x < dc.pui.Loader.__current.Timers.length; x++) {
+						var tim = dc.pui.Loader.__current.Timers[x];
+						
+						if (tim.__tid)
+							window.clearTimeout(tim.__tid);
+						else if (tim.__iid)
+							window.clearTimeout(tim.__iid);
+					}
+				}
 				
+				if (dc.pui.Loader.__current.onDestroy && dc.pui.Loader.__current.onDestroy.length) {
+					for (var i = 0; i < dc.pui.Loader.__current.onDestroy.length; i++) {
+						dc.pui.Loader.__current.onDestroy[i](dc.pui.Loader.__current);
+					}
+				}
+				
+				delete dc.pui.Loader.__current.onResize;
+				delete dc.pui.Loader.__current.onDestroy;
+				delete dc.pui.Loader.__current.onFrame;
+				delete dc.pui.Loader.__current.Timers;
+				
+				// run the destroy on old page
 				if (page && page.Functions['onDestroy']) 
-					page.Functions['onDestroy'].call(dc.pui.Loader.__current, entry);
+					page.Functions['onDestroy'].call(dc.pui.Loader.__current, entry);		// transition from (param 1) > to (param 2)
 			}
 			
 			dc.pui.Loader.__cache = {};
@@ -373,8 +460,8 @@ dc.pui = {
 			
 			var page = dc.pui.Loader.__pages[entry.Name];
 			
-			if (dc.util.String.isString(page.Title))
-				$('#pageLblTitle h1').text(page.Title);
+			//if (dc.util.String.isString(page.Title))
+			//	$('#pageLblTitle h1').text(page.Title);
 			
 			$(dc.pui.Loader.__content).empty().promise().then(function() {
 				// layout using 'pageContent' as the top of the chain of parents
@@ -446,6 +533,111 @@ dc.pui = {
 			
 			if (page && page.Functions['onFrame']) 
 				page.Functions['onFrame'].call(entry, e);
+			
+			if (entry.onFrame && entry.onFrame.length) {
+				for (var i = 0; i < entry.onFrame.length; i++) {
+					var render = entry.onFrame[i];
+					
+				    var now = Date.now();
+				    var delta = now - render.__then;
+				     
+				    if (delta > render.__interval) {
+				        // adjust so lag time is removed, produce even rendering 
+				    	render.__then = now - (delta % render.__interval);
+				         
+						render.Run(entry);
+				    }
+				    else {
+						dc.pui.Loader.requestFrame();	// keep calling until we don't skip
+						//render.Skip(entry);
+				    }
+				}
+			}
+		},
+		
+		registerResize : function(callback) {
+			var entry = dc.pui.Loader.__current;
+			
+			// TODO error
+			if (!entry)
+				return;
+			
+			if (!entry.onResize)
+				entry.onResize = [];
+			
+			entry.onResize.push(callback);
+		},
+		
+		registerFrame : function(render) {
+			var entry = dc.pui.Loader.__current;
+			
+			// TODO error
+			if (!entry)
+				return;
+			
+			if (!entry.onFrame)
+				entry.onFrame = [];
+			
+			render.__then = Date.now();
+			render.__interval = 1000 / render.Fps;
+			
+			entry.onFrame.push(render);
+		},
+		
+		registerDestroy : function(callback) {
+			var entry = dc.pui.Loader.__current;
+			
+			// TODO error
+			if (!entry)
+				return;
+			
+			if (!entry.onDestroy)
+				entry.onDestroy = [];
+			
+			entry.onDestroy.push(callback);
+		},
+		
+		allocateTimeout : function(options) {
+			var entry = dc.pui.Loader.__current;
+			
+			// TODO error
+			if (!entry)
+				return;
+			
+			if (!entry.Timers)
+				entry.Timers = [];
+			
+			var pos = entry.Timers.length;
+			
+			options.__tid = window.setTimeout(function () {
+					window.clearTimeout(options.__tid);		// no longer need to clear this later, it is called
+					entry.Timers.splice(pos, 1);
+					
+					options.Op(options.Data);
+				}, 
+				options.Period);
+			
+			entry.Timers.push(options);		
+		},
+		
+		allocateInterval : function(options) {
+			var entry = dc.pui.Loader.__current;
+			
+			// TODO error
+			if (!entry)
+				return;
+			
+			if (!entry.Timers)
+				entry.Timers = [];
+			
+			var pos = entry.Timers.length;
+			
+			options.__iid = window.setInterval(function () {
+					options.Op(options.Data);
+				}, 
+				options.Period);
+			
+			entry.Timers.push(options);		
 		}
 	},
 	Page: {		
@@ -1965,8 +2157,6 @@ $(document).on('mobileready', function () {
 		return;
 	
 	// if we are not at this page using the correct Main then switch main
-	var mpath = '/'; 
-	
 	var hash = location.hash;
 	
 	if (hash) {
@@ -1978,33 +2168,33 @@ $(document).on('mobileready', function () {
 			hash = hash.substring(1);
 	}
 	
-	// if path does not contain / or if it contains only / then skip url as home hint 
+	// if hash does not contain / or if it contains only / then skip hash as home hint 
 	if ((hash == '/') || (hash.indexOf('/') == -1))
 		hash = '';
 	
-	var hpath = hash ? hash : location.pathname;
+	var dpath = hash ? hash : location.pathname;
 
-	// if path does not contain / or if it contains only / then skip url as home hint 
-	if ((hpath == '/') || (hpath.indexOf('/') == -1) || (hpath == mpath))
-		hpath = '';
+	// if path does not contain / or if it contains only / then skip path as home hint 
+	if ((dpath == '/') || (dpath.indexOf('/') == -1))
+		dpath = '';
 	
 	// look for home hint in html attr
-	if (!hpath)
-		hpath = $('html').attr('data-dcw-Home');
+	if (!dpath)
+		dpath = $('html').attr('data-dcw-Home');
 	
-	if (!hpath)
-		hpath = dc.pui.Loader.__homePage;
+	if (!dpath)
+		dpath = dc.pui.Loader.__homePage;
 
-	if (mpath && (location.pathname != mpath)) {
-		if (hpath)
-			window.location = mpath + "#" + hpath;
-		else
-			window.location = mpath;
-		
+	// by this point we always want some dpath - home or otherwise - due to fact that we want to 
+	// go through the dynamic load for the initial page showing - so __destPath is our way to get
+	// home, etc via dynamic
+	
+	if (location.pathname != '/') {
+		window.location = '/#' + dpath;
 		return;
 	}
 	
-	dc.pui.Loader.__destPage = hpath;
+	dc.pui.Loader.__destPage = dpath;
 	
 	dc.comm.init(function() {
 		/*

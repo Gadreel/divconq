@@ -1,9 +1,5 @@
 package divconq.db.proc;
 
-import static divconq.db.Constants.*;
-
-import java.util.function.Consumer;
-
 import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
@@ -15,9 +11,11 @@ import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.builder.ICompositeBuilder;
 
-public class LoadDomains extends LoadRecord {
+public class LoadDomain extends LoadRecord {
 	@Override
 	public void execute(DatabaseInterface conn, DatabaseTask task, OperationResult log) {
+		RecordStruct params = task.getParamsAsRecord();
+		
 		TablesAdapter db = new TablesAdapter(conn, task); 
 		
 		ICompositeBuilder out = task.getBuilder();
@@ -59,29 +57,20 @@ public class LoadDomains extends LoadRecord {
 		BigDateTime when = BigDateTime.nowDateTime();
 		
 		try {
-			out.startList();
+			String did = params.getFieldAsString("Id");
 			
-			db.traverseSubIds("dcDomain", DB_GLOBAL_ROOT_USER, "dcDomainIndex", when, false, new Consumer<Object>() {				
-				@Override
-				public void accept(Object t) {
-					String did = t.toString();
-					
-					task.pushDomain(did);
-					
-					try {
-						LoadDomains.this.writeRecord(conn, task, log, out, db, "dcDomain",
-								did, when, select, true, false, false);
-					}
-					catch (Exception x) {
-						log.error("LoadDomainsProc: Unable to create resp 2: " + x);
-					}
-					finally {
-						task.popDomain();
-					}
-				}
-			});
+			task.pushDomain(did);
 			
-			out.endList();
+			try {
+				LoadDomain.this.writeRecord(conn, task, log, out, db, "dcDomain",
+						did, when, select, true, false, false);
+			}
+			catch (Exception x) {
+				log.error("LoadDomainsProc: Unable to create resp 2: " + x);
+			}
+			finally {
+				task.popDomain();
+			}
 		}
 		catch (Exception x) {
 			log.error("LoadDomainsProc: Unable to create resp: " + x);

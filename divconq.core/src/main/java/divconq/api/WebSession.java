@@ -39,6 +39,8 @@ public class WebSession extends HyperSession {
 			return;
 		}
 		
+		callback.setSession(this);
+		
 		this.replies.registerForReply(msg, callback);
 
     	this.handler.send(msg);

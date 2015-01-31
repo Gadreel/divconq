@@ -497,10 +497,10 @@ public class HubRouter {
 			//System.out.println("Gateway request passed checks z: " + msg);
     	}
     	/*
-    	// TODO temp - show me messages coming into gateway from server 
+    	// TODO temp - show me messages coming into server from gateway 
     	else if (!looksLikeReply) {
 			System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
-			System.out.println("Server request passed checks z: " + msg);
+			System.out.println("gateway request passed checks z: " + msg);
 			System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
     	}
     	*/

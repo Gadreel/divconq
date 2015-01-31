@@ -303,6 +303,8 @@ public class HyperSession extends ApiSession {
 			callback.complete();
 			return;
 		}
+		
+		callback.setSession(this);
     	
 		this.replies.registerForReplySerial(msg, callback);
 
