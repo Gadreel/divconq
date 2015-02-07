@@ -1,5 +1,13 @@
 package divconq.service.db;
 
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.function.Consumer;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.HttpsURLConnection;
+
 import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.db.DataRequest;
@@ -7,15 +15,23 @@ import divconq.db.IDatabaseManager;
 import divconq.db.ObjectResult;
 import divconq.db.common.RequestFactory;
 import divconq.db.query.LoadRecordRequest;
+import divconq.db.query.SelectDirectRequest;
 import divconq.db.query.SelectFields;
+import divconq.db.query.WhereEqual;
+import divconq.db.query.WhereField;
+import divconq.db.update.InsertRecordRequest;
 import divconq.hub.Hub;
+import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationContextBuilder;
 import divconq.lang.op.UserContext;
 import divconq.mod.ExtensionBase;
+import divconq.struct.CompositeParser;
 import divconq.struct.CompositeStruct;
+import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.util.HexUtil;
 import divconq.util.StringUtil;
 import divconq.work.TaskRun;
 
@@ -64,6 +80,161 @@ public class AuthService extends ExtensionBase implements IService {
 						request.returnValue(result);
 					}
 				});						
+				
+				return;
+			}			
+
+			
+			if ("SignInFacebook".equals(op)) {
+				// TODO check domain settings that FB sign in is allowed
+				
+				//request.getTask().withTimeout(30);		// TODO temp
+				
+				/*
+				RecordStruct data1 = new RecordStruct(
+						new FieldStruct("Name", "Andy"),
+						new FieldStruct("Age", "Green"),
+						new FieldStruct("Sex", "M")
+				);
+				
+				RecordStruct data2 = new RecordStruct(
+						new FieldStruct("Name", "Andy"),
+						new FieldStruct("Age", 44),
+						new FieldStruct("Sex", "M")
+				);
+				
+				System.out.println("1");
+				OperationContext.get().getSchema().validateType(data1, "geiTestDefinition");
+				System.out.println("2");
+				OperationContext.get().getSchema().validateType(data2, "geiTestDefinition");
+				*/
+				
+				// try to authenticate
+				RecordStruct creds = msg.getFieldAsRecord("Body");
+				
+				String uid = creds.getFieldAsString("UserId");
+				String fbtoken = creds.getFieldAsString("AccessToken");
+				
+				RecordStruct fbinfo = AuthService.fbSignIn(fbtoken, null);		// TODO use FB secret key someday? for app proof...
+				
+				if (request.hasErrors() || (fbinfo == null)) {
+					AuthService.this.clearUserContext(OperationContext.get());
+					request.errorTr(442);
+					return;
+				}
+				
+				// TODO allow only `verified` fb users?
+				if (!uid.equals(fbinfo.getFieldAsString("id")) || fbinfo.isFieldEmpty("email")
+						 || fbinfo.isFieldEmpty("first_name") || fbinfo.isFieldEmpty("last_name")) {		
+					AuthService.this.clearUserContext(OperationContext.get());
+					request.errorTr(442);
+					return;
+				}
+				
+				// sigin callback
+				Consumer<String> signincb = new Consumer<String>() {					
+					@Override
+					public void accept(String userid) {
+						DataRequest tp1 = RequestFactory.startSessionRequest(userid);
+						
+						// TODO for all services, be sure we return all messages from the submit with the message
+						db.submit(tp1, new ObjectResult() {
+							@Override
+							public void process(CompositeStruct result) {
+								RecordStruct sirec = (RecordStruct) result;
+								OperationContext ctx = request.getContext();
+								
+								//System.out.println("auth 2: " + request.getContext().isElevated());
+								
+								if (request.hasErrors() || (sirec == null)) {
+									AuthService.this.clearUserContext(ctx);
+									request.errorTr(442);
+								}
+								else {
+									ListStruct atags = sirec.getFieldAsList("AuthorizationTags");
+									atags.addItem("User");
+									
+									OperationContext.switchUser(ctx, ctx.getUserContext().toBuilder() 
+											.withVerified(true)
+											.withAuthToken(sirec.getFieldAsString("AuthToken"))
+											.withUserId(sirec.getFieldAsString("UserId"))
+											.withUsername(sirec.getFieldAsString("Username"))
+											.withFullName(sirec.getFieldAsString("FirstName") + " " + sirec.getFieldAsString("LastName"))		// TODO make locale smart
+											.withEmail(sirec.getFieldAsString("Email"))
+											.withAuthTags(atags)
+											.toUserContext()
+									);
+									
+									Hub.instance.getSessions().findOrCreateTether(request.getContext());
+								}
+								
+								request.returnValue(new RecordStruct(
+										new FieldStruct("Username", sirec.getFieldAsString("Username")),
+										new FieldStruct("FirstName", sirec.getFieldAsString("FirstName")),
+										new FieldStruct("LastName", sirec.getFieldAsString("LastName")),
+										new FieldStruct("Email", sirec.getFieldAsString("Email"))
+								));
+							}
+						});
+					}
+				};
+				
+				// -----------------------------------------
+				// find user - update or insert user record
+				// -----------------------------------------
+				
+				db.submit(
+						new SelectDirectRequest("dcUser", 
+								new SelectFields()
+									.withField("Id")
+									.withField("dcUsername", "Username")
+									.withField("dcFirstName", "FirstName")
+									.withField("dcLastName", "LastName")
+									.withField("dcEmail", "Email"),
+								new WhereEqual(new WhereField("dcmFacebookId"), uid)		// TODO or where `username` = `fb email`
+						), 
+						new ObjectResult() {
+							@Override
+							public void process(CompositeStruct uLookupResult) {
+								if (uLookupResult == null) {
+									request.error("Error finding user record");
+									request.complete();
+									return;
+								}
+								
+								ListStruct ulLookupResult = (ListStruct) uLookupResult;
+								
+								if (ulLookupResult.getSize() == 0) {
+									// insert new user record
+									// TODO be sure username (with this email) is unique
+									InsertRecordRequest req = new InsertRecordRequest();
+									
+									req
+										.withTable("dcUser")		
+										.withSetField("dcUsername", fbinfo.getFieldAsString("email"))
+										.withSetField("dcEmail", fbinfo.getFieldAsString("email"))
+										.withSetField("dcFirstName", fbinfo.getFieldAsString("first_name"))
+										.withSetField("dcLastName", fbinfo.getFieldAsString("last_name"))
+										.withSetField("dcmFacebookId", uid)
+										.withSetField("dcConfirmed", true);									
+									
+									// TODO look at fb `locale` and `timezone` too
+									
+									db.submit(req, new ObjectResult() {										
+										@Override
+										public void process(CompositeStruct result) {
+											signincb.accept(((RecordStruct)result).getFieldAsString("Id"));
+										}
+									});
+								}
+								else {
+									// TODO update
+									
+									signincb.accept(ulLookupResult.getItemAsRecord(0).getFieldAsString("Id"));
+								}
+							}
+						}
+				);
 				
 				return;
 			}			
@@ -131,23 +302,16 @@ public class AuthService extends ExtensionBase implements IService {
 						}
 						else {
 							//System.out.println("verify new");
-
-							RecordStruct urec = sirec.getFieldAsRecord("UserInfo");
-							
-							ListStruct atags = urec.getFieldAsList("AuthorizationTags");
-							
+							ListStruct atags = sirec.getFieldAsList("AuthorizationTags");
 							atags.addItem("User");
-							
-							// TODO add in group tags							
-							//atags.addItem(x);							
 							
 							OperationContext.switchUser(ctx, ctx.getUserContext().toBuilder() 
 									.withVerified(true)
-									.withAuthToken(urec.getFieldAsString("AuthToken"))
-									.withUserId(urec.getFieldAsString("UserId"))
+									.withAuthToken(sirec.getFieldAsString("AuthToken"))
+									.withUserId(sirec.getFieldAsString("UserId"))
 									.withUsername(tc.getUserContext().getCredentials().getFieldAsString("Username"))
-									.withFullName(urec.getFieldAsString("FirstName") + " " + urec.getFieldAsString("LastName"))		// TODO make locale smart
-									.withEmail(urec.getFieldAsString("Email"))
+									.withFullName(sirec.getFieldAsString("FirstName") + " " + sirec.getFieldAsString("LastName"))		// TODO make locale smart
+									.withEmail(sirec.getFieldAsString("Email"))
 									.withAuthTags(atags)
 									.toUserContext()
 							);
@@ -223,5 +387,50 @@ public class AuthService extends ExtensionBase implements IService {
 			.withGuestUserTemplate()
 			.withDomainId(uc.getDomainId())
 			.toUserContext());
+	}
+	
+	static public RecordStruct fbSignIn(String token, String secret) {
+        try {
+        	URL url = null;
+        	
+        	if (StringUtil.isEmpty(secret)) {
+				url = new URL("https://graph.facebook.com/v2.2/me?access_token=" + URLEncoder.encode(token, "UTF-8"));
+        	}
+        	else {
+	            Mac mac = Mac.getInstance("HmacSHA256");
+	            
+	            mac.init(new SecretKeySpec(secret.getBytes(), "HmacSHA256"));
+	            
+	            String verify = HexUtil.bufferToHex(mac.doFinal(token.getBytes())); 
+	            
+				//System.out.println("verify: " + verify);
+				
+				url = new URL("https://graph.facebook.com/v2.2/me?access_token=" + URLEncoder.encode(token, "UTF-8")
+						+ "&appsecret_proof=" + URLEncoder.encode(verify, "UTF-8"));					
+				
+				//System.out.println("url: " + url);
+        	}
+        	
+			HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+			 
+			con.setRequestProperty("User-Agent", "DivConq/1.0 (Language=Java/8)");
+	 
+			int responseCode = con.getResponseCode();
+	 
+			if (responseCode == 200) {
+				FuncResult<CompositeStruct> res = CompositeParser.parseJson(con.getInputStream());
+				
+				//System.out.println("res: " + res.getResult());
+				
+				return (RecordStruct) res.getResult();
+			}
+			
+			OperationContext.get().error("FB Response Code : " + responseCode);
+        } 
+        catch (Exception x) {
+            OperationContext.get().error("FB error: " + x);
+        }
+        
+        return null;
 	}
 }

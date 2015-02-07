@@ -19,10 +19,10 @@ package divconq.filestore.local;
 import java.io.InputStream;
 
 import divconq.filestore.ITextReader;
-import divconq.hub.Hub;
 import divconq.io.LineIterator;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
 import divconq.script.StackEntry;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -35,7 +35,7 @@ public class FileSystemTextReader extends RecordStruct implements ITextReader {
 	protected FileSystemFile file = null;
 	
 	public FileSystemTextReader() {
-		this.setType(Hub.instance.getSchema().getType("dciFileSystemTextReader"));
+		this.setType(OperationContext.get().getSchema().getType("dciFileSystemTextReader"));
 	}
 
 	public FileSystemTextReader(FileSystemFile file) {

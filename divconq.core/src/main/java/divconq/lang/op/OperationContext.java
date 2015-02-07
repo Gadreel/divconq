@@ -27,9 +27,11 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import divconq.bus.Message;
+import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
+import divconq.schema.SchemaManager;
 import divconq.session.Session;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
@@ -477,6 +479,22 @@ public class OperationContext {
 	 */
 	public UserContext getUserContext() {
 		return this.userctx;
+	}
+	
+	public DomainInfo getDomain() {
+		//if (this.schema != null)
+		//	return this.schema;
+		
+		return this.userctx.getDomain();
+	}
+	
+	public SchemaManager getSchema() {
+		//if (this.schema != null)
+		//	return this.schema;
+		
+		DomainInfo di = this.userctx.getDomain();
+		
+		return (di != null) ? di.getSchema() : Hub.instance.getSchema();
 	}
 
 	/**

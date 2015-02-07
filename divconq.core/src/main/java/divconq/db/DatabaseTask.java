@@ -20,7 +20,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
+import divconq.schema.SchemaManager;
 import divconq.struct.CompositeStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
@@ -66,6 +69,17 @@ public class DatabaseTask {
 		return this.domains.get(this.domains.size() - 1);
 	}
 	
+	public SchemaManager getSchema() {
+		String did = this.getDomain();
+		
+		DomainInfo di = Hub.instance.getDomainInfo(did);
+		
+		if (di != null)
+			return di.getSchema();
+		
+		return OperationContext.get().getSchema();
+	}
+	
 	public BigDecimal getStamp() {
 		return this.request.getFieldAsDecimal("Stamp");
 	}
@@ -100,7 +114,8 @@ public class DatabaseTask {
 		if (this.result.getResult() instanceof ObjectResult) {
 			// TODO not currently working, review
 			CompositeStruct res = ((ObjectResult)this.result.getResult()).getResultAsComposite();
-			Hub.instance.getSchema().validateProcResponse(this.request.getFieldAsString("Name"), res);
+			
+			this.getSchema().validateProcResponse(this.request.getFieldAsString("Name"), res);
 		}
 		
 		this.result.complete();

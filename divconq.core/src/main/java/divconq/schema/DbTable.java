@@ -19,7 +19,6 @@ package divconq.schema;
 import java.util.HashMap;
 import java.util.Map;
 
-import divconq.lang.op.OperationResult;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
@@ -60,7 +59,7 @@ public class DbTable {
 			fld.fkey = fel.getAttribute("ForeignKey");
 	}
 
-	public void compile(OperationResult mr, SchemaManager man) {
+	public void compile(SchemaManager man) {
 		DataType tbtype = man.getType(this.name);
 		
 		if (tbtype == null)
@@ -107,7 +106,7 @@ public class DbTable {
 		}
 	}
 
-	public DbField getField(String name2) {
+	protected DbField getField(String name2) {
 		return this.fields.get(name2);
 	}
 

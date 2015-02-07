@@ -113,27 +113,41 @@
 				<Request>
 					<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
 					<Field Name="Password" Type="dcSmallString" />
-					<Field Name="At" Type="DateTime" Required="True" />
 					<Field Name="Code" Type="dcUser:dcConfirmCode" />
 					<Field Name="RecoverExpire" Type="dcUser:dcRecoverAt" />
 					<Field Name="Suspect" Type="Boolean" />
 				</Request>
 				<Response>
-					<Field Name="UserInfo">
-						<Record>
-							<Field Name="UserId" Type="Id" />
-							<Field Name="FirstName" Type="dcUser:dcFirstName" />
-							<Field Name="LastName" Type="dcUser:dcLastName" />
-							<Field Name="Email" Type="dcUser:dcEmail" />
-							<Field Name="Locale" Type="dcUser:dcLocale" />
-							<Field Name="Chronology" Type="dcUser:dcChronology" />
-							<Field Name="AuthToken" Type="dcAuthToken" />
-							<Field Name="AuthorizationTags">
-								<List Type="dcUser:dcAuthorizationTag" />
-							</Field>
-						</Record>
+					<Field Name="UserId" Type="Id" />
+					<Field Name="FirstName" Type="dcUser:dcFirstName" />
+					<Field Name="LastName" Type="dcUser:dcLastName" />
+					<Field Name="Email" Type="dcUser:dcEmail" />
+					<Field Name="Locale" Type="dcUser:dcLocale" />
+					<Field Name="Chronology" Type="dcUser:dcChronology" />
+					<Field Name="AuthToken" Type="dcAuthToken" />
+					<Field Name="AuthorizationTags">
+						<List Type="dcUser:dcAuthorizationTag" />
 					</Field>
-					<Field Name="AdditionalTags">
+				</Response>
+			</Procedure>
+			<Procedure Name="dcStartSession" Execute="divconq.db.proc.StartSession">
+				<Description>
+					Start a user session, skipping authentication.
+					Requires either user name or user id.
+				</Description>
+				<Request>
+					<Field Name="UserId" Type="Id" />
+				</Request>
+				<Response>
+					<Field Name="UserId" Type="Id" />
+					<Field Name="Username" Type="dcUser:dcUsername" />
+					<Field Name="FirstName" Type="dcUser:dcFirstName" />
+					<Field Name="LastName" Type="dcUser:dcLastName" />
+					<Field Name="Email" Type="dcUser:dcEmail" />
+					<Field Name="Locale" Type="dcUser:dcLocale" />
+					<Field Name="Chronology" Type="dcUser:dcChronology" />
+					<Field Name="AuthToken" Type="dcAuthToken" />
+					<Field Name="AuthorizationTags">
 						<List Type="dcUser:dcAuthorizationTag" />
 					</Field>
 				</Response>
@@ -492,32 +506,6 @@
 					</Field>
 				</Request>
 			</Procedure>			
-			
-			<!-- 
-			<Procedure Name="dcStartSession" Execute="startSess^dcUser">
-				<Description>
-					Start a user session, skipping authentication.
-					Requires either user name or user id, not both.
-				</Description>
-				<Request>
-					<Field Name="At" Type="DateTime" Required="True" />
-					<Field Name="Username" Type="dcUser:dcUsername" />
-					<Field Name="UserId" Type="Id" />
-				</Request>
-				<Response>
-					<Field Name="UserId" Type="Id" />
-					<Field Name="FirstName" Type="dcTinyString" />
-					<Field Name="LastName" Type="dcTinyString" />
-					<Field Name="Email" Type="dcSmallString" />
-					<Field Name="Locale" Type="dcSmallString" />
-					<Field Name="Chronology" Type="dcSmallString" />
-					<Field Name="AuthToken" Type="dcAuthToken" />
-					<Field Name="AuthorizationTags">
-						<List Type="dcTinyString" />
-					</Field>
-				</Response>
-			</Procedure>
-			 -->
 			 
 			<Procedure Name="dcLoadDomains" Execute="divconq.db.proc.LoadDomains">
 				<Description>

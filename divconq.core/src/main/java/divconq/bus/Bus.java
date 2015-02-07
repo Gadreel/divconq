@@ -54,6 +54,7 @@ import divconq.bus.net.StreamDecoder;
 import divconq.bus.net.StreamEncoder;
 import divconq.bus.net.StreamMessage;
 import divconq.bus.net.StreamSession;
+import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
 import divconq.hub.ISystemWork;
 import divconq.hub.SysReporter;
@@ -261,7 +262,12 @@ public class Bus {
 			return or;
 		}
     	
-		ServiceRouter router = this.servicerouters.get(srv);
+		DomainInfo di = tc.getDomain();
+		
+		ServiceRouter router = (di != null) ? di.getServiceRouter(srv) : null;
+		
+		if (router == null)
+			router = this.servicerouters.get(srv);
 		
 		if (router == null) {
 			or.errorTr(221, msg);
@@ -373,7 +379,7 @@ public class Bus {
     		return;
     	
     	// TODO consider a setting to disable response checks
-		OperationResult mr = Hub.instance.getSchema().validateResponse(msg, original);
+		OperationResult mr = OperationContext.get().getSchema().validateResponse(msg, original);
 		
 		if (mr.hasErrors()) {
 			System.out.println("Bad Message Content: " + msg);
@@ -399,7 +405,7 @@ public class Bus {
     		return;
     	
     	// TODO consider a setting to disable response checks
-		OperationResult mr = Hub.instance.getSchema().validateResponse(msg, serv, feat, op);
+		OperationResult mr = OperationContext.get().getSchema().validateResponse(msg, serv, feat, op);
 		
 		if (mr.hasErrors()) {
 			System.out.println("Bad Message Content: " + msg);

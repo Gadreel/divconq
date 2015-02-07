@@ -21,6 +21,7 @@ import java.io.PrintStream;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 import w3.html.A;
+import w3.html.I;
 
 
 public class HyperLink extends A {
@@ -34,6 +35,10 @@ public class HyperLink extends A {
     public HyperLink() {
     	super();
     }
+    
+    public HyperLink(Object... args) {
+    	super(args);
+	}
     
     public HyperLink(String to, Object... args) {
     	super(args);
@@ -104,7 +109,12 @@ public class HyperLink extends A {
 		if (this.id != null)
 			attrs.add("id", this.id);
 		
-        super.build(args, attrs, this.label);
+		Nodes icon = new Nodes();
+		
+		if (StringUtil.isNotEmpty(this.icon))
+			icon.add(new I(new Attributes("class", "fa " + this.icon)));
+		
+        super.build(args, attrs, this.label, icon);
     }
     
     @Override

@@ -29,9 +29,9 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
 
-import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
 import divconq.lang.Memory;
+import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.schema.DataType;
 import divconq.script.StackEntry;
@@ -67,7 +67,7 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 			return super.getType();
 
 		// implied only, not explicit
-		return Hub.instance.getSchema().getType("AnyList");
+		return OperationContext.get().getSchema().getType("AnyList");
 	}
 	
 	/**
@@ -187,9 +187,7 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 	 * @param items to add
 	 * @return log of the result of the call (check hasErrors)
 	 */
-	public OperationResult addItem(Object... items) {
-		OperationResult or = new OperationResult();
-		
+	public void addItem(Object... items) {
 		for (Object o : items) {
 			Object value = o;
 			Struct svalue = null;
@@ -198,7 +196,7 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 				value = ((ICompositeBuilder)value).toLocal();
 			
 			if (this.explicitType != null) {
-				Struct sv = this.explicitType.wrapItem(value, or);
+				Struct sv = this.explicitType.wrapItem(value);
 				
 				if (sv != null)
 					svalue = sv;
@@ -209,8 +207,6 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 			
 			this.items.add(svalue);
 		}
-		
-		return or;
 	}
 	
 	public OperationResult addCollection(Collection<? extends Object> coll) {

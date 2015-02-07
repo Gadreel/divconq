@@ -18,25 +18,22 @@ package divconq.hub;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
-import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.locale.Localization;
 import divconq.schema.SchemaManager;
-import divconq.xml.XElement;
 
 public class ProjectCompiler {
-	public SchemaManager getSchema(OperationResult or, Collection<String> packages) {
+	public SchemaManager getSchema(Collection<String> packages) {
 		SchemaManager sm = new SchemaManager();
 		
 		// load in package order so that later packages override the original
 		for (String pkg : packages) {
 			File sdir = new File("./packages/" + pkg + "/schema");
 			
-			or.trace(0, "Checking for schemas in: " + sdir.getAbsolutePath());
+			OperationContext.get().trace(0, "Checking for schemas in: " + sdir.getAbsolutePath());
 			
 			if (sdir.exists())
 				// TODO make sure that we get in canonical order
@@ -46,20 +43,21 @@ public class ProjectCompiler {
 						return name.endsWith(".xml");
 					}
 				})) {					
-					or.trace(0, "Loading schema: " + schema.getAbsolutePath());
+					OperationContext.get().trace(0, "Loading schema: " + schema.getAbsolutePath());
 					
-					sm.loadSchema(schema);
+					sm.loadSchema(schema.toPath());
 				}
 		}
 
-		or.trace(0, "Starting compiling schemas");
+		OperationContext.get().trace(0, "Starting compiling schemas");
 		sm.compile();
 
-		or.trace(0, "Finished compiling schemas");
+		OperationContext.get().trace(0, "Finished compiling schemas");
 		
 		return sm;
 	}
 	
+	/*
 	public FuncResult<List<File>> getProcs(Collection<String> packages) {
 		FuncResult<List<File>> or = new FuncResult<List<File>>();		
 		List<File> sm = new ArrayList<File>();
@@ -81,6 +79,7 @@ public class ProjectCompiler {
 		
 		return or;
 	}
+	*/
 	
 	public Localization getDictionary(OperationResult or, Collection<String> packages) {
 		Localization loc = new Localization();
@@ -110,8 +109,10 @@ public class ProjectCompiler {
 		return loc;
 	}
 	
+	/*
 	public XElement getConfigShell(OperationResult or, Collection<String> components, String tier) {
 		// TODO
 		return null;
 	}
+	*/
 }

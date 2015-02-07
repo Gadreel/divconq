@@ -520,6 +520,22 @@ Context: {
 					Session.this.reply(MessageUtil.success(), msg);
 					return;
 				}
+				else if ("LoadUser".equals(op)) {
+					Message rmsg = new Message();
+					
+					// TODO review how this is used/give less info to caller by default
+					RecordStruct body = new RecordStruct();							
+					rmsg.setField("Body", body);
+					
+					Session.this.user.freezeRpc(body);
+					
+					body.setField("SessionId", Session.this.id);		
+					body.setField("SessionKey", Session.this.key);		
+					
+					Session.this.reply(rmsg, msg);
+					
+					return;
+				}
 			}
 		}
 		

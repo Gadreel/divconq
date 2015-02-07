@@ -23,6 +23,8 @@ package divconq.interchange.simple;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +35,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.HttpsURLConnection;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
@@ -77,6 +83,7 @@ import divconq.log.DebugLevel;
 import divconq.log.Logger;
 import divconq.script.Activity;
 import divconq.script.ui.ScriptUtility;
+import divconq.struct.CompositeParser;
 import divconq.struct.CompositeStruct;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
@@ -1769,12 +1776,87 @@ public class FileStoreClient implements ILocalCommandLine {
 					break;
 				}
 				
+				case 300: {
+					String atoken = "CAACEdEose0cBANA6bz2DjjZCtG28INh3jrFqZC1xD2O1IliaQaZAwfZBEfDlBMGo3bbkZCFiW0HIB83jNJtmKiwflFxkNvJk8WoKEZCCUtBdJhpZBxZAkc3fZCvgCWruH1I1WcDFJK5TKshLZA2p4njZA9rYtLFczDIBoV9WYaZA6Ey1qp8U0OxCcKZBTdY7VLz6R4UHezdwvRW1vIoLpffuU77Jx1yhk9URnEHMZD";
+						          //"CAACEdEose0cBAAmfZCS2s3yTK9ZAGmIcnCDx44ogqh4Y5VBZC3pH1FYn0BTRRDiIIC3y9T6EaBl8oPZAK2dHXUgZCj8L4HmV98ywrN0vioXvmym2ZCJAPxJVpMNo8OgHS8Lkny3ddkgvJQcetARuz1k4To4RwZA3SG2on0JYJovka67Hgereqk1ZABAbCsBwRirxnzcqoaE3rU3iuZBK0lYxKKuGpAseVQu4ZD";
+					String fbskey = "2c929d8c9d60d94b935336fef856c286";
+					//                "2c929d8c9d60d94b935336fef856c286"
+					
+			        try {
+			            Mac mac = Mac.getInstance("HmacSHA256");
+			            
+			            //mac.init(new SecretKeySpec(Utf8Encoder.encode(fbskey), "HmacSHA256"));
+			            
+			            //String verify = HexUtil.bufferToHex(mac.doFinal(Utf8Encoder.encode(atoken))); 
+			            
+			            mac.init(new SecretKeySpec(fbskey.getBytes(), "HmacSHA256"));
+			            
+			            String verify = HexUtil.bufferToHex(mac.doFinal(atoken.getBytes())); 
+			            
+						System.out.println("verify: " + verify);
+						
+						URL url = new URL("https://graph.facebook.com/v2.2/me?access_token=" + URLEncoder.encode(atoken, "UTF-8"));
+						//		+ "&appsecret_proof=" + URLEncoder.encode(verify, "UTF-8"));					
+						
+						System.out.println("url: " + url);
+						
+						HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+						 
+						con.setRequestProperty("User-Agent", "DivConq/1.0 (Language=Java/8)");
+				 
+						int responseCode = con.getResponseCode();
+						System.out.println("Response Code : " + responseCode);
+				 
+						FuncResult<CompositeStruct> res = CompositeParser.parseJson(con.getInputStream());
+						
+						System.out.println("res: " + res.getResult());
+			        } 
+			        catch (Exception x) {
+			            System.out.println("FB error: " + x);
+			        }
+					
+					break;
+				}
+				
+				case 301: {
+					System.out.println("a: " + URLEncoder.encode("appsecret_proof", "UTF-8")  +  " -- " + URLEncoder.encode(this.createProof("test", "test"), "UTF-8"));
+					System.out.println("b: " + this.createProof("helloWorld", "PRIE7$oG2uS-Yf17kEnUEpi5hvW/#AFo"));
+					break;
+				}
+				
+				case 302: {
+					String atoken = "CAACEdEose0cBAAmfZCS2s3yTK9ZAGmIcnCDx44ogqh4Y5VBZC3pH1FYn0BTRRDiIIC3y9T6EaBl8oPZAK2dHXUgZCj8L4HmV98ywrN0vioXvmym2ZCJAPxJVpMNo8OgHS8Lkny3ddkgvJQcetARuz1k4To4RwZA3SG2on0JYJovka67Hgereqk1ZABAbCsBwRirxnzcqoaE3rU3iuZBK0lYxKKuGpAseVQu4ZD";
+					String fbskey = "2c929d8c9d60d94b935336fef856c286";
+						
+					System.out.println("a: " + URLEncoder.encode("appsecret_proof", "UTF-8")  +  " -- " + URLEncoder.encode(this.createProof(atoken, fbskey), "UTF-8"));
+					break;
+				}
+				
 				}
 			}
 			catch (Exception x) {
 				System.out.println("Command Line Error: " + x);
 			}
 		}
+	}
+	
+	public String createProof(String atoken, String fbskey) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            
+            //mac.init(new SecretKeySpec(Utf8Encoder.encode(fbskey), "HmacSHA256"));
+            
+            //String verify = HexUtil.bufferToHex(mac.doFinal(Utf8Encoder.encode(atoken))); 
+            
+            mac.init(new SecretKeySpec(fbskey.getBytes(), "HmacSHA256"));
+            
+            return HexUtil.bufferToHex(mac.doFinal(atoken.getBytes())); 
+        } 
+        catch (Exception x) {
+            System.out.println("FB error: " + x);
+        }	
+        
+        return null;
 	}
 	
 	public void dumpQuery(KeyQuery kq) {

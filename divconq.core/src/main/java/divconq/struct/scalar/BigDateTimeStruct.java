@@ -16,8 +16,8 @@
 ************************************************************************ */
 package divconq.struct.scalar;
 
-import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
+import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
 import divconq.script.StackEntry;
@@ -33,7 +33,7 @@ public class BigDateTimeStruct extends ScalarStruct {
 		if (this.explicitType != null)
 			return super.getType();
 		
-		return Hub.instance.getSchema().getType("BigDateTime");
+		return OperationContext.get().getSchema().getType("BigDateTime");
 	}
 
 	public BigDateTimeStruct() {		

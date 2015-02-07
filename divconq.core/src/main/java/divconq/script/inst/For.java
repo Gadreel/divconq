@@ -16,8 +16,8 @@
 ************************************************************************ */
 package divconq.script.inst;
 
-import divconq.hub.Hub;
 import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
 import divconq.script.BlockInstruction;
 import divconq.script.ExecuteState;
 import divconq.script.StackBlockEntry;
@@ -67,7 +67,7 @@ public class For extends BlockInstruction {
 
 			IntegerStruct cntvar = new IntegerStruct();
 
-			cntvar.setType(Hub.instance.getSchema().getType("Integer"));		// TODO souldn't need this
+			cntvar.setType(OperationContext.get().getSchema().getType("Integer"));		// TODO souldn't need this
 			//cntvar.setName(stack.stringFromSource("Name", "_forindex"));
 			cntvar.setValue(from);
 			

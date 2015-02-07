@@ -19,12 +19,8 @@ package divconq.script;
 import java.util.HashMap;
 import java.util.Map;
 
-
-
-
-
-import divconq.hub.Hub;
 import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.script.inst.CoreInstructionProvider;
 import divconq.script.mutator.Substring;
@@ -55,7 +51,7 @@ public class ActivityManager {
 	
 	// create anonymous var
 	public Struct createVariable(String type) {
-		DataType mut = Hub.instance.getSchema().getType(type);
+		DataType mut = OperationContext.get().getSchema().getType(type);
 		
 		if (mut == null)
 			return null;

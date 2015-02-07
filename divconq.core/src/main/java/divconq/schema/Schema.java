@@ -16,14 +16,19 @@
 ************************************************************************ */
 package divconq.schema;
 
-import divconq.lang.op.OperationResult;
 import divconq.xml.XElement;
 
 public class Schema {
-	public SchemaManager manager = null;
+	protected SchemaManager manager = null;
+	protected String file = null;
+	
+	public Schema(String pathname, SchemaManager manager) {
+		this.manager = manager;
+		this.file = pathname;
+	}
 	
 	// used with includes as well
-	public void loadSchema(OperationResult or, XElement def) {
+	public void loadSchema(XElement def) {
 		if (def == null)
 			return;
 		
@@ -31,20 +36,20 @@ public class Schema {
 		
 		if (shared != null) {
 			for (XElement dtel : shared.selectAll("*")) {
-				this.manager.loadDataType(or, this, dtel);
+				this.manager.loadDataType(this, dtel);
 			}			
 		}
 		
 		XElement db = def.find("Database");
 		
 		if (db != null) 
-			this.manager.getDb().load(or, this, db);
+			this.manager.loadDb(this, db);
 		
 		
 		XElement ser = def.find("Services");
 		
 		if (ser != null) 
-			this.manager.getService().load(or, this, ser);
+			this.manager.loadService(this, ser);
 	}
 
 }

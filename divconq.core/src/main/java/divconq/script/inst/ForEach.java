@@ -16,9 +16,9 @@
 ************************************************************************ */
 package divconq.script.inst;
 
-import divconq.hub.Hub;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContext;
 import divconq.script.BlockInstruction;
 import divconq.script.ExecuteState;
 import divconq.script.StackBlockEntry;
@@ -83,7 +83,7 @@ public class ForEach extends BlockInstruction {
 			Struct source = stack.refFromSource("In");
 
 			AnyStruct collection = new AnyStruct();
-			collection.setType(Hub.instance.getSchema().getType("Any"));		// TODO shouldn't need this
+			collection.setType(OperationContext.get().getSchema().getType("Any"));		// TODO shouldn't need this
 			
 			if (source instanceof IItemCollection)
 				collection.setValue(((IItemCollection)source).getItemsAsync().iterator());

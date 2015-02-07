@@ -36,6 +36,10 @@ public class ButtonLink extends A {
     	super();
     }
     
+    public ButtonLink(Object... args) {
+    	super(args);
+	}
+    
     public ButtonLink(String to, Object... args) {
     	super(args);
         this.to = to;
@@ -58,6 +62,11 @@ public class ButtonLink extends A {
     
     public ButtonLink withPage(String v) {
     	this.page = v;
+    	return this;
+    }
+    
+    public ButtonLink withClick(String v) {
+    	this.click = v;
     	return this;
     }
     

@@ -20,9 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import divconq.db.ReplicatedDataRequest;
-import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
-import divconq.schema.DbTable;
+import divconq.lang.op.OperationContext;
 import divconq.struct.CompositeStruct;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
@@ -46,8 +45,6 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 	protected Struct extra = null;
 	protected BigDateTime when = BigDateTime.nowDateTime();
 	
-	protected DbTable schema = null;
-	
 	public DbRecordRequest(String proc) {
 		super(proc);
 	}
@@ -55,7 +52,6 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 	public DbRecordRequest withTable(String v) {
 		this.table = v;
 		
-		this.schema = Hub.instance.getSchema().getDb().getTable(table);
 		this.fields.clear();
 		
 		return this;
@@ -107,10 +103,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 			value = ((ConditionalValue)value).value;
 		}
 		
-		if (this.schema == null)
-			return this;
-		
-		divconq.schema.DbField fld = this.schema.getField(name);
+		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
 		if (fld == null) 
 			return this;
@@ -151,10 +144,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 			value = ((ConditionalValue)value).value;
 		}
 		
-		if (this.schema == null)
-			return this;
-		
-		divconq.schema.DbField fld = this.schema.getField(name);
+		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
 		if (fld == null) 
 			return this;
@@ -193,10 +183,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 			value = ((ConditionalValue)value).value;
 		}
 		
-		if (this.schema == null)
-			return this;
-		
-		divconq.schema.DbField fld = this.schema.getField(name);
+		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
 		if ((fld == null) || !fld.dynamic) 
 			return this;
@@ -233,10 +220,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 			value = ((ConditionalValue)value).value;
 		}
 		
-		if (this.schema == null)
-			return this;
-		
-		divconq.schema.DbField fld = this.schema.getField(name);
+		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
 		if ((fld == null) || !fld.dynamic || !fld.list) 
 			return this;
@@ -247,10 +231,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 	}
 
 	public DbRecordRequest withListToField(String name, boolean valueAsSubkey, ListStruct list) {
-		if (this.schema == null)
-			return this;
-		
-		divconq.schema.DbField fld = this.schema.getField(name);
+		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
 		if (fld == null || !fld.list) 
 			return this;
@@ -284,10 +265,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 	 * @param name
 	 */
 	public DbRecordRequest withRetireField(String name) {
-		if (this.schema == null)
-			return this;
-		
-		divconq.schema.DbField fld = this.schema.getField(name);
+		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
 		if (fld == null) 
 			return this;
@@ -304,10 +282,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 	}
 
 	public DbRecordRequest withRetireField(String name, String subkey) {
-		if (this.schema == null)
-			return this;
-		
-		divconq.schema.DbField fld = this.schema.getField(name);
+		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
 		if (fld == null) 
 			return this;

@@ -70,7 +70,7 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	protected Path localpath = null;
 		
 	public FileSystemFile() {
-		if (Hub.instance.getSchema() != null)
+		if (OperationContext.get().getSchema() != null)
 			this.setType(Hub.instance.getSchema().getType("dciFileSystemFile"));
 	}
 

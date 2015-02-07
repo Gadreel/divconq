@@ -29,6 +29,7 @@ import divconq.bus.net.Session;
 import divconq.bus.net.SocketInfo;
 import divconq.bus.net.StreamMessage;
 import divconq.bus.net.StreamSession;
+import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
 import divconq.hub.HubEvents;
 import divconq.lang.op.FuncCallback;
@@ -224,15 +225,6 @@ public class HubRouter {
 				return or;
 			}
 			
-			IService cb = this.registered.get(srv);
-			
-			if (cb == null) {
-				or.error(1, "Service not on this hub.");  // TODO code
-				return or;
-			}
-			
-			// TODO if cb is ReplyService then get the task context from there instead of the message ... update the signin/verify user to work with message body for new user context
-	
 			// TODO now that TaskContext is immutable we could optimize local Bus calls by not freezing and thawing except remotely - future optimization
 			OperationContext tc = OperationContext.allocate(msg);
 			
@@ -240,6 +232,20 @@ public class HubRouter {
 				or.errorTr(442);
 				return or;
 			}
+			
+			DomainInfo di = tc.getDomain();
+			
+			IService cb = (di != null) ? di.getService(srv) : null;
+
+			if (cb == null)
+				cb = this.registered.get(srv);
+			
+			if (cb == null) {
+				or.error(1, "Service not on this hub.");  // TODO code
+				return or;
+			}
+			
+			IService serv = cb;
 			
 			Task tb = new Task()
 				.withTitle("Hub Router: " + srv)
@@ -262,7 +268,7 @@ public class HubRouter {
 							}
 
 							// validate the structure of the message
-							OperationResult vres = Hub.instance.getSchema().validateRequest(msg);	
+							OperationResult vres = tc.getSchema().validateRequest(msg);	
 							
 							// when making a valid call to any service, you are elevated to system access for the duration of the request
 							// RPC users get a new context with each call though, and reply will not violate any security
@@ -278,7 +284,7 @@ public class HubRouter {
 							    return;
 							}
 							
-							cb.handle(task);
+							serv.handle(task);
 							
 							//System.out.println("d3: " + msg);
 							//System.out.println("d4: " + rmsg);
@@ -437,7 +443,7 @@ public class HubRouter {
 
 			// if not guest then we are even more picky
 			if (!isguest) {
-				Op op = Hub.instance.getSchema().getService().getOp(service, feature, msg.getFieldAsString("Op"));
+				Op op = OperationContext.get().getSchema().getServiceOp(service, feature, msg.getFieldAsString("Op"));
 				
 				// operations tagged as Gateway can be called by gateway no matter what...even when gateway is hacked
 				// normal user tag check applies, Gateway only means it gets past here, not pass message validation

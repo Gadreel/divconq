@@ -141,7 +141,7 @@ public class PagePart extends Element implements ICodeTag {
 				
 				String html = null;
 				
-				System.out.println("md: " + ppel.getText());
+				//System.out.println("md: " + ppel.getText());
 				
 				try {
 					html = new Markdown4jProcessor().process(ppel.getText());
@@ -150,17 +150,17 @@ public class PagePart extends Element implements ICodeTag {
 					System.out.println("error: " + x);
 				}
 				
-				System.out.println("html: " + html);
+				//System.out.println("html: " + html);
 				
 				nl = new Nodes();
-				nl.add(new UnescapedText(true, html));
+				nl.add(new LiteralText(html));
 				
 				//nl = view.getDomain().parseXml(view, ppel);
 			}
 			else if ("image".equals(ppel.getAttribute("Format"))) {
 				this.name = "div"; 
 				
-				System.out.println("image: " + ppel.getText());
+				//System.out.println("image: " + ppel.getText());
 				
 				nl = new Nodes();
 				//nl.add(new Img(new Attributes("src", "/galleries/" 
@@ -171,7 +171,7 @@ public class PagePart extends Element implements ICodeTag {
 			else if ("groovy".equals(ppel.getAttribute("Format"))) {
 				this.name = "div"; 
 				
-				System.out.println("script: " + ppel.getText());
+				//System.out.println("script: " + ppel.getText());
 				
 				try (GroovyClassLoader loader = new GroovyClassLoader()) {
 					Class<?> groovyClass = loader.parseClass(ppel.getText());

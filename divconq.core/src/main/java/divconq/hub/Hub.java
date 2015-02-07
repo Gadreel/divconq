@@ -559,6 +559,9 @@ public class Hub {
 	}
 	
 	public DomainInfo getDomainInfo(String id) {
+		if (StringUtil.isEmpty(id))
+			return null;
+		
 		return this.dsitemap.get(id);
 	}
 	
@@ -1275,7 +1278,7 @@ public class Hub {
 		// we need to catch domain config change events 
 		if (this.publicfilestore != null) { 
 			/*	Examples:
-				./dcw/[domain alias]/static/config     holds web setting for domain
+				./dcw/[domain alias]/config     holds web setting for domain
 					- settings.xml are the general settings (dcmHomePage - dcmDefaultTemplate[path]) - editable in CMS only
 					- dictionary.xml is the domain level dictionary - direct edit by web dev
 					- vars.json is the domain level variable store - direct edit by web dev
@@ -1291,23 +1294,31 @@ public class Hub {
 					//System.out.println(p);
 					
 					// only notify on config updates
-					if (p.getNameCount() < 5) 
+					if (p.getNameCount() < 4) 
 						return;
 					
 					// must be inside a domain or we don't care
 					String mod = p.getName(0);
 					String domain = p.getName(1);
-					String vis = p.getName(2);
-					String section = p.getName(3);
+					String section = p.getName(2);
 					
-					if (!"dcw".equals(mod) || !"static".equals(vis) || !"config".equals(section))
-						return;
+					if ("dcw".equals(mod) && "config".equals(section)) {
+						for (DomainInfo wdomain : Hub.this.dsitemap.values()) {
+							if (domain.equals(wdomain.getAlias())) {
+								wdomain.reloadSettings();
+								Hub.this.fireEvent(HubEvents.DomainConfigChanged, wdomain);
+								break;
+							}
+						}
+					}
 					
-					for (DomainInfo wdomain : Hub.this.dsitemap.values()) {
-						if (domain.equals(wdomain.getAlias())) {
-							wdomain.reloadSettings();
-							Hub.this.fireEvent(HubEvents.DomainConfigChanged, wdomain);
-							break;
+					if ("dcw".equals(mod) && "services".equals(section)) {
+						for (DomainInfo wdomain : Hub.this.dsitemap.values()) {
+							if (domain.equals(wdomain.getAlias())) {
+								wdomain.reloadServices();
+								Hub.this.fireEvent(HubEvents.DomainConfigChanged, wdomain);
+								break;
+							}
 						}
 					}
 				}

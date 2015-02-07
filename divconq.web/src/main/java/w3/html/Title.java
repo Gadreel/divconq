@@ -37,7 +37,7 @@ public class Title extends Element implements ICodeTag {
     
     public Title(String title) {
     	super();
-        this.title = new LiteralText(title);
+        this.title = new UnescapedText(false, title);
     }
 
     public Title(UnescapedText title) {

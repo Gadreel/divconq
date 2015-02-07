@@ -19,7 +19,6 @@ package divconq.schema;
 import java.util.HashMap;
 
 import divconq.bus.Message;
-import divconq.lang.op.OperationResult;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
@@ -31,7 +30,7 @@ public class ServiceSchema {
 		this.man = man;
 	}	
 	
-	public void load(OperationResult or, Schema schema, XElement db) {
+	public void load(Schema schema, XElement db) {
 		for (XElement serel : db.selectAll("Service")) {
 			String sname = serel.getAttribute("Name");
 			//String sclass = serel.getAttribute("Class");
@@ -81,12 +80,12 @@ public class ServiceSchema {
 						XElement req = opel.find("Request", "RecRequest");
 						
 						if (req != null)
-							opt.request = this.man.loadDataType(or, schema, req);
+							opt.request = this.man.loadDataType(schema, req);
 						
 						XElement resp = opel.find("Response", "RecResponse");
 						
 						if (resp != null)
-							opt.response = this.man.loadDataType(or, schema, resp);
+							opt.response = this.man.loadDataType(schema, resp);
 					}			
 				}			
 			}			
@@ -175,15 +174,15 @@ public class ServiceSchema {
 		}
 	}
 
-	public void compile(OperationResult mr) {
+	public void compile() {
 		for (Service s : this.services.values()) {
 			for (Feature f : s.features.values()) {
 				for (Op o : f.ops.values()) {
 					if (o.request != null)
-						o.request.compile(mr);
+						o.request.compile();
 					
 					if (o.response != null)
-						o.response.compile(mr);
+						o.response.compile();
 				}
 			}
 		}

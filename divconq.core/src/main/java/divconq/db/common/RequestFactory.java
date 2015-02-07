@@ -35,8 +35,7 @@ public class RequestFactory {
 	 */
 	static public DataRequest signInRequest(String username, String password, String code) {
 		RecordStruct params = new RecordStruct()
-				.withField("Username", (username != null) ? username.trim().toLowerCase() : null)
-				.withField("At", new DateTime());
+				.withField("Username", (username != null) ? username.trim().toLowerCase() : null);
 		
 		if (StringUtil.isNotEmpty(password)) 
 			params.withField("Password", password.trim());		// password crypto handled in stored proc
@@ -77,12 +76,17 @@ public class RequestFactory {
 	 * @param userid of user
 	 * @param username of user
 	 */
-	static public DataRequest startSessionRequest(String userid, String username) {
+	static public DataRequest startSessionRequest(String userid) {
 		return new ReplicatedDataRequest("dcStartSession")
 			.withParams(new RecordStruct()
-				// TODO in db .withField("At", new DateTime())
-				.withField("Username", (username != null) ? username.trim().toLowerCase() : null)
 				.withField("UserId", userid)
+			);
+	}
+	
+	static public DataRequest startSessionRequestFromName(String username) {
+		return new ReplicatedDataRequest("dcStartSession")
+			.withParams(new RecordStruct()
+				.withField("Username", (username != null) ? username.trim().toLowerCase() : null)
 			);
 	}
 	

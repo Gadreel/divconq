@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.struct.scalar;
 
-import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
 import divconq.script.StackEntry;
@@ -32,7 +32,7 @@ public class AnyStruct extends ScalarStruct {
 		if (this.explicitType != null)
 			return super.getType();
 		
-		return Hub.instance.getSchema().getType("Any");
+		return OperationContext.get().getSchema().getType("Any");
 	}
 
 	public AnyStruct() {		

@@ -16,7 +16,6 @@
 ************************************************************************ */
 package divconq.struct.scalar;
 
-import divconq.hub.Hub;
 import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
@@ -34,7 +33,7 @@ public class IntegerStruct extends ScalarStruct {
 		if (this.explicitType != null)
 			return super.getType();
 		
-		return Hub.instance.getSchema().getType("Integer");
+		return OperationContext.get().getSchema().getType("Integer");
 	}
 	
 	public IntegerStruct() {		

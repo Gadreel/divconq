@@ -55,10 +55,9 @@ public class TestBusAndContext implements IWork {
 				)
 		);
 		
-		Schema s = new Schema();
-		s.manager = Hub.instance.getSchema();
+		Schema s = new Schema("@Internal", Hub.instance.getSchema());
 		
-		s.loadSchema(testrun, myschema);
+		s.loadSchema(myschema);
 		
 		if (testrun.hasErrors()) {
 			testrun.error("Could not complete the test, bad schema!");
@@ -146,7 +145,7 @@ public class TestBusAndContext implements IWork {
 				
 				Hub.instance.getBus().getLocalHub().removeService("TestBusService");
 				
-				Hub.instance.getSchema().getService().remove("TestBusService");
+				Hub.instance.getSchema().removeService("TestBusService");
 				
 				// done
 				

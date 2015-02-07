@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import divconq.lang.op.FuncResult;
-import divconq.lang.op.OperationResult;
+import divconq.lang.op.OperationContext;
 import divconq.schema.Field.ReqTypes;
 import divconq.struct.CompositeStruct;
 import divconq.struct.FieldStruct;
@@ -54,7 +54,6 @@ public class DataType {
 	protected Schema schema = null;
 	protected String id = null;
 	protected DataKind kind = null;
-	protected boolean compiled = false;
 	protected XElement definition = null;	
 	protected List<XElement> xtraDefinitions = null;  //new ArrayList<XElement>();
 	
@@ -140,7 +139,7 @@ public class DataType {
 		return this.fields.get(name);
 	}
 	
-	public void load(OperationResult or, XElement dtel) {
+	public void load(XElement dtel) {
 		if (this.definition != null) {
 			if (this.xtraDefinitions == null)
 				this.xtraDefinitions = new ArrayList<XElement>();
@@ -163,22 +162,16 @@ public class DataType {
 		this.id = dtel.getAttribute("Id");
 	}
 
-	public void compile(OperationResult mr) {
-		if (this.compiled)
-			return;
-		
-		// to prevent recursion issues, mark compiled immediately
-		this.compiled = true;
-		
+	public void compile() {
 		if (this.kind == DataKind.Record)
-			this.compileRecord(mr);
+			this.compileRecord();
 		else if (this.kind == DataKind.List)
-			this.compileList(mr);
+			this.compileList();
 		else
-			this.compileScalar(mr);
+			this.compileScalar();
 	}
 
-	protected void compileRecord(OperationResult mr) {
+	protected void compileRecord() {
 		List<String> inhlist = new ArrayList<String>();
 		
 		if ("True".equals(this.definition.getAttribute("Any")))
@@ -199,11 +192,11 @@ public class DataType {
 			DataType dtype = this.schema.manager.getType(iname);
 			
 			if (dtype == null) {
-				mr.errorTr(413, iname);
+				OperationContext.get().errorTr(413, iname);
 				continue;
 			}
 			
-			dtype.compile(mr);
+			dtype.compile();
 			
 			inheritTypes.add(dtype);
 		}
@@ -212,7 +205,7 @@ public class DataType {
 		
 		for (XElement fel : this.definition.selectAll("Field")) {
 			Field f = new Field(this.schema);
-			f.compile(fel, mr);
+			f.compile(fel);
 			this.fields.put(f.name, f);
 		}
 		
@@ -220,7 +213,7 @@ public class DataType {
 			for (XElement el : this.xtraDefinitions) {
 				for (XElement fel : el.selectAll("Field")) {
 					Field f = new Field(this.schema);
-					f.compile(fel, mr);
+					f.compile(fel);
 					this.fields.put(f.name, f);
 				}
 			}
@@ -234,9 +227,9 @@ public class DataType {
 		}
 	}
 
-	protected void compileList(OperationResult mr) {
+	protected void compileList() {
 		this.items = new TypeOptionsList(this.schema);		
-		this.items.compile(this.definition, mr);
+		this.items.compile(this.definition);
 		
 		if (this.definition.hasAttribute("MinCount"))
 			this.minItems = (int)StringUtil.parseInt(this.definition.getAttribute("MinCount"), 0);
@@ -245,33 +238,31 @@ public class DataType {
 			this.maxItems = (int)StringUtil.parseInt(this.definition.getAttribute("MaxCount"), 0);
 	}
 
-	protected void compileScalar(OperationResult mr) {
+	protected void compileScalar() {
 		this.core = new CoreType(this.schema);
-		this.core.compile(this.definition, mr);
+		this.core.compile(this.definition);
 	}
 
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public boolean match(Object data, OperationResult mr) {
-		this.compile(mr);
-		
+	public boolean match(Object data) {
 		if (this.kind == DataKind.Record) {
 			if (data instanceof RecordStruct)
-				return this.matchRecord((RecordStruct)data, mr);
+				return this.matchRecord((RecordStruct)data);
 			
 			return false;
 		}
 		
 		if (this.kind == DataKind.List) {
 			if (data instanceof RecordStruct)
-				return this.matchList((RecordStruct)data, mr);
+				return this.matchList((RecordStruct)data);
 
 			return false;
 		}
 
-		return this.matchScalar(data, mr);
+		return this.matchScalar(data);
 	}
 
-	protected boolean matchRecord(RecordStruct data, OperationResult mr) {
+	protected boolean matchRecord(RecordStruct data) {
 		if (this.fields != null) {
 			
 			// match only if all required fields are present 
@@ -290,58 +281,56 @@ public class DataType {
 		return this.anyRec;
 	}
 
-	protected boolean matchList(CompositeStruct data, OperationResult mr) {
+	protected boolean matchList(CompositeStruct data) {
 		return true;		
 	}
 
-	protected boolean matchScalar(Object data, OperationResult mr) {
+	protected boolean matchScalar(Object data) {
 		if (this.core == null) 
 			return false;
 		
-		return this.core.match(data, mr);
+		return this.core.match(data);
 	}
 	
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
 	// returns true only if there was a non-null value present that conforms to the expected structure (record, list or scalar) 
 	// null values that do not conform should not cause an false
-	public boolean validate(Struct data, OperationResult mr) {
+	public boolean validate(Struct data) {
 		if (data == null)
 			return false;
-		
-		this.compile(mr);
 		
 		if (this.kind == DataKind.Record) {
 			if (data instanceof ICompositeBuilder)
 				data = ((ICompositeBuilder)data).toLocal();			// TODO may be a source of a major inefficiency - may need to have configuration around it...
 			
 			if (data instanceof RecordStruct)
-				return this.validateRecord((RecordStruct)data, mr);
+				return this.validateRecord((RecordStruct)data);
 
-			mr.errorTr(414, data);
+			OperationContext.get().errorTr(414, data);
 			return false;
 		}
 		
 		if (this.kind == DataKind.List) {
 			if (data instanceof ListStruct)
-				return this.validateList((ListStruct)data, mr);
+				return this.validateList((ListStruct)data);
 
-			mr.errorTr(415, data);		
+			OperationContext.get().errorTr(415, data);		
 			return false;
 		}
 
-		return this.validateScalar(data, mr);
+		return this.validateScalar(data);
 	}
 
-	protected boolean validateRecord(RecordStruct data, OperationResult mr) {
+	protected boolean validateRecord(RecordStruct data) {
 		if (this.fields != null) {
 			// handles all but the case where data holds a field not allowed 
 			for (Field fld : this.fields.values()) 
-				fld.validate(data.hasField(fld.name), data.getField(fld.name), mr);
+				fld.validate(data.hasField(fld.name), data.getField(fld.name));
 			
 			if (!this.anyRec)
 				for (FieldStruct fld : data.getFields()) {
 					if (! this.fields.containsKey(fld.getName()))
-						mr.errorTr(419, fld.getName(), data);	
+						OperationContext.get().errorTr(419, fld.getName(), data);	
 				}
 		}
 		
@@ -349,25 +338,25 @@ public class DataType {
 		return true;
 	}
 
-	protected boolean validateList(ListStruct data, OperationResult mr) {
+	protected boolean validateList(ListStruct data) {
 		if (this.items == null) 
-			mr.errorTr(416, data);   
+			OperationContext.get().errorTr(416, data);   
 		else
 			for (Struct obj : data.getItems())
-				this.items.validate(obj, mr);		
+				this.items.validate(obj);		
 		
 		if ((this.minItems > 0) && (data.getSize() < this.minItems))
-			mr.errorTr(417, data);   
+			OperationContext.get().errorTr(417, data);   
 		
 		if ((this.maxItems > 0) && (data.getSize() > this.maxItems))
-			mr.errorTr(418, data);   
+			OperationContext.get().errorTr(418, data);   
 		
 		return true;		
 	}
 
-	protected boolean validateScalar(Struct data, OperationResult mr) {
+	protected boolean validateScalar(Struct data) {
 		if (this.core == null) {
-			mr.errorTr(420, data);   
+			OperationContext.get().errorTr(420, data);   
 			return false;
 		}
 		
@@ -376,18 +365,16 @@ public class DataType {
 			String cname = this.definition.getAttribute("Class");
 			
 			if (data.getClass().getName().equals(cname) && (data instanceof ScalarStruct)) 
-				return this.core.validate(((ScalarStruct)data).toInternalValue(this.core.root), mr);
+				return this.core.validate(((ScalarStruct)data).toInternalValue(this.core.root));
 		}
 		
-		return this.core.validate(data, mr);
+		return this.core.validate(data);
 	}
 	
 	
-	public Struct wrap(Object data, OperationResult mr) {
+	public Struct wrap(Object data) {
 		if (data == null) 
 			return null;
-		
-		this.compile(mr);
 		
 		if (this.kind == DataKind.Record) {
 			if (data instanceof RecordStruct) {
@@ -400,7 +387,7 @@ public class DataType {
 				return s;
 			}
 			
-			mr.errorTr(421, data);		
+			OperationContext.get().errorTr(421, data);		
 			return null;
 		}
 		
@@ -415,11 +402,11 @@ public class DataType {
 				return s;
 			}
 			
-			mr.errorTr(439, data);		
+			OperationContext.get().errorTr(439, data);		
 			return null;
 		} 
 		
-		Struct s = this.core.wrap(data, mr);
+		Struct s = this.core.wrap(data);
 		
 		if (s != null) {
 			if (!s.hasExplicitType()  && (!"Any".equals(this.id)))
@@ -431,21 +418,19 @@ public class DataType {
 		return null;
 	}
 	
-	public Struct wrapItem(Object data, OperationResult mr) {
+	public Struct wrapItem(Object data) {
 		if (data == null) 
 			return null;
 		
-		this.compile(mr);
-		
 		if (this.kind == DataKind.Record) {
-			mr.errorTr(422, data);		
+			OperationContext.get().errorTr(422, data);		
 			return null;
 		}
 		
 		if (this.kind == DataKind.List) 
-			return this.items.wrap(data, mr);
+			return this.items.wrap(data);
 		
-		Struct s = this.core.wrap(data, mr);
+		Struct s = this.core.wrap(data);
 		
 		if (s != null) {
 			if (!s.hasExplicitType())
@@ -459,8 +444,6 @@ public class DataType {
 	
 	public FuncResult<Struct> create() {
 		FuncResult<Struct> mr = new FuncResult<>();
-		
-		this.compile(mr);
 		
 		Struct st = null;
 		
@@ -482,7 +465,7 @@ public class DataType {
 				}
 			}	
 			else if (this.core != null)
-				st = this.core.create(mr);
+				st = this.core.create();
 		}
 		
 		// TODO err message if null

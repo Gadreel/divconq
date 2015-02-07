@@ -19,7 +19,7 @@ package divconq.schema;
 import java.util.ArrayList;
 import java.util.List;
 
-import divconq.lang.op.OperationResult;
+import divconq.lang.op.OperationContext;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -47,45 +47,45 @@ public class TypeOptionsList {
 		return def;
 	}
 	
-	public void compile(XElement def, OperationResult mr) {		
+	public void compile(XElement def) {		
 		String t1 = def.getAttribute("Type");
 		
 		if (StringUtil.isNotEmpty(t1)) {
-			this.options = this.schema.manager.lookupOptionsType(t1, mr);
+			this.options = this.schema.manager.lookupOptionsType(t1);
 			return;
 		}
 		
 		for (XElement dtel : def.selectAll("*")) { 
 			DataType dt = new DataType(this.schema);
-			dt.load(mr, dtel);
-			dt.compile(mr);
+			dt.load(dtel);
+			dt.compile();
 			this.options.add(dt);
 		}
 	}
 	
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public boolean validate(Struct data, OperationResult mr) {
+	public boolean validate(Struct data) {
 		if (data == null)
 			return false;
 		
 		if (this.options.size() == 0) {
-			mr.errorTr(437, data);			
+			OperationContext.get().errorTr(437, data);			
 			return false;
 		}
 		
 		if (this.options.size() == 1) 
-			return this.options.get(0).validate(data, mr);
+			return this.options.get(0).validate(data);
 		
 		for (DataType dt : this.options) {
-			if (dt.match(data, mr)) 
-				return dt.validate(data, mr);
+			if (dt.match(data)) 
+				return dt.validate(data);
 		}
 		
-		mr.errorTr(438, data);			
+		OperationContext.get().errorTr(438, data);			
 		return false;
 	}
 	
-	public Struct wrap(Object data, OperationResult mr) {
+	public Struct wrap(Object data) {
 		if (data == null) 
 			return null;
 		
@@ -93,11 +93,11 @@ public class TypeOptionsList {
 			return null;
 		
 		if (this.options.size() == 1) 
-			return this.options.get(0).wrap(data, mr);
+			return this.options.get(0).wrap(data);
 		
 		for (DataType dt : this.options) {
-			if (dt.match(data, mr)) 
-				return dt.wrap(data, mr);
+			if (dt.match(data)) 
+				return dt.wrap(data);
 		}
 		
 		return null;

@@ -21,7 +21,7 @@ import divconq.db.update.DynamicListField;
 import divconq.db.update.DynamicScalarField;
 import divconq.db.update.ListField;
 import divconq.db.update.ScalarField;
-import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -49,9 +49,7 @@ public class ImportRecordRequest extends DbRecordRequest {
 		
 		this.id = record.getFieldAsRecord("Id").getFieldAsString("Data");
 		
-		divconq.schema.DbTable stab = Hub.instance.getSchema().getDb().getTable(table);
-		
-		for (divconq.schema.DbField sfld : stab.fields.values()) {
+		for (divconq.schema.DbField sfld : OperationContext.get().getSchema().getDbFields(table)) {
 			if (record.hasField(sfld.name)) {
 				if (sfld.list && sfld.dynamic) {
 					ListStruct items = record.getFieldAsList(sfld.name);

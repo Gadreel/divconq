@@ -76,14 +76,14 @@ public class CmsService extends ExtensionBase implements IService {
 		// TODO interleave private - LocalFileStore prifs = Hub.instance.getPrivateFileStore();
 		
 		if (pubfs != null) {
-			// TODO interleave phantom - domain's phantom file system
-			// Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/phantom/www", path);
+			// TODO interleave www-preview - domain's file system
+			// Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www-preview", path);
 			
-			// look in the domain's static file system
-			//Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/static/www", path);
+			// look in the domain's file system
+			//Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www", path);
 			
 			//if ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))
-			//		wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/static/", path);
+			//		wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/", path);
 					
 			this.fsd.setRootFolder(pubfs.getPath());
 			
@@ -118,8 +118,8 @@ public class CmsService extends ExtensionBase implements IService {
 			}
 			
 			CommonPath sectionpath = "DomainFileStore".equals(feature)
-					? new CommonPath("/dcw/" + domain.getAlias() + "/static")
-					: new CommonPath("/dcw/" + domain.getAlias() + "/static/files");
+					? new CommonPath("/dcw/" + domain.getAlias() + "/")
+					: new CommonPath("/dcw/" + domain.getAlias() + "/files");
 			
 			if ("FileDetail".equals(op)) {
 				this.handleFileDetail(request, this.fsd, sectionpath);
@@ -183,7 +183,7 @@ public class CmsService extends ExtensionBase implements IService {
 				return;
 			}
 			
-			CommonPath sectionpath = new CommonPath("/dcw/" + domain.getAlias() + "/static/galleries");
+			CommonPath sectionpath = new CommonPath("/dcw/" + domain.getAlias() + "/galleries");
 			
 			if ("ListFiles".equals(op)) {
 				this.handleListGallery(request, this.fsd, sectionpath);
@@ -247,7 +247,7 @@ public class CmsService extends ExtensionBase implements IService {
 		}		
 		
 		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
-		CommonPath sectionpath = new CommonPath("/dcw/" + domain.getAlias() + "/static");
+		CommonPath sectionpath = new CommonPath("/dcw/" + domain.getAlias() + "/");
 		
 		// =========================================================
 		//  store categories
@@ -662,8 +662,8 @@ public class CmsService extends ExtensionBase implements IService {
 						
 						XElement root = xres.getResult();
 						
-						String spath = path.subpath(4).toString();						
-						String fspath = spath.substring(0, spath.length() - 10);
+						String spath = path.subpath(3).toString();						// remove the www 
+						String fspath = spath.substring(0, spath.length() - 10);		// remove the extension
 						
 						if (fpath.endsWith(".dcuis.xml")) {
 							System.out.println("Importing skeleton: " + root.getAttribute("Title") + " " + fspath);
@@ -777,7 +777,7 @@ public class CmsService extends ExtensionBase implements IService {
 											req
 												.withTable("dcmSkeleton")		
 												.withSetField("dcmTitle", root.getAttribute("Title"))
-												.withSetField("dcmPath", fspath);
+												.withSetField("dcmPath", root.getAttribute("Skeleton"));
 											
 											Hub.instance.getDatabase().submit(req, new ObjectResult() {
 												@Override

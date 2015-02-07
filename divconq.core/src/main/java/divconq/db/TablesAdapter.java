@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import divconq.db.util.ByteUtil;
-import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
@@ -108,7 +107,7 @@ public class TablesAdapter {
 			String fname = field.getName();
 			
 			try {
-				DbField schema = Hub.instance.getSchema().getDb().getField(table, fname);
+				DbField schema = this.task.getSchema().getDbField(table, fname);
 				
 				// --------------------------------------
 				// StaticScalar handling - Data or Retired (true) not both
@@ -1056,7 +1055,7 @@ public class TablesAdapter {
 	public List<Object> get(String table, String id, String field, BigDateTime when, String format, boolean historical) {
 		List<Object> ret = new ArrayList<>();
 		
-		DbField schema = Hub.instance.getSchema().getDb().getField(table, field);
+		DbField schema = this.task.getSchema().getDbField(table, field);
 		
 		if (schema == null)
 			return ret;
@@ -1095,7 +1094,7 @@ public class TablesAdapter {
 	public List<Object> getExtended(String table, String id, String field, BigDateTime when, String format, boolean historical) {
 		List<Object> ret = new ArrayList<>();
 		
-		DbField schema = Hub.instance.getSchema().getDb().getField(table, field);
+		DbField schema = this.task.getSchema().getDbField(table, field);
 		
 		if (schema == null)
 			return ret;
@@ -1134,7 +1133,7 @@ public class TablesAdapter {
 	public List<byte[]> getRaw(String table, String id, String field, BigDateTime when, boolean historical) {
 		List<byte[]> ret = new ArrayList<>();
 		
-		DbField schema = Hub.instance.getSchema().getDb().getField(table, field);
+		DbField schema = this.task.getSchema().getDbField(table, field);
 		
 		if (schema == null)
 			return ret;
@@ -1758,7 +1757,7 @@ public class TablesAdapter {
 		String did = this.task.getDomain();
 		BigDecimal stamp = this.task.getStamp();
 		
-		DbField ffdef = Hub.instance.getSchema().getDb().getField(table, fname);
+		DbField ffdef = this.task.getSchema().getDbField(table, fname);
 		
 		try {
 			if (!ffdef.dynamic && !ffdef.list) {
@@ -1984,7 +1983,7 @@ updateTxt n id,field,table,sid,cid,apos,entry,word,line,lp,ch,score
 	public OperationResult executeTrigger(String table, String op, DatabaseInterface conn, DatabaseTask task, OperationResult log) {
 		OperationResult or = new OperationResult();
 		
-		List<DbTrigger> trigs = Hub.instance.getSchema().getDb().getTriggers(table, op);
+		List<DbTrigger> trigs = this.task.getSchema().getDbTriggers(table, op);
 		
 		for (DbTrigger trig : trigs) {
 			String spname = trig.execute;

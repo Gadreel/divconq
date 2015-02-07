@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import divconq.lang.op.FuncResult;
-import divconq.lang.op.OperationResult;
+import divconq.lang.op.OperationContext;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -70,7 +70,7 @@ public class Field {
 		return def;
 	}
 	
-	public void compile(XElement fel, OperationResult mr) {
+	public void compile(XElement fel) {
 		this.name = fel.getAttribute("Name");
 		
 		String req = fel.getAttribute("Required");
@@ -83,60 +83,60 @@ public class Field {
 		String t1 = fel.getAttribute("Type");
 		
 		if (StringUtil.isNotEmpty(t1)) {
-			this.options = this.schema.manager.lookupOptionsType(t1, mr);
+			this.options = this.schema.manager.lookupOptionsType(t1);
 			return;
 		}
 		
 		String f1 = fel.getAttribute("ForeignKey");
 		
 		if (StringUtil.isNotEmpty(f1)) {
-			this.options = this.schema.manager.lookupOptionsType("Id", mr);
+			this.options = this.schema.manager.lookupOptionsType("Id");
 			return;
 		}
 		
 		for (XElement dtel : fel.selectAll("*")) { 
 			DataType dt = new DataType(this.schema);
-			dt.load(mr, dtel);
-			dt.compile(mr);
+			dt.load(dtel);
+			dt.compile();
 			this.options.add(dt);
 		}
 	}
 		
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public void validate(boolean present, Struct data, OperationResult mr) {
+	public void validate(boolean present, Struct data) {
 		if (data == null) {
-			this.valueUnresolved(present, data, mr);
+			this.valueUnresolved(present, data);
 			return;
 		}   
 		
 		if (this.options.size() == 0) {
-			mr.errorTr(423, data);			
+			OperationContext.get().errorTr(423, data);			
 			return;
 		}
 		
 		if (this.options.size() == 1) { 
-			if (!this.options.get(0).validate(data, mr))
-				this.valueUnresolved(present, data, mr);
+			if (!this.options.get(0).validate(data))
+				this.valueUnresolved(present, data);
 			
 			return;
 		}
 		
 		for (DataType dt : this.options) {
-			if (dt.match(data, mr)) {
-				if (!dt.validate(data, mr))
-					this.valueUnresolved(present, data, mr);
+			if (dt.match(data)) {
+				if (!dt.validate(data))
+					this.valueUnresolved(present, data);
 				
 				return;
 			}
 		}
 		
-		mr.errorTr(440, data);			
+		OperationContext.get().errorTr(440, data);			
 		return;
 	}
 	
-	protected void valueUnresolved(boolean present, Object data, OperationResult mr) {
+	protected void valueUnresolved(boolean present, Object data) {
 		if (data != null) {
-			mr.errorTr(440, data);			
+			OperationContext.get().errorTr(440, data);			
 			return;
 		}
 		
@@ -146,10 +146,10 @@ public class Field {
 		if (this.required == ReqTypes.IfPresent && !present)
 			return;
 		
-		mr.errorTr(424, data, this.name);			
+		OperationContext.get().errorTr(424, data, this.name);			
 	}
 	
-	public Struct wrap(Object data, OperationResult mr) {
+	public Struct wrap(Object data) {
 		if (data == null) 
 			return null;
 		
@@ -157,11 +157,11 @@ public class Field {
 			return null;
 		
 		if (this.options.size() == 1) 
-			return this.options.get(0).wrap(data, mr);
+			return this.options.get(0).wrap(data);
 		
 		for (DataType dt : this.options) {
-			if (dt.match(data, mr)) 
-				return dt.wrap(data, mr);
+			if (dt.match(data)) 
+				return dt.wrap(data);
 		}
 		
 		return null;

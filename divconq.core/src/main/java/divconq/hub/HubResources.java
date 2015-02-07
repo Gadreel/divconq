@@ -387,7 +387,7 @@ public class HubResources {
 		
 		ProjectCompiler comp = new ProjectCompiler();
 
-		this.schemaman = comp.getSchema(or, this.packages);
+		this.schemaman = comp.getSchema(this.packages);
 		
 		if (or.hasErrors()) {
 			or.exit(103, "Unable to load schema file(s)");

@@ -29,7 +29,6 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
 
-import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
 import divconq.lang.Memory;
 import divconq.lang.op.FuncResult;
@@ -105,32 +104,26 @@ abstract public class Struct {
 	 */
 	abstract public boolean isNull();
 		
-	public void validate(OperationResult mr) {
-		this.validate(mr, this.explicitType);
-	}
-	
-	public void validate(OperationResult mr, DataType type) {
-		if (type == null)
-			mr.errorTr(522);		
-		else
-			type.validate(this, mr);
-	}
-		
 	public OperationResult validate() {
 		OperationResult mr = new OperationResult();
-		this.validate(mr, this.explicitType);
-		return mr;
-	}
-	
-	public OperationResult validate(DataType type) {
-		OperationResult mr = new OperationResult();
-		this.validate(mr, type);
+		this.validate(this.explicitType);
 		return mr;
 	}
 	
 	public OperationResult validate(String type) {
 		OperationResult mr = new OperationResult();
-		this.validate(mr, Hub.instance.getSchema().getType(type));
+		this.validate(OperationContext.get().getSchema().getType(type));
+		return mr;
+	}
+	
+	public OperationResult validate(DataType type) {
+		OperationResult mr = new OperationResult();
+		
+		if (type == null)
+			OperationContext.get().errorTr(522);		
+		else
+			type.validate(this);
+		
 		return mr;
 	}
 	

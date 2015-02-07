@@ -34,7 +34,6 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
 
-import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
 import divconq.lang.Memory;
 import divconq.lang.op.FuncResult;
@@ -89,7 +88,7 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 			return super.getType();
 
 		// implied only, not explicit
-		return Hub.instance.getSchema().getType("AnyRecord");
+		return OperationContext.get().getSchema().getType("AnyRecord");
 	}
 
 	/**
@@ -184,9 +183,7 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 	 * @param fields to add or replace
 	 * @return a log of messages about success of the call
 	 */
-	public OperationResult setField(FieldStruct... fields) {
-		OperationResult or = new OperationResult();
-		
+	public void setField(FieldStruct... fields) {
 		for (FieldStruct f : fields) {
 			Struct svalue = f.getValue();
 			
@@ -201,7 +198,7 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 					Field fld = this.explicitType.getField(f.getName());
 					
 					if (fld != null) {
-						Struct sv = fld.wrap(value, or);
+						Struct sv = fld.wrap(value);
 						
 						if (sv != null)
 							svalue = sv;
@@ -222,8 +219,6 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 			
 			this.fields.put(f.getName(), f);
 		}
-		
-		return or;
 	}
 	
 	/**
@@ -233,8 +228,8 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 	 * @param value to store with field
 	 * @return a log of messages about success of the call
 	 */
-	public OperationResult setField(String name, Object value) {
-		return this.setField(new FieldStruct(name, value));
+	public void setField(String name, Object value) {
+		this.setField(new FieldStruct(name, value));
 	}
 	
 	public RecordStruct withField(String name, Object value) {

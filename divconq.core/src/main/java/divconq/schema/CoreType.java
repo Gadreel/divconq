@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import divconq.lang.Memory;
-import divconq.lang.op.OperationResult;
+import divconq.lang.op.OperationContext;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.ScalarStruct;
@@ -75,7 +75,7 @@ public class CoreType {
 		return def;
 	}
 	
-	public void compile(XElement def, OperationResult mr) {
+	public void compile(XElement def) {
 		this.def = def;
 		
 		String name = def.getName();
@@ -85,7 +85,7 @@ public class CoreType {
 			
 			for (XElement dtel : def.selectAll("StringRestriction")) { 
 				StringRestriction dt = new StringRestriction();
-				dt.compile(dtel, mr);
+				dt.compile(dtel);
 				this.restrictions.add(dt);
 			}
 		}
@@ -94,7 +94,7 @@ public class CoreType {
 			
 			for (XElement dtel : def.selectAll("BinaryRestriction")) { 
 				BinaryRestriction dt = new BinaryRestriction();
-				dt.compile(dtel, mr);
+				dt.compile(dtel);
 				this.restrictions.add(dt);
 			}
 		}
@@ -103,7 +103,7 @@ public class CoreType {
 			
 			for (XElement dtel : def.selectAll("NumberRestriction")) { 
 				NumberRestriction dt = new NumberRestriction();
-				dt.compile(dtel, mr);
+				dt.compile(dtel);
 				this.restrictions.add(dt);
 			}
 		}
@@ -118,7 +118,7 @@ public class CoreType {
 		}
 	}
 
-	public boolean match(Object data, OperationResult mr) {
+	public boolean match(Object data) {
 		if (this.root == null) 
 			return false;
 		
@@ -143,7 +143,7 @@ public class CoreType {
 		return false;
 	}
 	
-	public Struct create(OperationResult mr) {
+	public Struct create() {
 		if (this.root == null) 
 			return null;
 		
@@ -182,12 +182,12 @@ public class CoreType {
 	}
 	
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public boolean validate(Object data, OperationResult mr) {
+	public boolean validate(Object data) {
 		if (data == null)
 			return false;
 		
 		if (this.root == null) {
-			mr.errorTr(407, data);			
+			OperationContext.get().errorTr(407, data);			
 			return false;
 		}
 		
@@ -203,7 +203,7 @@ public class CoreType {
 				return true;
 			
 			if (StringUtil.containsRestrictedChars(x)) {
-				mr.error("String contains restricted characters!");
+				OperationContext.get().error("String contains restricted characters!");
 				return false;
 			}
 			
@@ -213,7 +213,7 @@ public class CoreType {
 			}
 			
 			for (IDataRestriction dr : this.restrictions) 
-				dr.fail(x, mr);
+				dr.fail(x);
 			
 			return false;
 		}
@@ -235,7 +235,7 @@ public class CoreType {
 			}
 			
 			for (IDataRestriction dr : this.restrictions) 
-				dr.fail(x, mr);
+				dr.fail(x);
 			
 			return false;
 		}
@@ -257,7 +257,7 @@ public class CoreType {
 			}
 			
 			for (IDataRestriction dr : this.restrictions) 
-				dr.fail(x, mr);
+				dr.fail(x);
 			
 			return false;
 		}
@@ -279,11 +279,11 @@ public class CoreType {
 		if (this.root == RootType.Any) 
 			return true;
 		
-		mr.errorTr(412, data);			
+		OperationContext.get().errorTr(412, data);			
 		return false;
 	}
 
-	public Struct wrap(Object data, OperationResult mr) {
+	public Struct wrap(Object data) {
 		if (this.root == null) 
 			return null;
 		
@@ -342,9 +342,9 @@ public class CoreType {
 	}
 
 	interface IDataRestriction {
-		void compile(XElement def, OperationResult mr);
+		void compile(XElement def);
 		boolean pass(Object x);
-		void fail(Object x, OperationResult mr);
+		void fail(Object x);
 		RecordStruct toJsonDef();
 	}
 	
@@ -355,7 +355,7 @@ public class CoreType {
 		Pattern pattern = null;
 		
 		@Override
-		public void compile(XElement def, OperationResult mr) {
+		public void compile(XElement def) {
 			if (def.hasAttribute("Enum")) 
 				this.enums = def.getAttribute("Enum", "").split(",");
 			
@@ -405,12 +405,12 @@ public class CoreType {
 		}
 
 		@Override
-		public void fail(Object x, OperationResult mr) {
+		public void fail(Object x) {
 			if ((this.max > 0) && (((CharSequence)x).length() > this.max))
-				mr.errorTr(404, x);		
+				OperationContext.get().errorTr(404, x);		
 			
 			if ((this.min > 0) && (((CharSequence)x).length() < this.min))
-				mr.errorTr(405, x);		
+				OperationContext.get().errorTr(405, x);		
 			
 			if (this.enums != null) {
 				boolean fnd = false;
@@ -423,11 +423,11 @@ public class CoreType {
 				}
 				
 				if (!fnd)
-					mr.errorTr(406, x);		
+					OperationContext.get().errorTr(406, x);		
 			}
 			
 			if ((this.pattern != null) && !this.pattern.matcher((CharSequence)x).matches())
-				mr.errorTr(447, x);		
+				OperationContext.get().errorTr(447, x);		
 		}		
 
 		@Override
@@ -463,7 +463,7 @@ public class CoreType {
 		Number max = null;
 		
 		@Override
-		public void compile(XElement def, OperationResult mr) {
+		public void compile(XElement def) {
 			String con = def.getAttribute("Conform");
 			
 			if ("Integer".equals(con))
@@ -504,7 +504,7 @@ public class CoreType {
 				if ((this.conform == ConformKind.BigDecimal) && !(x instanceof BigDecimal) && !(x instanceof BigInteger) && !(x instanceof Long))
 					return false;
 				
-				if ((this.conform == ConformKind.Decimal) && !(x instanceof BigDecimal) && !(x instanceof Long))
+				if ((this.conform == ConformKind.Decimal) && !(x instanceof BigDecimal) && !(x instanceof BigInteger) && !(x instanceof Long))
 					return false;
 				
 				if ((this.conform == ConformKind.BigInteger) && (!(x instanceof BigInteger) && !(x instanceof Long)))
@@ -529,18 +529,18 @@ public class CoreType {
 		}
 
 		@Override
-		public void fail(Object x, OperationResult mr) {
+		public void fail(Object x) {
 			if ((this.conform == ConformKind.BigDecimal) && !(x instanceof BigDecimal) && !(x instanceof BigInteger) && !(x instanceof Long))
-				mr.errorTr(400, x);		
+				OperationContext.get().errorTr(400, x);		
 			
-			if ((this.conform == ConformKind.Decimal) && !(x instanceof BigDecimal) && !(x instanceof Long))
-				mr.errorTr(401, x);		
+			if ((this.conform == ConformKind.Decimal) && !(x instanceof BigDecimal) && !(x instanceof BigInteger) && !(x instanceof Long))
+				OperationContext.get().errorTr(401, x);		
 			
 			if ((this.conform == ConformKind.BigInteger) && (!(x instanceof BigInteger) && !(x instanceof Long)))
-				mr.errorTr(402, x);		
+				OperationContext.get().errorTr(402, x);		
 			
 			if ((this.conform == ConformKind.Integer) && (!(x instanceof Long)))
-				mr.errorTr(403, x);		
+				OperationContext.get().errorTr(403, x);		
 		}				
 
 		@Override
@@ -565,7 +565,7 @@ public class CoreType {
 		int min = 0;
 		
 		@Override
-		public void compile(XElement def, OperationResult mr) {
+		public void compile(XElement def) {
 			if (def.hasAttribute("MaxLength"))
 				this.max = (int)StringUtil.parseInt(def.getAttribute("MaxLength"), 0);
 			
@@ -592,7 +592,7 @@ public class CoreType {
 		}
 
 		@Override
-		public void fail(Object x, OperationResult mr) {
+		public void fail(Object x) {
 			// TODO Auto-generated method stub
 			
 		}				

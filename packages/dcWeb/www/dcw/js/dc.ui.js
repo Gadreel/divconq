@@ -666,8 +666,8 @@ dc.pui = {
 						if (dc.util.String.isString(child.Label))
 							node.text(child.Label);
 						
-						if (dc.util.String.isString(child.Icon)) 
-							node.append($('<i class="fa ' + child.Icon + '"></i>'));
+						//if (dc.util.String.isString(child.Icon)) 
+						//	node.append($('<i class="fa ' + child.Icon + '"></i>'));
 					
 						if (dc.util.String.isString(child.Click)) 
 							node.click(page.Functions[child.Click], function(e) {
@@ -2211,7 +2211,11 @@ $(document).on('mobileready', function () {
 				dc.pui.Loader.loadDestPage();
 			});
 		}
-		else
-			dc.pui.Loader.loadDestPage();
+		else {
+			// load user from current server session
+			dc.user.updateUser(false, function() {
+				dc.pui.Loader.loadDestPage();
+			});
+		}
 	});
 });

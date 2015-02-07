@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import divconq.lang.op.OperationResult;
 import divconq.util.StringUtil;
 import divconq.xml.XAttribute;
 import divconq.xml.XElement;
@@ -30,18 +29,21 @@ public class DatabaseSchema {
 	protected SchemaManager man = null;
 	protected HashMap<String, DbProc> procs = new HashMap<String, DbProc>();
 	protected HashMap<String, List<DbTrigger>> triggers = new HashMap<String, List<DbTrigger>>();
+	/*
 	protected HashMap<String, DbFilter> recfilters = new HashMap<String, DbFilter>();
 	protected HashMap<String, DbFilter> whrfilters = new HashMap<String, DbFilter>();
 	protected HashMap<String, DbFilter> reccomposers = new HashMap<String, DbFilter>();
 	protected HashMap<String, DbFilter> selcomposers = new HashMap<String, DbFilter>();
 	protected HashMap<String, DbFilter> whrcomposers = new HashMap<String, DbFilter>();
 	protected HashMap<String, DbFilter> collectors = new HashMap<String, DbFilter>();
+	*/
 	protected HashMap<String, DbTable> tables = new HashMap<String, DbTable>();
 	
 	public Collection<DbProc> getProcedures() {
 		return this.procs.values();
 	}
 	
+	/*
 	public Collection<DbFilter> getRecordFilters() {
 		return this.recfilters.values();
 	}
@@ -65,6 +67,7 @@ public class DatabaseSchema {
 	public Collection<DbFilter> getCollectors() {
 		return this.collectors.values();
 	}
+	*/
 	
 	public Collection<DbTable> getTables() {
 		return this.tables.values();
@@ -74,7 +77,7 @@ public class DatabaseSchema {
 		this.man = man;
 	}
 	
-	public void load(OperationResult or, Schema schema, XElement db) {
+	public void load(Schema schema, XElement db) {
 		for (XElement dtel : db.selectAll("Table")) {
 			String id = dtel.getAttribute("Id");
 			
@@ -92,9 +95,9 @@ public class DatabaseSchema {
 			DataType dt = this.man.knownTypes().get(id);
 			
 			if (dt != null) 
-				dt.load(or, dtel);
+				dt.load(dtel);
 			else {
-				dt = this.man.loadDataType(or, schema, dtel);
+				dt = this.man.loadDataType(schema, dtel);
 				
 				XElement autoSchema = new XElement("Table",
 						new XElement("Field",
@@ -124,7 +127,7 @@ public class DatabaseSchema {
 
 				
 				// automatically add Id, Retired, etc to tables 
-				dt.load(or, autoSchema);
+				dt.load(autoSchema);
 
 				for (XElement fel : autoSchema.selectAll("Field")) 
 					tab.addField(fel, dt);
@@ -155,12 +158,12 @@ public class DatabaseSchema {
 				XElement req = procel.find("Request", "ListRequest", "RecRequest");
 				
 				if (req != null)
-					opt.request = this.man.loadDataType(or, schema, req);
+					opt.request = this.man.loadDataType(schema, req);
 				
 				XElement resp = procel.find("Response", "ListResponse", "RecResponse");
 				
 				if (resp != null)
-					opt.response = this.man.loadDataType(or, schema, resp);
+					opt.response = this.man.loadDataType(schema, resp);
 			}			
 		}			
 		
@@ -185,6 +188,7 @@ public class DatabaseSchema {
 			ll.add(opt);
 		}			
 		
+		/*
 		for (XElement procel : db.selectAll("RecordFilter")) {
 			String sname = procel.getAttribute("Name");
 			
@@ -267,21 +271,21 @@ public class DatabaseSchema {
 			opt.table = procel.getAttribute("Table");
 			
 			this.collectors.put(sname, opt);
-		}			
+		}		
+		*/	
 	}
 
-	public void compile(OperationResult mr) {
+	public void compile() {
 		for (DbProc s : this.procs.values()) {
 			if (s.request != null)
-				s.request.compile(mr);
+				s.request.compile();
 			
 			if (s.response != null)
-				s.response.compile(mr);
+				s.response.compile();
 		}
 		
-		for (DbTable t : this.tables.values()) {
-			t.compile(mr, this.man);
-		}
+		for (DbTable t : this.tables.values()) 
+			t.compile(this.man);
 	}
 
 	public DataType getProcRequestType(String name) {
@@ -310,16 +314,20 @@ public class DatabaseSchema {
 	}
 	
 	public DbField getField(String table, String field) {
-		if (StringUtil.isEmpty(table))
+		if (StringUtil.isEmpty(table) || StringUtil.isEmpty(field))
 			return null;
 		
 		DbTable tbl = this.tables.get(table);
 		
-		return tbl.fields.get(field);
+		if (tbl != null)		
+			return tbl.fields.get(field);
+		
+		return null;
 	}
 	
+	// returns a copy list, you (caller) can own the list 
 	public List<DbTrigger> getTriggers(String table, String operation) {
-		if (StringUtil.isEmpty(table))
+		if (StringUtil.isEmpty(table) || StringUtil.isEmpty(operation))
 			return null;
 		
 		List<DbTrigger> ret = new ArrayList<>();
@@ -331,6 +339,19 @@ public class DatabaseSchema {
 					ret.add(t);
 		
 		return ret;
+	}
+	
+	// returns a copy list, you (caller) can own the list 
+	public List<DbField> getFields(String table) {
+		if (StringUtil.isEmpty(table))
+			return null;
+		
+		DbTable tbl = this.tables.get(table);
+		
+		if (tbl == null)
+			return null;
+		
+		return new ArrayList<>(tbl.fields.values());
 	}
 	
 	public DbProc getProc(String name) {

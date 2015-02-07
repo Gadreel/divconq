@@ -230,15 +230,6 @@ public class DatabaseManager implements IDatabaseManager {
 			cb.complete();
 			return;
 		}
-		
-		Hub.instance.getSchema().validateProcRequest(name, params);
-		
-		// if did not pass schema validation
-		if (cb.hasErrors()) {
-			cb.errorTr(311);
-			cb.complete();
-			return;
-		}
 	
 		// task/user context - including domain id - automatically travel with this request
 		RecordStruct req = new RecordStruct();
@@ -266,7 +257,16 @@ public class DatabaseManager implements IDatabaseManager {
 			return;
 		}
 		
-		DbProc proc = Hub.instance.getSchema().getDb().getProc(name);
+		task.getSchema().validateProcRequest(name, params);
+		
+		// if did not pass schema validation
+		if (cb.hasErrors()) {
+			cb.errorTr(311);
+			cb.complete();
+			return;
+		}
+		
+		DbProc proc = Hub.instance.getSchema().getDbProc(name);
 		
 		String spname = proc.execute;
 		

@@ -18,9 +18,8 @@ package divconq.web.dcui;
 
 import java.io.PrintStream;
 
-import divconq.util.StringUtil;
 import w3.html.Html;
-
+import divconq.util.StringUtil;
 
 public class UnescapedText extends Node {
     protected String value = "";
@@ -77,7 +76,7 @@ public class UnescapedText extends Node {
 				buffer.println(",");
 			
 			buffer.print(tabs + "'");
-			Node.writeDynamicJsString(buffer, this.value);
+			Node.writeDynamicJsString(buffer, Html.escapeHtml(this.value));
 			buffer.print("'");
 			
 			return true;

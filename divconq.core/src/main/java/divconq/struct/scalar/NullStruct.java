@@ -16,7 +16,7 @@
 ************************************************************************ */
 package divconq.struct.scalar;
 
-import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
 import divconq.script.StackEntry;
@@ -33,7 +33,7 @@ public class NullStruct extends ScalarStruct {
 			return super.getType();
 
 		// implied only, not explicit
-		return Hub.instance.getSchema().getType("Null");
+		return OperationContext.get().getSchema().getType("Null");
 	}
 	
 	@Override

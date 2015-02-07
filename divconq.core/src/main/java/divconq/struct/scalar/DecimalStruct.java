@@ -18,7 +18,6 @@ package divconq.struct.scalar;
 
 import java.math.BigDecimal;
 
-import divconq.hub.Hub;
 import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
@@ -35,7 +34,7 @@ public class DecimalStruct extends ScalarStruct {
 		if (this.explicitType != null)
 			return super.getType();
 		
-		return Hub.instance.getSchema().getType("Decimal");
+		return OperationContext.get().getSchema().getType("Decimal");
 	}
 
 	public DecimalStruct() {		

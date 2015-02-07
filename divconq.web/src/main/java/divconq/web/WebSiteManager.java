@@ -152,10 +152,10 @@ public class WebSiteManager {
 		
 
 		/**
-		 * - ./private/dcw/filetransferconsulting/phantom/www/dcf/index.html
-		 * - ./private/dcw/filetransferconsulting/static/www/dcf/index.html
-		 * - ./public/dcw/filetransferconsulting/phantom/www/dcf/index.html
-		 * - ./public/dcw/filetransferconsulting/static/www/dcf/index.html
+		 * - ./private/dcw/filetransferconsulting/www-preview/dcf/index.html
+		 * - ./private/dcw/filetransferconsulting/www/dcf/index.html
+		 * - ./public/dcw/filetransferconsulting/www-preview/dcf/index.html
+		 * - ./public/dcw/filetransferconsulting/www/dcf/index.html
 		 */			
 
 		FuncCallback<FileStoreEvent> localfilestorecallback = new FuncCallback<FileStoreEvent>() {
@@ -168,13 +168,13 @@ public class WebSiteManager {
 				//System.out.println(p);
 				
 				// only notify on www updates
-				if (p.getNameCount() < 5) 
+				if (p.getNameCount() < 4) 
 					return;
 				
 				// must be inside a domain or we don't care
 				String mod = p.getName(0);
 				String domain = p.getName(1);
-				String section = p.getName(3);
+				String section = p.getName(2);
 				
 				if (!"dcw".equals(mod) || !"www".equals(section))
 					return;

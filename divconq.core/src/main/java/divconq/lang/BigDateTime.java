@@ -20,8 +20,8 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.chrono.ISOChronology;
 
-import divconq.hub.Hub;
 import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
 import divconq.schema.CoreType;
 import divconq.schema.DataType;
 import divconq.util.StringUtil;
@@ -274,7 +274,7 @@ public class BigDateTime implements Comparable<BigDateTime> {
 			return fr;
 		}
 		
-		DataType dt = Hub.instance.getSchema().getType("BigDateTime");
+		DataType dt = OperationContext.get().getSchema().getType("BigDateTime");
 		
 		if (dt == null) {
 			fr.errorTr(232);
@@ -288,7 +288,7 @@ public class BigDateTime implements Comparable<BigDateTime> {
 			return fr;
 		}
 		
-		if (!ct.validate(date, fr)) {
+		if (!ct.validate(date)) {
 			fr.errorTr(231, date);
 			return fr;
 		}

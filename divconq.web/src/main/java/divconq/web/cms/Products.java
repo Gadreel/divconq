@@ -142,7 +142,7 @@ public class Products {
 					if (!this.hasErrors()) {
 						DomainInfo domain = OperationContext.get().getUserContext().getDomain();
 						
-						String path = "/dcw/" + domain.getAlias() + "/static/galleries/store/category/" + rec.getFieldAsString("Alias");
+						String path = "/dcw/" + domain.getAlias() + "/galleries/store/category/" + rec.getFieldAsString("Alias");
 						
 						fs.addFolder(new CommonPath(path), new FuncCallback<IFileStoreFile>() {							
 							@Override
@@ -326,7 +326,7 @@ public class Products {
 					if (!this.hasErrors()) {
 						DomainInfo domain = OperationContext.get().getUserContext().getDomain();
 						
-						String path = "/dcw/" + domain.getAlias() + "/static/galleries/store/product/" + rec.getFieldAsString("Alias");
+						String path = "/dcw/" + domain.getAlias() + "/galleries/store/product/" + rec.getFieldAsString("Alias");
 						
 						fs.addFolder(new CommonPath(path), new FuncCallback<IFileStoreFile>() {							
 							@Override

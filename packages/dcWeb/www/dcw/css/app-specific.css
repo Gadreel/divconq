@@ -48,7 +48,7 @@
 ----------------------------------------------- */
 
 #dcappHeader {
-	background: #948679;
+	background: black;
 }
 
 #dcappHeaderGrid {
@@ -142,7 +142,7 @@
 ----------------------------------------------- */
 
 #dcappFooter {
-	background-color: rgb(239,235,226);
+	background-color: #f6f6f6;
 	padding: 16px;
 	text-align: left;
 	font-size: 12px;  
@@ -163,10 +163,9 @@
 
 html head+body .ui-btn.ui-btn-a, html head+body .ui-btn.ui-btn-a:visited {
 	text-shadow: none;
-	
-	background-color:#948679;
-	border:1px solid #29447E;
-	color:#fffff3;
+	background-color: black;
+	border:1px solid gray;
+	color: white;
 }
 
 #puConfirmHtml {

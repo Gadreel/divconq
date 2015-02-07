@@ -6,7 +6,6 @@ import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.db.util.ByteUtil;
 import divconq.lang.BigDateTime;
-import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.session.Session;
 import divconq.struct.FieldStruct;
@@ -15,7 +14,7 @@ import divconq.struct.RecordStruct;
 import divconq.struct.builder.ICompositeBuilder;
 import divconq.util.StringUtil;
 
-public class SignIn extends LoadRecord {
+public class StartSession extends LoadRecord {
 	@Override
 	public void execute(DatabaseInterface conn, DatabaseTask task, OperationResult log) {
 		RecordStruct params = task.getParamsAsRecord();
@@ -25,57 +24,20 @@ public class SignIn extends LoadRecord {
 		BigDateTime when = BigDateTime.nowDateTime();
 				
 		String token = null;
-		String uid = null;
-		boolean confirmed = false;
-		String password = params.getFieldAsString("Password");
+		String uid = params.getFieldAsString("UserId");
 		String uname = params.getFieldAsString("Username");
-		//String code = params.getFieldAsString("Code");
-		// TODO part of Trust monitoring -- boolean suspect = params.getFieldAsBooleanOrFalse("Suspect");	
 		
 		try {			
 			if (task.isReplicating()) {
 				token = params.getFieldAsString("Token");
 				uid = params.getFieldAsString("Uid");
-				confirmed = params.getFieldAsBooleanOrFalse("Confirmed");
 			}
 			else {
-				byte[] userid = conn.nextPeerKey(DB_GLOBAL_INDEX_2, did, "dcUser", "dcUsername", uname, null);
-
-				if (userid != null) 
-					uid = ByteUtil.extractValue(userid).toString();
-				
-				if (StringUtil.isNotEmpty(uid)) {
-					if (StringUtil.isNotEmpty(password)) {
-						Object fndpass = db.getDynamicScalar("dcUser", uid, "dcPassword", when);
-						
-						if (fndpass != null) {
-							// TODO check if it is hex, if so it is probably hashed so then run incoming password through
-							// hash to do compare
-							//params.setField("Password", OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(this.password.trim()));
-							
-							String password2 = OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(password.trim());
-							
-							// otherwise do plain text compare
-							if (!password2.equals(fndpass)) {
-								// TODO if recover is not expired
-								//. i recoverExpire]]$$get1^dcDb("dcUser",uid,"dcRecoverAt") q
-								
-								fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
-								
-								if (!password.equals(fndpass)) 
-									uid = null;
-							}
-						}
-						else {
-							// TODO if recover is not expired
-							//. i recoverExpire]]$$get1^dcDb("dcUser",uid,"dcRecoverAt") q
-							
-							fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
-							
-							if (!password.equals(fndpass)) 
-								uid = null;
-						}
-					}
+				if (StringUtil.isEmpty(uid)) {
+					byte[] userid = conn.nextPeerKey(DB_GLOBAL_INDEX_2, did, "dcUser", "dcUsername", uname, null);
+	
+					if (userid != null) 
+						uid = ByteUtil.extractValue(userid).toString();
 				}
 			}
 			
@@ -92,12 +54,6 @@ public class SignIn extends LoadRecord {
 			}
 			
 			if (!task.isReplicating()) {
-				// TODO a confirmed login requires at least user name and a confirmation code, it might also take a password
-				// but the code must be present to become a confirmed user
-				// i '$$get1^dcDb("dcUser",uid,"dcConfirmed") d
-				// . i (code'="")&($$get1^dcDb("dcUser",uid,"dcConfirmCode")=code) s Params("Confirmed")=1,confirmed=1 q
-				// . d err^dcConn(124) q							
-				
 				token = Session.nextSessionId();
 			}
 			
@@ -118,9 +74,6 @@ public class SignIn extends LoadRecord {
 			conn.set("dcSession", token, "User", uid);
 			conn.set("dcSession", token, "Domain", did);
 			
-			if (confirmed) 
-				db.setStaticScalar("dcUser", uid, "dcConfirmed", confirmed);
-			
 			// TODO create some way to track last login that doesn't take up db space
 			// or make last login an audit thing...track all logins in StaticList?
 			
@@ -135,6 +88,10 @@ public class SignIn extends LoadRecord {
 					new RecordStruct(
 							new FieldStruct("Field", "Id"),
 							new FieldStruct("Name", "UserId")
+					),
+					new RecordStruct(
+							new FieldStruct("Field", "dcUsername"),
+							new FieldStruct("Name", "Username")
 					),
 					new RecordStruct(
 							new FieldStruct("Field", "dcFirstName"),
@@ -166,18 +123,12 @@ public class SignIn extends LoadRecord {
 							new FieldStruct("Name", "AuthToken")
 					)
 			);		
-
-			//out.startRecord();
-			//out.field("UserInfo");
 			
 			this.writeRecord(conn, task, log, out, db, "dcUser",
 					uid, when, select, true, false, false);
-			
-			//out.field("AdditionalTags", null);		
-			//out.endRecord();
 		}
 		catch (Exception x) {
-			log.error("SignIn: Unable to create resp: " + x);
+			log.error("StartSession: Unable to create resp: " + x);
 		}
 		
 		task.complete();

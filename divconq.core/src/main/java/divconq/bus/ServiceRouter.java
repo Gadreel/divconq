@@ -47,7 +47,7 @@ public class ServiceRouter {
 		return name;
 	}
 
-	public OperationResult sendMessage(final Message msg) {
+	public OperationResult sendMessage(Message msg) {
     	String to = msg.getFieldAsString("ToHub");
     	
     	if ("*".equals(to))
@@ -187,6 +187,20 @@ public class ServiceRouter {
 					this.tunnelhublist.remove(hub);
 				}
 			}
+		}
+		finally {
+			this.lock.unlock();
+		}
+    }
+    
+    public void indexLocal() {
+		this.lock.lock();
+		
+		try {
+			HubRouter hub = Hub.instance.getBus().getLocalHub();
+			
+			this.hubs.put(hub.getHubId(), hub);
+			this.localhub = hub;
 		}
 		finally {
 			this.lock.unlock();

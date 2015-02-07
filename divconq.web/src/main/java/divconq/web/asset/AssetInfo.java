@@ -137,7 +137,7 @@ public class AssetInfo {
 					this.chunkSize = Files.size(this.fpath);
 				}
 				else {
-					System.out.println("expand 1: " + System.currentTimeMillis());
+					//System.out.println("expand 1: " + System.currentTimeMillis());
 					
 					this.buffer = ByteBufWriter.createLargeHeap();
 					
@@ -147,7 +147,7 @@ public class AssetInfo {
 						});
 					}
 					
-					System.out.println("expand 2: " + System.currentTimeMillis());
+					//System.out.println("expand 2: " + System.currentTimeMillis());
 					
 				}
 			} 

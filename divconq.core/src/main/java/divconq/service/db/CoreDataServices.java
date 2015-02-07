@@ -136,7 +136,7 @@ public class CoreDataServices extends ExtensionBase implements IService {
 			}
 			
 			if ("AddUser".equals(op)) {
-				final AddUserRequest req = new AddUserRequest(rec.getFieldAsString("Username"));
+				AddUserRequest req = new AddUserRequest(rec.getFieldAsString("Username"));
 			
 				if (rec.hasField("FirstName"))
 					req.setFirstName(rec.getFieldAsString("FirstName"));
@@ -319,7 +319,7 @@ public class CoreDataServices extends ExtensionBase implements IService {
 						LocalFileStore fs = Hub.instance.getPublicFileStore();
 						
 						if (fs != null)  {
-							Path dspath = fs.getFilePath().resolve("dcw/" + rec.getFieldAsString("Alias") + "/static");
+							Path dspath = fs.getFilePath().resolve("dcw/" + rec.getFieldAsString("Alias") + "/");
 							
 							try {
 								Files.createDirectories(dspath.resolve("files"));

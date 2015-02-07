@@ -277,25 +277,25 @@ public class WebDomain {
 	 * 		"/dcf/index.html"
 	 * 
 	 * Domain Private Phantom Files:							(draft/preview mode files)
-	 * 		./private/dcw/[domain id]/phantom/www/dcf/index.html
+	 * 		./private/dcw/[domain id]/www-preview/dcf/index.html
 	 * 
 	 * Domain Private Override Files:
-	 * 		./private/dcw/[domain id]/static/www/dcf/index.html
+	 * 		./private/dcw/[domain id]/www/dcf/index.html
 	 * 
 	 * Domain Phantom Files:                           			(draft/preview mode files)
-	 * 		./public/dcw/[domain id]/phantom/www/dcf/index.html
+	 * 		./public/dcw/[domain id]/www-preview/dcf/index.html
 	 * 
 	 * Domain Override Files:
-	 * 		./public/dcw/[domain id]/static/www/dcf/index.html
+	 * 		./public/dcw/[domain id]/www/dcf/index.html
 	 * 
 	 * Package Files:
 	 * 		./packages/[package id]/www/dcf/index.html
 	 * 
 	 * Example:
-	 * - ./private/dcw/filetransferconsulting/phantom/www/dcf/index.html
-	 * - ./private/dcw/filetransferconsulting/static/www/dcf/index.html
-	 * - ./public/dcw/filetransferconsulting/phantom/www/dcf/index.html
-	 * - ./public/dcw/filetransferconsulting/static/www/dcf/index.html
+	 * - ./private/dcw/filetransferconsulting/www-preview/dcf/index.html
+	 * - ./private/dcw/filetransferconsulting/www/dcf/index.html
+	 * - ./public/dcw/filetransferconsulting/www-preview/dcf/index.html
+	 * - ./public/dcw/filetransferconsulting/www/dcf/index.html
 	 * - ./packages/zCustomPublic/www/dcf/index.html
 	 * - ./packages/dc/dcFilePublic/www/dcf/index.html
 	 * - ./packages/dcWeb/www/dcf/index.html
@@ -327,38 +327,38 @@ public class WebDomain {
 				return ioa;
 			
 			if (prifs != null) {
-				// look in the domain's phantom file system
+				// look in the domain's www-preview file system
 				if (isPreview) {
-					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/phantom/www", path);
+					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www-preview", path);
 					
 					if (wpath != null) 
 						return this.pathToAdapter(isPreview, path, wpath);
 				}
 				
 				// look in the domain's static file system
-				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/static/www", path);
+				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www", path);
 				
 				if ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))
-						wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/static/", path);
+						wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/", path);
 				
 				if (wpath != null) 
 					return this.pathToAdapter(isPreview, path, wpath);
 			}
 			
 			if (pubfs != null) {
-				// look in the domain's phantom file system
+				// look in the domain's www-preview file system
 				if (isPreview) {
-					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/phantom/www", path);
+					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www-preview", path);
 					
 					if (wpath != null) 
 						return this.pathToAdapter(isPreview, path, wpath);
 				}
 				
 				// look in the domain's static file system
-				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/static/www", path);
+				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www", path);
 				
 				if ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))
-						wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/static/", path);
+						wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/", path);
 				
 				if (wpath != null) 
 					return this.pathToAdapter(isPreview, path, wpath);
@@ -426,15 +426,15 @@ public class WebDomain {
 			
 			if (prifs != null) {
 				if (isPreview) {
-					// look in the domain's phantom file system
-					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/phantom/www", ppath);
+					// look in the domain's www-preview file system
+					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www-preview", ppath);
 					
 					if (wpath != null) 
 						return this.pathToAdapter(isPreview, ppath, wpath);
 				}
 				
 				// look in the domain's static file system
-				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/static/www", ppath);
+				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www", ppath);
 				
 				if (wpath != null) 
 					return this.pathToAdapter(isPreview, ppath, wpath);
@@ -442,15 +442,15 @@ public class WebDomain {
 			
 			if (pubfs != null) {
 				if (isPreview) {
-					// look in the domain's phantom file system
-					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/phantom/www", ppath);
+					// look in the domain's www-preview file system
+					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www-preview", ppath);
 					
 					if (wpath != null) 
 						return this.pathToAdapter(isPreview, ppath, wpath);
 				}
 				
 				// look in the domain's static file system
-				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/static/www", ppath);
+				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www", ppath);
 				
 				if (wpath != null) 
 					return this.pathToAdapter(isPreview, ppath, wpath);

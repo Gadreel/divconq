@@ -20,7 +20,6 @@ import java.text.DecimalFormat;
 
 import org.joda.time.format.DateTimeFormat;
 
-import divconq.hub.Hub;
 import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
@@ -38,7 +37,7 @@ public class StringStruct extends ScalarStruct {
 		if (this.explicitType != null)
 			return super.getType();
 		
-		return Hub.instance.getSchema().getType("String");
+		return OperationContext.get().getSchema().getType("String");
 	}
 
 	public StringStruct() {		

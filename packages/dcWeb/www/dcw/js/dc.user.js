@@ -154,7 +154,7 @@ dc.user = {
 				if (resdata.Verified) {
 					// copy only select fields for security reasons
 					var uinfo = {
-						Verified: true,
+						Verified: ("00000_000000000000002" != resdata.UserId),	// guest is not treated as verified in client
 						UserId: resdata.UserId,
 						Username: resdata.Username,
 						FullName: resdata.FullName,
@@ -167,6 +167,53 @@ dc.user = {
 					
 					if (remember) {
 						uinfo.Credentials = creds;		
+						uinfo.RememberMe = remember;
+					}
+					
+					dc.user._info = uinfo;
+ 
+					// failed login will not wipe out remembered user (could be a server issue or timeout),
+					// only set on success - successful logins will save or wipe out depending on Remember
+					dc.user.saveRememberedUser();
+					
+					if (dc.user._signinhandler)
+						dc.user._signinhandler.call(dc.user._info);
+				}
+			}
+			
+			if (callback)
+				callback();
+		});
+	},
+	
+	updateUser : function(remember, callback) {		
+		dc.user._info = { };
+
+		var msg = {
+			Service: 'Session',
+			Feature: 'Control',
+			Op: 'LoadUser'
+		};
+		
+		dc.comm.sendMessage(msg, function(rmsg) { 
+			if (rmsg.Result == 0) {
+				var resdata = rmsg.Body;
+				
+				if (resdata.Verified) {
+					// copy only select fields for security reasons
+					var uinfo = {
+						Verified: ("00000_000000000000002" != resdata.UserId),	// guest is not treated as verified in client
+						UserId: resdata.UserId,
+						Username: resdata.Username,
+						FullName: resdata.FullName,
+						Email: resdata.Email,
+						AuthTags: resdata.AuthTags,
+						DomainId: resdata.DomainId,
+						Locale: resdata.Locale,
+						Chronology: resdata.Chronology
+					}
+					
+					if (remember) {
 						uinfo.RememberMe = remember;
 					}
 					

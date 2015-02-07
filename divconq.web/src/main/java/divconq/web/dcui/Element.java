@@ -142,7 +142,7 @@ abstract public class Element extends Node {
                 	this.name = obj.toString();
                 }
                 else {
-                    LiteralText txt = new LiteralText(obj.toString());
+                	LiteralText txt = new LiteralText(obj.toString());
                     txt.setParent(this);
                     this.children.add(txt);
                     txt.doBuild();

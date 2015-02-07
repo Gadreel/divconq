@@ -1,17 +1,14 @@
 package divconq.db.proc;
 
-import java.util.Map.Entry;
 import java.util.function.Consumer;
 
 import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.db.IStoredProc;
-import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
 import divconq.lang.op.OperationResult;
 import divconq.schema.DbField;
-import divconq.schema.DbTable;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
@@ -56,10 +53,8 @@ public class LoadRecord implements IStoredProc {
 
 		// if select none then select all
 		if (select.getSize() == 0) {
-			DbTable tab = Hub.instance.getSchema().getDb().getTable(table);
-			
-			for (Entry<String, DbField> entry : tab.fields.entrySet()) 
-				select.addItem(new RecordStruct(new FieldStruct("Field", entry.getKey())));
+			for (DbField entry : task.getSchema().getDbFields(table)) 
+				select.addItem(new RecordStruct(new FieldStruct("Field", entry.getName())));
 		}
 		
 		if (!skipWriteRec)
@@ -108,7 +103,7 @@ public class LoadRecord implements IStoredProc {
 		String fname = field.getFieldAsString("Field");
 		String format = field.getFieldAsString("Format");
 		
-		DbField fdef = Hub.instance.getSchema().getDb().getField(table, fname);
+		DbField fdef = task.getSchema().getDbField(table, fname);
 
 		if (fdef == null) {
 			out.value(null);

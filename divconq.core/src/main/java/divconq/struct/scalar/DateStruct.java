@@ -20,7 +20,6 @@ import org.joda.time.LocalDate;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
 
-import divconq.hub.Hub;
 import divconq.lang.op.OperationContext;
 import divconq.schema.DataType;
 import divconq.schema.RootType;
@@ -37,7 +36,7 @@ public class DateStruct extends ScalarStruct {
 		if (this.explicitType != null)
 			return super.getType();
 		
-		return Hub.instance.getSchema().getType("LocalDate");
+		return OperationContext.get().getSchema().getType("LocalDate");
 	}
 
 	public DateStruct() {		

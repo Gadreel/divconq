@@ -44,7 +44,7 @@ public class FileSystemScanner extends FileCollection implements IFileStoreScann
 	protected FileSystemFile folder = null;
 	
 	public FileSystemScanner() {
-		if (Hub.instance.getSchema() != null)
+		if (OperationContext.get().getSchema() != null)
 			this.setType(Hub.instance.getSchema().getType("dciFileSystemScanner"));
 	}
 
