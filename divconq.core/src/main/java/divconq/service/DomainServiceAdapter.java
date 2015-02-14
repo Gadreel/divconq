@@ -16,11 +16,13 @@ import divconq.work.TaskRun;
 public class DomainServiceAdapter implements IService {
 	protected String name = null;
 	protected Path sourcepath = null;
+	protected Path domainpath = null;
 	protected Map<String, ServiceFeature> features = new HashMap<String, ServiceFeature>();
 	
-	public DomainServiceAdapter(String name, Path spath) {
+	public DomainServiceAdapter(String name, Path spath, Path dpath) {
 		this.name = name;
 		this.sourcepath = spath;
+		this.domainpath = dpath;
 	}
 	
 	@Override
@@ -55,7 +57,12 @@ public class DomainServiceAdapter implements IService {
 			
 			// TODO Auto-generated method stub
 			try (GroovyClassLoader loader = new GroovyClassLoader()) {
-				loader.addClasspath(DomainServiceAdapter.this.sourcepath.toString());
+				Path dpath = DomainServiceAdapter.this.domainpath.resolve("glib");
+				
+				//System.out.println("dpath: " + dpath);
+				
+				if (Files.exists(dpath))
+					loader.addClasspath(dpath.toString());
 				
 				Class<?> groovyClass = loader.parseClass(spath.toFile());
 				
@@ -63,6 +70,7 @@ public class DomainServiceAdapter implements IService {
 			}
 			catch (Exception x) {
 				OperationContext.get().error("Unable to prepare service script: " + spath);
+				OperationContext.get().error("Error: " + x);
 			}		
 		}
 		
@@ -80,6 +88,7 @@ public class DomainServiceAdapter implements IService {
 				}
 				catch (Exception x) {
 					OperationContext.get().error("Unable to execute script!");
+					OperationContext.get().error("Error: " + x);
 				}		
 			}
 			

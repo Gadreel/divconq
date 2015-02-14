@@ -28,6 +28,7 @@ import divconq.xml.XElement;
 public class DatabaseSchema {
 	protected SchemaManager man = null;
 	protected HashMap<String, DbProc> procs = new HashMap<String, DbProc>();
+	protected HashMap<String, DbComposer> composers = new HashMap<String, DbComposer>();
 	protected HashMap<String, List<DbTrigger>> triggers = new HashMap<String, List<DbTrigger>>();
 	/*
 	protected HashMap<String, DbFilter> recfilters = new HashMap<String, DbFilter>();
@@ -41,6 +42,10 @@ public class DatabaseSchema {
 	
 	public Collection<DbProc> getProcedures() {
 		return this.procs.values();
+	}
+	
+	public Collection<DbComposer> getComposers() {
+		return this.composers.values();
 	}
 	
 	/*
@@ -164,6 +169,20 @@ public class DatabaseSchema {
 				
 				if (resp != null)
 					opt.response = this.man.loadDataType(schema, resp);
+			}			
+			
+			for (XElement procel : secel.selectAll("Composer")) {
+				String sname = procel.getAttribute("Name");
+				
+				if (StringUtil.isEmpty(sname))
+					continue;			
+				
+				DbComposer opt = new DbComposer();
+				opt.name = sname;
+				opt.execute = procel.getAttribute("Execute");
+				opt.securityTags = tags;
+				
+				this.composers.put(sname, opt);
 			}			
 		}			
 		
@@ -297,7 +316,7 @@ public class DatabaseSchema {
 		return null;
 	}
 
-	public DataType getResponseType(String name) {
+	public DataType getProcResponseType(String name) {
 		DbProc proc = this.getProc(name);
 		
 		if (proc != null)
@@ -359,5 +378,12 @@ public class DatabaseSchema {
 			return null;
 		
 		return this.procs.get(name);
+	}
+	
+	public DbComposer getComposer(String name) {
+		if (StringUtil.isEmpty(name))
+			return null;
+		
+		return this.composers.get(name);
 	}
 }

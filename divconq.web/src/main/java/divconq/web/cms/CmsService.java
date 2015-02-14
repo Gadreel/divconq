@@ -697,10 +697,10 @@ public class CmsService extends ExtensionBase implements IService {
 							String tpath = root.getAttribute("Skeleton");
 							
 							Hub.instance.getDatabase().submit(
-								new SelectDirectRequest("dcmSkeleton", 
-									new SelectFields().withField("Id"),
-									new WhereEqual(new WhereField("dcmPath"), tpath)
-								), 
+								new SelectDirectRequest()
+									.withTable("dcmSkeleton") 
+									.withSelect(new SelectFields().withField("Id"))
+									.withWhere(new WhereEqual(new WhereField("dcmPath"), tpath)), 
 								new ObjectResult() {
 									@Override
 									public void process(CompositeStruct result) {

@@ -20,6 +20,7 @@ import org.joda.time.DateTime;
 
 import divconq.db.DataRequest;
 import divconq.lang.BigDateTime;
+import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
 
 /**
@@ -45,10 +46,12 @@ public class LoadRecordRequest extends DataRequest {
 		return this;
 	}
 	
+	/*
 	public LoadRecordRequest withFilter(String v) {
 		((RecordStruct) this.parameters).setField("Filter", v);
 		return this;
 	}
+	*/
 	
 	public LoadRecordRequest withWhen(BigDateTime v) {
 		((RecordStruct) this.parameters).setField("When", v);
@@ -65,10 +68,12 @@ public class LoadRecordRequest extends DataRequest {
 		return this;
 	}
 	
+	/*
 	public LoadRecordRequest withExtra(Object v) {
 		((RecordStruct) this.parameters).setField("Extra", v);
 		return this;
 	}
+	*/
 	
 	public LoadRecordRequest withSelect(SelectFields v) {
 		((RecordStruct) this.parameters).setField("Select", v.getFields());
@@ -85,4 +90,12 @@ public class LoadRecordRequest extends DataRequest {
 		return this;
 	}
 	
+	@Override
+	public CompositeStruct buildParams() {
+		// default in When
+		if (!((RecordStruct)this.parameters).hasField("When"))
+			((RecordStruct) this.parameters).setField("When", BigDateTime.nowDateTime());
+		
+		return super.buildParams();
+	}
 }

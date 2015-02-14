@@ -122,6 +122,7 @@ public class TablesAdapter {
 					Object newValue = Struct.objectToCore(data.getField("Data"));
 					String tags = data.getFieldAsString("Tags");
 					boolean retired = data.getFieldAsBooleanOrFalse("Retired");
+					boolean updateOnly = data.getFieldAsBooleanOrFalse("UpdateOnly");
 					
 					// --------------------------------------
 					// StaticScalar w/o audit handling 
@@ -181,6 +182,37 @@ public class TablesAdapter {
 					// StaticScalar w/ audit handling 
 					// --------------------------------------
 					
+					// find the next, older, stamp after current
+					byte[] olderStamp = this.conn.nextPeerKey(DB_GLOBAL_RECORD, did, table, id, fname, stamp);
+					BigDecimal oldStamp = null;
+					boolean oldIsSet = false;
+					boolean oldIsRetired = false;
+					Object oldValue = null;
+					
+					if (olderStamp != null) {
+						oldStamp = Struct.objectToDecimal(ByteUtil.extractValue(olderStamp));
+						
+						// try to get the data if any - note retired fields have no data
+						if (oldStamp != null) {
+							oldIsRetired = this.conn.getAsBooleanOrFalse(DB_GLOBAL_RECORD, did, table, id, fname, oldStamp, "Retired");
+							oldIsSet = this.conn.isSet(DB_GLOBAL_RECORD, did, table, id, fname, oldStamp, "Data");
+							
+							if (oldIsSet) 
+								oldValue = this.conn.get(DB_GLOBAL_RECORD, did, table, id, fname, oldStamp, "Data");
+						}
+					}
+					
+					if (updateOnly) {
+						if (retired && oldIsRetired)
+							continue;
+						
+						if ((oldValue == null) && (newValue == null))
+							continue;
+						
+						if ((oldValue != null) && oldValue.equals(newValue))
+							continue;
+					}
+					
 					// set either retired or data, not both
 					if (retired)
 						this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Retired", retired);
@@ -197,26 +229,12 @@ public class TablesAdapter {
 					
 					BigDecimal endStamp = null;
 					
-					// find the next, older, stamp after current
-					byte[] olderStamp = this.conn.nextPeerKey(DB_GLOBAL_RECORD, did, table, id, fname, stamp);
-					
-					if (olderStamp != null) {
-						BigDecimal oldStamp = Struct.objectToDecimal(ByteUtil.extractValue(olderStamp));
-						
-						// try to get the data if any - note retired fields have no data
-						if (oldStamp != null) {
-							boolean oldIsSet = this.conn.isSet(DB_GLOBAL_RECORD, did, table, id, fname, oldStamp, "Data");
-							
-							if (oldIsSet) {
-								Object oldValue = this.conn.get(DB_GLOBAL_RECORD, did, table, id, fname, oldStamp, "Data");
-							
-								// read the stamp from the old index, this will now be ours
-								endStamp = this.conn.getAsDecimal(DB_GLOBAL_INDEX_1, did, table, fname, oldValue, id, oldStamp);
-					
-								// update the old index with current stamp
-								this.conn.set(DB_GLOBAL_INDEX_1, did, table, fname, oldValue, id, oldStamp, stamp);
-							}
-						}
+					if (oldIsSet) {
+						// read the stamp from the old index, this will now be ours
+						endStamp = this.conn.getAsDecimal(DB_GLOBAL_INDEX_1, did, table, fname, oldValue, id, oldStamp);
+			
+						// update the old index with current stamp
+						this.conn.set(DB_GLOBAL_INDEX_1, did, table, fname, oldValue, id, oldStamp, stamp);
 					}
 					
 					if (retired)
@@ -274,6 +292,7 @@ public class TablesAdapter {
 					Object newValue = Struct.objectToCore(data.getField("Data"));
 					String tags = data.getFieldAsString("Tags");
 					boolean retired = data.getFieldAsBooleanOrFalse("Retired");
+					boolean updateOnly = data.getFieldAsBooleanOrFalse("UpdateOnly");
 					
 					BigDateTime from = data.getFieldAsBigDateTime("From");
 					BigDateTime to = data.getFieldAsBigDateTime("To");
@@ -281,7 +300,6 @@ public class TablesAdapter {
 					// --------------------------------------
 					// w/o audit handling 
 					// --------------------------------------
-					
 				 					
 					// if audit mode is off then stamp is always the same (zero) for all updates
 					if (auditDisabled) {
@@ -347,6 +365,39 @@ public class TablesAdapter {
 					// w/ audit handling 
 					// --------------------------------------
 					
+					// find the next, older, stamp after current
+					byte[] olderStamp = this.conn.nextPeerKey(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp);
+					BigDecimal oldStamp = null;
+					boolean oldIsSet = false;
+					boolean oldIsRetired = false;
+					Object oldValue = null;
+					
+					if (olderStamp != null) {
+						oldStamp = Struct.objectToDecimal(ByteUtil.extractValue(olderStamp));
+						
+						// try to get the data if any - note retired fields have no data
+						if (oldStamp != null) {
+							oldIsRetired = this.conn.getAsBooleanOrFalse(DB_GLOBAL_RECORD, did, table, id, fname, sid, oldStamp, "Retired");
+							oldIsSet = this.conn.isSet(DB_GLOBAL_RECORD, did, table, id, fname, sid, oldStamp, "Data");
+							
+							if (oldIsSet) 
+								oldValue = this.conn.get(DB_GLOBAL_RECORD, did, table, id, fname, sid, oldStamp, "Data");
+						}
+					}
+					
+					if (updateOnly) {
+						// TODO for dynamic scalar (only) look at previous value (different sid) and skip if that has same value
+						
+						if (retired && oldIsRetired)
+							continue;
+						
+						if ((oldValue == null) && (newValue == null))
+							continue;
+						
+						if ((oldValue != null) && oldValue.equals(newValue))
+							continue;
+					}
+					
 					// set either retired or data, not both
 					if (retired)
 						this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Retired", retired);
@@ -369,26 +420,12 @@ public class TablesAdapter {
 					
 					BigDecimal endStamp = null;
 					
-					// find the next, older, stamp after current
-					byte[] olderStamp = this.conn.nextPeerKey(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp);
-					
-					if (olderStamp != null) {
-						BigDecimal oldStamp = Struct.objectToDecimal(ByteUtil.extractValue(olderStamp));
-						
-						// try to get the data if any - note retired fields have no data
-						if (oldStamp != null) {
-							boolean oldIsSet = this.conn.isSet(DB_GLOBAL_RECORD, did, table, id, fname, sid, oldStamp, "Data");
-							
-							if (oldIsSet) {
-								Object oldValue = this.conn.get(DB_GLOBAL_RECORD, did, table, id, fname, sid, oldStamp, "Data");
-							
-								// read the stamp from the old index, this will now be ours
-								endStamp = this.conn.getAsDecimal(DB_GLOBAL_INDEX_2, did, table, fname, oldValue, id, sid, oldStamp);
-					
-								// update the old index with current stamp
-								this.conn.set(DB_GLOBAL_INDEX_2, did, table, fname, oldValue, id, sid, oldStamp, stamp);
-							}
-						}
+					if (oldIsSet) {
+						// read the stamp from the old index, this will now be ours
+						endStamp = this.conn.getAsDecimal(DB_GLOBAL_INDEX_2, did, table, fname, oldValue, id, sid, oldStamp);
+			
+						// update the old index with current stamp
+						this.conn.set(DB_GLOBAL_INDEX_2, did, table, fname, oldValue, id, sid, oldStamp, stamp);
 					}
 					
 					if (retired)

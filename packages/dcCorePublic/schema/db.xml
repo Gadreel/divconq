@@ -70,6 +70,7 @@
 		</Table>
 		
 		<Trigger Table="dcUser" Operation="BeforeInsert" Execute="divconq.db.trigger.BeforeUserInsert" />
+		<Trigger Table="dcUser" Operation="BeforeUpdate" Execute="divconq.db.trigger.BeforeUserUpdate" />
 		
 		<Table Id="dcGroup">
 			<Field Name="dcName" Type="dcSmallString" Required="True" Indexed="True" Dynamic="True" />
@@ -79,7 +80,6 @@
 		
 		<!-- 
 		<RecordComposer Name="dcAuthorizationTags" Execute="recAuthTags^dcUser" />
-		<SelectComposer Name="dcAuthorizationTags" Execute="selAuthTags^dcUser" />
 		<WhereComposer Name="dcAuthorizationTags" Execute="whrAuthTags^dcUser" />
 		 -->
 		 
@@ -106,6 +106,8 @@
 			</Procedure>			
 		</Secure>			
 		<Secure Tags="Admin">
+			<Composer Name="dcListCounter" Execute="divconq.db.comp.ListCounter" />
+		
 			<Procedure Name="dcSignIn" Execute="divconq.db.proc.SignIn">
 				<Description>
 					Start a user session if credentials pass.

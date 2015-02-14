@@ -2,7 +2,9 @@
 	<Skeleton>
 		<footer id="dcappFooter">
 			<div class="dcappWrapper">
-				&copy; @val|SiteCopyright@ @val|SiteAuthor@
+				<div id="dcappFooterContent">
+					&copy; @val|SiteCopyright@ @val|SiteAuthor@
+				</div>
 			</div>
 		</footer>
 	</Skeleton>

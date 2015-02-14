@@ -17,14 +17,7 @@
 package divconq.db.thru;
 
 import divconq.db.update.DbRecordRequest;
-import divconq.db.update.DynamicListField;
-import divconq.db.update.DynamicScalarField;
-import divconq.db.update.ListField;
-import divconq.db.update.ScalarField;
-import divconq.lang.op.OperationContext;
-import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
-import divconq.struct.Struct;
 
 /**
  * Update a record in dcDatabase, see dcUpdateRecord schema.
@@ -45,6 +38,7 @@ public class ImportRecordRequest extends DbRecordRequest {
 	public ImportRecordRequest(String table, RecordStruct record) {
 		super("dcUpdateRecord");
 		
+		/* TODO
 		this.withTable(table);
 		
 		this.id = record.getFieldAsRecord("Id").getFieldAsString("Data");
@@ -71,5 +65,43 @@ public class ImportRecordRequest extends DbRecordRequest {
 					this.withFields(ScalarField.buildImport(sfld.name, record.getFieldAsRecord(sfld.name)));
 			}
 		}
+		*/
+		
 	}
+	
+	/*
+
+	// TODO tags
+	public static DbField buildImport(String name, RecordStruct data) {
+		DynamicListField fld = new DynamicListField(name, data.getFieldAsString("Sid"), data.getFieldAsAny("Data"));
+		
+		if (data.hasField("From"))
+			fld.from = data.getFieldAsBigDateTime("From");
+		
+		if (data.hasField("To"))
+			fld.to = data.getFieldAsBigDateTime("To");
+		
+		return fld;
+	}
+	 
+	 
+
+	// TODO tags
+	public static DbField buildImport(String name, RecordStruct data) {
+		DynamicScalarField fld = new DynamicScalarField(name, data.getFieldAsString("Sid"), data.getFieldAsAny("Data"));
+		
+		if (data.hasField("From"))
+			fld.from = data.getFieldAsBigDateTime("From");
+		
+		return fld;
+	}
+
+	// TODO tags
+	public static DbField buildImport(String name, RecordStruct data) {
+		ScalarField fld = new ScalarField(name, data.getFieldAsAny("Data"));
+		
+		return fld;
+	}
+	 
+	 */
 }

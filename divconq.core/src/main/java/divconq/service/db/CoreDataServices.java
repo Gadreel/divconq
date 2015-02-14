@@ -242,13 +242,14 @@ public class CoreDataServices extends ExtensionBase implements IService {
 			// use with discretion
 			if ("ListUsers".equals(op)) {
 				db.submit(
-					new SelectDirectRequest("dcUser", new SelectFields()
-						.withField("Id")
-						.withField("dcUsername", "Username")
-						.withField("dcFirstName", "FirstName")
-						.withField("dcLastName", "LastName")
-						.withField("dcEmail", "Email")
-					), 
+					new SelectDirectRequest()
+						.withTable("dcUser")
+						.withSelect(new SelectFields()
+							.withField("Id")
+							.withField("dcUsername", "Username")
+							.withField("dcFirstName", "FirstName")
+							.withField("dcLastName", "LastName")
+							.withField("dcEmail", "Email")), 
 					new ObjectFinalResult(request));
 				
 				return ;
@@ -285,11 +286,8 @@ public class CoreDataServices extends ExtensionBase implements IService {
 				ReplicatedDataRequest req = new UpdateRecordRequest()
 					.withTable("dcDomain")
 					.withId("MyUpdateDomain".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id"))
-					.withConditionallySetField(rec, "Title", "dcTitle")
-					.withConditionallySetField(rec, "Alias", "dcAlias")
-					.withConditionallySetField(rec, "Description", "dcDescription")
-					.withConditionallySetField(rec, "ObscureClass", "dcObscureClass")
-					.withConditionallyReplaceList(rec, "Names", "dcName");
+					.withConditionallySetFields(rec, "Title", "dcTitle", "Alias", "dcAlias", "Description", "dcDescription", "ObscureClass", "dcObscureClass")
+					.withConditionallySetList(rec, "Names", "dcName");
 				
 				req.withDomain("MyUpdateDomain".equals(op) ? uc.getDomainId() : rec.getFieldAsString("Id"));
 				
@@ -307,11 +305,8 @@ public class CoreDataServices extends ExtensionBase implements IService {
 			if ("AddDomain".equals(op)) {
 				ReplicatedDataRequest req = new InsertRecordRequest()
 					.withTable("dcDomain")
-					.withConditionallySetField(rec, "Title", "dcTitle")
-					.withConditionallySetField(rec, "Alias", "dcAlias")
-					.withConditionallySetField(rec, "Description", "dcDescription")
-					.withConditionallySetField(rec, "ObscureClass", "dcObscureClass")
-					.withCopyList("dcName", true, rec.getFieldAsList("Names"));
+					.withConditionallySetFields(rec, "Title", "dcTitle", "Alias", "dcAlias", "Description", "dcDescription", "ObscureClass", "dcObscureClass")
+					.withSetList("dcName", rec.getFieldAsList("Names"));
 				
 				db.submit(req, new ObjectResult() {
 					@Override
@@ -468,10 +463,11 @@ public class CoreDataServices extends ExtensionBase implements IService {
 			// use with discretion
 			if ("ListGroups".equals(op)) {
 				db.submit(
-					new SelectDirectRequest("dcGroup", new SelectFields()
-						.withField("Id")
-						.withField("dcName", "Name")
-					), 
+					new SelectDirectRequest()
+						.withTable("dcGroup")
+						.withSelect(new SelectFields()
+							.withField("Id")
+							.withField("dcName", "Name")), 
 					new ObjectFinalResult(request));
 				
 				return ;

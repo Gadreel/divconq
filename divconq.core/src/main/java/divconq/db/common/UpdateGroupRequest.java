@@ -68,7 +68,7 @@ public class UpdateGroupRequest extends UpdateRecordRequest {
 
 		// warning - setting an empty list removes all tags
 		if (this.tags != null)
-			this.withReplaceList("dcAuthorizationTag", this.tags);
+			this.withSetList("dcAuthorizationTag", this.tags);
 		
 		this.parameters = super.buildParams();	
 		

@@ -234,6 +234,29 @@ var dc = {
 						
 					return 0;
 				}
+			},
+			sortDescObjects: function(sfield) {
+				return function(a, b) { 
+					var av = a[sfield];
+					var bv = b[sfield];
+					
+					if ((av === null) && (bv === null))
+						return 0;
+						
+					if (av === null) 
+						return 1;
+						
+					if (bv === null) 
+						return 1;
+						
+					if (av < bv)
+						return 1;
+						
+					if (av > bv)
+						return -1;
+						
+					return 0;
+				}
 			}
 		},
 		Number: {

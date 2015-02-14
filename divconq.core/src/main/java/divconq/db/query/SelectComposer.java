@@ -42,6 +42,16 @@ public class SelectComposer implements ISelectField {
 		this.column.setField("Format", v);		
 		return this;
 	}
+	
+	public SelectComposer withField(String v) {
+		this.column.setField("Field", v);		
+		return this;
+	}
+	
+	public SelectComposer withParams(RecordStruct v) {
+		this.column.setField("Params", v);		
+		return this;
+	}
 
 	@Override
 	public Struct getParams() {

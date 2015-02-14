@@ -20,6 +20,7 @@ import divconq.db.query.SelectFields;
 import divconq.db.query.WhereEqual;
 import divconq.db.query.WhereField;
 import divconq.db.update.InsertRecordRequest;
+import divconq.db.update.UpdateRecordRequest;
 import divconq.hub.Hub;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
@@ -87,27 +88,6 @@ public class AuthService extends ExtensionBase implements IService {
 			
 			if ("SignInFacebook".equals(op)) {
 				// TODO check domain settings that FB sign in is allowed
-				
-				//request.getTask().withTimeout(30);		// TODO temp
-				
-				/*
-				RecordStruct data1 = new RecordStruct(
-						new FieldStruct("Name", "Andy"),
-						new FieldStruct("Age", "Green"),
-						new FieldStruct("Sex", "M")
-				);
-				
-				RecordStruct data2 = new RecordStruct(
-						new FieldStruct("Name", "Andy"),
-						new FieldStruct("Age", 44),
-						new FieldStruct("Sex", "M")
-				);
-				
-				System.out.println("1");
-				OperationContext.get().getSchema().validateType(data1, "geiTestDefinition");
-				System.out.println("2");
-				OperationContext.get().getSchema().validateType(data2, "geiTestDefinition");
-				*/
 				
 				// try to authenticate
 				RecordStruct creds = msg.getFieldAsRecord("Body");
@@ -184,19 +164,22 @@ public class AuthService extends ExtensionBase implements IService {
 				// -----------------------------------------
 				
 				db.submit(
-						new SelectDirectRequest("dcUser", 
-								new SelectFields()
+						new SelectDirectRequest()
+							.withTable("dcUser")
+							.withSelect(new SelectFields()
 									.withField("Id")
 									.withField("dcUsername", "Username")
 									.withField("dcFirstName", "FirstName")
 									.withField("dcLastName", "LastName")
-									.withField("dcEmail", "Email"),
-								new WhereEqual(new WhereField("dcmFacebookId"), uid)		// TODO or where `username` = `fb email`
-						), 
+									.withField("dcEmail", "Email")
+							)
+							.withWhere(
+									new WhereEqual(new WhereField("dcmFacebookId"), uid)		// TODO or where `username` = `fb email` - maybe?
+							),
 						new ObjectResult() {
 							@Override
 							public void process(CompositeStruct uLookupResult) {
-								if (uLookupResult == null) {
+								if (this.hasErrors() || (uLookupResult == null)) {
 									request.error("Error finding user record");
 									request.complete();
 									return;
@@ -206,7 +189,6 @@ public class AuthService extends ExtensionBase implements IService {
 								
 								if (ulLookupResult.getSize() == 0) {
 									// insert new user record
-									// TODO be sure username (with this email) is unique
 									InsertRecordRequest req = new InsertRecordRequest();
 									
 									req
@@ -223,14 +205,40 @@ public class AuthService extends ExtensionBase implements IService {
 									db.submit(req, new ObjectResult() {										
 										@Override
 										public void process(CompositeStruct result) {
-											signincb.accept(((RecordStruct)result).getFieldAsString("Id"));
+											if (this.hasErrors())
+												request.complete();
+											else
+												signincb.accept(((RecordStruct)result).getFieldAsString("Id"));
 										}
 									});
 								}
 								else {
-									// TODO update
+									String dcuid = ulLookupResult.getItemAsRecord(0).getFieldAsString("Id");
 									
-									signincb.accept(ulLookupResult.getItemAsRecord(0).getFieldAsString("Id"));
+									UpdateRecordRequest req = new UpdateRecordRequest();
+									
+									req
+										.withTable("dcUser")
+										.withId(dcuid)
+										// TODO add these once UpdateField works with Dynamic Scalar
+										//.withUpdateField("dcUsername", fbinfo.getFieldAsString("email"))
+										//.withUpdateField("dcEmail", fbinfo.getFieldAsString("email"))
+										//.withUpdateField("dcFirstName", fbinfo.getFieldAsString("first_name"))
+										//.withUpdateField("dcLastName", fbinfo.getFieldAsString("last_name"))
+										.withUpdateField("dcmFacebookId", uid)
+										.withUpdateField("dcConfirmed", true);									
+									
+									// TODO look at fb `locale` and `timezone` too
+									
+									db.submit(req, new ObjectResult() {										
+										@Override
+										public void process(CompositeStruct result) {
+											if (this.hasErrors())
+												request.complete();
+											else
+												signincb.accept(dcuid);
+										}
+									});
 								}
 							}
 						}

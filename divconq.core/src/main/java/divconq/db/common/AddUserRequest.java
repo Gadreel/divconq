@@ -113,7 +113,7 @@ public class AddUserRequest extends InsertRecordRequest {
 	}
 	
 	public AddUserRequest(String username) {
-		this.filter = "dcIsAccountTaken";
+		//this.filter = "dcIsAccountTaken";
 
 		this.withTable("dcUser");
 		this.setUsername(username);
@@ -168,7 +168,7 @@ public class AddUserRequest extends InsertRecordRequest {
 		this.withSetField("dcConfirmCode", this.confirmcode);
 		
 		// this works for insert, but Set approach works with both insert and update - see UpdateUserRequest
-		this.withCopyList("dcAuthorizationTag", true, this.tags);
+		this.withSetList("dcAuthorizationTag", this.tags);
 		
 		// password crypto 
 		if (this.password.isSet())

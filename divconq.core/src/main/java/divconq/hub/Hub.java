@@ -1312,7 +1312,7 @@ public class Hub {
 						}
 					}
 					
-					if ("dcw".equals(mod) && "services".equals(section)) {
+					if ("dcw".equals(mod) && ("services".equals(section) || "glib".equals(section))) {
 						for (DomainInfo wdomain : Hub.this.dsitemap.values()) {
 							if (domain.equals(wdomain.getAlias())) {
 								wdomain.reloadServices();

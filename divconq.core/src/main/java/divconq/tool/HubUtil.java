@@ -487,7 +487,7 @@ public class HubUtil implements ILocalCommandLine {
 					
 					String dbbakpath = "./datastore-bak/" + dbpath.getFileName().toString();	// TODO configure location
 					
-					BackupableDBOptions bdb = new BackupableDBOptions(dbbakpath, true, true, false, true, 0, 0);
+					BackupableDBOptions bdb = new BackupableDBOptions(dbbakpath);
 				
 					RestoreBackupableDB restore = new RestoreBackupableDB(bdb);
 					

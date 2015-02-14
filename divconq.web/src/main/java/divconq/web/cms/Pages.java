@@ -88,8 +88,7 @@ public class Pages {
 			req
 				.withTable("dcmSkeleton")		
 				.withId(rec.getFieldAsString("Id"))
-				.withConditionallySetField(rec, "Title", "dcmTitle")
-				.withConditionallySetField(rec, "Path", "dcmPath");
+				.withConditionallySetFields(rec, "Title", "dcmTitle", "Path", "dcmPath");
 			
 			db.submit(req, new ObjectFinalResult(request));
 			
@@ -108,11 +107,12 @@ public class Pages {
 
 		if ("List".equals(op)) {
 			db.submit(
-				new SelectDirectRequest("dcmSkeleton", new SelectFields()
-					.withField("Id")
-					.withField("dcmTitle", "Title")
-					.withField("dcmPath", "Path")
-				), 
+				new SelectDirectRequest()
+					.withTable("dcmSkeleton")
+					.withSelect(new SelectFields()
+						.withField("Id")
+						.withField("dcmTitle", "Title")
+						.withField("dcmPath", "Path")), 
 				new ObjectFinalResult(request));
 			
 			return ;
@@ -295,11 +295,7 @@ public class Pages {
 			
 			req
 				.withTable("dcmPage")		
-				.withConditionallySetField(rec, "Title", "dcmTitle")
-				.withConditionallySetField(rec, "Path", "dcmPath")
-				.withConditionallySetField(rec, "Skeleton", "dcmSkeleton")
-				.withConditionallySetField(rec, "Keywords", "dcmKeywords")
-				.withConditionallySetField(rec, "Description", "dcmDescription")
+				.withConditionallySetFields(rec, "Title", "dcmTitle", "Path", "dcmPath", "Skeleton", "dcmSkeleton", "Keywords", "dcmKeywords", "Description", "dcmDescription")
 				.withSetField("dcmModified", new DateTime());
 			
 			if (addOp) {
@@ -388,11 +384,12 @@ public class Pages {
 
 		if ("List".equals(op)) {
 			db.submit(
-				new SelectDirectRequest("dcmPage", new SelectFields()
-					.withField("Id")
-					.withField("dcmTitle", "Title")
-					.withField("dcmPath", "Path")
-				), 
+				new SelectDirectRequest()
+					.withTable("dcmPage")
+					.withSelect(new SelectFields()
+						.withField("Id")
+						.withField("dcmTitle", "Title")
+						.withField("dcmPath", "Path")), 
 				new ObjectFinalResult(request));
 			
 			return ;
@@ -400,8 +397,9 @@ public class Pages {
 	}
 	
 	static public void compilePage(FileSystemDriver fs, CommonPath sectionpath, WhereExpression where, OperationCallback callback) {
-		SelectDirectRequest req = new SelectDirectRequest("dcmPage", 
-			new SelectFields()
+		SelectDirectRequest req = new SelectDirectRequest()
+			.withTable("dcmPage") 
+			.withSelect(new SelectFields()
 				.withField("Id")
 				.withField("dcmTitle", "Title")
 				.withField("dcmPath", "Path")
@@ -415,9 +413,8 @@ public class Pages {
 				.withField("dcmPublished", "Published")
 				.withField("dcmDescription", "Description")
 				.withField("dcmPartContent", "PartContent", null, true)
-				.withField("dcmPartAttributes", "PartAttributes", null, true), 
-			where
-		);
+				.withField("dcmPartAttributes", "PartAttributes", null, true))
+			.withWhere(where);
 		
 		Hub.instance.getDatabase().submit(req, new ObjectResult() {
 			@Override

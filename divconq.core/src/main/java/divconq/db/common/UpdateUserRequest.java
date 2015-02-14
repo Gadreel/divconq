@@ -118,7 +118,7 @@ public class UpdateUserRequest extends UpdateRecordRequest {
 		this.withTable("dcUser");		
 		this.withId(id);
 		
-		this.filter = "dcIsAccountTaken";
+		//this.filter = "dcIsAccountTaken";
 	}
 	
 	@Override
@@ -148,7 +148,7 @@ public class UpdateUserRequest extends UpdateRecordRequest {
 		
 		// warning - setting an empty list removes all tags
 		if (this.tags != null)
-			this.withReplaceList("dcAuthorizationTag", this.tags);
+			this.withSetList("dcAuthorizationTag", this.tags);
 		
 		return super.buildParams();	
 	}

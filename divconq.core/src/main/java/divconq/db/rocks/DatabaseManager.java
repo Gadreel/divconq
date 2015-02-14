@@ -110,7 +110,7 @@ public class DatabaseManager implements IDatabaseManager {
 		String dbbakpath = config.getAttribute("BackupPath", "./datastore-bak/" + dbp.getFileName().toString());
 		Path dbbakp = Paths.get(dbbakpath);
 		
-		BackupableDBOptions bdb = new BackupableDBOptions(dbbakpath, true, true, false, true, 0, 0);
+		BackupableDBOptions bdb = new BackupableDBOptions(dbbakpath);
 
 		try {
 			Files.createDirectories(dbp);

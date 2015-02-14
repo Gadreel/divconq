@@ -2,12 +2,15 @@ package divconq.db.proc;
 
 import java.util.function.Consumer;
 
+import divconq.db.IComposer;
 import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.db.IStoredProc;
+import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
 import divconq.lang.op.OperationResult;
+import divconq.schema.DbComposer;
 import divconq.schema.DbField;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
@@ -83,15 +86,29 @@ public class LoadRecord implements IStoredProc {
 		boolean myCompact = compact;
 		
 		if (!field.isFieldEmpty("Composer")) {
-			// TODO lookup the composer and call it
-			/*
-		  i $d(select(spos,"Composer")) d  quit
-		  . s composer=select(spos,"Composer")
-		  . i (composer="")!(^dcProg("reccomposer",composer)="") w ScalarNull
-		  . x "d "_^dcProg("reccomposer",composer)
-			 * 
-			 */
-			out.value(null);
+			DbComposer proc = Hub.instance.getSchema().getDbComposer(field.getFieldAsString("Composer"));
+			
+			if (proc == null) {
+				out.value(null);
+				return;
+			}
+			
+			String cpname = proc.execute;
+			
+			if (StringUtil.isEmpty(cpname)) {
+				out.value(null);
+				return;
+			}
+			
+			try {
+				Class<?> cpclass = Class.forName(cpname);				
+				IComposer sp = (IComposer) cpclass.newInstance();
+				sp.writeField(conn, task, log, out, db, table, id, when, select, field, historical, myCompact);
+			} 
+			catch (Exception x) {
+				log.error("Unable to run composer: " + x);
+			}
+			
 			return;
 		}
 		

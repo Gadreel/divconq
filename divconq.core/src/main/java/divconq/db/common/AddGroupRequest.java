@@ -61,7 +61,7 @@ public class AddGroupRequest extends InsertRecordRequest {
 	public CompositeStruct buildParams() {
 		this.withSetField("dcName", this.name);
 		this.withSetField("dcDescription", this.desc);
-		this.withCopyList("dcAuthorizationTag", true, this.tags);
+		this.withSetList("dcAuthorizationTag", this.tags);
 		
 		this.parameters = super.buildParams();	
 		

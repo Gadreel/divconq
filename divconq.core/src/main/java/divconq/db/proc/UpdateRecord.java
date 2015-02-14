@@ -84,6 +84,7 @@ public class UpdateRecord implements IStoredProc {
 		//  and set fields
 		// ===========================================
 
+		// TODO move to tables interface
 		if (params.hasField("Sets")) {
 			ListStruct sets = params.getFieldAsList("Sets");
 			

@@ -29,6 +29,7 @@
 		<Library File="sqljdbc4.jar" />
 		<Library File="rsyntaxtextarea-2.5.3.jar"/>
 		<Library File="slf4j-api-1.7.7.jar"/>
+		<Library File="rocksdbjni-3.9.0.jar"/>
 		
 		<Folder Path="bin"/>
 		<Folder Path="util"/>

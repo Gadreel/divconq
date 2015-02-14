@@ -26,7 +26,6 @@ import divconq.struct.CompositeStruct;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
-import divconq.struct.Struct;
 import divconq.util.StringUtil;
 
 /**
@@ -36,13 +35,11 @@ import divconq.util.StringUtil;
  *
  */
 abstract public class DbRecordRequest extends ReplicatedDataRequest {
-	protected List<DbField> fields = new ArrayList<>();	
+	protected List<FieldRequest> fields = new ArrayList<>();	
 	protected ListStruct sets = new ListStruct();
 	
 	protected String table = null;
 	protected String id = null;
-	protected String filter = null;
-	protected Struct extra = null;
 	protected BigDateTime when = BigDateTime.nowDateTime();
 	
 	public DbRecordRequest(String proc) {
@@ -61,40 +58,14 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		this.id = id;
 		return this;
 	}
-	
-	public DbRecordRequest withFilter(String filter) {
-		this.filter = filter;
-		return this;
-	}
-	
-	public DbRecordRequest withExtra(Struct extra) {
-		this.extra = extra;
-		return this;
-	}
 
-	public DbRecordRequest withFields(DbField... fields) {
-		for (DbField fld : fields)
+	public DbRecordRequest withFields(FieldRequest... fields) {
+		for (FieldRequest fld : fields)
 			this.fields.add(fld);		
 		
 		return this;
 	}	
 
-	public DbRecordRequest withSetOrRetireField(String name, Object value) {
-		if (value == null) {
-			this.withRetireField(name);
-			return this;
-		}
-		
-		if ((value instanceof String) && StringUtil.isEmpty((String)value)) {
-			this.withRetireField(name);
-			return this;
-		}
-
-		this.withSetField(name, value);
-		
-		return this;
-	}
-	
 	public DbRecordRequest withSetField(String name, Object value) {
 		if (value instanceof ConditionalValue) {
 			if (!((ConditionalValue)value).set)
@@ -108,30 +79,44 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		if (fld == null) 
 			return this;
 		
-		if (fld.dynamic && fld.list)		
-			this.withFields(new DynamicListField(name, null, value, this.when));
-		else if (fld.dynamic)		
-			this.withFields(new DynamicScalarField(name, null, value, this.when));
+		FieldRequest dfld = new FieldRequest()
+			.withName(name)
+			.withValue(value);
+		
+		this.withFields(dfld);
+		
+		if (fld.dynamic)
+			dfld.withRandomSubKey().withFrom(this.when);
 		else if (fld.list)		
-			this.withFields(new ListField(name, null, value));
-		else		
-			this.withFields(new ScalarField(name, value));
+			dfld.withRandomSubKey();
 		
 		return this;
 	}
-
-	public DbRecordRequest withSetOrRetireField(String name, String subkey, Object value) {
-		if (value == null) {
-			this.withRetireField(name, subkey);
-			return this;
+	
+	public DbRecordRequest withUpdateField(String name, Object value) {
+		if (value instanceof ConditionalValue) {
+			if (!((ConditionalValue)value).set)
+				return this;
+			
+			value = ((ConditionalValue)value).value;
 		}
 		
-		if ((value instanceof String) && StringUtil.isEmpty((String)value)) {
-			this.withRetireField(name, subkey);
+		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
+		
+		if (fld == null) 
 			return this;
-		}
-
-		this.withSetField(name, subkey, value);
+		
+		FieldRequest dfld = new FieldRequest()
+			.withName(name)
+			.withValue(value)
+			.withUpdateOnly();
+		
+		this.withFields(dfld);
+		
+		if (fld.dynamic)
+			dfld.withRandomSubKey().withFrom(this.when);
+		else if (fld.list)		
+			dfld.withRandomSubKey();
 		
 		return this;
 	}
@@ -149,29 +134,43 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		if (fld == null) 
 			return this;
 		
-		if (fld.dynamic && fld.list)		
-			this.withFields(new DynamicListField(name, subkey, value, this.when));
-		else if (fld.dynamic)		
-			this.withFields(new DynamicScalarField(name, subkey, value, this.when));
-		else if (fld.list)		
-			this.withFields(new ListField(name, subkey, value));
+		FieldRequest dfld = new FieldRequest()
+			.withName(name)
+			.withValue(value)
+			.withSubKey(subkey);
+		
+		this.withFields(dfld);
+		
+		if (fld.dynamic)
+			dfld.withFrom(this.when);
 		
 		return this;
 	}
 
-	public DbRecordRequest withSetOrRetireField(String name, String subkey, Object value, BigDateTime from) {
-		if (value == null) {
-			this.withRetireField(name, subkey);
-			return this;
+	public DbRecordRequest withUpdateField(String name, String subkey, Object value) {
+		if (value instanceof ConditionalValue) {
+			if (!((ConditionalValue)value).set)
+				return this;
+			
+			value = ((ConditionalValue)value).value;
 		}
 		
-		if ((value instanceof String) && StringUtil.isEmpty((String)value)) {
-			this.withRetireField(name, subkey);
+		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
+		
+		if ((fld == null) || (!fld.dynamic && !fld.list)) 
 			return this;
-		}
+		
+		FieldRequest dfld = new FieldRequest()
+			.withName(name)
+			.withValue(value)
+			.withSubKey(subkey)
+			.withUpdateOnly();
+		
+		this.withFields(dfld);
+		
+		if (fld.dynamic)
+			dfld.withFrom(this.when);
 
-		this.withSetField(name, subkey, value, from);
-		
 		return this;
 	}
 
@@ -188,26 +187,13 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		if ((fld == null) || !fld.dynamic) 
 			return this;
 		
-		if (fld.list)		
-			this.withFields(new DynamicListField(name, subkey, value, from));
-		else 		
-			this.withFields(new DynamicScalarField(name, subkey, value, from));
+		FieldRequest dfld = new FieldRequest()
+			.withName(name)
+			.withValue(value)
+			.withSubKey(subkey)
+			.withFrom(from);
 		
-		return this;
-	}
-
-	public DbRecordRequest withSetOrRetireField(String name, String subkey, Object value, BigDateTime from, BigDateTime to) {
-		if (value == null) {
-			this.withRetireField(name, subkey);
-			return this;
-		}
-		
-		if ((value instanceof String) && StringUtil.isEmpty((String)value)) {
-			this.withRetireField(name, subkey);
-			return this;
-		}
-
-		this.withSetField(name, subkey, value, from, to);
+		this.withFields(dfld);
 		
 		return this;
 	}
@@ -225,195 +211,38 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		if ((fld == null) || !fld.dynamic || !fld.list) 
 			return this;
 		
-		this.withFields(new DynamicListField(name, subkey, value, from, to));
+		FieldRequest dfld = new FieldRequest()
+			.withName(name)
+			.withValue(value)
+			.withSubKey(subkey)
+			.withFrom(from)
+			.withTo(to);
 		
-		return this;
-	}
-
-	public DbRecordRequest withListToField(String name, boolean valueAsSubkey, ListStruct list) {
-		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
-		
-		if (fld == null || !fld.list) 
-			return this;
-		
-		for (Struct item : list.getItems())
-			if (fld.dynamic)
-				this.withFields(new DynamicListField(name, valueAsSubkey ? item.toString() : null, item, this.when));
-			else
-				this.withFields(new ListField(name, valueAsSubkey ? item.toString() : null, item));
+		this.withFields(dfld);
 		
 		return this;
 	}
 	
-	public DbRecordRequest withConditionallySetField(RecordStruct source, String sname) {
-		if (source.hasField(sname)) 
-			this.withSetField(sname, source.getField(sname));
-		
-		return this;
-	}
-	
-	public DbRecordRequest withConditionallySetField(RecordStruct source, String sname, String dname) {
-		if (source.hasField(sname)) 
-			this.withSetField(dname, source.getField(sname));
-		
-		return this;
-	}
-	
-	/**
-	 * meaningless for any list
-	 * 
-	 * @param name
-	 */
-	public DbRecordRequest withRetireField(String name) {
-		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
-		
-		if (fld == null) 
-			return this;
-		
-		if (!fld.dynamic && !fld.list)		
-			this.withFields(new ScalarField(name));
-		else if (fld.dynamic && !fld.list) {
-			DynamicScalarField dfld = new DynamicScalarField(name, null, (Object)null);
-			dfld.setWhen(this.when);
-			this.withFields(dfld);
+	// where pairs = even are source and odd are dest
+	public DbRecordRequest withConditionallySetFields(RecordStruct source, String... pairs) {
+		for (int i = 0; i < (pairs.length - 1); i += 2) {
+			if (source.hasField(pairs[i])) 
+				this.withSetField(pairs[i+1], source.getField(pairs[i]));
 		}
 		
 		return this;
 	}
-
-	public DbRecordRequest withRetireField(String name, String subkey) {
-		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
-		
-		if (fld == null) 
-			return this;
-		
-		if (fld.dynamic && fld.list)		
-			this.withFields(new DynamicListField(name, subkey));
-		else if (fld.dynamic) {		
-			DynamicScalarField dfld = new DynamicScalarField(name, subkey, (Object)null);
-			dfld.setWhen(this.when);
-			this.withFields(dfld);
-		}
-		else if (fld.list)		
-			this.withFields(new ListField(name, subkey));
-		
-		return this;
-	}
 	
-	// scalar
-
-	public DbRecordRequest withSetScalar(String name, Object value) {
-		if (value instanceof ConditionalValue) {
-			if (!((ConditionalValue)value).set)
-				return this;
-			
-			value = ((ConditionalValue)value).value;
+	public DbRecordRequest withConditionallyUpdateFields(RecordStruct source, String... pairs) {
+		for (int i = 0; i < (pairs.length - 1); i += 2) {
+			if (source.hasField(pairs[i])) 
+				this.withUpdateField(pairs[i+1], source.getField(pairs[i]));
 		}
 		
-		this.withFields(new ScalarField(name, value));
-		
-		return this;
-	}
-
-	public DbRecordRequest withRetireScalar(String dname) {
-		this.withFields(new ScalarField(dname));
-		
-		return this;
-	}
-
-	public DbRecordRequest withSetScalar(RecordStruct source, String sname) {
-		this.withSetScalar(source, sname, sname);
-		
-		return this;
-	}
-
-	public DbRecordRequest withSetScalar(RecordStruct source, String sname, String dname) {
-		this.withFields(new ScalarField(dname, source.getField(sname)));
-		
-		return this;
-	}
-
-	public DbRecordRequest withConditionallySetScalar(RecordStruct source, String sname) {
-		this.withConditionallySetScalar(source, sname, sname);
-		
-		return this;
-	}
-
-	public DbRecordRequest withConditionallySetScalar(RecordStruct source, String sname, String dname) {
-		if (source.hasField(sname)) 
-			this.withFields(new ScalarField(dname, source.getField(sname)));
-		
 		return this;
 	}
 	
-	// dynamic scalar
-	
-	public DbRecordRequest withSetDynamicScalar(String name, String subkey, Object value) {
-		this.withSetDynamicScalar(name, subkey, value, this.when);
-		
-		return this;
-	}
-	
-	public DbRecordRequest withSetDynamicScalar(String name, String subkey, Object value, BigDateTime when) {
-		if (value instanceof ConditionalValue) {
-			if (!((ConditionalValue)value).set)
-				return this;
-			
-			value = ((ConditionalValue)value).value;
-		}
-		
-		this.withFields(new DynamicScalarField(name, subkey, value, when));
-		
-		return this;
-	}
-	
-	public DbRecordRequest withRetireDynamicScalar(String dname, String subkey) {
-		this.withFields(new DynamicScalarField(dname, subkey, this.when));
-		
-		return this;
-	}
-	
-	public DbRecordRequest withSetDynamicScalar(RecordStruct source, String sname, String subkey) {
-		this.withSetDynamicScalar(source, sname, sname, subkey);
-		
-		return this;
-	}
-	
-	public DbRecordRequest withSetDynamicScalar(RecordStruct source, String sname, String dname, String subkey) {
-		this.withFields(new DynamicScalarField(dname, subkey, source.getField(sname), this.when));
-		
-		return this;
-	}
-	
-	public DbRecordRequest withConditionallySetDynamicScalar(RecordStruct source, String sname, String subkey) {
-		this.withConditionallySetDynamicScalar(source, sname, sname, subkey);
-		
-		return this;
-	}
-	
-	public DbRecordRequest withConditionallySetDynamicScalar(RecordStruct source, String sname, String dname, String subkey) {
-		if (source.hasField(sname)) 
-			this.withFields(new DynamicScalarField(dname, subkey, source.getField(sname), this.when));
-		
-		return this;
-	}
-
-	// list
-	
-	public DbRecordRequest withSetList(String name, String subkey, Object value) {
-		if (value instanceof ConditionalValue) {
-			if (!((ConditionalValue)value).set)
-				return this;
-			
-			value = ((ConditionalValue)value).value;
-		}
-		
-		this.withFields(new ListField(name, subkey, value));
-		
-		return this;
-	}
-
-	public DbRecordRequest withReplaceList(String name, ListStruct values) {
+	public DbRecordRequest withSetList(String name, ListStruct values) {
 		this.sets.addItem(new RecordStruct()
 			.withField("Field", name)
 			.withField("Values", values)
@@ -421,48 +250,8 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		
 		return this;
 	}
-
-	public DbRecordRequest withCopyList(String name, boolean valueAsSubkey, ListStruct list) {
-		if (list != null) {
-			for (Struct item : list.getItems()) 
-				this.withFields(new ListField(name, valueAsSubkey ? item.toString() : null, item));					
-		}
-		
-		return this;
-	}
 	
-	public DbRecordRequest withRetireList(String name, String subkey) {
-		this.withFields(new ListField(name, subkey));
-		
-		return this;
-	}
-	
-	public DbRecordRequest withSetList(RecordStruct source, String sname, String subkey) {
-		this.withSetList(source, sname, sname, subkey);
-		
-		return this;
-	}
-
-	public DbRecordRequest withSetList(RecordStruct source, String sname, String dname, String subkey) {
-		this.withFields(new ListField(dname, subkey, source.getField(sname)));
-		
-		return this;
-	}
-
-	public DbRecordRequest withCopyList(RecordStruct source, String sname, String dname, boolean valueAsSubkey) {
-		if (source.hasField(sname)) {
-			Struct list = source.getField(sname);
-			
-			if (list instanceof ListStruct) {
-				for (Struct item : ((ListStruct) list).getItems()) 
-					this.withFields(new ListField(dname, valueAsSubkey ? item.toString() : null, item));					
-			}			
-		}
-		
-		return this;
-	}
-
-	public DbRecordRequest withConditionallyReplaceList(RecordStruct source, String sname, String dname) {
+	public DbRecordRequest withConditionallySetList(RecordStruct source, String sname, String dname) {
 		if (!source.hasField(sname))
 			return this;
 		
@@ -473,97 +262,34 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		
 		return this;
 	}
-
-	public DbRecordRequest withConditionallySetList(RecordStruct source, String sname, String subkey) {
-		this.withConditionallySetList(source, sname, sname, subkey);
-		
-		return this;
-	}
-
-	public DbRecordRequest withConditionallySetList(RecordStruct source, String sname, String dname, String subkey) {
-		if (source.hasField(sname)) 
-			this.withFields(new ListField(dname, subkey, source.getField(sname)));
-		
-		return this;
-	}
-
-	// dynamic list
 	
-	public DbRecordRequest withSetDynamicList(String name, String subkey, Object value) {
-		this.withSetDynamicList(name, subkey, value, this.when, null);
+	public DbRecordRequest withRetireField(String name) {
+		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
-		return this;
-	}
-	
-	public DbRecordRequest withSetDynamicList(String name, String subkey, Object value, BigDateTime from) {
-		this.withSetDynamicList(name, subkey, value, from, null);
+		if (fld == null) 
+			return this;
 		
-		return this;
-	}
-	
-	public DbRecordRequest withSetDynamicList(String name, String subkey, Object value, BigDateTime from, BigDateTime to) {
-		if (value instanceof ConditionalValue) {
-			if (!((ConditionalValue)value).set)
-				return this;
-			
-			value = ((ConditionalValue)value).value;
-		}
+		FieldRequest dfld = new FieldRequest()
+			.withName(name)
+			.withRetired();
 		
-		this.withFields(new DynamicListField(name, subkey, value, from, to));
+		this.withFields(dfld);
 		
 		return this;
 	}
 
-	public DbRecordRequest withCopyDynamicList(String name, boolean valueAsSubkey, ListStruct list) {
-		if (list != null) {
-			for (Struct item : list.getItems()) 
-				this.withFields(new DynamicListField(name, valueAsSubkey ? item.toString() : null, item, this.when));					
-		}
+	public DbRecordRequest withRetireField(String name, String subkey) {
+		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
-		return this;
-	}
-	
-	public DbRecordRequest withRetireDynamicList(String name, String subkey) {
-		this.withFields(new DynamicListField(name, subkey, this.when));
+		if (fld == null) 
+			return this;
 		
-		return this;
-	}
-	
-	public DbRecordRequest withSetDynamicList(RecordStruct source, String sname, String subkey) {
-		this.withSetDynamicList(source, sname, sname, subkey);
+		FieldRequest dfld = new FieldRequest()
+			.withName(name)
+			.withRetired()
+			.withSubKey(subkey);
 		
-		return this;
-	}
-
-	public DbRecordRequest withSetDynamicList(RecordStruct source, String sname, String dname, String subkey) {
-		this.withFields(new DynamicListField(dname, subkey, source.getField(sname), this.when));
-		
-		return this;
-	}
-
-	public DbRecordRequest withCopyDynamicList(RecordStruct source, String sname, String dname, boolean valueAsSubkey) {
-		if (source.hasField(sname)) {
-			Struct list = source.getField(sname);
-			
-			if (list instanceof ListStruct) {
-				for (Struct item : ((ListStruct) list).getItems()) 
-					this.withFields(new DynamicListField(dname, valueAsSubkey ? item.toString() : null, item, this.when));					
-			}			
-		}
-		
-		return this;
-	}
-
-	public DbRecordRequest withConditionallySetDynamicList(RecordStruct source, String sname, String subkey) {
-		this.withConditionallySetDynamicList(source, sname, sname, subkey);
-		
-		return this;
-	}
-
-	public DbRecordRequest withConditionallySetDynamicList(RecordStruct source, String sname, String dname, String subkey) {
-		if (source.hasField(sname)) {
-			this.withFields(new DynamicListField(dname, subkey, source.getField(sname), this.when));
-		}
+		this.withFields(dfld);
 		
 		return this;
 	}
@@ -572,7 +298,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 	public CompositeStruct buildParams() {
 		RecordStruct flds = new RecordStruct();
 		
-		for (DbField fld : this.fields) 
+		for (FieldRequest fld : this.fields) 
 			flds.setField(fld.getName(), fld.getParams(flds));		
 		
 		RecordStruct params = new RecordStruct(
@@ -582,12 +308,6 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		
 		if (StringUtil.isNotEmpty(this.id))
 			params.setField("Id", this.id);
-		
-		if (StringUtil.isNotEmpty(this.filter))
-			params.setField("Filter", this.filter);
-		
-		if (this.extra != null)
-			params.setField("Extra", this.extra);
 		
 		params.setField("When", this.when);
 		

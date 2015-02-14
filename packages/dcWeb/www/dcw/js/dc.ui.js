@@ -802,6 +802,10 @@ dc.pui = {
 									return $('#' + (inp ? inp.Id : '__unreal'));
 								};
 								
+								form.values = function() {
+									return dc.pui.Page.getFormValues(child.Name);
+								};
+								
 								entry.Forms[form.Name] = form;
 							}
 						}

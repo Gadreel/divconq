@@ -76,16 +76,16 @@ public class Products {
 					}
 					
 					db.submit(
-							new SelectDirectRequest("dcmCategory", 
-								new SelectFields()
+							new SelectDirectRequest()
+								.withTable("dcmCategory")
+								.withSelect(new SelectFields()
 									.withField("Id")
 									.withField("dcmTitle", "Title")
 									.withField("dcmAlias", "Alias")
 									.withField("dcmMode", "Mode")
 									.withField("dcmParent", "Parent")
-									.withField("dcmDescription", "Description"),
-								new WhereEqual(new WhereField("dcmParent"), rec.getFieldAsString("Id"))
-							), 
+									.withField("dcmDescription", "Description"))
+								.withWhere(new WhereEqual(new WhereField("dcmParent"), rec.getFieldAsString("Id"))),
 							new ObjectResult() {
 								@Override
 								public void process(CompositeStruct result2) {
@@ -112,12 +112,7 @@ public class Products {
 			req
 				.withTable("dcmCategory")		
 				.withId(rec.getFieldAsString("Id"))
-				.withConditionallySetField(rec, "Title", "dcmTitle")
-				.withConditionallySetField(rec, "Alias", "dcmAlias")
-				.withConditionallySetField(rec, "Mode", "dcmMode")
-				.withConditionallySetField(rec, "Parent", "dcmParent")
-				.withConditionallySetField(rec, "Description", "dcmDescription")
-				.withConditionallySetField(rec, "ShipAmount", "dcmShipAmount");
+				.withConditionallySetFields(rec, "Title", "dcmTitle", "Alias", "dcmAlias", "Mode", "dcmMode", "Parent", "dcmParent", "Description", "dcmDescription", "ShipAmount", "dcmShipAmount");
 			
 			db.submit(req, new ObjectFinalResult(request));
 			
@@ -129,12 +124,7 @@ public class Products {
 			
 			req
 				.withTable("dcmCategory")		
-				.withConditionallySetField(rec, "Title", "dcmTitle")
-				.withConditionallySetField(rec, "Alias", "dcmAlias")
-				.withConditionallySetField(rec, "Mode", "dcmMode")
-				.withConditionallySetField(rec, "Parent", "dcmParent")
-				.withConditionallySetField(rec, "Description", "dcmDescription")
-				.withConditionallySetField(rec, "ShipAmount", "dcmShipAmount");
+				.withConditionallySetFields(rec, "Title", "dcmTitle", "Alias", "dcmAlias", "Mode", "dcmMode", "Parent", "dcmParent", "Description", "dcmDescription", "ShipAmount", "dcmShipAmount");
 			
 			db.submit(req, new ObjectResult() {
 				@Override
@@ -210,30 +200,31 @@ public class Products {
 		
 		if ("Lookup".equals(op)) {
 			db.submit(
-					new SelectDirectRequest("dcmCategory", 
-							new SelectFields()
+					new SelectDirectRequest()
+						.withTable("dcmCategory") 
+						.withSelect(new SelectFields()
 								.withField("Id")
 								.withField("dcmTitle", "Title")
 								.withField("dcmAlias", "Alias")
 								.withField("dcmMode", "Mode")
 								.withField("dcmParent", "Parent")
-								.withField("dcmDescription", "Description"),
-							new WhereEqual(new WhereField("dcmAlias"), rec.getFieldAsString("Alias"))
-					), 
+								.withField("dcmDescription", "Description"))
+						.withWhere(new WhereEqual(new WhereField("dcmAlias"), rec.getFieldAsString("Alias"))), 
 					new ObjectFinalResult(request));
 			return ;
 		}
 
 		if ("List".equals(op)) {
 			db.submit(
-				new SelectDirectRequest("dcmCategory", new SelectFields()
-					.withField("Id")
-					.withField("dcmTitle", "Title")
-					.withField("dcmAlias", "Alias")
-					.withField("dcmMode", "Mode")
-					.withField("dcmParent", "Parent")
-					.withField("dcmDescription", "Description")
-				), 
+				new SelectDirectRequest()
+					.withTable("dcmCategory")
+					.withSelect(new SelectFields()
+						.withField("Id")
+						.withField("dcmTitle", "Title")
+						.withField("dcmAlias", "Alias")
+						.withField("dcmMode", "Mode")
+						.withField("dcmParent", "Parent")
+						.withField("dcmDescription", "Description")),
 				new ObjectFinalResult(request));
 			
 			return ;
@@ -282,19 +273,11 @@ public class Products {
 			req
 				.withTable("dcmProduct")		
 				.withId(rec.getFieldAsString("Id"))
-				.withConditionallySetField(rec, "Title", "dcmTitle")
-				.withConditionallySetField(rec, "Alias", "dcmAlias")
-				.withConditionallySetField(rec, "Sku", "dcmSku")
-				.withConditionallySetField(rec, "Description", "dcmDescription")
-				.withConditionallySetField(rec, "Category", "dcmCategory")
-				.withConditionallySetField(rec, "CategoryPosition", "dcmCategoryPosition")
-				.withConditionallySetField(rec, "Price", "dcmPrice")
-				.withConditionallySetField(rec, "ShipAmount", "dcmShipAmount")
-				.withConditionallySetField(rec, "ShipWeight", "dcmShipWeight")
-				.withConditionallySetField(rec, "ShipFree", "dcmShipFree")
-				.withConditionallySetField(rec, "TaxFree", "dcmTaxFree")
-				.withConditionallySetField(rec, "ShowInStore", "dcmShowInStore")
-				.withConditionallyReplaceList(rec, "Tags", "dcmTag");
+				.withConditionallySetFields(rec, "Title", "dcmTitle", "Alias", "dcmAlias", "Sku", "dcmSku", 
+						"Description", "dcmDescription", "Category", "dcmCategory", "CategoryPosition", "dcmCategoryPosition",
+						"Price", "dcmPrice", "ShipAmount", "dcmShipAmount", "ShipWeight", "dcmShipWeight", 
+						"ShipFree", "dcmShipFree", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore")
+				.withConditionallySetList(rec, "Tags", "dcmTag");
 			
 			db.submit(req, new ObjectFinalResult(request));
 			
@@ -306,19 +289,11 @@ public class Products {
 			
 			req
 				.withTable("dcmProduct")		
-				.withConditionallySetField(rec, "Title", "dcmTitle")
-				.withConditionallySetField(rec, "Alias", "dcmAlias")
-				.withConditionallySetField(rec, "Sku", "dcmSku")
-				.withConditionallySetField(rec, "Description", "dcmDescription")
-				.withConditionallySetField(rec, "Category", "dcmCategory")
-				.withConditionallySetField(rec, "CategoryPosition", "dcmCategoryPosition")
-				.withConditionallySetField(rec, "Price", "dcmPrice")
-				.withConditionallySetField(rec, "ShipAmount", "dcmShipAmount")
-				.withConditionallySetField(rec, "ShipWeight", "dcmShipWeight")
-				.withConditionallySetField(rec, "ShipFree", "dcmShipFree")
-				.withConditionallySetField(rec, "TaxFree", "dcmTaxFree")
-				.withConditionallySetField(rec, "ShowInStore", "dcmShowInStore")
-				.withConditionallyReplaceList(rec, "Tags", "dcmTag");
+				.withConditionallySetFields(rec, "Title", "dcmTitle", "Alias", "dcmAlias", "Sku", "dcmSku", 
+						"Description", "dcmDescription", "Category", "dcmCategory", "CategoryPosition", "dcmCategoryPosition",
+						"Price", "dcmPrice", "ShipAmount", "dcmShipAmount", "ShipWeight", "dcmShipWeight", 
+						"ShipFree", "dcmShipFree", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore")
+				.withConditionallySetList(rec, "Tags", "dcmTag");
 			
 			db.submit(req, new ObjectResult() {
 				@Override
@@ -356,17 +331,17 @@ public class Products {
 		
 		if ("Lookup".equals(op)) {
 			db.submit(
-					new SelectDirectRequest("dcmProduct", 
-							new SelectFields()
+					new SelectDirectRequest()
+						.withTable("dcmProduct")
+						.withSelect(new SelectFields()
 								.withField("Id")
 								.withField("dcmTitle", "Title")
 								.withField("dcmAlias", "Alias")
 								.withField("dcmSku", "Sku")
 								.withField("dcmShowInStore", "ShowInStore")
 								.withField("dcmPrice", "Price")
-								.withField("dcmDescription", "Description"),
-							new WhereEqual(new WhereField("dcmAlias"), rec.getFieldAsString("Alias"))
-					), 
+								.withField("dcmDescription", "Description"))
+						.withWhere(new WhereEqual(new WhereField("dcmAlias"), rec.getFieldAsString("Alias"))), 
 					new ObjectFinalResult(request));
 			
 			return ;
@@ -395,17 +370,17 @@ public class Products {
 					}
 					
 					db.submit(
-							new SelectDirectRequest("dcmProduct", 
-									new SelectFields()
+							new SelectDirectRequest()
+								.withTable("dcmProduct")
+								.withSelect(new SelectFields()
 										.withField("Id")
 										.withField("dcmTitle", "Title")
 										.withField("dcmAlias", "Alias")
 										.withField("dcmSku", "Sku")
 										.withField("dcmShowInStore", "ShowInStore")
 										.withField("dcmPrice", "Price")
-										.withField("dcmDescription", "Description"),
-									new WhereEqual(new WhereField("dcmCategory"), rec.getFieldAsString("Id"))
-							), 
+										.withField("dcmDescription", "Description"))
+								.withWhere(new WhereEqual(new WhereField("dcmCategory"), rec.getFieldAsString("Id"))), 
 							new ObjectResult() {
 								@Override
 								public void process(CompositeStruct result2) {
@@ -427,15 +402,16 @@ public class Products {
 
 		if ("List".equals(op)) {
 			db.submit(
-				new SelectDirectRequest("dcmProduct", new SelectFields()
+				new SelectDirectRequest()
+					.withTable("dcmProduct")
+					.withSelect(new SelectFields()
 					.withField("Id")
 					.withField("dcmTitle", "Title")
 					.withField("dcmAlias", "Alias")
 					.withField("dcmSku", "Sku")
 					.withField("dcmShowInStore", "ShowInStore")
 					.withField("dcmPrice", "Price")
-					.withField("dcmDescription", "Description")
-				), 
+					.withField("dcmDescription", "Description")), 
 				new ObjectFinalResult(request));
 			
 			return ;

@@ -3,14 +3,17 @@
 	  <header id="dcappHeader">
 		<div class="dcappWrapper">
 			<div id="dcappHeaderGrid">
-				<div id="dcappLogo"><h1><Link id="dcappHomeBtn1" Click="hdrDoAppHome" Label="@val|SiteTitle@" /></h1></div>
-				
-				<div id="dcappHeaderMenus">
-					<div id="dcappTopMenu">
-						<ul>
-						  <li><Link id="dcappHomeBtn2" Click="hdrDoAppHome" Label="App Menu" /></li>
-						  <li><Link id="dcappRootBtn" Click="hdrDoWebHome" Label="Go to Website" /></li>
-						  <li><Link id="dcappSignOutBtn" Click="hdrDoSignOut" Label="Sign Out" /></li>
+				<Link id="dcappHeaderLogo" Page="/Portal"><img src="/dcw/img/logo64.png" /></Link>
+				<h1 id="dcappHeaderLbl">@val|SiteTitle@</h1>
+
+				<div id="dcappHeaderMenu">
+					<a href="#dcappHeaderMenuPop" data-rel="popup" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-icon-bars ui-btn-icon-notext ui-btn-a" />
+					
+					<div data-role="popup" id="dcappHeaderMenuPop" data-theme="b">
+						<ul data-role="listview" data-inset="true" style="min-width:210px;">
+							<li><Link Label="App Menu" Page="/Portal" /></li>
+							<li><Link Label="Website" Page="/Home" /></li>
+							<li><Link Label="Sign Out" Page="/SignOut" /></li>
 						</ul>
 					</div>
 				</div>

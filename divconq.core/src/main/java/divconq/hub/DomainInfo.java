@@ -169,7 +169,8 @@ public class DomainInfo {
 		if (fs == null)
 			return;
 		
-		Path cpath = fs.getFilePath().resolve("dcw/" + this.getAlias() + "/services");
+		Path dpath = fs.getFilePath().resolve("dcw/" + this.getAlias());
+		Path cpath = dpath.resolve("services");
 
 		if (Files.notExists(cpath))
 			return;
@@ -182,7 +183,7 @@ public class DomainInfo {
 				
 				String name = path.getFileName().toString();
 				
-				this.registered.put(name, new DomainServiceAdapter(name, path));
+				this.registered.put(name, new DomainServiceAdapter(name, path, dpath));
 				
 				ServiceRouter r = new ServiceRouter(name);
 				r.indexLocal();

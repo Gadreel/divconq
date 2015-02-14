@@ -324,8 +324,6 @@
 		<Record Id="dcDbCall">
 			<Field Name="Table" Type="dcTinyString" Required="True" />
 			<Field Name="When" Type="BigDateTime" />
-			<Field Name="Filter" Type="dcTinyString" />
-			<Field Name="Extra" Type="Any" />
 		</Record>
 		
 		<Record Id="dcDbSelectField">
@@ -340,6 +338,7 @@
 			<Field Name="Composer" Type="dcTinyString" />
 			<Field Name="Table" Type="dcTinyString" />
 			<Field Name="KeyField" Type="dcTinyString" />
+			<Field Name="Params" Type="AnyRecord" />
 		</Record>
 		
 		<Record Id="dcDbWhereField">

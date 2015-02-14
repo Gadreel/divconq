@@ -18,7 +18,6 @@ package divconq.db.update;
 
 import divconq.db.ReplicatedDataRequest;
 import divconq.struct.RecordStruct;
-import divconq.util.StringUtil;
 
 /**
  * dcDatabase does not remove records, but it does have the concept of retiring a record.
@@ -35,25 +34,6 @@ public class ReviveRecordRequest extends ReplicatedDataRequest {
 	 * @param id of record
 	 */
 	public ReviveRecordRequest(String table, String id) {
-		this(table, id, null, null);
-	}
-	
-	/**
-	 * @param table name
-	 * @param id of record
-	 * @param filter name
-	 */
-	public ReviveRecordRequest(String table, String id, String filter) {
-		this(table, id, filter, null);
-	}
-	
-	/**
-	 * @param table name
-	 * @param id of record
-	 * @param filter name
-	 * @param extra parameters for filter
-	 */
-	public ReviveRecordRequest(String table, String id, String filter, RecordStruct extra) {
 		super("dcReviveRecord");
 		
 		RecordStruct params = new RecordStruct();
@@ -62,11 +42,5 @@ public class ReviveRecordRequest extends ReplicatedDataRequest {
 		
 		params.setField("Table", table);	
 		params.setField("Id", id);		
-		
-		if (StringUtil.isNotEmpty(filter))
-			params.setField("Filter", filter);
-		
-		if (extra != null)
-			params.setField("Extra", extra);
 	}
 }

@@ -109,6 +109,18 @@ public class SchemaManager {
 		return this.chain.getDbProc(name);
 	}
 	
+	public DbComposer getDbComposer(String name) {
+		DbComposer t = this.db.getComposer(name);
+		
+		if (t != null)
+			return t;
+		
+		if (this.chain == null)
+			return null;
+		
+		return this.chain.getDbComposer(name);
+	}
+	
 	// returns (copy) list of all triggers for all levels of the chain
 	public List<DbTrigger> getDbTriggers(String table, String operation) {
 		List<DbTrigger> t = this.db.getTriggers(table, operation);		
@@ -278,28 +290,22 @@ public class SchemaManager {
 	 * @return log of validation attempt
 	 */
 	public OperationResult validateProcRequest(String name, CompositeStruct req){
-		OperationContext tc = OperationContext.get();
 		OperationResult mr = new OperationResult();
 		
-		if (tc == null) {
-			mr.errorTr(425);
-		}
+		DbProc proc = this.getDbProc(name);
+		
+		if (proc == null)
+			mr.errorTr(426);		
 		else {
-			DbProc proc = this.getDbProc(name);
-			
-			if (proc == null)
-				mr.errorTr(426);		
-			else {
-				// authorization is for the DB Service not here - the user is already elevated here
-				//if (!tc.isAuthorized(proc.securityTags))
+			// authorization is for the DB Service not here - the user is already elevated here
+			//if (!tc.isAuthorized(proc.securityTags))
 
-				if (proc.request == null) {
-					if ((req != null) && !req.isEmpty())
-						mr.errorTr(428);		
-				}
-				else
-					proc.request.validate(req);
+			if (proc.request == null) {
+				if ((req != null) && !req.isEmpty())
+					mr.errorTr(428);		
 			}
+			else
+				proc.request.validate(req);
 		}
 		
 		return mr;
@@ -313,8 +319,9 @@ public class SchemaManager {
 	 * @return log of validation attempt
 	 */
 	public OperationResult validateProcResponse(String name, CompositeStruct resp){
-		DbProc proc = this.getDbProc(name);
 		OperationResult mr = new OperationResult();
+		
+		DbProc proc = this.getDbProc(name);
 		
 		if (proc == null)
 			mr.errorTr(429);		
