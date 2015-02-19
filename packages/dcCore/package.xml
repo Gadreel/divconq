@@ -55,6 +55,7 @@
 		<Library File="libjnotify.jnilib"/>
 		<Library File="libjnotify.so"/>
 		
+		<File Path="fixperms.sh"/>
 		<File Path="foreground.sh"/>
 		<File Path="update.sh"/>
 	</DependsOn>

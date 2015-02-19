@@ -184,6 +184,12 @@ dc.comm = {
 		dc.comm._ws.send(JSON.stringify(msg));
 	},
 	
+	sendTestMessage : function(msg) {
+		dc.comm.sendMessage(msg, function(res) {
+			console.log('Result: ' + JSON.stringify(res));
+		});
+	},
+	
 	Tracker: {
 		_list: [],
 		_status: [],

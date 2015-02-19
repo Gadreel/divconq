@@ -198,6 +198,7 @@ public class PagePart extends Element implements ICodeTag {
 				}
 				catch (Exception x) {
 					OperationContext.get().error("Unable to execute script!");
+					OperationContext.get().error("Error: " + x);
 				}
 			}
 			

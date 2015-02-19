@@ -100,6 +100,7 @@ public class AuthService extends ExtensionBase implements IService {
 				if (request.hasErrors() || (fbinfo == null)) {
 					AuthService.this.clearUserContext(OperationContext.get());
 					request.errorTr(442);
+					request.complete();
 					return;
 				}
 				
@@ -108,6 +109,7 @@ public class AuthService extends ExtensionBase implements IService {
 						 || fbinfo.isFieldEmpty("first_name") || fbinfo.isFieldEmpty("last_name")) {		
 					AuthService.this.clearUserContext(OperationContext.get());
 					request.errorTr(442);
+					request.complete();
 					return;
 				}
 				
@@ -129,24 +131,25 @@ public class AuthService extends ExtensionBase implements IService {
 								if (request.hasErrors() || (sirec == null)) {
 									AuthService.this.clearUserContext(ctx);
 									request.errorTr(442);
+									request.complete();
+									return;
 								}
-								else {
-									ListStruct atags = sirec.getFieldAsList("AuthorizationTags");
-									atags.addItem("User");
-									
-									OperationContext.switchUser(ctx, ctx.getUserContext().toBuilder() 
-											.withVerified(true)
-											.withAuthToken(sirec.getFieldAsString("AuthToken"))
-											.withUserId(sirec.getFieldAsString("UserId"))
-											.withUsername(sirec.getFieldAsString("Username"))
-											.withFullName(sirec.getFieldAsString("FirstName") + " " + sirec.getFieldAsString("LastName"))		// TODO make locale smart
-											.withEmail(sirec.getFieldAsString("Email"))
-											.withAuthTags(atags)
-											.toUserContext()
-									);
-									
-									Hub.instance.getSessions().findOrCreateTether(request.getContext());
-								}
+
+								ListStruct atags = sirec.getFieldAsList("AuthorizationTags");
+								atags.addItem("User");
+								
+								OperationContext.switchUser(ctx, ctx.getUserContext().toBuilder() 
+										.withVerified(true)
+										.withAuthToken(sirec.getFieldAsString("AuthToken"))
+										.withUserId(sirec.getFieldAsString("UserId"))
+										.withUsername(sirec.getFieldAsString("Username"))
+										.withFullName(sirec.getFieldAsString("FirstName") + " " + sirec.getFieldAsString("LastName"))		// TODO make locale smart
+										.withEmail(sirec.getFieldAsString("Email"))
+										.withAuthTags(atags)
+										.toUserContext()
+								);
+								
+								Hub.instance.getSessions().findOrCreateTether(request.getContext());
 								
 								request.returnValue(new RecordStruct(
 										new FieldStruct("Username", sirec.getFieldAsString("Username")),

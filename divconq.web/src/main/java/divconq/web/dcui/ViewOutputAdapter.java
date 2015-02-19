@@ -63,6 +63,10 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 		this.functions.add(func);
 	}
 	
+	public void addFunctions(List<XElement> func) {
+		this.functions.addAll(func);
+	}
+	
 	public List<XElement> getFunctions() {
 		return this.functions;
 	}

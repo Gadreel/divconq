@@ -229,6 +229,22 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
 				ps.print("\t\t}");
 			}
 			
+			for (XElement func : this.view.getFunctions()) {
+				if (!func.hasAttribute("Name") || "Load".equals(func.getAttribute("Mode")))
+					continue;
+				
+				if (first)
+					first = false;
+				else
+					ps.println(",");
+				
+				ps.print("\t\t" + func.getAttribute("Name") + ": function(" + func.getAttribute("Params", "") + ") {");
+				
+				ps.print(func.getText());
+				
+				ps.print("\t\t}");
+			}
+			
 			for (XElement func : this.context.getFunctions()) {
 				if (!func.hasAttribute("Name") || "Load".equals(func.getAttribute("Mode")))
 					continue;

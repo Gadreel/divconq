@@ -151,6 +151,7 @@ dc.pui = {
 		__portalPage: '/Portal',
 		__signInPage: '/SignIn',
 		__destPage: null,
+		__frameRequest: false,
 		
 		init: function() {
 			dc.pui.Loader.__content = document.querySelector('body'); 
@@ -519,10 +520,15 @@ dc.pui = {
 		},
 		
 		requestFrame: function() {
-			window.requestAnimationFrame(dc.pui.Loader.buildFrame);			
+			if (!dc.pui.Loader.__frameRequest) {
+				window.requestAnimationFrame(dc.pui.Loader.buildFrame);
+				dc.pui.Loader.__frameRequest = true;
+			}
 		},
 		
 		buildFrame: function(e) {
+			dc.pui.Loader.__frameRequest = false;
+			
 			var entry = dc.pui.Loader.__current;
 			
 			// TODO error
@@ -530,6 +536,7 @@ dc.pui = {
 				return;
 			
 			var page = dc.pui.Loader.__pages[entry.Name];
+		    var now = Date.now();
 			
 			if (page && page.Functions['onFrame']) 
 				page.Functions['onFrame'].call(entry, e);
@@ -538,7 +545,6 @@ dc.pui = {
 				for (var i = 0; i < entry.onFrame.length; i++) {
 					var render = entry.onFrame[i];
 					
-				    var now = Date.now();
 				    var delta = now - render.__then;
 				     
 				    if (delta > render.__interval) {

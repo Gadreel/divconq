@@ -16,11 +16,13 @@ h1 {
 	padding: 15px 0;
 	margin: 0;
 	text-align: center;
+	letter-spacing: 0.1rem;	
 }
 
 h2 {
 	font-size: 20px;
 	margin-top: 12px; 
+	letter-spacing: 0.1rem;
 }
 
 h3 .fa {
@@ -54,7 +56,7 @@ body {
 	background-color: white;
 }
 
-.genericFlexRow {
+.genericFlexRow, .dcFlexRow {
 	display: -webkit-box;
 	display: -moz-box;
 	display: -ms-flexbox;
@@ -70,7 +72,7 @@ body {
 	flex-direction: row;
 }
 
-.genericFlexColumn {
+.genericFlexColumn, .dcFlexColumn {
 	display: -webkit-box;
 	display: -moz-box;
 	display: -ms-flexbox;
@@ -86,13 +88,13 @@ body {
 	flex-direction: column;
 }
 	
-.genericFlexWrap {
+.genericFlexWrap, .dcFlexWrap {
 	-webkit-flex-wrap: wrap;
 	-ms-flex-wrap: wrap;
 	flex-wrap: wrap;
 }
 	
-.genericFlexJustify {
+.genericFlexJustify, .dcFlexJustify {
 	-webkit-box-pack: justify;
 	-moz-box-pack: justify;
 	-webkit-justify-content: space-around;
@@ -100,12 +102,19 @@ body {
 	justify-content: space-around;
 }
 
-.genericFlexOne {
+.genericFlexOne, .dcFlex1 {
 	-webkit-box-flex: 1;
 	-moz-box-flex: 1;
 	-webkit-flex: 1;
 	-ms-flex: 1;
 	flex: 1;
+}
+
+.dcNoSelect {
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .ui-popup-screen.in {

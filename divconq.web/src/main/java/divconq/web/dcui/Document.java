@@ -88,6 +88,7 @@ public class Document extends Html {
 				//this.sxel = layout;
 		    	view.addLibs(layout.selectAll("RequireLib"));
 		    	view.addStyles(layout.selectAll("RequireStyle"));
+				view.addFunctions(layout.selectAll("Function"));
 				
 				view.contenttemplate = view.getDomain().parseXml(view, layout.find("Skeleton"));
 			}

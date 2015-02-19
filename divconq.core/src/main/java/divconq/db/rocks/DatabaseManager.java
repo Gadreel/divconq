@@ -109,12 +109,12 @@ public class DatabaseManager implements IDatabaseManager {
 		
 		String dbbakpath = config.getAttribute("BackupPath", "./datastore-bak/" + dbp.getFileName().toString());
 		Path dbbakp = Paths.get(dbbakpath);
-		
-		BackupableDBOptions bdb = new BackupableDBOptions(dbbakpath);
 
 		try {
 			Files.createDirectories(dbp);
 			Files.createDirectories(dbbakp);
+			
+			BackupableDBOptions bdb = new BackupableDBOptions(dbbakpath);
 			
 			//this.db = RocksDB.open(this.options, dbpath);		
 			
