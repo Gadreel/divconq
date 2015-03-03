@@ -252,5 +252,5 @@ public class SelectFields {
 		this.fields.addItem(sub.getParams());
 		
 		return this;
-	}	
+	}
 }

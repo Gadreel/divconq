@@ -37,6 +37,7 @@ import divconq.mod.IExtension;
 import divconq.net.IpAddress;
 import divconq.util.MimeUtil;
 import divconq.util.StringUtil;
+import divconq.web.http.SslContextFactory;
 import divconq.xml.XElement;
 
 public class WebSiteManager {
@@ -47,6 +48,8 @@ public class WebSiteManager {
 	protected ConcurrentHashMap<String, WebDomain> dsitemap = new ConcurrentHashMap<String, WebDomain>();
 	
 	protected String version = null;
+	
+	protected SslContextFactory ssl = new SslContextFactory(); 
 	
 	// TODO when module is unloaded, clean up all references to classes
 
@@ -71,42 +74,48 @@ public class WebSiteManager {
 		this.module = module;
 
 		if (config != null) {
-			// ideally we would only load in Hub level settings, try to use sparingly
-			MimeUtil.load(config);
+			this.ssl.init(config);
 			
-			this.devices = config.selectAll("DeviceRule");
+			XElement settings = config.find("ViewSettings");
 			
-			for (XElement macros : config.selectAll("Macro")) {
-				String name = macros.getAttribute("Name");
+			if (settings != null) {
+				// ideally we would only load in Hub level settings, try to use sparingly
+				MimeUtil.load(settings);
 				
-				if (StringUtil.isEmpty(name))
-					continue;
+				this.devices = settings.selectAll("DeviceRule");
 				
-				String bname = macros.getAttribute("Class");
-				
-				if (StringUtil.isNotEmpty(bname)) {
-					Class<?> cls = this.module.getLoader().getClass(bname);
+				for (XElement macros : settings.selectAll("Macro")) {
+					String name = macros.getAttribute("Name");
 					
-					if (cls != null) {
-						Class<? extends IWebMacro> tcls = cls.asSubclass(IWebMacro.class);
+					if (StringUtil.isEmpty(name))
+						continue;
+					
+					String bname = macros.getAttribute("Class");
+					
+					if (StringUtil.isNotEmpty(bname)) {
+						Class<?> cls = this.module.getLoader().getClass(bname);
 						
-						if (tcls != null)
-							try {
-								this.macros.put(name, tcls.newInstance());
-							} 
-							catch (Exception x) {
-								x.printStackTrace();
-							}
-					} 
-
-					// TODO log
-					//System.out.println("unable to load class: " + cname);
+						if (cls != null) {
+							Class<? extends IWebMacro> tcls = cls.asSubclass(IWebMacro.class);
+							
+							if (tcls != null)
+								try {
+									this.macros.put(name, tcls.newInstance());
+								} 
+								catch (Exception x) {
+									x.printStackTrace();
+								}
+						} 
+	
+						// TODO log
+						//System.out.println("unable to load class: " + cname);
+					}
+					
+					String value = macros.getAttribute("Value");
+					
+					if (StringUtil.isNotEmpty(value)) 
+						this.vmacros.add(name, value);
 				}
-				
-				String value = macros.getAttribute("Value");
-				
-				if (StringUtil.isNotEmpty(value)) 
-					this.vmacros.add(name, value);
 			}
 		}
 	
@@ -254,7 +263,7 @@ public class WebSiteManager {
 			if (domain != null)
 				return domain; 
 			
-			for (DomainInfo d : Hub.instance.getDomains()) {
+			for (DomainInfo d : Hub.instance.getDomains().getDomains()) {
 				if (d.getId().equals(id)) {
 					domain = new WebDomain();
 					domain.init(d);
@@ -290,11 +299,31 @@ public class WebSiteManager {
 	}
 	
 	public DomainInfo resolveDomainInfo(Request req) {
-		return Hub.instance.resolveDomainInfo(this.resolveHost(req));
+		return Hub.instance.getDomains().resolveDomainInfo(this.resolveHost(req));
 	}
 	
 	public DomainInfo resolveDomainInfo(String dname) {
-		return Hub.instance.resolveDomainInfo(this.resolveHost(dname));
+		return Hub.instance.getDomains().resolveDomainInfo(this.resolveHost(dname));
+	}
+
+	// only call this with normalized hostnames 
+	public SslContextFactory findSslContextFactory(String hostname) {
+		DomainInfo di = Hub.instance.getDomains().resolveDomainInfo(hostname);
+		
+		if (di == null)
+			return this.ssl;
+		
+		WebDomain wd = this.getDomain(di.getId());
+		
+		if (wd == null)
+			return this.ssl;
+		
+		SslContextFactory scf = wd.getSecureContextFactory(hostname);
+		
+		if (scf != null)
+			return scf;
+		
+		return this.ssl;
 	}
 
 	public IWebMacro getMacro(String name) {
@@ -354,5 +383,4 @@ public class WebSiteManager {
 		
 		return res;
 	}
-	
 }

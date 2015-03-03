@@ -1,5 +1,6 @@
 package divconq.tool.release;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -9,6 +10,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -22,6 +24,25 @@ import java.util.function.Predicate;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.diff.DiffEntry.ChangeType;
+import org.eclipse.jgit.diff.DiffFormatter;
+import org.eclipse.jgit.diff.RawTextComparator;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.util.io.DisabledOutputStream;
+
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
+import com.jcraft.jsch.UserInfo;
 
 import divconq.api.ApiSession;
 import divconq.hub.Foreground;
@@ -72,6 +93,8 @@ public class Main implements ILocalCommandLine {
 				
 				if (gitpath != null)
 					System.out.println("5)  Copy Source to GitHub folder");
+				
+				System.out.println("6)  Update AWWW");
 
 				String opt = scan.nextLine();
 				
@@ -86,109 +109,47 @@ public class Main implements ILocalCommandLine {
 					break;
 					
 				case 1: {
-					if (relpath == null) {
-						System.out.println("Release path not defined");
-						break;
-					}
-						
-					FuncResult<XElement> xres = XmlReader.loadFile(relpath.resolve("release.xml"), false);
+					ReleasesHelper releases = new ReleasesHelper();
 					
-					if (xres.hasErrors()) {
-						System.out.println("Release settings file is not present or has bad xml structure");
+					if (!releases.init(relpath))
 						break;
-					}
-					
-					List<XElement> rellist = xres.getResult().selectAll("Release");
 					
 					System.out.println("Select a release to build");
 					System.out.println("0) None");
 					
-					for (int i = 0; i < rellist.size(); i++)
-						System.out.println((i+1) + ") " + rellist.get(i).getAttribute("Name"));
+					List<String> rnames = releases.names();
+					
+					for (int i = 0; i < rnames.size(); i++)
+						System.out.println((i+1) + ") " + rnames.get(i));
 					
 					System.out.println("Option #: ");
 					opt = scan.nextLine();
 					
 					mopt = StringUtil.parseInt(opt);
 					
-					if (mopt == null)
+					if ((mopt == null) || (mopt == 0))
 						break;
 					
-					if (mopt < 0 || mopt > rellist.size()) {
+					XElement relchoice = releases.get(mopt.intValue() - 1);
+					
+					if (relchoice == null) {
 						System.out.println("Invalid option");
 						break;
 					}
 					
-					if (mopt == 0) 
+					PackagesHelper availpackages = new PackagesHelper();
+					availpackages.init();
+					
+					InstallHelper inst = new InstallHelper();
+					if (!inst.init(availpackages, relchoice))
 						break;
 					
-					XElement relchoice = rellist.get(mopt.intValue() - 1);
-					
-					boolean includeinstaller = Struct.objectToBooleanOrFalse(relchoice.getAttribute("IncludeInstaller"));
-					String prinpackage = relchoice.getAttribute("PrincipalPackage");
-					
-					int pspos = prinpackage.lastIndexOf('/');
-					String prinpackagenm = (pspos != -1) ? prinpackage.substring(pspos + 1) : prinpackage;
-					
-					Set<String> instpkgs = new HashSet<>(); 
-					instpkgs.add(prinpackage);
-					
-					if (includeinstaller)
-						instpkgs.add("dc/dcInstall");
-					
-					Set<String> relopts = new HashSet<>(); 
-					
-					if (relchoice.hasAttribute("Options"))
-						relopts.addAll(Arrays.asList(relchoice.getAttribute("Options").split(",")));
-					
-					relchoice.selectAll("Package").stream().forEach(pkg -> instpkgs.add(pkg.getAttribute("Name")));
-					
-					System.out.println("Selected packages: " + instpkgs);
-					
-					Path pkgspath = Paths.get("./packages");
-					Map<String, XElement> availpackages = new HashMap<>();
-					
-					Files.walkFileTree(pkgspath, new SimpleFileVisitor<Path>() {
-						public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attrs) throws java.io.IOException {
-							Path pkgdesc = path.resolve("package.xml");
-							
-							if (Files.exists(pkgdesc)) {
-								
-								FuncResult<XElement> xres = XmlReader.loadFile(path.resolve("package.xml"), false);
-								
-								if (xres.hasErrors()) 
-									System.out.println("package.xml found, but not usable: " + path);
-								else 
-									availpackages.put(pkgspath.relativize(path).toString().replace('\\', '/'), xres.getResult());
-								
-								return FileVisitResult.SKIP_SUBTREE; 
-							}
-							
-							return FileVisitResult.CONTINUE; 
-						}
-					});
-					
-					System.out.println("Available packages: " + availpackages.keySet());
-					
-					AtomicBoolean errored = new AtomicBoolean(false); 
-					String[] coreinst = instpkgs.toArray(new String[instpkgs.size()]);
-					
-					for (int i = 0; i < coreinst.length; i++)
-						this.collectPackageDependencies(instpkgs, availpackages, relopts, coreinst[i], errored);
-
-					if (errored.get()) {
-						System.out.println("Error with package dependencies");
-						break;
-					}
-					
-					System.out.println("All release packages: " + instpkgs);
-					
-					XElement prindesc = availpackages.get(prinpackage);
+					XElement prindesc = availpackages.get(inst.prinpackage);
 					
 					XElement prininst = prindesc.find("Install");
 					
 					if (prininst == null) {
-						System.out.println("Principle package: " + prinpackage + " cannot be released directly, it must be part of another package.");
+						System.out.println("Principle package: " + inst.prinpackagenm + " cannot be released directly, it must be part of another package.");
 						break;
 					}
 					
@@ -212,6 +173,7 @@ public class Main implements ILocalCommandLine {
 					
 					System.out.println("Preparing zip files");
 					
+					AtomicBoolean errored = new AtomicBoolean();
 					Path tempfolder = FileUtil.allocateTempFolder2();
 					
 					ListStruct ignorepaths = new ListStruct();
@@ -219,10 +181,10 @@ public class Main implements ILocalCommandLine {
 					Set<String> dependson = new HashSet<>();
 					
 					// put all the release files into a temp folder
-					instpkgs.forEach(pname -> {
+					inst.instpkgs.forEach(pname -> {
 						availpackages.get(pname)
 							.selectAll("DependsOn").stream()
-							.filter(doel -> !doel.hasAttribute("Option") || relopts.contains(doel.getAttribute("Option")))
+							.filter(doel -> !doel.hasAttribute("Option") || inst.relopts.contains(doel.getAttribute("Option")))
 							.forEach(doel -> {
 								// copy all libraries we rely on
 								doel.selectAll("Library").forEach(libel -> {
@@ -325,8 +287,8 @@ public class Main implements ILocalCommandLine {
 					}
 					
 					// copy the principle config
-					Path csrc = Paths.get("./packages/" + prinpackage + "/config");
-					Path cdest = tempfolder.resolve("config/" + prinpackagenm);
+					Path csrc = Paths.get("./packages/" + inst.prinpackage + "/config");
+					Path cdest = tempfolder.resolve("config/" + inst.prinpackagenm);
 					
 					if (Files.exists(csrc)) {
 						Files.createDirectories(cdest);
@@ -348,7 +310,7 @@ public class Main implements ILocalCommandLine {
 						
 						String pname = pkg.getAttribute("Name");
 						
-						pspos = pname.lastIndexOf('/');
+						int pspos = pname.lastIndexOf('/');
 						String pnm = (pspos != -1) ? pname.substring(pspos + 1) : pname;
 						
 						csrc = Paths.get("./packages/" + pname + "/config");
@@ -371,7 +333,7 @@ public class Main implements ILocalCommandLine {
 						break;
 
 					// also copy installer config if being used
-					if (includeinstaller) {
+					if (inst.includeinstaller) {
 						csrc = Paths.get("./packages/dc/dcInstall/config");
 						cdest = tempfolder.resolve("config/dcInstall");
 						
@@ -429,9 +391,9 @@ public class Main implements ILocalCommandLine {
 					// write env file
 					d1res = IOUtil.saveEntireFile(tempfolder.resolve("env.bat"), 
 							"set mem=" + relchoice.getAttribute("Memory", "2048") + "\r\n"
-							+ "SET project=" + prinpackagenm + "\r\n"
-							+ "SET service=" + relchoice.getAttribute("Service", prinpackagenm) + "\r\n"
-							+ "SET servicename=" + relchoice.getAttribute("ServiceName", prinpackagenm + " Service") + "\r\n");			
+							+ "SET project=" + inst.prinpackagenm + "\r\n"
+							+ "SET service=" + relchoice.getAttribute("Service", inst.prinpackagenm) + "\r\n"
+							+ "SET servicename=" + relchoice.getAttribute("ServiceName", inst.prinpackagenm + " Service") + "\r\n");			
 					
 					if (d1res.hasErrors()) {
 						System.out.println("Error with prepping env");
@@ -776,6 +738,153 @@ public class Main implements ILocalCommandLine {
 					
 					break;
 				}
+				case 6: {
+					ReleasesHelper releases = new ReleasesHelper();
+					if (!releases.init(relpath))						
+						break;
+					
+					XElement relchoice = releases.get("AWWWServer");
+					
+					if (relchoice == null) {
+						System.out.println("Invalid option");
+						break;
+					}
+					
+					PackagesHelper availpackages = new PackagesHelper();
+					availpackages.init();
+					
+					InstallHelper inst = new InstallHelper();
+					if (!inst.init(availpackages, relchoice))
+						break;
+					
+					ServerHelper ssh = new ServerHelper();
+					if (!ssh.init(relchoice.find("SSH")))
+						break;
+					
+					ChannelSftp sftp = null;
+
+					try {			
+						Channel channel = ssh.session().openChannel("sftp");
+						channel.connect();
+						sftp = (ChannelSftp) channel;
+						
+						// go to routines folder
+						sftp.cd("/usr/local/bin/dc/AWWWServer");
+						
+				        FileRepositoryBuilder builder = new FileRepositoryBuilder();
+				        
+				        Repository repository = builder
+				        		.setGitDir(new File(".git"))
+				                .findGitDir() // scan up the file system tree
+				                .build();
+				        
+				        String lastsync = releases.getData("AWWWServer").getFieldAsString("LastCommitSync");
+				        
+				        RevWalk rw = new RevWalk(repository);
+				        ObjectId head1 = repository.resolve(Constants.HEAD);
+				        RevCommit commit1 = rw.parseCommit(head1);
+				        
+				        releases.getData("AWWWServer").setField("LastCommitSync", head1.name());
+				        
+				        ObjectId rev2 = repository.resolve(lastsync);
+				        RevCommit parent = rw.parseCommit(rev2);
+				        //RevCommit parent2 = rw.parseCommit(parent.getParent(0).getId());
+				        
+				        DiffFormatter df = new DiffFormatter(DisabledOutputStream.INSTANCE);
+				        df.setRepository(repository);
+				        df.setDiffComparator(RawTextComparator.DEFAULT);
+				        df.setDetectRenames(true);
+				        
+				        // list oldest first or change types are all wrong!!
+				        List<DiffEntry> diffs = df.scan(parent.getTree(), commit1.getTree());
+				        
+				        for (DiffEntry diff : diffs) {
+				        	String gnpath = diff.getNewPath();
+				        	String gopath = diff.getOldPath();
+				        	
+				        	Path npath = Paths.get("./" + gnpath);
+				        	Path opath = Paths.get("./" + gopath);
+				        	
+				        	if (diff.getChangeType() == ChangeType.DELETE) {
+					        	if (inst.containsPathExtended(opath)) {
+					        		System.out.println("- " + diff.getChangeType().name() + " - " + opath);
+					        		
+					        		sftp.rm(opath.toString());
+					        		System.out.println("deleted!!");
+					        	}
+					        	else {
+					        		System.out.println("/ " + diff.getChangeType().name() + " - " + gopath + " !!!!!!!!!!!!!!!!!!!!!!!!!");
+					        	}
+				        	}
+				        	else if ((diff.getChangeType() == ChangeType.ADD) || (diff.getChangeType() == ChangeType.MODIFY) || (diff.getChangeType() == ChangeType.COPY)) {
+					        	if (inst.containsPathExtended(npath)) {
+					        		System.out.println("+ " + diff.getChangeType().name() + " - " + npath);
+					        		
+									ssh.makeDirSftp(sftp, npath.getParent());
+										
+					        		sftp.put(npath.toString(), npath.toString(), ChannelSftp.OVERWRITE);
+					        		sftp.chmod(npath.endsWith(".sh") ? 484 : 420, npath.toString());		// 644 octal = 420 dec, 744 octal = 484 dec
+					        		System.out.println("uploaded!!");
+					        	}
+					        	else {
+					        		System.out.println("> " + diff.getChangeType().name() + " - " + gnpath + " !!!!!!!!!!!!!!!!!!!!!!!!!");
+					        	}
+				        	}
+				        	else if (diff.getChangeType() == ChangeType.RENAME) {
+				        		// remove the old
+					        	if (inst.containsPathExtended(opath)) {
+					        		System.out.println("- " + diff.getChangeType().name() + " - " + opath);
+					        		
+					        		sftp.rm(opath.toString());
+					        		System.out.println("deleted!!");
+					        	}
+					        	else {
+					        		System.out.println("/ " + diff.getChangeType().name() + " - " + gopath + " !!!!!!!!!!!!!!!!!!!!!!!!!");
+					        	}
+					        	
+					        	// add the new path
+					        	if (inst.containsPathExtended(npath)) {
+					        		System.out.println("+ " + diff.getChangeType().name() + " - " + npath);
+					        		
+									ssh.makeDirSftp(sftp, npath.getParent());
+										
+					        		sftp.put(npath.toString(), npath.toString(), ChannelSftp.OVERWRITE);
+					        		sftp.chmod(npath.endsWith(".sh") ? 484 : 420, npath.toString());		// 644 octal = 420 dec, 744 octal = 484 dec
+					        		System.out.println("uploaded!!");
+					        	}
+					        	else {
+					        		System.out.println("> " + diff.getChangeType().name() + " - " + gnpath + " !!!!!!!!!!!!!!!!!!!!!!!!!");
+					        	}
+				        	}
+				        	else {
+				        		System.out.println("??????????????????????????????????????????????????????????");
+				        		System.out.println(": " + diff.getChangeType().name() + " - " + gnpath + " ?????????????????????????");
+				        		System.out.println("??????????????????????????????????????????????????????????");
+				        	}
+				        }
+				        
+				        rw.dispose();
+				        
+				        repository.close();
+				        
+				        releases.saveData();
+					} 
+					catch (SftpException x) {
+						System.out.println("Sftp Error: " + x);
+					} 
+					catch (JSchException x) {
+						System.out.println("Sftp Error: " + x);
+					}
+					finally {			
+						if (sftp.isConnected())
+							sftp.exit();
+						
+						ssh.close();
+					}
+					
+					
+					break;
+				}
 				}
 			}
 			catch(Exception x) {
@@ -784,26 +893,348 @@ public class Main implements ILocalCommandLine {
 		}		
 	}
 
-	protected void collectPackageDependencies(Set<String> instpkgs, Map<String, XElement> availpackages, Set<String> relopts, String pname, AtomicBoolean errored) {
-		if (!availpackages.containsKey(pname)) {
-			errored.set(true);
-			System.out.println("Required Package not found: " + pname);
-			return;
-		}
+	public class ServerHelper {
+		protected JSch jsch = new JSch();
+		protected Session session = null;
 		
-		// filter DependsOn by Option
-		for (XElement doel : availpackages.get(pname).selectAll("DependsOn")) {
-			if (doel.hasAttribute("Option") && !relopts.contains(doel.getAttribute("Option")))
-				continue;
-			
-			 // copy all libraries we rely on
-			for (XElement pkg : doel.selectAll("Package")) {
-				String doname = pkg.getAttribute("Name");
-				instpkgs.add(doname);
-				this.collectPackageDependencies(instpkgs, availpackages, relopts, doname, errored);
+		public boolean init(XElement connconfig) {
+			try {
+				String hostname = connconfig.getAttribute("Host");
+				String username = connconfig.getAttribute("User");
+		    	String password = connconfig.getAttribute("Password");
+				String keyfile = connconfig.getAttribute("KeyFile");
+		    	String passphrase = connconfig.getAttribute("Passphrase");
+				
+				int port = (int) StringUtil.parseInt(connconfig.getAttribute("Port"), 22);
+	
+		    	if (StringUtil.isNotEmpty(password))
+		    		password = Hub.instance.getClock().getObfuscator().decryptHexToString(password).toString();
+		    	
+		    	String passwordx = password;
+		    	
+		    	if (StringUtil.isNotEmpty(passphrase))
+		    		passphrase = Hub.instance.getClock().getObfuscator().decryptHexToString(passphrase).toString();
+				
+				if (StringUtil.isNotEmpty(keyfile)) 
+					this.jsch.addIdentity(keyfile, passphrase);
+				
+				this.session = this.jsch.getSession(username, hostname, port);
+				
+		    	if (StringUtil.isNotEmpty(password))
+		    		this.session.setPassword(password);
+	
+				this.session.setUserInfo(new UserInfo() {
+					@Override
+					public void showMessage(String message) {
+						System.out.println("SSH session message: " + message);
+					}
+	
+					@Override
+					public boolean promptYesNo(String message) {
+						return true;
+					}
+	
+					@Override
+					public boolean promptPassword(String message) {
+						return false;
+					}
+	
+					@Override
+					public boolean promptPassphrase(String message) {
+						return false;
+					}
+	
+					@Override
+					public String getPassword() {
+						return passwordx;
+					}
+	
+					@Override
+					public String getPassphrase() {
+						return null;
+					}
+				});
+	
+				this.session.connect(30000); // making a connection with timeout.
+				this.session.setTimeout(20000);   // 20 second read timeout
+			} 
+			catch (Exception x) {
+				System.out.println("Error initializing SSH session: " + x);
+				return false;
 			}
+			
+			return true;
 		}
 
-		return;
+		public void close() {
+			this.session.disconnect();
+		}
+		
+		public Session session() {
+			return this.session;
+		}
+		
+		// intended to have a ./ before path 
+		public boolean makeDirSftp(ChannelSftp sftp, Path path) {
+			System.out.println("mkdir: " + path +  "  ------   " + path.getNameCount());
+			
+			// path "." should be there
+			if (path.getNameCount() < 2)
+				return true;
+			
+			//System.out.println("checking");
+			
+			try {
+			    sftp.stat(path.toString());
+			    return true;		// path is there 
+			} 
+			catch (Exception x) {
+			}
+			
+			this.makeDirSftp(sftp, path.getParent());
+			
+			try {
+				sftp.mkdir(path.toString());
+        		sftp.chmod(493, path.toString());		// 755 octal = 493 dec
+			} 
+			catch (Exception x) {
+				System.out.println("Failed to create directory: " + x);
+				return false;
+			}
+			
+			return true;
+		}
+	}
+	
+	public class ReleasesHelper {
+		protected List<XElement> rellist = null;
+		protected RecordStruct reldata = null;
+		protected Path cspath = null;
+		
+		public List<String> names() {
+			List<String> names = new ArrayList<String>();
+			
+			for (int i = 0; i < rellist.size(); i++)
+				names.add(rellist.get(i).getAttribute("Name"));
+			
+			return names;
+		}
+		
+		public void saveData() {
+			IOUtil.saveEntireFile2(cspath, this.reldata.toPrettyString());
+		}
+
+		public XElement get(int i) {
+			return this.rellist.get(i);
+		}
+		
+		public XElement get(String name) {
+			for (int i = 0; i < rellist.size(); i++)
+				if (rellist.get(i).getAttribute("Name").equals(name))
+					return rellist.get(i);
+			
+			return null;
+		}
+		
+		public RecordStruct getData(String name) {
+			return this.reldata.getFieldAsRecord(name);
+		}
+		
+		public boolean init(Path relpath) {
+			if (relpath == null) {
+				System.out.println("Release path not defined");
+				return false;
+			}
+				
+			FuncResult<XElement> xres = XmlReader.loadFile(relpath.resolve("release.xml"), false);
+			
+			if (xres.hasErrors()) {
+				System.out.println("Release settings file is not present or has bad xml structure");
+				return false;
+			}
+			
+			this.rellist = xres.getResult().selectAll("Release");
+			
+			this.cspath = relpath.resolve("release-data.json");
+
+			if (Files.exists(cspath)) {
+				FuncResult<CharSequence> res = IOUtil.readEntireFile(cspath);
+				
+				if (res.isEmptyResult()) {
+					System.out.println("Release data unreadable");
+					return false;
+				}
+				
+				this.reldata = Struct.objectToRecord(res.getResult());
+			}
+			
+			return true;
+		}		
+	}
+	
+	public class InstallHelper {
+		protected XElement relchoice = null;
+		protected PackagesHelper availpackages = null;
+		protected String prinpackage = null;
+		protected String prinpackagenm = null;
+		protected Set<String> instpkgs = new HashSet<>(); 
+		protected Set<String> relopts = new HashSet<>(); 
+		protected boolean includeinstaller = false;
+		
+		public boolean init(PackagesHelper availpackages, XElement relchoice) {
+			this.relchoice = relchoice;
+			this.availpackages = availpackages;
+			
+			this.includeinstaller = Struct.objectToBooleanOrFalse(relchoice.getAttribute("IncludeInstaller"));
+			this.prinpackage = relchoice.getAttribute("PrincipalPackage");
+			
+			int pspos = prinpackage.lastIndexOf('/');
+			this.prinpackagenm = (pspos != -1) ? prinpackage.substring(pspos + 1) : prinpackage;
+			
+			instpkgs.add(prinpackage);
+			
+			if (includeinstaller)
+				instpkgs.add("dc/dcInstall");
+			
+			if (relchoice.hasAttribute("Options"))
+				relopts.addAll(Arrays.asList(relchoice.getAttribute("Options").split(",")));
+			
+			relchoice.selectAll("Package").stream().forEach(pkg -> instpkgs.add(pkg.getAttribute("Name")));
+			
+			System.out.println("Selected packages: " + instpkgs);
+			
+			String[] coreinst = instpkgs.toArray(new String[instpkgs.size()]);
+			
+			for (int i = 0; i < coreinst.length; i++) {
+				if (!availpackages.collectPackageDependencies(this, coreinst[i])) {
+					System.out.println("Error with package dependencies");
+					return false;
+				}
+			}
+			
+			System.out.println("All release packages: " + instpkgs);
+			return true;
+		}
+		
+		// does the official release contain this...or do the domains
+		public boolean containsPathExtended(Path npath) {
+			if (npath.getName(1).toString().equals("public")) {
+				if (npath.getNameCount() < 4)
+					return false;
+				
+				String alias = npath.getName(3).toString();
+				
+				return relchoice.selectAll("Domain").stream().anyMatch(domain -> alias.equals(domain.getAttribute("Alias")));
+			}
+			
+			return this.containsPath(npath);
+		}
+
+		// does the official release contain this...
+		public boolean containsPath(Path npath) {
+			AtomicBoolean fnd = new AtomicBoolean();
+			
+			String p = npath.toString().substring(2);
+			
+			this.instpkgs.forEach(pname -> {
+				if (p.startsWith("packages/" + pname))
+					fnd.set(true);
+				
+				availpackages.get(pname)
+					.selectAll("DependsOn").stream()
+					.filter(doel -> !doel.hasAttribute("Option") || this.relopts.contains(doel.getAttribute("Option")))
+					.forEach(doel -> {
+						// copy all libraries we rely on
+						// TODO consider lib handling
+						//doel.selectAll("Library").forEach(libel -> {
+						//	
+						//	Path src = Paths.get("./lib/" + libel.getAttribute("File"));
+						//});
+						
+						// copy all files we rely on
+						doel.selectAll("File").forEach(libel -> {
+							if (p.equals(libel.getAttribute("Path")))
+									fnd.set(true);;
+						});
+						
+						// copy all folders we rely on
+						doel.selectAll("Folder").forEach(libel -> {
+							if (p.startsWith(libel.getAttribute("Path")))
+								fnd.set(true);;
+						});
+					});
+				
+				// copy the released packages libraries
+				// TODO handle package libs in main lib?
+				//Path libsrc = Paths.get("./packages/" + pname + "/lib");
+			});
+			
+			return fnd.get();
+		}
+		
+		public boolean hasOption(String opt) {
+			return relopts.contains(opt);
+		}
+		
+		public void addPackage(String name) {
+			this.instpkgs.add(name);
+		}
+	}
+	
+	public class PackagesHelper {
+		protected Path pkgspath = Paths.get("./packages");
+		protected Map<String, XElement> availpackages = new HashMap<>();
+		
+		public void init() throws Exception {
+			Files.walkFileTree(pkgspath, new SimpleFileVisitor<Path>() {
+				public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attrs) throws java.io.IOException {
+					Path pkgdesc = path.resolve("package.xml");
+					
+					if (Files.exists(pkgdesc)) {
+						
+						FuncResult<XElement> xres = XmlReader.loadFile(path.resolve("package.xml"), false);
+						
+						if (xres.hasErrors()) 
+							System.out.println("package.xml found, but not usable: " + path);
+						else 
+							availpackages.put(pkgspath.relativize(path).toString().replace('\\', '/'), xres.getResult());
+						
+						return FileVisitResult.SKIP_SUBTREE; 
+					}
+					
+					return FileVisitResult.CONTINUE; 
+				}
+			});
+			
+			System.out.println("Available packages: " + availpackages.keySet());
+		}
+		
+		public XElement get(String pname) {
+			return this.availpackages.get(pname);
+		}
+		
+		// return true on success
+		public boolean collectPackageDependencies(InstallHelper inst, String pname) {
+			if (!availpackages.containsKey(pname)) {
+				System.out.println("Required Package not found: " + pname);
+				return false;
+			}
+			
+			// filter DependsOn by Option
+			for (XElement doel : availpackages.get(pname).selectAll("DependsOn")) {
+				if (doel.hasAttribute("Option") && !inst.hasOption(doel.getAttribute("Option")))
+					continue;
+				
+				 // copy all libraries we rely on
+				for (XElement pkg : doel.selectAll("Package")) {
+					String doname = pkg.getAttribute("Name");
+					inst.addPackage(doname);
+					if (!this.collectPackageDependencies(inst, doname))
+						return false;
+				}
+			}
+
+			return true;
+		}
 	}
 }

@@ -22,6 +22,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.net.ssl.TrustManager;
+
 import w3.html.A;
 import w3.html.Article;
 import w3.html.Aside;
@@ -79,6 +81,7 @@ import w3.html.U;
 import w3.html.Ul;
 import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
+import divconq.hub.DomainNameMapping;
 import divconq.hub.Hub;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.OperationContext;
@@ -106,6 +109,8 @@ import divconq.web.dcui.Nodes;
 import divconq.web.dcui.PagePart;
 import divconq.web.dcui.ViewOutputAdapter;
 import divconq.web.dcui.ViewTemplateAdapter;
+import divconq.web.http.SslContextFactory;
+import divconq.web.http.WebTrustManager;
 import divconq.xml.XElement;
 import divconq.xml.XNode;
 import divconq.xml.XText;
@@ -117,6 +122,10 @@ public class WebDomain {
 	protected CommonPath homepath = null;
 	
 	protected XElement webconfig = null;
+	
+	protected TrustManager[] trustManagers = new TrustManager[1];
+	protected DomainNameMapping<SslContextFactory> certs = null;
+	
 	protected Map<String, IOutputAdapter> paths = new HashMap<>();
 	protected Map<String, IOutputAdapter> previewpaths = new HashMap<>();
 	
@@ -185,6 +194,37 @@ public class WebDomain {
 	
 		if (this.webconfig.hasAttribute("Locale")) 
 			this.locale = this.webconfig.getAttribute("Locale");
+		
+		WebTrustManager trustman = new WebTrustManager();
+		trustman.init(this.webconfig);
+		
+		this.trustManagers[0] = trustman;
+		
+		LocalFileStore fs = Hub.instance.getPublicFileStore();
+		
+		if (fs == null)
+			return;
+		
+		Path cpath = fs.getFilePath().resolve("dcw/" + this.getAlias() + "/config/certs");
+
+		if (Files.notExists(cpath))
+			return;
+		
+		this.certs = new DomainNameMapping<>();
+		
+		for (XElement cel : this.webconfig.selectAll("Certificate")) {
+			SslContextFactory ssl = new SslContextFactory();
+			ssl.init(cel, cpath.toString() + "/", trustManagers);
+			this.certs.add(cel.getAttribute("Name"), ssl);
+		}
+	}
+
+	// matchname might be a wildcard match
+	public SslContextFactory getSecureContextFactory(String matchname) {
+		if (this.certs != null)
+			return this.certs.get(matchname);
+		
+		return null;
 	}
 	
 	public void addCodeTag(String tag, Class<? extends ICodeTag> classdef) {

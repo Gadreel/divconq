@@ -31,6 +31,7 @@ public class ButtonLink extends A {
     protected String click = null;
     protected String page = null;
     protected boolean wide = false;
+    protected String css = null;
 
     public ButtonLink() {
     	super();
@@ -70,6 +71,11 @@ public class ButtonLink extends A {
     	return this;
     }
     
+    public ButtonLink withCss(String v) {
+    	this.css = v;
+    	return this;
+    }
+    
 	@Override
 	public Node deepCopy(Element parent) {
 		ButtonLink cp = new ButtonLink();
@@ -86,6 +92,7 @@ public class ButtonLink extends A {
 		((ButtonLink)n).page = this.page;
 		((ButtonLink)n).label = this.label;
 		((ButtonLink)n).icon = this.icon;
+		((ButtonLink)n).css = this.css;
 		((ButtonLink)n).click = this.click;
 		((ButtonLink)n).wide = this.wide;
 	}
@@ -103,6 +110,7 @@ public class ButtonLink extends A {
 		this.icon = xel.getRawAttribute("Icon");
 		this.click = xel.getRawAttribute("Click");
 		this.page = xel.getRawAttribute("Page");
+		this.css = xel.getRawAttribute("class");
 		
 		if (StringUtil.isNotEmpty(this.page))
 			this.to = this.page;
@@ -113,8 +121,8 @@ public class ButtonLink extends A {
     @Override
     public void build(Object... args) {
     	Attributes attrs = this.wide 
-			? new Attributes("href", this.to, "class", "ui-button ui-button-wide ui-theme-a")
-			: new Attributes("href", this.to, "class", "ui-button ui-theme-a");
+			? new Attributes("href", this.to, "class", "ui-button ui-button-wide ui-theme-a " + StringUtil.toEmpty(this.css)) 
+			: new Attributes("href", this.to, "class", "ui-button ui-theme-a " + StringUtil.toEmpty(this.css));
 		
 		if (this.id != null)
 			attrs.add("id", this.id);

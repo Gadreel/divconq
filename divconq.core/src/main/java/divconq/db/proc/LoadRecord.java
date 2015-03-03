@@ -31,6 +31,9 @@ public class LoadRecord implements IStoredProc {
 		boolean historical = params.getFieldAsBooleanOrFalse("Historical");	
 		ListStruct select = params.getFieldAsList("Select");
 		
+		if (when == null)
+			when = BigDateTime.nowDateTime();
+		
 		// TODO add db filter option
 		//d runFilter("Query") quit:Errors  ; if any violations in filter then do not proceed
 		
@@ -128,7 +131,7 @@ public class LoadRecord implements IStoredProc {
 		}
 		
 		// for foreign key queries 
-		String ftable = fdef.fkey;
+		String ftable = fdef.getForeignKey();
 		
 		// for reverse foreign key queries 
 		if (!field.isFieldEmpty("Table"))
@@ -182,7 +185,7 @@ public class LoadRecord implements IStoredProc {
 		}
 
 		// DynamicList, StaticList (or DynamicScalar is when == null)
-		if (fdef.list || (fdef.dynamic && when == null)) {
+		if (fdef.isList() || (fdef.isDynamic() && when == null)) {
 			out.startList();
 			
 			// keep in mind that `id` is the "value" in the index
@@ -221,7 +224,7 @@ public class LoadRecord implements IStoredProc {
 			return;
 		}		
 		// DynamicScalar
-		else if (fdef.dynamic) {
+		else if (fdef.isDynamic()) {
 			if (subselect != null)
 				foreignSink.accept(db.getDynamicScalar(table, id, fname, when, format, historical));
 			else if (compact)

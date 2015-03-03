@@ -18,8 +18,8 @@
 		
 		<Table Id="dcDomain">
 			<Field Name="dcTitle" Type="dcSmallString" Required="True" />
-			<Field Name="dcAlias" Type="dcSmallString" Required="True" />
-			<Field Name="dcName" Type="dcSmallString" Required="True" List="True" />
+			<Field Name="dcAlias" Type="dcSmallString" Required="True" Unique="True" />
+			<Field Name="dcName" Type="dcSmallString" List="True" />
 			<Field Name="dcDescription" Type="String" />
 			
 			<!-- crypto support -->
@@ -47,7 +47,7 @@
 			but this user may also appear in another domain, such as ^dcRecord("dcUser#00100_000000000000001","00975_000000123000999"
 		-->
 		<Table Id="dcUser">
-			<Field Name="dcUsername" Type="dcUsername" Required="True" Indexed="True" Dynamic="True" />
+			<Field Name="dcUsername" Type="dcUsername" Required="True" Unique="True" Indexed="True" Dynamic="True" />
 			<Field Name="dcFirstName" Type="dcTinyString" Indexed="True" Dynamic="True" />
 			<Field Name="dcLastName" Type="dcTinyString" Indexed="True" Dynamic="True" />
 			
@@ -69,8 +69,10 @@
 			<Field Name="dcGroup" ForeignKey="dcGroup" List="True" /> 
 		</Table>
 		
+		<!-- 
 		<Trigger Table="dcUser" Operation="BeforeInsert" Execute="divconq.db.trigger.BeforeUserInsert" />
 		<Trigger Table="dcUser" Operation="BeforeUpdate" Execute="divconq.db.trigger.BeforeUserUpdate" />
+		-->
 		
 		<Table Id="dcGroup">
 			<Field Name="dcName" Type="dcSmallString" Required="True" Indexed="True" Dynamic="True" />
@@ -91,7 +93,7 @@
 				<Response>
 					<Field Name="Text" Type="String" />
 				</Response>
-			</Procedure>			
+			</Procedure>
 			<Procedure Name="dcEcho" Execute="divconq.db.proc.Echo">
 				<Description>
 					Test the database, give it a string and it will echo back.
@@ -107,6 +109,22 @@
 		</Secure>			
 		<Secure Tags="Admin">
 			<Composer Name="dcListCounter" Execute="divconq.db.comp.ListCounter" />
+			<Composer Name="dcIndexValueCounter" Execute="divconq.db.comp.IndexValueCounter" />
+			
+			<Procedure Name="dcIndexCounter" Execute="divconq.db.proc.CountIndexes">
+				<Description>
+					Load a single record including fields and subqueries.
+				</Description>
+				<Request Inherits="dcDbCall">
+					<Field Name="Field" Type="dcTinyString" />
+					<Field Name="Historical" Type="Boolean" />
+					<Field Name="When" Type="BigDateTime" />
+					<Field Name="Values">
+						<List Type="Any" />
+					</Field>
+				</Request>
+				<Response Any="True" />
+			</Procedure>			
 		
 			<Procedure Name="dcSignIn" Execute="divconq.db.proc.SignIn">
 				<Description>

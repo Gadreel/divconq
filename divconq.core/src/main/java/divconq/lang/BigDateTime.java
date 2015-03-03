@@ -262,6 +262,12 @@ public class BigDateTime implements Comparable<BigDateTime> {
 		return new BigDateTime(new LocalDate());
 	}
 	
+	static public BigDateTime parseOrNull(String date) {
+		FuncResult<BigDateTime> r = BigDateTime.parse(date);
+		
+		return r.getResult();
+	}
+	
 	/**
 	 * @param date internal big datetime format
 	 * @return BigDateTime object plus warnings, if any

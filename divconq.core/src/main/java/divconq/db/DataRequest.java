@@ -23,8 +23,8 @@ import divconq.util.StringUtil;
 
 /**
  * Assemble a generic Query request for the database.  A query request should not
- * call a stored procedure with parameters that will cause it to update/alter data
- * with in the database (other than temp tables and caches).  Other than that restriction
+ * call a stored procedure that will cause the database to update/alter data
+ * (other than temp tables and caches).  Other than that restriction
  * this class can call nearly any stored procedure if the parameters are assembled 
  * correctly.
  * 

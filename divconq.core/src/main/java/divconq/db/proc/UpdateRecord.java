@@ -28,6 +28,26 @@ public class UpdateRecord implements IStoredProc {
 		TablesAdapter db = new TablesAdapter(conn, task); 
 		
 		// ===========================================
+		//  verify the fields
+		// ===========================================
+		
+		RecordStruct fields = params.getFieldAsRecord("Fields");
+		BigDateTime when = params.getFieldAsBigDateTime("When");
+		
+		if (when == null)
+			when = BigDateTime.nowDateTime();
+		
+		if (!task.isReplicating()) {
+			// only check first time, otherwise allow replication
+			OperationResult cor = db.checkFields(table, fields, params.getFieldAsString("Id"));
+			
+			if (cor.hasErrors()) {
+				task.complete();
+				return;
+			}
+		}
+		
+		// ===========================================
 		//  run before trigger
 		// ===========================================
 		OperationResult cor = db.executeTrigger(table, isUpdate ? "BeforeUpdate" : "BeforeInsert", conn, task, log);
@@ -39,20 +59,6 @@ public class UpdateRecord implements IStoredProc {
 		
 		// it is possible for Id to be set by trigger (e.g. with domains)
 		String id = params.getFieldAsString("Id");
-		
-		// ===========================================
-		//  verify the fields
-		// ===========================================
-		
-		RecordStruct fields = params.getFieldAsRecord("Fields");
-		BigDateTime when = params.getFieldAsBigDateTime("When");
-		
-		cor = db.checkFields(table, fields);
-		
-		if (cor.hasErrors()) {
-			task.complete();
-			return;
-		}
 		
 		// TODO add db filter option
 		//d runFilter("Insert" or "Update") quit:Errors  ; if any violations in filter then do not proceed

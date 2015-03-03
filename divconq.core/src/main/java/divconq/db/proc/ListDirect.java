@@ -66,6 +66,11 @@ public class ListDirect extends LoadRecord {
 		ListStruct select = new ListStruct(params.getFieldAsRecord("Select"));
 		RecordStruct where = params.getFieldAsRecord("Where");
 		
+		if (when == null)
+			when = BigDateTime.nowDateTime();
+		
+		BigDateTime fwhen = when;
+		
 		// TODO add db filter option
 		//d runFilter("Query") quit:Errors  ; if any violations in filter then do not proceed
 		
@@ -84,10 +89,10 @@ public class ListDirect extends LoadRecord {
 				public void accept(Object t) {
 					String id = t.toString();
 					
-					db.checkSelect(table, id, when, where, historical);
+					db.checkSelect(table, id, fwhen, where, historical);
 	
 					try {
-						ListDirect.this.writeField(conn, task, log, out, db, table, id, when, select, select.getItemAsRecord(0),
+						ListDirect.this.writeField(conn, task, log, out, db, table, id, fwhen, select, select.getItemAsRecord(0),
 								historical, compact);
 					}
 					catch (Exception x) {

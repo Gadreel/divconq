@@ -12,16 +12,24 @@ import divconq.lang.op.OperationResult;
 import divconq.schema.DbField;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.struct.Struct;
 import divconq.struct.builder.BuilderStateException;
 import divconq.struct.builder.ICompositeBuilder;
+import divconq.util.StringUtil;
 
-public class ListCounter implements IComposer {
+// TODO re-think, this is not yet used
+public class IndexValueCounter implements IComposer {
 	@Override
 	public void writeField(DatabaseInterface conn, DatabaseTask task, OperationResult log, ICompositeBuilder out, TablesAdapter db,
 			String table, String id, BigDateTime when, ListStruct select, RecordStruct field, boolean historical, boolean compact)
 	{	
 		try {
 			String fname = field.getFieldAsString("Field");
+
+			if (StringUtil.isEmpty(fname)) {
+				out.value(new Long(0));
+				return;
+			}
 			
 			DbField fdef = task.getSchema().getDbField(table, fname);
 
@@ -30,31 +38,24 @@ public class ListCounter implements IComposer {
 				return;
 			}
 			
-			AtomicLong cnt = new AtomicLong();
+			RecordStruct params = field.getFieldAsRecord("Params");
+
+			if ((params == null) || params.isFieldEmpty("Value")) {
+				out.value(new Long(0));
+				return;
+			}
 			
-			if ("Id".equals(fname)) {
-				cnt.set(1);
-			}
-			// DynamicList, StaticList (or DynamicScalar is when == null)
-			else if (fdef.isList() || (fdef.isDynamic() && when == null)) {
-				// keep in mind that `id` is the "value" in the index
-				db.traverseSubIds(table, id, fname, when, historical, new Consumer<Object>() {				
-					@Override
-					public void accept(Object subid) {
-						cnt.incrementAndGet();
-					}
-				});
-			}		
-			// DynamicScalar
-			else if (fdef.isDynamic()) {
-				if (db.getDynamicScalarRaw(table, id, fname, when, historical) != null)
-					cnt.set(1);
-			}
-			// StaticScalar
-			else {
-				if (db.getStaticScalarRaw(table, id, fname) != null)
-					cnt.set(1);
-			}
+			// get as a type we understand
+			Object val = Struct.objectToCore(field.getField("Value"));
+			
+			AtomicLong cnt = new AtomicLong();
+
+			db.traverseIndex(table, fname, val, when, historical, new Consumer<Object>() {				
+				@Override
+				public void accept(Object subid) {
+					cnt.incrementAndGet();
+				}
+			});
 			
 			task.getBuilder().value(new Long(cnt.get()));
 		} 

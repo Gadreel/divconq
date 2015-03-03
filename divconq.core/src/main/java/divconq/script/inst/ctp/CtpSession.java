@@ -50,7 +50,7 @@ public class CtpSession extends With {
 			return;
         }
         
-        DomainInfo di = Hub.instance.resolveDomainInfo(host);
+        DomainInfo di = Hub.instance.getDomains().resolveDomainInfo(host);
         
         ApiSession sess = null;
         

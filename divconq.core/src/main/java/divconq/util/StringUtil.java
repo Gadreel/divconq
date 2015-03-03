@@ -141,6 +141,13 @@ public class StringUtil {
 
 	      return true;
 	  }	  
+
+		public static String toEmpty(String css) {
+			if (css == null)
+				return "";
+			
+			return css;
+		}
 	  
 	  /*
 	   * scan through characters and remove excess whitespace - per XML

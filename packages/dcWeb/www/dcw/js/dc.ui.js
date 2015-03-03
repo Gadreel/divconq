@@ -221,10 +221,10 @@ dc.pui = {
 		},
 		
 		loadHomePage: function() {
-			var hpath = $('html').attr('data-dcw-Home');
+			var hpath = dc.pui.Loader.__homePage;
 			
 			if (!hpath)
-				hpath = dc.pui.Loader.__homePage;
+				hpath = $('html').attr('data-dcw-Home');
 			
 			if (hpath)
 				dc.pui.Loader.loadPage(hpath);
@@ -235,10 +235,10 @@ dc.pui = {
 		},
 		
 		loadPortalPage: function() {
-			var hpath = $('html').attr('data-dcw-Portal');
+			var hpath = dc.pui.Loader.__portalPage;
 			
 			if (!hpath)
-				hpath = dc.pui.Loader.__portalPage;
+				hpath = $('html').attr('data-dcw-Portal');
 			
 			if (hpath)
 				dc.pui.Loader.loadPage(hpath);
@@ -249,10 +249,10 @@ dc.pui = {
 		},
 		
 		loadSigninPage: function() {
-			var hpath = $('html').attr('data-dcw-SignIn');
+			var hpath = dc.pui.Loader.__signInPage;
 			
 			if (!hpath)
-				hpath = dc.pui.Loader.__signInPage;
+				hpath = $('html').attr('data-dcw-SignIn');
 			
 			if (hpath)
 				dc.pui.Loader.loadPage(hpath);
@@ -473,7 +473,9 @@ dc.pui = {
 				});
 				
 				$(dc.pui.Loader.__content).enhanceWithin().promise().then(function() {			
-					$("html, body").animate({ scrollTop: 0 }, "slow");
+					$("html, body").animate({ scrollTop: 0 }, "fast");
+					
+					dc.pui.Loader.enhancePage();
 					
 					// loadcntdwn can be used by the Load function to delay loading the form
 					// if Load needs to do an async operation
@@ -514,7 +516,33 @@ dc.pui = {
 				});
 			});
 		},
-		
+		enhancePage: function() {
+			$('*[data-dcui-mode="enhance"] a').each(function() { 
+				//console.log('a: ' + $(this).attr('href'));
+				
+				var l = $(this).attr('href');
+				
+				if (l.startsWith('http:') || l.startsWith('https:')) {
+					$(this).attr('target', '_blank')
+					return;
+				}
+				
+				// look for a single starting slash
+				if ((l.charAt(0) != '/') || (l.charAt(1) == '/'))
+					return;
+				
+				var name = l.substr(l.lastIndexOf('/') + 1);
+				
+				if (name.indexOf('.') != -1)
+					return;
+				
+				$(this).click(l, function(e) {
+					dc.pui.Loader.loadPage(e.data);
+					e.preventDefault();
+					return false;
+				});			
+			});
+		},		
 		currentPageEntry: function() {
 			return dc.pui.Loader.__current;
 		},
@@ -806,6 +834,10 @@ dc.pui = {
 									var inp = this.Inputs[name];
 									
 									return $('#' + (inp ? inp.Id : '__unreal'));
+								};
+								
+								form.submit = function() {
+									return $('#' + this.Id).submit();
 								};
 								
 								form.values = function() {
@@ -2112,17 +2144,26 @@ dc.pui = {
 				
 				$('#puConfirm').enhanceWithin().popup();
 				
-				$('#btnConfirmPopup').click(function(e) {
-					$('#puConfirm').popup('close');
-					
+				$("#puConfirm").on("popupafterclose", function () {
 					if (dc.pui.Popup.__cb)
 						dc.pui.Popup.__cb();
+
+					//console.log('aaaa');
+				});
+				
+				$('#btnConfirmPopup').click(function(e) {
+					//$('#puConfirm').popup('close').promise().then(function() {
+					//});
+					
+					$('#puConfirm').popup('close');
 						
 					e.preventDefault();
 					return false;
 				});
 				
 				$('#btnRejectPopup').click(function(e) {
+					dc.pui.Popup.__cb = null;
+					
 					$('#puConfirm').popup('close');
 						
 					e.preventDefault();

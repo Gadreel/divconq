@@ -31,8 +31,8 @@ public class Constants {
 	
 	final static public String DB_GLOBAL_RECORD_META = "dcRecordMeta";
 	final static public String DB_GLOBAL_RECORD = "dcRecord";
-	final static public String DB_GLOBAL_INDEX_1 = "dcIndex1";
-	final static public String DB_GLOBAL_INDEX_2 = "dcIndex2";
+	final static public String DB_GLOBAL_INDEX = "dcIndex1";
+	final static public String DB_GLOBAL_INDEX_SUB = "dcIndex2";
 	
 	final static public String DB_GLOBAL_ROOT_DOMAIN = "00000_000000000000001";
 	final static public String DB_GLOBAL_ROOT_USER = "00000_000000000000001";

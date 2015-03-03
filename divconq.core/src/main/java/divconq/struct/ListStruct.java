@@ -209,6 +209,11 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 		}
 	}
 	
+	public ListStruct withItems(Object... items) {
+		this.addItem(items);
+		return this;
+	}
+	
 	public OperationResult addCollection(Collection<? extends Object> coll) {
 		OperationResult or = new OperationResult();
 		
@@ -251,6 +256,21 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 			return null;
 		
 		return this.items.get(idx);
+	}
+	
+	public Object getAt(int idx) {
+		if ((idx >= this.items.size()) || (idx < 0))
+			return null;
+		
+		Struct v = this.items.get(idx);
+		
+		if (v == null)
+			return null;
+		
+		if (v instanceof CompositeStruct)
+			return v;
+		
+		return ((ScalarStruct) v).getGenericValue();
 	}
 	
 	/**

@@ -942,7 +942,7 @@ public class Bus {
 			System.out.println("  >>> " + StringUtil.join(al, ","));
 		}
 		
-		Hub.instance.dumpDomainNames();
+		Hub.instance.getDomains().dumpDomainNames();
 	}
 
 	public AclFilter getAcl() {

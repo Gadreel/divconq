@@ -1,12 +1,13 @@
 package divconq.db.trigger;
 
-import static divconq.db.Constants.DB_GLOBAL_INDEX_2;
+import static divconq.db.Constants.DB_GLOBAL_INDEX_SUB;
 import static divconq.db.Constants.DB_GLOBAL_RECORD;
 import static divconq.db.Constants.DB_GLOBAL_RECORD_META;
 import static divconq.db.Constants.DB_GLOBAL_ROOT_DOMAIN;
 import static divconq.db.Constants.DB_GLOBAL_ROOT_USER;
 
 import java.math.BigDecimal;
+import java.util.Locale;
 
 import org.joda.time.DateTime;
 
@@ -48,9 +49,9 @@ public class AfterDomainInsert implements IStoredProc {
 			// insert root user name
 			conn.set(DB_GLOBAL_RECORD, did, "dcUser", DB_GLOBAL_ROOT_USER, "dcUsername", unamesub, stamp, "Data", "root");
 			// increment index count
-			conn.inc(DB_GLOBAL_INDEX_2, did, "dcUser", "dcUsername", "root");					
+			conn.inc(DB_GLOBAL_INDEX_SUB, did, "dcUser", "dcUsername", "root");					
 			// set the new index new
-			conn.set(DB_GLOBAL_INDEX_2, did, "dcUser", "dcUsername", "root", DB_GLOBAL_ROOT_USER, unamesub, stamp, null);
+			conn.set(DB_GLOBAL_INDEX_SUB, did, "dcUser", "dcUsername", "root", DB_GLOBAL_ROOT_USER, unamesub, null);
 
 			// TODO enhance to take email from root domain's root user
 			String email = "awhite@filetransferconsulting.com";
@@ -71,9 +72,9 @@ public class AfterDomainInsert implements IStoredProc {
 			// insert root user email
 			conn.set(DB_GLOBAL_RECORD, did, "dcUser", DB_GLOBAL_ROOT_USER, "dcEmail", emailsub, stamp, "Data", email);
 			// increment index count
-			conn.inc(DB_GLOBAL_INDEX_2, did, "dcUser", "dcEmail", email);					
+			conn.inc(DB_GLOBAL_INDEX_SUB, did, "dcUser", "dcEmail", email.toLowerCase(Locale.ROOT));					
 			// set the new index new
-			conn.set(DB_GLOBAL_INDEX_2, did, "dcUser", "dcEmail", email, DB_GLOBAL_ROOT_USER, emailsub, stamp, null);
+			conn.set(DB_GLOBAL_INDEX_SUB, did, "dcUser", "dcEmail", email.toLowerCase(Locale.ROOT), DB_GLOBAL_ROOT_USER, emailsub, null);
 			
 			// TODO enhance how confirm code is generated/returned
 			

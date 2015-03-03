@@ -43,6 +43,9 @@ public class DbTable {
 		if (fel.hasAttribute("Required")) 
 			fld.required = "true".equals(fel.getAttribute("Required").toLowerCase());
 		
+		if (fel.hasAttribute("Unique")) 
+			fld.unique = "true".equals(fel.getAttribute("Unique").toLowerCase());
+		
 		if (fel.hasAttribute("Indexed")) 
 			fld.indexed = "true".equals(fel.getAttribute("Indexed").toLowerCase());
 		
@@ -70,6 +73,7 @@ public class DbTable {
 				fld.type = "Id";
 				fld.typeid = "Id";
 				fld.indexed = true;
+				//fld.unique = true;
 			}
 			else {
 				fld.fkey = null;
@@ -95,8 +99,10 @@ public class DbTable {
 						}
 	
 						// these types cannot index (even other types are truncated to 64 chars for indexing, though value can be larger)
-						if ("Json".equals(fld.typeid) || "Xml".equals(fld.typeid) || "BigString".equals(fld.typeid) || "Binary".equals(fld.typeid))
+						if ("Json".equals(fld.typeid) || "Xml".equals(fld.typeid) || "BigString".equals(fld.typeid) || "Binary".equals(fld.typeid)) {
 							fld.indexed = false;
+							fld.unique = false;
+						}
 					}
 				}
 				else {

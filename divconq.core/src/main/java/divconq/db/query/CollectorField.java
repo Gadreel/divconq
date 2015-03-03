@@ -16,16 +16,11 @@
 ************************************************************************ */
 package divconq.db.query;
 
-import java.util.Collection;
-
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
-import divconq.util.StringUtil;
 
 /**
- * TODO add support in M
- * 
  * Names the indexed field to use to provide record ids to a Select or List request.  
  * 
  * @author Andy
@@ -43,48 +38,36 @@ public class CollectorField implements ICollector {
 		this.column.setField("Field", name);
 	}
 	
-	/**
-	 * @param name of indexed field
-	 * @param values to use as parameters for script 
-	 */
-	public CollectorField(String name, Collection<String> values) {
-		this.column.setField("Field", name);
-		
+	public CollectorField withValues(Object... values) {
 		if (values != null) {
 			ListStruct list = new ListStruct();
 			
-			for (String v : values)
+			for (Object v : values)
 				list.addItem(v);
 			
 			this.column.setField("Values", list);
 		}
+		
+		return this;
 	}
 	
-	/**
-	 * @param name of indexed field
-	 * @param values to use as parameters for script 
-	 */
-	public CollectorField(String name, String from, String to) {
-		this.column.setField("Field", name);
+	public CollectorField withFrom(Object v) {
+		this.column.setField("From", v);
 		
-		if (StringUtil.isNotEmpty(from)) 
-			this.column.setField("From", from);
-		
-		if (StringUtil.isNotEmpty(to)) 
-			this.column.setField("To", to);
+		return this;
 	}
 	
-	/* (non-Javadoc)
-	 * @see divconq.db.query.ICollector#getParams()
-	 */
+	public CollectorField withTo(Object v) {
+		this.column.setField("To", v);
+		
+		return this;
+	}
+	
 	@Override
 	public Struct getParams() {
 		return this.column;
 	}
 	
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString() {
 		return this.column.toString();

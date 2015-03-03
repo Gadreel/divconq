@@ -51,20 +51,29 @@ import divconq.util.HexUtil;
 import divconq.util.StringUtil;
 import divconq.work.IWork;
 import divconq.work.TaskRun;
+import divconq.xml.XElement;
 
 public class SendWork implements IWork {
 	@Override
 	public void run(TaskRun task) {
-		RecordStruct settings = MailTaskFactory.getSettings();
+		XElement settings = MailTaskFactory.getSettings();
 		
-		String smtpHost = settings.getFieldAsString("SmtpHost");
-		int smtpPort = (int) StringUtil.parseInt(settings.getFieldAsString("SmtpPort"), 587);
-		boolean smtpAuth = settings.getFieldAsBooleanOrFalse("SmtpAuth");
-		boolean smtpDebug = settings.getFieldAsBooleanOrFalse("SmtpDebug");
-		String smtpUsername = settings.getFieldAsString("SmtpUsername");
-		String smtpPassword = settings.isFieldEmpty("SmtpPassword") 
-				? null
-				: Hub.instance.getClock().getObfuscator().decryptHexToString(settings.getFieldAsString("SmtpPassword"));
+		if (settings == null) {
+			task.error("Missing email settings");
+			task.complete();
+			return;
+		}
+		
+		String smtpHost = settings.getAttribute("SmtpHost");
+		int smtpPort = (int) StringUtil.parseInt(settings.getAttribute("SmtpPort"), 587);
+		boolean smtpAuth = Struct.objectToBoolean(settings.getAttribute("SmtpAuth", "false"));
+		boolean smtpDebug = Struct.objectToBoolean(settings.getAttribute("SmtpDebug", "false"));
+		String smtpUsername = settings.getAttribute("SmtpUsername");
+		String smtpPassword = settings.hasAttribute("SmtpPassword") 
+				? Hub.instance.getClock().getObfuscator().decryptHexToString(settings.getAttribute("SmtpPassword"))
+				: null;
+		
+		String debugBCC = settings.getAttribute("BccDebug");
 		
 		RecordStruct req = (RecordStruct) task.getTask().getParams();
 		
@@ -72,7 +81,7 @@ public class SendWork implements IWork {
 			String from = req.getFieldAsString("From");		
 			String reply = req.getFieldAsString("ReplyTo");		
 			String to = req.getFieldAsString("To");
-			String bccdebug = req.getFieldAsString("BccDebug");
+			String bccdebug = debugBCC;
 			String subject = req.getFieldAsString("Subject");
 			String body = req.getFieldAsString("Body");
 			

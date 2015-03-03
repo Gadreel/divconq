@@ -1,10 +1,8 @@
 package divconq.db.proc;
 
-import static divconq.db.Constants.*;
 import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
-import divconq.db.util.ByteUtil;
 import divconq.lang.BigDateTime;
 import divconq.lang.op.OperationResult;
 import divconq.session.Session;
@@ -34,10 +32,10 @@ public class StartSession extends LoadRecord {
 			}
 			else {
 				if (StringUtil.isEmpty(uid)) {
-					byte[] userid = conn.nextPeerKey(DB_GLOBAL_INDEX_2, did, "dcUser", "dcUsername", uname, null);
-	
+					Object userid = db.firstInIndex("dcUser", "dcUsername", uname, when, false);
+					
 					if (userid != null) 
-						uid = ByteUtil.extractValue(userid).toString();
+						uid = userid.toString();
 				}
 			}
 			

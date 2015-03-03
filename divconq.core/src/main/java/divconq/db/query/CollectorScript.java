@@ -55,17 +55,11 @@ public class CollectorScript implements ICollector {
 		}
 	}
 	
-	/* (non-Javadoc)
-	 * @see divconq.db.query.ICollector#getParams()
-	 */
 	@Override
 	public Struct getParams() {
 		return this.column;
 	}
 	
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString() {
 		return this.column.toString();

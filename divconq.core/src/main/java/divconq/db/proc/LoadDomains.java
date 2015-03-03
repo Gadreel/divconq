@@ -61,7 +61,7 @@ public class LoadDomains extends LoadRecord {
 		try {
 			out.startList();
 			
-			db.traverseSubIds("dcDomain", DB_GLOBAL_ROOT_USER, "dcDomainIndex", when, false, new Consumer<Object>() {				
+			db.traverseSubIds("dcDomain", DB_GLOBAL_ROOT_DOMAIN, "dcDomainIndex", when, false, new Consumer<Object>() {				
 				@Override
 				public void accept(Object t) {
 					String did = t.toString();

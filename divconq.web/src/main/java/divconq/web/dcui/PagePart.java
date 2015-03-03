@@ -115,6 +115,8 @@ public class PagePart extends Element implements ICodeTag {
 			}
 		}
 		
+		Attributes attrs = new Attributes("id", this.id);
+		
 		if (ppel != null) {
 			Nodes nl = null;
 			
@@ -138,6 +140,7 @@ public class PagePart extends Element implements ICodeTag {
 			}
 			else if ("md".equals(ppel.getAttribute("Format"))) {
 				this.name = "div"; 
+				attrs.add("data-dcui-mode", "enhance");
 				
 				String html = null;
 				
@@ -202,7 +205,7 @@ public class PagePart extends Element implements ICodeTag {
 				}
 			}
 			
-			this.myArguments = new Object[] { new Attributes("id", this.id), nl };
+			this.myArguments = new Object[] { attrs, nl };
 		}
 		
         super.doBuild();

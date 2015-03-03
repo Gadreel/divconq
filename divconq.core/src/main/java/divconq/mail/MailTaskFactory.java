@@ -19,30 +19,35 @@ package divconq.mail;
 import java.util.Collection;
 
 import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationContext;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
-import divconq.util.StringUtil;
 import divconq.work.Task;
 import divconq.xml.XElement;
 
 public class MailTaskFactory {
 	// abstract out the service so we can use SQL, noSQL or XML based service - or non-smtp services
-	static protected String useBucket = null;
-	static protected String debugBCC = null;
+	//static protected String useBucket = null;
+	//static protected String debugBCC = null;
 	static protected IMailProcessor processor = null; 
-	static public RecordStruct settings = null;
+	//static public RecordStruct settings = null;
 	
-	public static RecordStruct getSettings() {
-		return MailTaskFactory.settings;
+	static public XElement getSettings() {
+		XElement dsettings = OperationContext.get().getDomain().getSettings();
+		
+		if (dsettings != null) {
+			XElement msettings = dsettings.find("Email");
+			
+			if (msettings != null)
+				return msettings;
+		}
+		
+		return processor.getSettings();		// default
 	}
-
-	public static void setSettings(RecordStruct settings) {
-		MailTaskFactory.settings = settings;
-	}
-	
+		
 	// we need a processor of some sort or we are dead in water
-	public static void setProcessor(IMailProcessor processor) {
+	public static void init(IMailProcessor processor) {
 		MailTaskFactory.processor = processor;
 	}
 	
@@ -83,14 +88,16 @@ public class MailTaskFactory {
 		
 		String tid = Task.nextTaskId("EMAIL");
 		
-		if (StringUtil.isNotEmpty(MailTaskFactory.debugBCC))
-			params.setField("BccDebug", MailTaskFactory.debugBCC);
+		XElement settings = MailTaskFactory.getSettings();
+		
+		// unfortunately this uses the current domain - which may not be the domain that is sending
+		String useBucket = (settings != null) ? settings.getAttribute("Bucket", "Default") : "Default";
 		
 		Task task = new Task()
 			.withId(tid)
 			.withTitle("Send Email To " + params.getFieldAsString("To"))
 			.withParams(params)
-			.withBucket(MailTaskFactory.useBucket)
+			.withBucket(useBucket)
 			.withDefaultLogger()
 			.withSubContext()
 			.withMaxTries(6)
@@ -99,10 +106,5 @@ public class MailTaskFactory {
 		MailTaskFactory.processor.embilishTask(task);
 		
 		return task;
-	}
-
-	public static void init(XElement settings) {
-		MailTaskFactory.useBucket = settings.getAttribute("Bucket", "Default");
-		MailTaskFactory.debugBCC = settings.getAttribute("BccDebug");
 	}
 }

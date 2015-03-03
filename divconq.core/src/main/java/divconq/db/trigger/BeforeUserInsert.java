@@ -1,9 +1,10 @@
 package divconq.db.trigger;
 
-import static divconq.db.Constants.DB_GLOBAL_INDEX_2;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
 import divconq.db.IStoredProc;
+import divconq.db.TablesAdapter;
+import divconq.lang.BigDateTime;
 import divconq.lang.op.OperationResult;
 import divconq.struct.FieldStruct;
 import divconq.struct.RecordStruct;
@@ -24,7 +25,7 @@ public class BeforeUserInsert implements IStoredProc {
 			return;
 		}
 		
-		String did = task.getDomain();
+		TablesAdapter db = new TablesAdapter(conn, task); 
 
 		try {
 			for (FieldStruct fs : uname.getFields()) {
@@ -35,8 +36,8 @@ public class BeforeUserInsert implements IStoredProc {
 					return;
 				}
 				
-				byte[] userid = conn.nextPeerKey(DB_GLOBAL_INDEX_2, did, "dcUser", "dcUsername", rec.getFieldAsString("Data"), null);
-		
+				Object userid = db.firstInIndex("dcUser", "dcUsername", rec.getFieldAsString("Data"), BigDateTime.nowDateTime(), false);
+				
 				if (userid != null) {
 					log.error("Username must be unique, this username (email) already in use.");
 					return;

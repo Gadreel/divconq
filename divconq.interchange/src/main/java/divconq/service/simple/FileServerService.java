@@ -93,7 +93,7 @@ public class FileServerService extends ExtensionBase implements IService {
 		Hub.instance.subscribeToEvent(HubEvents.Running, new IEventSubscriber() {
 			@Override
 			public void eventFired(Object e) {
-				for (DomainInfo domain : Hub.instance.getDomains()) {
+				for (DomainInfo domain : Hub.instance.getDomains().getDomains()) {
 					XElement dset = domain.getSettings();
 					
 					if (dset != null) {

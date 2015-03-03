@@ -55,8 +55,10 @@ import divconq.db.Constants;
 import divconq.db.ObjectResult;
 import divconq.db.DataRequest;
 import divconq.db.common.RequestFactory;
+import divconq.db.query.CollectorField;
 import divconq.db.query.ListDirectRequest;
 import divconq.db.query.LoadRecordRequest;
+import divconq.db.query.SelectDirectRequest;
 import divconq.db.query.SelectField;
 import divconq.db.query.SelectFields;
 import divconq.db.rocks.RocksInterface;
@@ -73,6 +75,7 @@ import divconq.filestore.CommonPath;
 import divconq.hub.Foreground;
 import divconq.hub.Hub;
 import divconq.hub.ILocalCommandLine;
+import divconq.lang.BigDateTime;
 import divconq.lang.Memory;
 import divconq.lang.TimeoutPlan;
 import divconq.lang.op.FuncResult;
@@ -81,6 +84,7 @@ import divconq.lang.op.OperationObserver;
 import divconq.lang.op.OperationResult;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
+import divconq.mail.MailTaskFactory;
 import divconq.script.Activity;
 import divconq.script.ui.ScriptUtility;
 import divconq.struct.CompositeParser;
@@ -1305,6 +1309,43 @@ public class FileStoreClient implements ILocalCommandLine {
 				case 212: {
 					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
 					
+					RocksIterator it = adapt.iterator();
+					
+					it.seekToFirst();
+					
+					while (it.isValid()) {
+						byte[] key = it.key();						
+						
+						if (key[0] == Constants.DB_TYPE_MARKER_OMEGA) {
+							System.out.println("END");
+							break;
+						}
+						
+						byte[] val = it.value();
+						
+						System.out.println("Hex Key: " + HexUtil.bufferToHex(key));
+						List<Object> keyParts = ByteUtil.extractKeyParts(key);
+						
+						for (Object p : keyParts)
+							System.out.print((p == null) ? " / " : p.toString() + " / ");
+						
+						System.out.println(" = " + ByteUtil.extractValue(val));
+
+						if ((key[0] != Constants.DB_TYPE_MARKER_ALPHA) && !Constants.DB_GLOBAL_INDEX.equals(keyParts.get(0)) && !Constants.DB_GLOBAL_INDEX_SUB.equals(keyParts.get(0))) {
+							System.out.println("PAST END");
+							break;
+						}
+						
+						it.next();
+					}
+					
+					break;
+				}
+				
+				/*
+				case 212: {
+					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
+					
 					KeyQuery kq = new KeyQuery(adapt, new MatchKeyLevel("Record"), 
 							new MatchKeyLevel("Person"), new MatchKeyLevel(2045), new MatchKeyLevel("Name"));
 					
@@ -1312,6 +1353,7 @@ public class FileStoreClient implements ILocalCommandLine {
 					
 					break;
 				}
+				*/
 				
 				case 213: {
 					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();
@@ -1829,6 +1871,127 @@ public class FileStoreClient implements ILocalCommandLine {
 					String fbskey = "2c929d8c9d60d94b935336fef856c286";
 						
 					System.out.println("a: " + URLEncoder.encode("appsecret_proof", "UTF-8")  +  " -- " + URLEncoder.encode(this.createProof(atoken, fbskey), "UTF-8"));
+					break;
+				}
+				
+				case 303: {
+					DataRequest req = new DataRequest("dcIndexCounter")
+						.withDomain("00700_000000000000004")
+						.withParams(
+								new RecordStruct()
+									.withField("Table", "geiDesign")
+									.withField("Field", "geiStatus")
+									.withField("When", BigDateTime.nowDateTime())
+									.withField("Values", new ListStruct()
+										.withItems("Draft","Pending","Approved","InProgress","Shipped","Canceled")
+									)
+						);
+
+					Hub.instance.getDatabase().submit(req,
+							new ObjectResult() {
+								@Override
+								public void process(CompositeStruct result) {
+									System.out.println(result.toPrettyString());
+								}								
+							});
+					
+					break;
+				}
+				
+				case 304: {
+					SelectDirectRequest req = new SelectDirectRequest() 
+						.withTable("geiDesign")
+						.withSelect(new SelectFields()
+							.withField("Id")
+							.withField("geiSubmitWhen", "SubmitWhen")
+							.withField("geiStatus", "Status")
+							.withField("geiTeam", "Team")
+							.withField("geiOrderSize", "OrderSize")
+							.withField("geiInternalTodo", "ToDos")
+							.withField("geiLog", "Log")
+						)
+						.withCollector(new CollectorField("geiInternalTodo"));
+
+					req.withDomain("00700_000000000000004");
+
+					Hub.instance.getDatabase().submit(req,
+							new ObjectResult() {
+								@Override
+								public void process(CompositeStruct result) {
+									System.out.println(result.toPrettyString());
+								}								
+							});
+					
+					break;
+				}
+				
+				case 305: {
+					SelectDirectRequest req = new SelectDirectRequest() 
+						.withTable("geiDesign")
+						.withSelect(new SelectFields()
+							.withField("Id")
+							.withField("geiSubmitWhen", "SubmitWhen")
+							.withField("geiStatus", "Status")
+							.withField("geiTeam", "Team")
+							.withField("geiOrderSize", "OrderSize")
+							.withField("geiInternalTodo", "ToDos")
+							.withField("geiLog", "Log")
+						)
+						.withCollector(new CollectorField("geiStatus").withValues("Approved", "Canceled"));
+
+					req.withDomain("00700_000000000000004");
+
+					Hub.instance.getDatabase().submit(req,
+							new ObjectResult() {
+								@Override
+								public void process(CompositeStruct result) {
+									System.out.println(result.toPrettyString());
+								}								
+							});
+					
+					break;
+				}
+				
+				case 306: {
+					SelectDirectRequest req = new SelectDirectRequest() 
+						.withTable("geiDesign")
+						.withSelect(new SelectFields()
+							.withField("Id")
+							.withField("geiSubmitWhen", "SubmitWhen")
+							.withField("geiStatus", "Status")
+							.withField("geiTeam", "Team")
+							.withField("geiOrderSize", "OrderSize")
+							.withField("geiInternalTodo", "ToDos")
+							.withField("geiLog", "Log")
+						)
+						.withCollector(new CollectorField("geiStatus").withFrom("C").withTo("E"));
+
+					req.withDomain("00700_000000000000004");
+
+					Hub.instance.getDatabase().submit(req,
+							new ObjectResult() {
+								@Override
+								public void process(CompositeStruct result) {
+									System.out.println(result.toPrettyString());
+								}								
+							});
+					
+					break;
+				}
+				
+				case 307: {
+			    	// then send the email
+					Task emailtask = MailTaskFactory.createSendEmailTask("andy@andywhitewebworks.com", "lightofgadrel@gmail.com", "test email 1", "hi there! this is a test email");
+
+					if (emailtask == null) {
+						System.out.println("Unable to create task");
+						return;
+					}
+
+					emailtask.withContext(OperationContext.allocateRoot().toBuilder().withDomainId("00700_000000000000004").toOperationContext());
+					
+					MailTaskFactory.sendEmail(emailtask);
+					
 					break;
 				}
 				

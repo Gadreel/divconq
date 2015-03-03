@@ -85,9 +85,9 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		
 		this.withFields(dfld);
 		
-		if (fld.dynamic)
+		if (fld.isDynamic())
 			dfld.withRandomSubKey().withFrom(this.when);
-		else if (fld.list)		
+		else if (fld.isList())		
 			dfld.withRandomSubKey();
 		
 		return this;
@@ -113,9 +113,9 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		
 		this.withFields(dfld);
 		
-		if (fld.dynamic)
+		if (fld.isDynamic())
 			dfld.withRandomSubKey().withFrom(this.when);
-		else if (fld.list)		
+		else if (fld.isList())		
 			dfld.withRandomSubKey();
 		
 		return this;
@@ -141,7 +141,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		
 		this.withFields(dfld);
 		
-		if (fld.dynamic)
+		if (fld.isDynamic())
 			dfld.withFrom(this.when);
 		
 		return this;
@@ -157,7 +157,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		
 		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
-		if ((fld == null) || (!fld.dynamic && !fld.list)) 
+		if ((fld == null) || (!fld.isDynamic() && !fld.isList())) 
 			return this;
 		
 		FieldRequest dfld = new FieldRequest()
@@ -168,7 +168,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		
 		this.withFields(dfld);
 		
-		if (fld.dynamic)
+		if (fld.isDynamic())
 			dfld.withFrom(this.when);
 
 		return this;
@@ -184,7 +184,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		
 		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
-		if ((fld == null) || !fld.dynamic) 
+		if ((fld == null) || !fld.isDynamic()) 
 			return this;
 		
 		FieldRequest dfld = new FieldRequest()
@@ -208,7 +208,7 @@ abstract public class DbRecordRequest extends ReplicatedDataRequest {
 		
 		divconq.schema.DbField fld = OperationContext.get().getSchema().getDbField(this.table, name);
 		
-		if ((fld == null) || !fld.dynamic || !fld.list) 
+		if ((fld == null) || !fld.isDynamic() || !fld.isList()) 
 			return this;
 		
 		FieldRequest dfld = new FieldRequest()

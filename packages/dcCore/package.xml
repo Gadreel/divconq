@@ -29,7 +29,7 @@
 		<Library File="sqljdbc4.jar" />
 		<Library File="rsyntaxtextarea-2.5.3.jar"/>
 		<Library File="slf4j-api-1.7.7.jar"/>
-		<Library File="rocksdbjni-3.9.0.jar"/>
+		<Library File="rocksdbjni-3.9.1.jar"/>
 		
 		<Folder Path="bin"/>
 		<Folder Path="util"/>
@@ -66,6 +66,7 @@
 	</DependsOn>
 
 	<NoLongerDependsOn>
+		<Library File="rocksdbjni-3.9.0.jar"/>
 		<Library File="netty-all-4.0.24.Final.jar" />
 		<Library File="groovy-all-2.3.7-indy.jar"/>
 		

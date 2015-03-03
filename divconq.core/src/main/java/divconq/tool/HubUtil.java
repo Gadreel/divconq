@@ -21,7 +21,7 @@
  */
 package divconq.tool;
 
-import static divconq.db.Constants.DB_GLOBAL_INDEX_2;
+import static divconq.db.Constants.DB_GLOBAL_INDEX_SUB;
 import static divconq.db.Constants.DB_GLOBAL_RECORD;
 import static divconq.db.Constants.DB_GLOBAL_RECORD_META;
 import static divconq.db.Constants.DB_GLOBAL_ROOT_DOMAIN;
@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 
 import org.rocksdb.BackupInfo;
@@ -44,15 +45,18 @@ import org.rocksdb.RocksIterator;
 
 import divconq.api.ApiSession;
 import divconq.db.Constants;
+import divconq.db.UtilitiesAdapter;
 import divconq.db.rocks.RocksInterface;
 import divconq.db.rocks.DatabaseManager;
 import divconq.db.rocks.keyquery.KeyQuery;
 import divconq.db.util.ByteUtil;
 import divconq.hub.DomainInfo;
+import divconq.hub.DomainsManager;
 import divconq.hub.Foreground;
 import divconq.hub.Hub;
 import divconq.hub.ILocalCommandLine;
 import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.script.Activity;
@@ -175,6 +179,7 @@ public class HubUtil implements ILocalCommandLine {
 				System.out.println("6)  Restore Database");
 				System.out.println("7)  Compact Database - TODO");
 				System.out.println("8)  Mess Database");
+				System.out.println("9)  Re-index dcTables");
 	
 				String opt = scan.nextLine();
 				
@@ -383,18 +388,18 @@ public class HubUtil implements ILocalCommandLine {
 						// insert root user name
 						dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcUser", DB_GLOBAL_ROOT_USER, "dcUsername", unamesub, stamp, "Data", "root");
 						// increment index count
-						dbconn.inc(DB_GLOBAL_INDEX_2, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcUsername", "root");					
+						dbconn.inc(DB_GLOBAL_INDEX_SUB, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcUsername", "root");					
 						// set the new index new
-						dbconn.set(DB_GLOBAL_INDEX_2, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcUsername", "root", DB_GLOBAL_ROOT_USER, unamesub, stamp, null);
+						dbconn.set(DB_GLOBAL_INDEX_SUB, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcUsername", "root", DB_GLOBAL_ROOT_USER, unamesub, null);
 						
 						String emailsub = db.allocateSubkey();
 	
 						// insert root user email
 						dbconn.set(DB_GLOBAL_RECORD, DB_GLOBAL_ROOT_DOMAIN, "dcUser", DB_GLOBAL_ROOT_USER, "dcEmail", emailsub, stamp, "Data", email);
 						// increment index count
-						dbconn.inc(DB_GLOBAL_INDEX_2, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcEmail", email);
+						dbconn.inc(DB_GLOBAL_INDEX_SUB, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcEmail", email.toLowerCase(Locale.ROOT));
 						// set the new index new
-						dbconn.set(DB_GLOBAL_INDEX_2, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcEmail", email, DB_GLOBAL_ROOT_USER, emailsub, stamp, null);
+						dbconn.set(DB_GLOBAL_INDEX_SUB, DB_GLOBAL_ROOT_DOMAIN, "dcUser", "dcEmail", email.toLowerCase(Locale.ROOT), DB_GLOBAL_ROOT_USER, emailsub, null);
 						
 						String pwsub = db.allocateSubkey();
 						
@@ -520,6 +525,7 @@ public class HubUtil implements ILocalCommandLine {
 					
 					try {
 						// TODO db.dbDirect().compactRange();
+						db.dbDirect().garbageCollect();
 						System.out.println("Database compacted up!");
 					}
 					catch (Exception x) {
@@ -559,6 +565,43 @@ public class HubUtil implements ILocalCommandLine {
 					}
 					catch (Exception x) {
 						System.out.println("Error messing up database: " + x);
+					}
+					finally {
+						db.stop();
+					}
+					
+					break;
+				}
+				
+				case 9: {
+					System.out.println("Re-index db");
+					Path dbpath = this.getDbPath(scan);
+					
+					if (dbpath == null) 
+						break;
+				
+					DatabaseManager db = this.getDatabase(dbpath, true);
+					
+					if (db == null) {
+						System.out.println("Database missing or bad!");
+						break;
+					}					
+					
+					try {
+						DomainsManager dm = new DomainsManager();
+						
+						dm.initFromDB(db, new OperationCallback() {							
+							@Override
+							public void callback() {
+								UtilitiesAdapter adp = new UtilitiesAdapter(db, dm);
+								adp.rebuildIndexes();
+								
+								System.out.println("Database indexed!");
+							}
+						});
+					}
+					catch (Exception x) {
+						System.out.println("Error indexing database: " + x);
 					}
 					finally {
 						db.stop();

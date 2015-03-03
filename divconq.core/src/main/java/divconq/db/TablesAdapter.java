@@ -3,6 +3,8 @@ package divconq.db;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import divconq.db.util.ByteUtil;
@@ -50,16 +52,120 @@ public class TablesAdapter {
 		return or;
 	}
 	
-	public OperationResult checkFields(String table, RecordStruct fields) {
+	public OperationResult checkFields(String table, RecordStruct fields, String inId) {
 		OperationResult or = new OperationResult();
 		
-		// TODO
+		BiConsumer<DbField,RecordStruct> fieldChecker = new BiConsumer<DbField,RecordStruct>() {
+			@Override
+			public void accept(DbField schema, RecordStruct data) {
+				boolean retired = data.getFieldAsBooleanOrFalse("Retired");
+				
+				if (retired) {
+					if (schema.isRequired()) 
+						OperationContext.get().error("Field cannot be retired: " + table + " - " + schema.getName());
+					
+					return;
+				}
+				
+				// validate data type
+				Struct value = data.getField("Data");
+				
+				if (value == null) {
+					if (schema.isRequired()) 
+						OperationContext.get().error("Field cannot be null: " + table + " - " + schema.getName());
+					
+					return;
+				}
+				
+				OperationResult cor = TablesAdapter.this.task.getSchema().validateType(value, schema.getTypeId()); 
+				
+				if (cor.hasErrors()) 
+					return;
+				
+				Object cValue = Struct.objectToCore(value);
+				
+				if (cValue == null) {
+					if (schema.isRequired()) 
+						OperationContext.get().error("Field cannot be null: " + table + " - " + schema.getName());
+					
+					return;
+				}
+				
+				if (!schema.isUnique())
+					return;
+				
+				// make sure value is unique - null for when is fine because uniqueness is not time bound
+				Object id = TablesAdapter.this.firstInIndex(table, schema.getName(), cValue, null, false);
+				
+				// if we are a new record
+				if (inId == null) {
+					if (id != null) {
+						OperationContext.get().error("Field must be unique: " + table + " - " + schema.getName());
+						return;
+					}
+					
+				}
+				// if we are not a new record
+				else if (id != null) {
+					if (!inId.equals(id)) {
+						OperationContext.get().error("Field already in use, must be unique: " + table + " - " + schema.getName());
+						return;
+					}
+				}
+			}
+		}; 
+		
+		// checking incoming fields for type correctness, uniqueness and requiredness
+		for (FieldStruct field : fields.getFields()) {
+			String fname = field.getName();
+			
+			try {
+				DbField schema = this.task.getSchema().getDbField(table, fname);
+				
+				if (schema == null) {
+					OperationContext.get().error("Field not defined: " + table + " - " + fname);
+					continue;
+				}
+				
+				// --------------------------------------
+				// StaticScalar handling - Data or Retired (true) not both
+				// --------------------------------------
+				if (!schema.isList() && !schema.isDynamic()) {
+					fieldChecker.accept(schema, (RecordStruct) field.getValue());
+				}
+				// --------------------------------------
+				// StaticList handling
+				// DynamicScalar handling
+				// DynamicList handling
+				// --------------------------------------
+				else {
+					for (FieldStruct subid : ((RecordStruct) field.getValue()).getFields()) 
+						fieldChecker.accept(schema, (RecordStruct) subid.getValue());
+				}
+			}
+			catch (Exception x) {
+				or.error("Error checking field: " + fname);
+			}
+		}
+			
+		// if we are a new record, check that we have all the required fields
+		if (inId == null) {
+			for (DbField schema : this.task.getSchema().getDbFields(table)) {
+				if (!schema.isRequired())
+					continue;
+				
+				// all we need to do is check if the field is present, the checks above have already shown
+				// that fields present pass the required check
+				if (!fields.hasField(schema.getName())) 
+					OperationContext.get().error("Field missing but required: " + table + " - " + schema.getName());
+			}			
+		}
 		
 		return or;
 	}
 	
 	public OperationResult checkSetFields(String table, String id, RecordStruct fields) {
-		OperationResult cor = this.checkFields(table, fields);
+		OperationResult cor = this.checkFields(table, fields, id);
 		
 		if (cor.hasErrors())
 			return cor;
@@ -109,6 +215,11 @@ public class TablesAdapter {
 			try {
 				DbField schema = this.task.getSchema().getDbField(table, fname);
 				
+				if (schema == null) {
+					OperationContext.get().error("Field not defined: " + table + " - " + fname);
+					continue;
+				}
+				
 				// --------------------------------------
 				// StaticScalar handling - Data or Retired (true) not both
 				//
@@ -124,73 +235,24 @@ public class TablesAdapter {
 					boolean retired = data.getFieldAsBooleanOrFalse("Retired");
 					boolean updateOnly = data.getFieldAsBooleanOrFalse("UpdateOnly");
 					
-					// --------------------------------------
-					// StaticScalar w/o audit handling 
-					// --------------------------------------
+					// find the first, newest, stamp 
+					byte[] newerStamp = this.conn.nextPeerKey(DB_GLOBAL_RECORD, did, table, id, fname, null);
 					
-					// if audit mode is off then stamp is always the same (zero) for all updates
-					if (auditDisabled) {
-						// check if we have a value currently for this field
-						boolean oldIsSet = this.conn.isSet(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Data");					
-						Object oldValue = this.conn.get(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Data");
-						
-						if (retired) {
-							// if we are retiring then get rid of old value
-							if (oldIsSet)
-								this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Data");
-							
-							this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Retired", retired);
-						}
-						else {
-							// if we are not retiring then get rid of old Retired just in case it was set before
-							this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Data", newValue);
-							this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Retired");
-						}
-						
-						// retiring or not, tags can be associated - set to new, if any, or be sure we remove old
-						if (StringUtil.isNotEmpty(tags))
-							this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Tags", tags);
-						else
-							this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Tags");
-						
-						// don't bother with the indexes if not configured
-						if (!schema.isIndexed())
-							continue;
-						
-						// check if value is already in index (same as oldValue), if so skip any more 
-						if (oldIsSet && this.conn.isSet(DB_GLOBAL_INDEX_1, did, table, fname, newValue, id, stamp))
-							continue;
-	
-						if (oldIsSet) { 
-							// decrement index count for the old value
-							this.conn.dec(DB_GLOBAL_INDEX_1, did, table, fname, oldValue);
-	
-							// remove the old index value
-							this.conn.kill(DB_GLOBAL_INDEX_1, did, table, fname, oldValue, id, stamp);
-						}
-	
-						// increment index count
-						this.conn.inc(DB_GLOBAL_INDEX_1, did, table, fname, newValue);					
-	
-						// set the new index new
-						this.conn.set(DB_GLOBAL_INDEX_1, did, table, fname, newValue, id, stamp, null);
-						
-						continue;
+					boolean hasNewer = false;
+					
+					if (newerStamp != null) {
+						BigDecimal newStamp = Struct.objectToDecimal(ByteUtil.extractValue(newerStamp));
+						hasNewer = stamp.compareTo(newStamp) > 0;  // if we come after newer then we are older info, there is newer
 					}
-					
-					// --------------------------------------
-					// StaticScalar w/ audit handling 
-					// --------------------------------------
 					
 					// find the next, older, stamp after current
 					byte[] olderStamp = this.conn.nextPeerKey(DB_GLOBAL_RECORD, did, table, id, fname, stamp);
-					BigDecimal oldStamp = null;
 					boolean oldIsSet = false;
 					boolean oldIsRetired = false;
 					Object oldValue = null;
 					
 					if (olderStamp != null) {
-						oldStamp = Struct.objectToDecimal(ByteUtil.extractValue(olderStamp));
+						BigDecimal oldStamp = Struct.objectToDecimal(ByteUtil.extractValue(olderStamp));
 						
 						// try to get the data if any - note retired fields have no data
 						if (oldStamp != null) {
@@ -202,61 +264,55 @@ public class TablesAdapter {
 						}
 					}
 					
-					if (updateOnly) {
-						if (retired && oldIsRetired)
-							continue;
-						
-						if ((oldValue == null) && (newValue == null))
-							continue;
-						
-						if ((oldValue != null) && oldValue.equals(newValue))
-							continue;
-					}
+					boolean effectivelyEqual = (retired && oldIsRetired) || ((oldValue == null) && (newValue == null)) || ((oldValue != null) && oldValue.equals(newValue));
+					
+					if (updateOnly && effectivelyEqual) 
+						continue;
 					
 					// set either retired or data, not both
-					if (retired)
+					if (retired) {
+						if (oldIsSet && auditDisabled)
+							this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Data");
+						
 						this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Retired", retired);
-					else
+					}
+					else {						
+						if (auditDisabled)
+							this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Retired");
+						
 						this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Data", newValue);
+					}
 					
 					// add tags if any - ok even if retired
 					if (StringUtil.isNotEmpty(tags))
 						this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Tags", tags);
-					
+					else if (auditDisabled)
+						this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, stamp, "Tags");
+						
 					// don't bother with the indexes if not configured
-					if (!schema.isIndexed())
+					// or if there is a newer value for this field already set
+					if (!schema.isIndexed() || hasNewer || effectivelyEqual)
 						continue;
 					
-					BigDecimal endStamp = null;
-					
-					if (oldIsSet) {
-						// read the stamp from the old index, this will now be ours
-						endStamp = this.conn.getAsDecimal(DB_GLOBAL_INDEX_1, did, table, fname, oldValue, id, oldStamp);
-			
-						// update the old index with current stamp
-						this.conn.set(DB_GLOBAL_INDEX_1, did, table, fname, oldValue, id, oldStamp, stamp);
+					if (oldIsSet && !oldIsRetired) {
+						if (oldValue instanceof String)
+							oldValue = oldValue.toString().toLowerCase(Locale.ROOT);
+						
+						// decrement index count for the old value
+						// remove the old index value
+						this.conn.dec(DB_GLOBAL_INDEX, did, table, fname, oldValue);
+						this.conn.kill(DB_GLOBAL_INDEX, did, table, fname, oldValue, id);
 					}
 					
-					if (retired)
-						continue;
-					
-					// if there was no older stamp then get the endStamp from the next newer stamp
-					if (endStamp == null) {
-						byte[] newerStamp = this.conn.prevPeerKey(DB_GLOBAL_RECORD, did, table, id, fname, stamp);
+					if (!retired) {
+						if (newValue instanceof String)
+							newValue = newValue.toString().toLowerCase(Locale.ROOT);
 						
-						if (newerStamp != null) 
-							endStamp = Struct.objectToDecimal(ByteUtil.extractValue(newerStamp));
-						
-						// no need to update newer index, it doesn't point to our stamp
-					}
-					
-					// only count an id once, so only if id is not currently set should we do increment
-					if (!this.conn.hasAny(DB_GLOBAL_INDEX_1, did, table, fname, newValue, id)) 
 						// increment index count
-						this.conn.inc(DB_GLOBAL_INDEX_1, did, table, fname, newValue);
-					
-					// update the next index with end stamp - which may be null or the stamp for a future stamp
-					this.conn.set(DB_GLOBAL_INDEX_1, did, table, fname, newValue, id, stamp, endStamp);
+						// set the new index new
+						this.conn.inc(DB_GLOBAL_INDEX, did, table, fname, newValue);
+						this.conn.set(DB_GLOBAL_INDEX, did, table, fname, newValue, id, null);
+					}
 					
 					continue;
 				}
@@ -297,73 +353,15 @@ public class TablesAdapter {
 					BigDateTime from = data.getFieldAsBigDateTime("From");
 					BigDateTime to = data.getFieldAsBigDateTime("To");
 					
-					// --------------------------------------
-					// w/o audit handling 
-					// --------------------------------------
-				 					
-					// if audit mode is off then stamp is always the same (zero) for all updates
-					if (auditDisabled) {
-						// check if we have a value currently for this field
-						boolean oldIsSet = this.conn.isSet(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Data");					
-						Object oldValue = this.conn.get(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Data");
-						
-						if (retired) {
-							// if we are retiring then get rid of old value
-							if (oldIsSet)
-								this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Data");
-							
-							this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Retired", retired);
-						}
-						else {
-							// if we are not retiring then get rid of old Retired just in case it was set before
-							this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Data", newValue);
-							this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Retired");
-						}
-						
-						// retiring or not, tags can be associated - set to new, if any, or be sure we remove old
-						if (StringUtil.isNotEmpty(tags))
-							this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Tags", tags);
-						else
-							this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Tags");
-						
-						if (from != null)
-							this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "From", from);
-						else
-							this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "From");
-						
-						if (to != null)
-							this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "To", to);
-						else
-							this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "To");
-						
-						// don't bother with the indexes if not configured
-						if (!schema.isIndexed())
-							continue;
-						
-						// check if value is already in index (same as oldValue), if so skip any more 
-						if (oldIsSet && this.conn.isSet(DB_GLOBAL_INDEX_2, did, table, fname, newValue, id, sid, stamp))
-							continue;
-	
-						if (oldIsSet) { 
-							// decrement index count for the old value
-							this.conn.dec(DB_GLOBAL_INDEX_2, did, table, fname, oldValue);
-	
-							// remove the old index value
-							this.conn.kill(DB_GLOBAL_INDEX_2, did, table, fname, oldValue, id, sid, stamp);
-						}
-	
-						// increment index count
-						this.conn.inc(DB_GLOBAL_INDEX_2, did, table, fname, newValue);
-	
-						// set the new index new
-						this.conn.set(DB_GLOBAL_INDEX_2, did, table, fname, newValue, id, sid, stamp, null);
-						
-						continue;
-					}
+					// find the first, newest, stamp 
+					byte[] newerStamp = this.conn.nextPeerKey(DB_GLOBAL_RECORD, did, table, id, fname, sid, null);
 					
-					// --------------------------------------
-					// w/ audit handling 
-					// --------------------------------------
+					boolean hasNewer = false;
+					
+					if (newerStamp != null) {
+						BigDecimal newStamp = Struct.objectToDecimal(ByteUtil.extractValue(newerStamp));
+						hasNewer = stamp.compareTo(newStamp) > 0;  // if we come after newer then we are older info, there is newer
+					}
 					
 					// find the next, older, stamp after current
 					byte[] olderStamp = this.conn.nextPeerKey(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp);
@@ -385,69 +383,80 @@ public class TablesAdapter {
 						}
 					}
 					
-					if (updateOnly) {
+					boolean effectivelyEqual = (retired && oldIsRetired) || ((oldValue == null) && (newValue == null)) || ((oldValue != null) && oldValue.equals(newValue));
+					
+					if (updateOnly && effectivelyEqual) 
 						// TODO for dynamic scalar (only) look at previous value (different sid) and skip if that has same value
-						
-						if (retired && oldIsRetired)
-							continue;
-						
-						if ((oldValue == null) && (newValue == null))
-							continue;
-						
-						if ((oldValue != null) && oldValue.equals(newValue))
-							continue;
-					}
+						continue;
 					
 					// set either retired or data, not both
-					if (retired)
+					if (retired) {
+						// if we are retiring then get rid of old value
+						if (auditDisabled && oldIsSet)
+							this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Data");
+						
 						this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Retired", retired);
-					else
+					}
+					else {
+						// if we are not retiring then get rid of old Retired just in case it was set before
+						if (auditDisabled)
+							this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Retired");
+						
 						this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Data", newValue);
+					}
 					
 					// add tags if any - ok even if retired
 					if (StringUtil.isNotEmpty(tags))
 						this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Tags", tags);
+					else if (auditDisabled)
+						this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "Tags");
 					
 					if (from != null)
 						this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "From", from);
+					else if (auditDisabled)
+						this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "From");
 					
 					if (to != null)
 						this.conn.set(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "To", to);
+					else if (auditDisabled)
+						this.conn.kill(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp, "To");
 					
 					// don't bother with the indexes if not configured
-					if (!schema.isIndexed())
+					// or if there is a newer value for this field already set
+					if (!schema.isIndexed() || hasNewer || effectivelyEqual)
 						continue;
 					
-					BigDecimal endStamp = null;
-					
-					if (oldIsSet) {
-						// read the stamp from the old index, this will now be ours
-						endStamp = this.conn.getAsDecimal(DB_GLOBAL_INDEX_2, did, table, fname, oldValue, id, sid, oldStamp);
-			
-						// update the old index with current stamp
-						this.conn.set(DB_GLOBAL_INDEX_2, did, table, fname, oldValue, id, sid, oldStamp, stamp);
+					if (oldIsSet && !oldIsRetired) { 
+						if (oldValue instanceof String)
+							oldValue = oldValue.toString().toLowerCase(Locale.ROOT);
+						
+						// decrement index count for the old value
+						// remove the old index value
+						this.conn.dec(DB_GLOBAL_INDEX_SUB, did, table, fname, oldValue);
+						this.conn.kill(DB_GLOBAL_INDEX_SUB, did, table, fname, oldValue, id, sid);
 					}
 					
-					if (retired)
-						continue;
-					
-					// if there was no older stamp then get the endStamp from the next newer stamp
-					if (endStamp == null) {
-						byte[] newerStamp = this.conn.prevPeerKey(DB_GLOBAL_RECORD, did, table, id, fname, sid, stamp);
+					if (!retired) {
+						if (newValue instanceof String)
+							newValue = newValue.toString().toLowerCase(Locale.ROOT);
 						
-						if (newerStamp != null) 
-							endStamp = Struct.objectToDecimal(ByteUtil.extractValue(newerStamp));
+						String range = null;
 						
-						// no need to update newer index, it doesn't point to our stamp
-					}
-					
-					// only count an id once, so only if id is not currently set should we do increment
-					if (!this.conn.hasAny(DB_GLOBAL_INDEX_2, did, table, fname, newValue, id)) 
+						if (from != null)
+							range = from.toString();
+						
+						if (to != null) {
+							if (range == null)
+								range = ":" + to.toString();
+							else
+								range += ":" + to.toString();
+						}
+						
 						// increment index count
-						this.conn.inc(DB_GLOBAL_INDEX_2, did, table, fname, newValue);
-					
-					// update the next index with end stamp - which may be null or the stamp for a future stamp
-					this.conn.set(DB_GLOBAL_INDEX_2, did, table, fname, newValue, id, sid, stamp, endStamp);
+						// set the new index new
+						this.conn.inc(DB_GLOBAL_INDEX_SUB, did, table, fname, newValue);
+						this.conn.set(DB_GLOBAL_INDEX_SUB, did, table, fname, newValue, id, sid, range);
+					}
 					
 					continue;
 				}
@@ -595,7 +604,7 @@ public class TablesAdapter {
 	/*
 	 ; check not only retired, but if this record was active during the period of time
 	 ; indicated by "when".  If a record has no From then it is considered to be 
-	 ; active indefinately in the past, prior to To.  If there is no To then record
+	 ; active indefinitely in the past, prior to To.  If there is no To then record
 	 ; is active current and since From.
 	 */
 	public boolean isCurrent(String table, String id, BigDateTime when, boolean historical) {
@@ -1792,66 +1801,64 @@ public class TablesAdapter {
 	
 	public void traverseIndex(String table, String fname, Object val, BigDateTime when, boolean historical, Consumer<Object> out) {
 		String did = this.task.getDomain();
-		BigDecimal stamp = this.task.getStamp();
 		
 		DbField ffdef = this.task.getSchema().getDbField(table, fname);
 		
+		if (ffdef == null)
+			return;
+		
+		if (val instanceof String)
+			val = val.toString().toLowerCase(Locale.ROOT);
+		
 		try {
-			if (!ffdef.dynamic && !ffdef.list) {
-				byte[] foreignid = conn.nextPeerKey(DB_GLOBAL_INDEX_1, did, table, fname, val, null);
-				
-				while (foreignid != null) {
-					Object fid = ByteUtil.extractValue(foreignid);
-					
-					byte[] foreignstamp = conn.getOrNextPeerKey(DB_GLOBAL_INDEX_1, did, table, fname, val, fid, stamp);
-					
-					if (foreignstamp != null) {
-						BigDecimal fstamp = Struct.objectToDecimal(ByteUtil.extractValue(foreignstamp));
-						
-						BigDecimal endstamp = conn.getAsDecimal(DB_GLOBAL_INDEX_1, did, table, fname, val, fid, fstamp);
+			byte[] recid = conn.nextPeerKey(ffdef.getIndexName(), did, table, fname, val, null);
+			
+			while (recid != null) {
+				Object rid = ByteUtil.extractValue(recid);
 
-						if ((endstamp == null) || (stamp.compareTo(endstamp) < 0)) {
-							if (this.isCurrent(table, fid.toString(), when, historical)) 
-								out.accept(fid);
-						}
+				if (this.isCurrent(table, rid.toString(), when, historical)) {
+					if (ffdef.isStaticScalar()) {
+						out.accept(rid);
 					}
-					
-					foreignid = conn.nextPeerKey(DB_GLOBAL_INDEX_1, did, table, fname, val, fid);
-				}
-			}
-			else {
-				byte[] foreignid = conn.nextPeerKey(DB_GLOBAL_INDEX_2, did, table, fname, val, null);
-				
-				while (foreignid != null) {
-					Object fid = ByteUtil.extractValue(foreignid);
-					
-					byte[] foreignsid = conn.nextPeerKey(DB_GLOBAL_INDEX_2, did, table, fname, val, fid, null);
-					
-					while (foreignsid != null) {
-						Object fsid = ByteUtil.extractValue(foreignsid);
+					else {
+						byte[] recsid = conn.nextPeerKey(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rid, null);
 						
-						byte[] foreignstamp = conn.getOrNextPeerKey(DB_GLOBAL_INDEX_2, did, table, fname, val, fid, fsid, stamp);
-						
-						if (foreignstamp != null) {
-							BigDecimal fstamp = Struct.objectToDecimal(ByteUtil.extractValue(foreignstamp));
+						while (recsid != null) {
+							Object rsid = ByteUtil.extractValue(recsid);
 							
-							BigDecimal endstamp = conn.getAsDecimal(DB_GLOBAL_INDEX_2, did, table, fname, val, fid, fsid, fstamp);
-
-							if ((endstamp == null) || (stamp.compareTo(endstamp) < 0)) {
-								if (this.isCurrent(table, fid.toString(), when, historical)) { 
-									out.accept(fid);
-									
-									// skip this id, we got it once
-									break;
-								}
+							
+							String range = conn.getAsString(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rid, rsid);
+							
+							if (StringUtil.isEmpty(range) || (when == null)) {
+								out.accept(rid);
 							}
+							else {
+								int pos = range.indexOf(':');
+								
+								BigDateTime from = null;
+								BigDateTime to = null;
+								
+								if (pos == -1) {
+									from = BigDateTime.parseOrNull(range);
+								}
+								else if (pos == 0) {
+									to = BigDateTime.parseOrNull(range.substring(1));
+								}
+								else {
+									from = BigDateTime.parseOrNull(range.substring(0, pos));
+									to = BigDateTime.parseOrNull(range.substring(pos + 1));
+								}
+								
+								if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) 
+									out.accept(rid);
+							}
+							
+							recsid = conn.nextPeerKey(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rsid);
 						}
-						
-						foreignsid = conn.nextPeerKey(DB_GLOBAL_INDEX_2, did, table, fname, val, fsid);
 					}
-					
-					foreignid = conn.nextPeerKey(DB_GLOBAL_INDEX_2, did, table, fname, val, fid);
 				}
+				
+				recid = conn.nextPeerKey(ffdef.getIndexName(), did, table, fname, val, rid);
 			}
 		}
 		catch (Exception x) {
@@ -1859,164 +1866,153 @@ public class TablesAdapter {
 		}
 	}
 	
-	/* TODO
- ;
-  ;
- 
- ; get all (unique) id's associated with a given value-field pair
-loopTable(table,cstate,when,historical) i (table="") quit ""
- i (table'["#")&(Domain'="") s table=table_"#"_Domain     ; support table instances
- ;
- n fschema,id,fnd,nval
- ;
- s id=cstate("Id")
- ;
- f  d  q:fnd!(id="")
- . ; get next 
- . s id=$o(^dcRecord(table,id))
- . ; skip if none found
- . q:id=""
- . ; do not include records that are not current to 'when'
- . q:'$$isCurrent(table,id,when,historical)
- . ;
- . s fnd=1
- ;
- s cstate("Id")=id
- ;
- quit id
- ;
- ;
- ; get all (non-unique) id's associated with a range of values
-loopRange(table,field,from,to,cstate,when,historical) i (table="")!(field="") quit "" 
- i (table'["#")&(Domain'="") s table=table_"#"_Domain     ; support table instances
- ;
- n fschema,cv,id,fnd,done
- m fschema=^dcSchema($p(table,"#"),"Fields",field)
- quit:fschema("Indexed")'=1 ""		; if not indexed, cannot use
- ;
- s from=$$val2Ndx(from)
- s to=$$val2Ndx(to)
- ;
- s cv=cstate("Current")
- ;
- f  d  q:fnd!done
- . ; if id is null in state then we need to go to next value
- . i cstate("Id")="" d
- . . i (cv="")&(from'="") s cv=from
- . . e  i 'fschema("List")&'fschema("Dynamic") s cv=$o(^dcIndex1(table,field,cv))
- . . e  s cv=$o(^dcIndex2(table,field,cv))
- . i (cv="")!((to'="")&(cv]]to)) s done=1,cv="" q   ; don't go past 'to'
- . s id=$$loopIndex(table,field,cv,.cstate,when,historical)
- . i id'="" s fnd=1
- ;
- s cstate("Current")=cv
- ;
- quit id
- ;
- ;
- ; get all (non-unique) id's associated with a range of values
-loopValues(table,field,values,cstate,when,historical) i (table="")!(field="") quit "" 
- i (table'["#")&(Domain'="") s table=table_"#"_Domain     ; support table instances
- ;
- n fschema,cv,id,fnd,done
- m fschema=^dcSchema($p(table,"#"),"Fields",field)
- quit:fschema("Indexed")'=1 ""		; if not indexed, cannot use
- ;
- s cv=cstate("Current")
- ;
- f  d  q:fnd!done
- . ; if id is null in state then we need to go to next value
- . i cstate("Id")="" s cv=$o(values(cv)) 
- . i (cv="") s done=1 q   
- . s id=$$loopIndex(table,field,values(cv),.cstate,when,historical)
- . i id'="" s fnd=1
- ;
- s cstate("Current")=cv
- ;
- quit id
- ;
- ;
- 	 * 
-	 */
+	public Object firstInIndex(String table, String fname, Object val, BigDateTime when, boolean historical) {
+		String did = this.task.getDomain();
+		
+		DbField ffdef = this.task.getSchema().getDbField(table, fname);
+		
+		if (ffdef == null)
+			return null;
+		
+		if (val instanceof String)
+			val = val.toString().toLowerCase(Locale.ROOT);
+		
+		try {
+			byte[] recid = conn.nextPeerKey(ffdef.getIndexName(), did, table, fname, val, null);
+			
+			while (recid != null) {
+				Object rid = ByteUtil.extractValue(recid);
+				
+				if (this.isCurrent(table, rid.toString(), when, historical)) { 
 	
-	public void indexText() {
-		// TODO
-	}
-	
-	/*
- ;
-updateTxt n id,field,table,sid,cid,apos,entry,word,line,lp,ch,score
- s id=^dcParams(Pid,"Id"),table=^dcParams(Pid,"Table")
- i (id="")!(table="") d err^dcConn(50011) quit
- i (table'["#")&(Domain'="") s table=table_"#"_Domain     ; support table instances
- ;
- d runFilter("Update") quit:Errors  ; if any violations in filter then do not proceed
- ;
- ; we'll need storage for old stems from previous indexing.  allocate an id from the 
- ; cache global
- ;
- s cid=$$getCacheId^dcDbSelect()
- l +^dcTextRecord(table,id)
- ;
- f  s field=$o(^dcParams(Pid,"Fields",field))  q:field=""  d
- . f  s sid=$o(^dcParams(Pid,"Fields",field,sid))  q:sid=""  d  
- . . ;
- . . ; ^dcCache(cid,word)=score - first fill from existing document, then remove those in new doc - remaining need to be removed
- . . ;
- . . k entry
- . . ;
- . . f  s apos=$o(^dcTextRecord(table,id,field,sid,"Analyzed",apos))  q:apos=""  d  
- . . . s line=^dcTextRecord(table,id,field,sid,"Analyzed",apos)
- . . . f lp=1:1:$l(line) d
- . . . . s ch=$e(line,lp)
- . . . . i ch'="|" s entry=entry_ch q
- . . . . i $l(entry)=0 q
- . . . . s word=$p(entry,":",1)
- . . . . s score=$p(entry,":",2)
- . . . . s ^dcCache(cid,word)=score		; for this table, id, field, sid collect the words
- . . . . k entry
- . . ;
- . . ; do indexing and prune cache
- . . ;
- . . k entry
- . . ;
- . . f  s apos=$o(^dcParams(Pid,"Fields",field,sid,"Analyzed",apos))  q:apos=""  d  
- . . . s line=^dcParams(Pid,"Fields",field,sid,"Analyzed",apos)
- . . . f lp=1:1:$l(line) d
- . . . . s ch=$e(line,lp)
- . . . . i ch'="|" s entry=entry_ch q
- . . . . i $l(entry)=0 q
- . . . . s word=$p(entry,":",1)
- . . . . s score=$p(entry,":",2)
- . . . . s entry=$p(entry,":",3)
- . . . . ;
- . . . . k:^dcCache(cid,word)=score ^dcCache(cid,word)    ; don't need to clean this word	
- . . . . ;
- . . . . s ^dcTextIndex(table,field,word,score,id,sid)=entry
- . . . . k entry
- . . ;
- . . ; remove hanging words
- . . ;
- . . k word  f  s word=$o(^dcCache(cid,word))  q:word=""  d
- . . . k ^dcTextIndex(table,field,word,^dcCache(cid,word),id,sid)		
- . . ;
- . . d clearCache^dcDbSelect(cid)
- . . ;
- . . k ^dcTextRecord(table,id,field,sid)
- . . m ^dcTextRecord(table,id,field,sid)=^dcParams(Pid,"Fields",field,sid)
- ;
- l -^dcTextRecord(table,id)
- d killCache^dcDbSelect(cid)
- ;
- quit 
- ;
- 	 * 
-	 */
-	
-	public ListStruct searchText() {
-		return null;		// TODO
-	}
+					if (ffdef.isStaticScalar()) 
+						return rid;
 
+					byte[] recsid = conn.nextPeerKey(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rid, null);
+					
+					while (recsid != null) {
+						Object rsid = ByteUtil.extractValue(recsid);
+						
+						String range = conn.getAsString(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rid, rsid);
+						
+						if (StringUtil.isEmpty(range) || (when == null))
+							return rid;
+						
+						int pos = range.indexOf(':');
+						
+						BigDateTime from = null;
+						BigDateTime to = null;
+						
+						if (pos == -1) {
+							from = BigDateTime.parseOrNull(range);
+						}
+						else if (pos == 0) {
+							to = BigDateTime.parseOrNull(range.substring(1));
+						}
+						else {
+							from = BigDateTime.parseOrNull(range.substring(0, pos));
+							to = BigDateTime.parseOrNull(range.substring(pos + 1));
+						}
+						
+						if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) 
+							return rid;
+						
+						recsid = conn.nextPeerKey(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rsid);
+					}
+				}
+				
+				recid = conn.nextPeerKey(ffdef.getIndexName(), did, table, fname, val, rid);
+			}
+		}
+		catch (Exception x) {
+			OperationContext.get().error("traverseIndex error: " + x);
+		}
+		
+		return null;
+	}	
+	
+	public void traverseIndexRange(String table, String fname, Object fromval, Object toval, BigDateTime when, boolean historical, Consumer<Object> out) {
+		String did = this.task.getDomain();
+		
+		DbField ffdef = this.task.getSchema().getDbField(table, fname);
+		
+		if (ffdef == null)
+			return;
+		
+		if (fromval instanceof String)
+			fromval = fromval.toString().toLowerCase(Locale.ROOT);
+		
+		if (toval instanceof String)
+			toval = toval.toString().toLowerCase(Locale.ROOT);
+		
+		try {
+			byte[] valb = conn.getOrNextPeerKey(ffdef.getIndexName(), did, table, fname, fromval);
+			byte[] valfin = (toval != null) ? ByteUtil.buildKey(toval) : null;
+			
+			while (valb != null) {
+				// check if past "To"
+				if ((valfin != null) && (ByteUtil.compareKeys(valb, valfin) >= 0))
+					break;
+				
+				Object val = ByteUtil.extractValue(valb);
+
+				byte[] recid = conn.nextPeerKey(ffdef.getIndexName(), did, table, fname, val, null);
+				
+				while (recid != null) {
+					Object rid = ByteUtil.extractValue(recid);
+
+					if (this.isCurrent(table, rid.toString(), when, historical)) {
+						if (ffdef.isStaticScalar()) {
+							out.accept(rid);
+						}
+						else {
+							byte[] recsid = conn.nextPeerKey(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rid, null);
+							
+							while (recsid != null) {
+								Object rsid = ByteUtil.extractValue(recsid);
+								
+								String range = conn.getAsString(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rid, rsid);
+								
+								if (StringUtil.isEmpty(range) || (when == null)) {
+									out.accept(rid);
+								}
+								else {
+									int pos = range.indexOf(':');
+									
+									BigDateTime from = null;
+									BigDateTime to = null;
+									
+									if (pos == -1) {
+										from = BigDateTime.parseOrNull(range);
+									}
+									else if (pos == 0) {
+										to = BigDateTime.parseOrNull(range.substring(1));
+									}
+									else {
+										from = BigDateTime.parseOrNull(range.substring(0, pos));
+										to = BigDateTime.parseOrNull(range.substring(pos + 1));
+									}
+									
+									if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) 
+										out.accept(rid);
+								}
+								
+								recsid = conn.nextPeerKey(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rsid);
+							}
+						}
+					}
+					
+					recid = conn.nextPeerKey(ffdef.getIndexName(), did, table, fname, val, rid);
+				}
+				
+				valb = conn.nextPeerKey(ffdef.getIndexName(), did, table, fname, val);
+			}
+		}
+		catch (Exception x) {
+			OperationContext.get().error("traverseIndex error: " + x);
+		}
+	}	
+	
 	public OperationResult executeTrigger(String table, String op, DatabaseInterface conn, DatabaseTask task, OperationResult log) {
 		OperationResult or = new OperationResult();
 		

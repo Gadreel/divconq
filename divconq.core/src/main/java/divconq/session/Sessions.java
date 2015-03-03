@@ -260,7 +260,7 @@ public class Sessions implements IService {
 	}
 
 	public Session create(String origin, String domain) {
-		Session s = new Session(origin, Hub.instance.resolveDomainId(domain));
+		Session s = new Session(origin, Hub.instance.getDomains().resolveDomainId(domain));
 		this.sessions.put(s.getId(), s);
 		return s;
 	}

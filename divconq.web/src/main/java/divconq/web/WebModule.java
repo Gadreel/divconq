@@ -26,7 +26,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
-import divconq.net.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,12 +37,11 @@ import divconq.log.Logger;
 import divconq.mod.ModuleBase;
 import divconq.util.StringUtil;
 import divconq.web.http.ServerHandler;
-import divconq.web.http.SslContextFactory;
+import divconq.web.http.SniHandler;
 import divconq.xml.XElement;
 
 //TODO integrate streaming - http://code.google.com/p/red5/
 public class WebModule extends ModuleBase {
-	protected SslContextFactory ssl = new SslContextFactory(); 
 	protected ConcurrentHashMap<Integer, Channel> activelisteners = new ConcurrentHashMap<>();
     protected ReentrantLock listenlock = new ReentrantLock();
     protected WebSiteManager siteman = new WebSiteManager();
@@ -51,9 +49,7 @@ public class WebModule extends ModuleBase {
 	@Override
 	public void start() {
 		// prepare the web site manager from settings in module config
-		this.siteman.start(this, this.config.find("ViewSettings"));
-		
-		this.ssl.init(this.config);
+		this.siteman.start(this, this.config);
 		
 		// private hub then go online ASAP
 		//if (!Hub.instance.getResources().isGateway())
@@ -97,8 +93,13 @@ public class WebModule extends ModuleBase {
 					protected void initChannel(SocketChannel ch) throws Exception {
 		    	        ChannelPipeline pipeline = ch.pipeline();
 		    	        
-		    	        if (secure)
-		    	        	pipeline.addLast("ssl", new SslHandler(WebModule.this.ssl.getServerEngine()));
+		    	        if (secure) {
+		    	        	SniHandler ssl = new SniHandler(WebModule.this.siteman);
+		    	        	
+		    	            //SslHandler ssl = new SslHandler(WebModule.this.siteman.findSslContextFactory("root").getServerEngine()); 
+		    	        	
+		    	        	pipeline.addLast("ssl", ssl);
+		    	        }
 		    	        
 		    	        //pipeline.addLast("codec-http", new HttpServerCodec());
 		    	        //pipeline.addLast("aggregator", new HttpObjectAggregator(65536));

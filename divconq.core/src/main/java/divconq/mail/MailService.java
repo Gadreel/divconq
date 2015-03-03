@@ -61,25 +61,32 @@ public class MailService extends ExtensionBase implements IService, IMailProcess
 	public void start() {
 		super.start();
 
-		RecordStruct servicesettings = new RecordStruct();
+		//RecordStruct servicesettings = new RecordStruct();
 		
 		XElement settings = this.getLoader().getSettings();
 		
 		if (settings != null) {
+			/*
 			servicesettings.setField("SmtpHost", settings.getAttribute("SmtpHost"));
 			servicesettings.setField("SmtpPort", settings.getAttribute("SmtpPort"));
 			servicesettings.setField("SmtpUsername", settings.getAttribute("SmtpUsername"));
 			servicesettings.setField("SmtpAuth", settings.getAttribute("SmtpAuth"));
 			servicesettings.setField("SmtpDebug", settings.getAttribute("SmtpDebug"));
 			servicesettings.setField("SmtpPassword", settings.getAttribute("SmtpPassword"));
+			*/
 			
 			this.procmode = settings.getAttribute("ProcessMode", this.procmode);
 			
-			MailTaskFactory.init(settings);
+			//MailTaskFactory.init(settings);
 		}
 		
-		MailTaskFactory.setSettings(servicesettings);
-		MailTaskFactory.setProcessor(this);
+		//MailTaskFactory.setSettings(servicesettings);
+		MailTaskFactory.init(this);
+	}
+	
+	@Override
+	public XElement getSettings() {
+		return this.getLoader().getSettings();
 	}
 	
 	@Override

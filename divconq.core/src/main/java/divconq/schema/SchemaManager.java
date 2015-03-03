@@ -67,9 +67,21 @@ public class SchemaManager {
 	public void setChain(SchemaManager v) {
 		this.chain = v;
 	}
+
+	public boolean hasTable(String table) {
+		boolean fnd = this.db.hasTable(table);
+		
+		if (fnd)
+			return true;
+		
+		if (this.chain == null)
+			return false;
+		
+		return this.chain.hasTable(table);
+	}
 	
 	public List<DbField> getDbFields(String table) {
-		List<DbField> t = this.db.getFields(table);		
+		List<DbField> t = this.db.getFields(table);
 		
 		if (t == null)
 			t = new ArrayList<DbField>();

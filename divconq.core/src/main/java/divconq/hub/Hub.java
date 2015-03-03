@@ -31,12 +31,10 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -46,16 +44,12 @@ import org.joda.time.DateTime;
 import divconq.api.ApiSession;
 import divconq.api.IApiSessionFactory;
 import divconq.bus.Bus;
-import divconq.bus.Message;
 import divconq.count.CountManager;
 import divconq.ctp.net.CtpServices;
 import divconq.db.IDatabaseManager;
 import divconq.db.ObjectResult;
 import divconq.db.DataRequest;
-import divconq.filestore.CommonPath;
-import divconq.io.FileStoreEvent;
 import divconq.io.LocalFileStore;
-import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.locale.LocaleUtil;
@@ -73,9 +67,7 @@ import divconq.sql.SqlManager;
 import divconq.sql.SqlManager.SqlDatabase;
 import divconq.struct.CompositeStruct;
 import divconq.struct.FieldStruct;
-import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
-import divconq.struct.Struct;
 import divconq.util.FileUtil;
 import divconq.util.MimeUtil;
 import divconq.util.StringUtil;
@@ -128,10 +120,8 @@ public class Hub {
 	protected HubResources resources = null;
 	protected SecurityPolicy policy = new SecurityPolicy();
 	protected IDatabaseManager db = null;
-
-	// domain tracking
-	protected ConcurrentHashMap<String, String> dnamemap = new ConcurrentHashMap<>();
-	protected ConcurrentHashMap<String, DomainInfo> dsitemap = new ConcurrentHashMap<>();
+	
+	protected DomainsManager domainman = new DomainsManager();
 	
 	// api session managers
 	protected ConcurrentHashMap<String, IApiSessionFactory> apimans = new ConcurrentHashMap<>();
@@ -283,8 +273,27 @@ public class Hub {
 		
 		// TODO check for repo updates if connected via db and if in Production mode (not dev mode)
 		// if true then restart with resume code
+		
+		// gateways always use Auth and Domain service from internal server
+		if (!this.resources.isGateway()) {
+			// these two services are required, if service not available and we are not on Gateway then load them
+			
+			// load default dcDomains
+			if (!this.bus.isServiceAvailable("dcDomains")) {
+				DomainsService s = new DomainsService();
+				s.init(null);
+				this.bus.getLocalHub().registerService(s);
+			}
+			
+			// load default dcAuth  
+			if (!this.bus.isServiceAvailable("dcAuth")) {
+				AuthService s = new AuthService();
+				s.init(null);
+				this.bus.getLocalHub().registerService(s);
+			}
+		}
 
-		Hub.this.loadDomains();
+		this.domainman.init();
 		
 		this.dependencyChanged();
 	}
@@ -524,45 +533,12 @@ public class Hub {
 		return this.resources;
 	}
 	
-	public Collection<DomainInfo> getDomains() {
-		return this.dsitemap.values();
-	}
-
-	public void dumpDomainNames() {
-		System.out.println("Domains: ");
-		System.out.println();
-		
-		for (Entry<String, String> en : this.dnamemap.entrySet()) {
-			System.out.println("Domain: " + en.getKey() + " - " + en.getValue() + " : " + this.dsitemap.get(en.getValue()).getTitle());
-		}
-	}
-	
-	public String resolveDomainId(String domain) {
-		if (StringUtil.isEmpty(domain)) 
-			return null;
-		
-		// if this is a domain id then return it
-		if (this.dsitemap.containsKey(domain))
-			return domain;
-
-		// if not an id then try lookup of domain name
-		return this.dnamemap.get(domain);
-	}
-	
-	public DomainInfo resolveDomainInfo(String dname) {
-		String did = this.resolveDomainId(dname);
-		
-		if (StringUtil.isNotEmpty(did))
-			return this.dsitemap.get(did);
-		
-		return null;
+	public DomainsManager getDomains() {
+		return this.domainman;
 	}
 	
 	public DomainInfo getDomainInfo(String id) {
-		if (StringUtil.isEmpty(id))
-			return null;
-		
-		return this.dsitemap.get(id);
+		return this.domainman.getDomainInfo(id);
 	}
 	
 	/**
@@ -1164,208 +1140,7 @@ public class Hub {
 		
 		return retpath;
 	}
-	
-	public void loadDomains() {
-		HubDependency domdep = new HubDependency("Domains");
-		domdep.setPassRun(false);
-		this.addDependency(domdep);
-		
-		// gateways always use Auth and Domain service from internal server
-		if (!this.resources.isGateway()) {
-			// these two services are required if not on Gateway then load them
-			
-			// load default dcDomains
-			if (!this.bus.isServiceAvailable("dcDomains")) {
-				DomainsService s = new DomainsService();
-				s.init(null);
-				this.bus.getLocalHub().registerService(s);
-			}
-			
-			// load default dcAuth  
-			if (!this.bus.isServiceAvailable("dcAuth")) {
-				AuthService s = new AuthService();
-				s.init(null);
-				this.bus.getLocalHub().registerService(s);
-			}
-		}
-		
-		Hub.instance.subscribeToEvent(HubEvents.DomainAdded, new IEventSubscriber() {			
-			@Override
-			public void eventFired(Object e) {
-				String did = (String) e;
-				
-				Hub.this.bus.sendMessage(
-						(Message) new Message("dcDomains", "Manager", "Load")
-							.withField("Body", new RecordStruct().withField("Id", did)), 
-						result -> {
-							// if this fails the hub cannot start
-							if (result.hasErrors()) {
-								Logger.error("Unable to load new domain into hub");
-								return;
-							}
-							
-							RecordStruct drec = result.getBodyAsRec();
-							
-							DomainInfo di = new DomainInfo();							
-							di.load(drec);
-							
-							Hub.this.dsitemap.put(did, di);
-							
-							ListStruct names = di.getNames();
-					
-							if (names != null)
-								for (Struct dn : names.getItems()) {
-									String n = Struct.objectToCharsStrict(dn).toString();
-									
-									Hub.this.dnamemap.put(n, did);
-								}
-						}
-					);
-			}
-		});
-		
-		Hub.instance.subscribeToEvent(HubEvents.DomainUpdated, new IEventSubscriber() {			
-			@Override
-			public void eventFired(Object e) {
-				String did = (String) e;
-				
-				Hub.this.bus.sendMessage(
-						(Message) new Message("dcDomains", "Manager", "Load")
-							.withField("Body", new RecordStruct().withField("Id", did)), 
-						result -> {
-							// if this fails the hub cannot start
-							if (result.hasErrors()) {
-								Logger.error("Unable to update domain in hub");
-								return;
-							}
-							
-							RecordStruct drec = result.getBodyAsRec();
 
-							DomainInfo di = Hub.instance.dsitemap.get(did);
-							
-							// update old
-							if (di != null) {
-								ListStruct names = di.getNames();
-
-								if (names != null)
-									for (Struct dn : names.getItems()) {
-										String n = Struct.objectToCharsStrict(dn).toString();
-										Hub.this.dnamemap.remove(n);
-									}
-								
-								di.load(drec);
-							}
-							// insert new
-							else {
-								di = new DomainInfo();
-								di.load(drec);
-								Hub.this.dsitemap.put(did, di);
-							}
-							
-							ListStruct names = di.getNames();
-					
-							if (names != null)
-								for (Struct dn : names.getItems()) {
-									String n = Struct.objectToCharsStrict(dn).toString();
-									Hub.this.dnamemap.put(n, did);
-								}
-						}
-					);
-			}
-		});
-		
-		// register for file store events before we start any services that might listen to these events
-		// we need to catch domain config change events 
-		if (this.publicfilestore != null) { 
-			/*	Examples:
-				./dcw/[domain alias]/config     holds web setting for domain
-					- settings.xml are the general settings (dcmHomePage - dcmDefaultTemplate[path]) - editable in CMS only
-					- dictionary.xml is the domain level dictionary - direct edit by web dev
-					- vars.json is the domain level variable store - direct edit by web dev
-			*/
-			
-			FuncCallback<FileStoreEvent> localfilestorecallback = new FuncCallback<FileStoreEvent>() {
-				@Override
-				public void callback() {
-					this.resetCalledFlag();
-					
-					CommonPath p = this.getResult().getPath();
-					
-					//System.out.println(p);
-					
-					// only notify on config updates
-					if (p.getNameCount() < 4) 
-						return;
-					
-					// must be inside a domain or we don't care
-					String mod = p.getName(0);
-					String domain = p.getName(1);
-					String section = p.getName(2);
-					
-					if ("dcw".equals(mod) && "config".equals(section)) {
-						for (DomainInfo wdomain : Hub.this.dsitemap.values()) {
-							if (domain.equals(wdomain.getAlias())) {
-								wdomain.reloadSettings();
-								Hub.this.fireEvent(HubEvents.DomainConfigChanged, wdomain);
-								break;
-							}
-						}
-					}
-					
-					if ("dcw".equals(mod) && ("services".equals(section) || "glib".equals(section))) {
-						for (DomainInfo wdomain : Hub.this.dsitemap.values()) {
-							if (domain.equals(wdomain.getAlias())) {
-								wdomain.reloadServices();
-								Hub.this.fireEvent(HubEvents.DomainConfigChanged, wdomain);
-								break;
-							}
-						}
-					}
-				}
-			};
-			
-			this.publicfilestore.register(localfilestorecallback);
-		}		
-		
-		this.bus.sendMessage(
-			new Message("dcDomains", "Manager", "LoadAll"), 
-			result -> {
-				// if this fails the hub cannot start
-				if (result.hasErrors()) {
-					// stop if we think we are connected, but if not then wait maybe we'll connect again and trigger this load again
-					if (this.state == HubState.Connected)
-						this.stop();
-					
-					return;
-				}
-				
-				ListStruct domains = result.getBodyAsList();
-				
-				for (Struct d : domains.getItems()) {
-					RecordStruct drec = (RecordStruct) d;
-					
-					String did = drec.getFieldAsString("Id");
-					
-					DomainInfo di = new DomainInfo();							
-					di.load(drec);
-					
-					Hub.this.dsitemap.put(did, di);
-					
-					ListStruct names = di.getNames();
-			
-					if (names != null)
-						for (Struct dn : names.getItems()) {
-							String n = Struct.objectToCharsStrict(dn).toString();
-							
-							Hub.this.dnamemap.put(n, did);
-						}
-				}
-				
-				this.removeDependency(domdep.source);
-			}
-		);
-	}
-	
 	public ApiSession createLocalApiSession(String domain) {
 		IApiSessionFactory man = this.apimans.get("_local");
 		

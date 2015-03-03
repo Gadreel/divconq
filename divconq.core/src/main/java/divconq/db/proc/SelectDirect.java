@@ -1,5 +1,6 @@
 package divconq.db.proc;
 
+import java.util.HashMap;
 import java.util.function.Consumer;
 
 import divconq.db.DatabaseInterface;
@@ -9,6 +10,7 @@ import divconq.lang.BigDateTime;
 import divconq.lang.op.OperationResult;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.struct.Struct;
 import divconq.struct.builder.ICompositeBuilder;
 
 public class SelectDirect extends LoadRecord {
@@ -52,7 +54,7 @@ public class SelectDirect extends LoadRecord {
 	 ;			"To"				value to end at, exclusive
 	 ;			"Field"				if not using Code to get collection, use a Field instead
 	 ;
-	 ;	Historical	true / false
+	 ;	Historical	true / false   - ignore the To field in Record and in Field - meaning we can see back in time, but not in future, From is still obeyed
 	 ;
 	 ; Result
 	 ;		List of records, content based on Select
@@ -68,11 +70,72 @@ public class SelectDirect extends LoadRecord {
 		ListStruct select = params.getFieldAsList("Select");
 		RecordStruct where = params.getFieldAsRecord("Where");
 		
+		if (when == null)
+			when = BigDateTime.nowDateTime();
+		
+		BigDateTime fwhen = when;
+		
 		// TODO add db filter option
 		//d runFilter("Query") quit:Errors  ; if any violations in filter then do not proceed
 		
 		TablesAdapter db = new TablesAdapter(conn, task); 
 		ICompositeBuilder out = task.getBuilder();
+		
+		RecordStruct collector = params.getFieldAsRecord("Collector");
+		
+		if (collector != null) {
+			try {
+				out.startList();
+				// TODO support script
+				
+				// TODO make sure we produce only unique records
+				// enhance by making this use ^dcTemp for large number of records
+				HashMap<String, Boolean> unique = new HashMap<>();
+				
+				Consumer<Object> uniqueConsumer = new Consumer<Object>() {				
+					@Override
+					public void accept(Object t) {
+						try {
+							String id = t.toString();
+							
+							// we have already returned this one
+							if (unique.containsKey(id))
+								return;
+							
+							if (db.checkSelect(table, id, fwhen, where, historical)) {
+								unique.put(id, true);
+								
+								SelectDirect.this.writeRecord(conn, task, log, out, db, table, id, fwhen, select, compact, false, historical);
+							}
+						}
+						catch (Exception x) {
+							log.error("Issue with select direct: " + x);
+						}
+					}
+				};				
+				
+				String fname = collector.getFieldAsString("Field");
+				
+				ListStruct values = collector.getFieldAsList("Values");
+				
+				if (values != null) {
+					for (Struct s : values.getItems()) 
+						db.traverseIndex(table, fname, Struct.objectToCore(s), when, historical, uniqueConsumer);
+				}
+				else {
+					Object from = Struct.objectToCore(collector.getField("From"));
+					Object to = Struct.objectToCore(collector.getField("To"));
+					
+					db.traverseIndexRange(table, fname, from, to, when, historical, uniqueConsumer);
+				}
+				
+				out.endList();
+			}
+			catch (Exception x) {
+				log.error("Issue with select direct: " + x);
+			}
+			
+		}
 		
 		/*
 		// TODO support collector
@@ -111,8 +174,8 @@ public class SelectDirect extends LoadRecord {
 					try {
 						String id = t.toString();
 						
-						if (db.checkSelect(table, id, when, where, historical))
-							SelectDirect.this.writeRecord(conn, task, log, out, db, table, id, when, select, compact, false, historical);
+						if (db.checkSelect(table, id, fwhen, where, historical))
+							SelectDirect.this.writeRecord(conn, task, log, out, db, table, id, fwhen, select, compact, false, historical);
 					}
 					catch (Exception x) {
 						log.error("Issue with select direct: " + x);

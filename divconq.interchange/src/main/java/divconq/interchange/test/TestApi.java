@@ -207,7 +207,7 @@ public class TestApi {
 						System.out.print("Domain (e.g. root): ");
 						domain = scan.nextLine();
 						
-						domain = Hub.instance.resolveDomainId(domain);
+						domain = Hub.instance.getDomains().resolveDomainId(domain);
 					
 						// TODO capi.getSession().getUser().setDomainId(domain);
 					}

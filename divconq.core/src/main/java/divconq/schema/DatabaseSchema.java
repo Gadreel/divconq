@@ -343,6 +343,13 @@ public class DatabaseSchema {
 		
 		return null;
 	}
+
+	public boolean hasTable(String table) {
+		if (StringUtil.isEmpty(table))
+			return false;
+		
+		return this.tables.containsKey(table);
+	}
 	
 	// returns a copy list, you (caller) can own the list 
 	public List<DbTrigger> getTriggers(String table, String operation) {
