@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -82,6 +83,9 @@ import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationObserver;
 import divconq.lang.op.OperationResult;
+import divconq.lang.stem.IndexInfo;
+import divconq.lang.stem.IndexInfo.StemEntry;
+import divconq.lang.stem.IndexUtility;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
 import divconq.mail.MailTaskFactory;
@@ -1991,6 +1995,21 @@ public class FileStoreClient implements ILocalCommandLine {
 					emailtask.withContext(OperationContext.allocateRoot().toBuilder().withDomainId("00700_000000000000004").toOperationContext());
 					
 					MailTaskFactory.sendEmail(emailtask);
+					
+					break;
+				}
+				
+				case 308: {
+					String text = "This is a demo of the TokenStream API";
+					
+					IndexInfo res = IndexUtility.stemEnglishPhrase(text, 5);
+					
+					for (Entry<String, StemEntry> e : res.entries.entrySet()) {
+						System.out.println("- " + e.getKey() + " --- " + e.getValue().computeScore());
+						
+						for (int i = 0; i < e.getValue().positions.size(); i++)
+							System.out.println("    @ " + e.getValue().positions.get(i));
+					}
 					
 					break;
 				}

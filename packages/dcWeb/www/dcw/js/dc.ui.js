@@ -248,14 +248,14 @@ dc.pui = {
 			dc.pui.Loader.__signInPage = v;
 		},
 		
-		loadSigninPage: function() {
+		loadSigninPage: function(p) {
 			var hpath = dc.pui.Loader.__signInPage;
 			
 			if (!hpath)
 				hpath = $('html').attr('data-dcw-SignIn');
 			
 			if (hpath)
-				dc.pui.Loader.loadPage(hpath);
+				dc.pui.Loader.loadPage(hpath, p);
 		},
 		
 		setDestPage: function(v) {
@@ -279,6 +279,11 @@ dc.pui = {
 		loadPage: function(page, params) {
 			if (!page)
 				return;
+			
+			var rp = dc.handler ? dc.handler.reroute(page, params) : null;
+			
+			if (rp != null)
+				page = rp;
 			
 			var entry = {
 				Name: page, 
@@ -400,7 +405,7 @@ dc.pui = {
 			dc.pui.Loader.__destPage = dc.pui.Loader.__hashes[dc.pui.Loader.__loadPageHash].Name;
 			
 			if (reason == 1)
-				dc.pui.Loader.loadPage(dc.pui.Loader.__signInPage);
+				dc.pui.Loader.loadSigninPage({FromFail: true});
 		},
 		
 		addPageEntry: function(entry) {
@@ -522,7 +527,7 @@ dc.pui = {
 				
 				var l = $(this).attr('href');
 				
-				if (l.startsWith('http:') || l.startsWith('https:')) {
+				if (l.startsWith('http:') || l.startsWith('https:') || l.endsWith('.pdf')) {
 					$(this).attr('target', '_blank')
 					return;
 				}

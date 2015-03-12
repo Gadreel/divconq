@@ -326,7 +326,7 @@ public class CmsService extends ExtensionBase implements IService {
 				
 				
 				for (IFileStoreFile file : this.getResult()) {
-					if (".meta.json".equals(file.getName())) {
+					if ("meta.json".equals(file.getName())) {
 						cdcb.increment();
 						
 						file.readAllText(new FuncCallback<String>() {							
@@ -425,7 +425,7 @@ public class CmsService extends ExtensionBase implements IService {
 			}
 		});
 		
-		fs.getFileDetail(path.resolvePeer(".meta.json"), new FuncCallback<IFileStoreFile>() {			
+		fs.getFileDetail(path.resolvePeer("meta.json"), new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -461,7 +461,7 @@ public class CmsService extends ExtensionBase implements IService {
 		
 		// TODO check that user has access to this folder
 		
-		fs.getFileDetail(sectionpath.resolve(fpath + "/.meta.json"), new FuncCallback<IFileStoreFile>() {			
+		fs.getFileDetail(sectionpath.resolve(fpath + "/meta.json"), new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {
@@ -543,7 +543,7 @@ public class CmsService extends ExtensionBase implements IService {
 		
 		CommonPath path = sectionpath.resolve(fpath);
 		
-		fs.getFileDetail(path.resolve(".meta.json"), new FuncCallback<IFileStoreFile>() {			
+		fs.getFileDetail(path.resolve("meta.json"), new FuncCallback<IFileStoreFile>() {			
 			@Override
 			public void callback() {
 				if (request.hasErrors()) {

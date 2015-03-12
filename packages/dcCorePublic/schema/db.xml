@@ -64,7 +64,7 @@
 			<Field Name="dcConfirmCode" Type="dcTinyString" />
 			<Field Name="dcRecoverAt" Type="DateTime" />
 			
-			<Field Name="dcAuthorizationTag" Type="dcTinyString" List="True" />
+			<Field Name="dcAuthorizationTag" Type="dcTinyString" List="True" Indexed="True" />
 			
 			<Field Name="dcGroup" ForeignKey="dcGroup" List="True" /> 
 		</Table>
@@ -76,7 +76,7 @@
 		
 		<Table Id="dcGroup">
 			<Field Name="dcName" Type="dcSmallString" Required="True" Indexed="True" Dynamic="True" />
-			<Field Name="dcAuthorizationTag" Type="dcTinyString" List="True" />
+			<Field Name="dcAuthorizationTag" Type="dcTinyString" List="True" Indexed="True" />
 			<Field Name="dcDescription" Type="String" />
 		</Table>
 		
@@ -212,7 +212,6 @@
 				<Response>
 					<Field Name="Code" Type="dcUser:dcConfirmCode" />
 					<Field Name="Email" Type="dcUser:dcEmail" />
-					<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
 				</Response>
 			</Procedure>
 			

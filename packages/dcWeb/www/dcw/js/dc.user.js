@@ -136,7 +136,13 @@ dc.user = {
 	/**
 	 * Given the current user info, try to sign in.  Trigger the callback whether sign in works or fails.
 	 */
-	signin2 : function(creds, remember, callback) {		
+	signin2 : function(creds, remember, callback) {	
+		if (window.location.protocol != "https:") {
+			// TODO turn this into a handler event
+			dc.pui.Popup.alert('Connection is not secure, unable to sign in!');
+			return;
+		}
+			
 		dc.user._info = { };
 
 		// we take what ever Credentials are supplied, so custom Credentials may be used		

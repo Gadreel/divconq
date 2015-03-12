@@ -42,6 +42,7 @@ public class MimeUtil {
 						new XElement("MimeDef", new XAttribute("Ext", "js"), new XAttribute("Type", "application/javascript"), new XAttribute("Compress", "True")),
 						new XElement("MimeDef", new XAttribute("Ext", "yaml"), new XAttribute("Type", "text/yaml"), new XAttribute("Compress", "True")),
 						new XElement("MimeDef", new XAttribute("Ext", "woff"), new XAttribute("Type", "application/x-font-woff")),
+						new XElement("MimeDef", new XAttribute("Ext", "woff2"), new XAttribute("Type", "application/font-woff2")),
 						new XElement("MimeDef", new XAttribute("Ext", "cur"), new XAttribute("Type", "image/vnd.microsoft.icon")),
 						new XElement("MimeDef", new XAttribute("Ext", "ico"), new XAttribute("Type", "image/vnd.microsoft.icon"))
 				)

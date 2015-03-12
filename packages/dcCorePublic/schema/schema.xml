@@ -825,6 +825,7 @@
 						<Response Inherits="ResponseMessage" />
 					</Op>
 				</Feature>
+				<!-- there is no good way to generalize this
 				<Feature Name="Recovery">
 					<Op Name="InitiateSelf">
 						<Description>
@@ -840,6 +841,7 @@
 						<Response Inherits="ResponseMessage" />
 					</Op>
 				</Feature>
+				-->
 			</Secure>
 			<Secure Tags="Admin">
 				<Feature Name="Recovery">

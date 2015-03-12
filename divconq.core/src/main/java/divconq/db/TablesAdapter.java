@@ -296,7 +296,7 @@ public class TablesAdapter {
 					
 					if (oldIsSet && !oldIsRetired) {
 						if (oldValue instanceof String)
-							oldValue = oldValue.toString().toLowerCase(Locale.ROOT);
+							oldValue = oldValue.toString().trim().toLowerCase(Locale.ROOT);
 						
 						// decrement index count for the old value
 						// remove the old index value
@@ -306,7 +306,7 @@ public class TablesAdapter {
 					
 					if (!retired) {
 						if (newValue instanceof String)
-							newValue = newValue.toString().toLowerCase(Locale.ROOT);
+							newValue = newValue.toString().trim().toLowerCase(Locale.ROOT);
 						
 						// increment index count
 						// set the new index new
@@ -428,7 +428,7 @@ public class TablesAdapter {
 					
 					if (oldIsSet && !oldIsRetired) { 
 						if (oldValue instanceof String)
-							oldValue = oldValue.toString().toLowerCase(Locale.ROOT);
+							oldValue = oldValue.toString().trim().toLowerCase(Locale.ROOT);
 						
 						// decrement index count for the old value
 						// remove the old index value
@@ -438,7 +438,7 @@ public class TablesAdapter {
 					
 					if (!retired) {
 						if (newValue instanceof String)
-							newValue = newValue.toString().toLowerCase(Locale.ROOT);
+							newValue = newValue.toString().trim().toLowerCase(Locale.ROOT);
 						
 						String range = null;
 						
@@ -1808,7 +1808,7 @@ public class TablesAdapter {
 			return;
 		
 		if (val instanceof String)
-			val = val.toString().toLowerCase(Locale.ROOT);
+			val = val.toString().trim().toLowerCase(Locale.ROOT);
 		
 		try {
 			byte[] recid = conn.nextPeerKey(ffdef.getIndexName(), did, table, fname, val, null);
@@ -1875,7 +1875,7 @@ public class TablesAdapter {
 			return null;
 		
 		if (val instanceof String)
-			val = val.toString().toLowerCase(Locale.ROOT);
+			val = val.toString().trim().toLowerCase(Locale.ROOT);
 		
 		try {
 			byte[] recid = conn.nextPeerKey(ffdef.getIndexName(), did, table, fname, val, null);
@@ -1940,10 +1940,10 @@ public class TablesAdapter {
 			return;
 		
 		if (fromval instanceof String)
-			fromval = fromval.toString().toLowerCase(Locale.ROOT);
+			fromval = fromval.toString().trim().toLowerCase(Locale.ROOT);
 		
 		if (toval instanceof String)
-			toval = toval.toString().toLowerCase(Locale.ROOT);
+			toval = toval.toString().trim().toLowerCase(Locale.ROOT);
 		
 		try {
 			byte[] valb = conn.getOrNextPeerKey(ffdef.getIndexName(), did, table, fname, fromval);
@@ -2035,11 +2035,13 @@ public class TablesAdapter {
 	}
 	
 	/*
- ;
+ ;	TODO improve so source can be table or script
+ 
  ; Params("Sources",[table name],"Title")=[field name]
  ; Params("Sources",[table name],"Body")=[field name]
  ; Params("Sources",[table name],"Extras",[field name])=1  
  ;
+ 		TODO wrap up to above sids are part of a source
  ; Params("AllowedSids",[table name],[field name],[sid])=1					- if field name not present then assume all
  ;
  ; Params("RequiredWords",[word],"Term")=1

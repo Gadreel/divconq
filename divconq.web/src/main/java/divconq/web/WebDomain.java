@@ -120,6 +120,7 @@ public class WebDomain {
 	protected String alias = null;
 	protected String locale = null;		// domain level locale
 	protected CommonPath homepath = null;
+	protected WebSiteManager man = null;
 	
 	protected XElement webconfig = null;
 	
@@ -153,9 +154,10 @@ public class WebDomain {
 		return this.appFramework;
 	}
 	
-	public void init(DomainInfo domain) {
+	public void init(DomainInfo domain, WebSiteManager man) {
 		this.id = domain.getId();
 		this.alias = domain.getAlias();
+		this.man = man;
 		
 		this.initialTags();
 
@@ -438,7 +440,7 @@ public class WebDomain {
 		// we get here if we have no extension - thus we need to look for path match with specials
 		int pdepth = path.getNameCount();
 		
-		// check path maps first - hopefully the request has been mapped
+		// check path maps first - hopefully the request has been mapped at one of the levels
 		while (pdepth > 0) {
 			CommonPath ppath = path.subpath(0, pdepth);
 
@@ -610,6 +612,8 @@ public class WebDomain {
 		if (web == null)
 			return null;
 		
+		String defPort = this.man.getDefaultTlsPort();
+		
 		for (XElement route : web.selectAll("Route")) {
 			if (host.equals(route.getAttribute("Name"))) {
 				if (route.hasAttribute("RedirectPath"))
@@ -629,7 +633,7 @@ public class WebDomain {
 					path += StringUtil.isNotEmpty(rname) ? rname : host;
 					
 					// if forcing a switch, use another port
-					path += changeTls ? ":" + route.getAttribute("TlsPort", "443") : port;
+					path += changeTls ? ":" + route.getAttribute("TlsPort", defPort) : port;
 					
 					return path + req.getOriginalPath(); 
 				}
@@ -639,7 +643,7 @@ public class WebDomain {
 		}
 		
 		if ((ssl == null) && Struct.objectToBoolean(web.getAttribute("ForceTls", "False"))) 
-			return "https://" + host + ":" + web.getAttribute("TlsPort", "443") + req.getOriginalPath(); 
+			return "https://" + host + ":" + web.getAttribute("TlsPort", defPort) + req.getOriginalPath(); 
 		
 		return null;
 	}

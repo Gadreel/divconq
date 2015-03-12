@@ -739,6 +739,10 @@ public class Main implements ILocalCommandLine {
 					break;
 				}
 				case 6: {
+					System.out.println("Are you sure you want to update AWWW Server? (y/n): ");
+					if (!scan.nextLine().toLowerCase().startsWith("y"))
+						break;
+					
 					ReleasesHelper releases = new ReleasesHelper();
 					if (!releases.init(relpath))						
 						break;

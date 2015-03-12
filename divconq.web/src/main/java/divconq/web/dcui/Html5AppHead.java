@@ -184,6 +184,7 @@ public class Html5AppHead extends Head implements ICodeTag {
 				new Script("/dcw/js/dc.user.js"),
 				new Script("/dcw/js/dc.comm.js"),
 				new Script("/dcw/js/dc.ui.js"),
+				new Script("/dcw/js/dc.handler.js"),
 				new Script("/dcw/js/jquery.mobile-1.4.5.cust.js")
 		);
 		

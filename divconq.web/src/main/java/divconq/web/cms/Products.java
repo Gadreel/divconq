@@ -142,7 +142,7 @@ public class Products {
 								// TODO remove this - it is specific to a website - make general purpose setting instead
 								/*
 								if (!this.hasErrors()) {
-									CommonPath metapath = this.getResult().resolvePath(new CommonPath("/.meta.json"));
+									CommonPath metapath = this.getResult().resolvePath(new CommonPath("/meta.json"));
 									
 									fs.getFileDetail(metapath, new FuncCallback<IFileStoreFile>() {
 										@Override

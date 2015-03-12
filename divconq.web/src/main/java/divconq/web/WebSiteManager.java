@@ -48,6 +48,7 @@ public class WebSiteManager {
 	protected ConcurrentHashMap<String, WebDomain> dsitemap = new ConcurrentHashMap<String, WebDomain>();
 	
 	protected String version = null;
+	protected String defaultTlsPort = "443";
 	
 	protected SslContextFactory ssl = new SslContextFactory(); 
 	
@@ -60,6 +61,10 @@ public class WebSiteManager {
 	
 	public Collection<IWebExtension> getSites() {
 		return this.extensions.values();
+	}
+	
+	public String getDefaultTlsPort() {
+		return this.defaultTlsPort;
 	}
 	
 	public WebModule getModule() {
@@ -75,6 +80,8 @@ public class WebSiteManager {
 
 		if (config != null) {
 			this.ssl.init(config);
+			
+			this.defaultTlsPort = config.getAttribute("DefaultTlsPort", this.defaultTlsPort);
 			
 			XElement settings = config.find("ViewSettings");
 			
@@ -266,7 +273,7 @@ public class WebSiteManager {
 			for (DomainInfo d : Hub.instance.getDomains().getDomains()) {
 				if (d.getId().equals(id)) {
 					domain = new WebDomain();
-					domain.init(d);
+					domain.init(d, this);
 					this.dsitemap.put(id, domain);
 					
 					return domain;

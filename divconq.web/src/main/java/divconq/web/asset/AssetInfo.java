@@ -168,6 +168,7 @@ public class AssetInfo {
 			return this.mime;
 		
 		String extension = this.path.getFileExtension();
+		
 		return MimeUtil.getMimeType(extension);
 	}
 }
