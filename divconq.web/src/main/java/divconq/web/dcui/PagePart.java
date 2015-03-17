@@ -55,10 +55,14 @@ public class PagePart extends Element implements ICodeTag {
 
 	@Override
 	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+		Attributes attrs = HtmlUtil.initAttrs(xel);
+		
     	this.id = xel.getRawAttribute("id");
     	this.content = xel.getRawAttribute("Content");
 		
     	this.src = view.getSource();
+    	
+        this.myArguments = new Object[] { attrs };
     	
 		nodes.add(this);
 	}
@@ -205,7 +209,7 @@ public class PagePart extends Element implements ICodeTag {
 				}
 			}
 			
-			this.myArguments = new Object[] { attrs, nl };
+			this.myArguments = new Object[] { this.myArguments, attrs, nl };
 		}
 		
         super.doBuild();

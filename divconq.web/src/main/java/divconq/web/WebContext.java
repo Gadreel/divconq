@@ -21,6 +21,7 @@ import io.netty.handler.codec.http.Cookie;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.stream.ChunkedInput;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,13 +29,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
+import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
+import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.UserContext;
 import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
 import divconq.session.Session;
+import divconq.struct.CompositeStruct;
+import divconq.struct.RecordStruct;
+import divconq.struct.Struct;
+import divconq.util.IOUtil;
 import divconq.util.StringUtil;
+import divconq.web.dcui.GalleryImageConsumer;
 import divconq.web.dcui.Node;
 import divconq.xml.XElement;
 
@@ -396,5 +404,50 @@ public class WebContext {
 
 	public boolean isPreview() {
 		return this.preview;
+	}
+	
+	// string path is relative to dcw/[alias]/[path]
+	public CompositeStruct getJsonResource(String path) {
+		Path fpath = this.domain.findFilePath(false, new CommonPath(path), null);
+		
+		if (fpath != null) 
+			return this.getJsonResource(fpath);
+		
+		return null;
+	}
+	
+	public CompositeStruct getJsonResource(Path path) {
+		FuncResult<CharSequence> mres = IOUtil.readEntireFile(path);
+				
+		if (mres.isNotEmptyResult()) 
+			return Struct.objectToComposite(mres.getResult());
+		
+		return null;
+	}
+	
+	public CompositeStruct getGalleryMeta(String path) {
+		Path fpath = this.domain.findFilePath(false, new CommonPath("/galleries" + path + "/meta.json"), null);
+		
+		if (fpath != null) 
+			return this.getJsonResource(fpath);
+		
+		return null;
+	}
+	
+	public void forEachGalleryShowImage(String path, String show, GalleryImageConsumer consumer) {
+		RecordStruct gallery = (RecordStruct) this.getGalleryMeta(path);
+		
+		if ((gallery != null) && (gallery.hasField("Shows"))) {
+			for (Struct s : gallery.getFieldAsList("Shows").getItems()) {
+				RecordStruct showrec = (RecordStruct) s;
+				
+				if (!show.equals(showrec.getFieldAsString("Alias")))
+					continue;
+				
+				for (Struct i : showrec.getFieldAsList("Images").getItems()) {
+					consumer.accept(gallery, showrec, i);
+				}
+			}
+		}
 	}
 }

@@ -52,16 +52,28 @@ public class AdvForm extends Form {
 
 	@Override
 	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
-		this.fname = xel.getAttribute("Name");
+		Attributes attrs = HtmlUtil.initAttrs(xel);
 		
-		super.parseElement(view, nodes, xel);
+		if (xel.hasAttribute("Prefix"))
+			attrs.add("Prefix", xel.getRawAttribute("Prefix"));
+		
+		if (xel.hasAttribute("AlwaysNew"))
+			attrs.add("AlwaysNew", xel.getRawAttribute("AlwaysNew"));
+		
+		this.fname = xel.getAttribute("Name");
+
+        this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
+		
+		nodes.add(this);
+		
+		//super.parseElement(view, nodes, xel);
 	}
     
     @Override
     public boolean writeDynamic(PrintStream buffer, String tabs, boolean first) {
     	this.name = "Form";
     	
-    	this.attributes.put("Name", this.fname);
+    	this.attributes.put("Name", this.fname);		// only with dynamic, let stream appear as "form"
     	
     	return super.writeDynamic(buffer, tabs, first);
     }

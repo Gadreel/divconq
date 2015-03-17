@@ -351,10 +351,6 @@ public class WebDomain {
 	}
 	
 	public IOutputAdapter findFile(boolean isPreview, CommonPath path, IWebExtension ext) {
-		LocalFileStore pubfs = Hub.instance.getPublicFileStore();
-		LocalFileStore pacfs = Hub.instance.getPackageFileStore();
-		LocalFileStore prifs = Hub.instance.getPrivateFileStore();
-		
 		// =====================================================
 		//  if request has an extension do specific file lookup
 		// =====================================================
@@ -368,63 +364,10 @@ public class WebDomain {
 			if (ioa != null)
 				return ioa;
 			
-			if (prifs != null) {
-				// look in the domain's www-preview file system
-				if (isPreview) {
-					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www-preview", path);
-					
-					if (wpath != null) 
-						return this.pathToAdapter(isPreview, path, wpath);
-				}
-				
-				// look in the domain's static file system
-				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www", path);
-				
-				if ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))
-						wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/", path);
-				
-				if (wpath != null) 
-					return this.pathToAdapter(isPreview, path, wpath);
-			}
+			Path wpath = this.findFilePath(isPreview, path, ext);
 			
-			if (pubfs != null) {
-				// look in the domain's www-preview file system
-				if (isPreview) {
-					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www-preview", path);
-					
-					if (wpath != null) 
-						return this.pathToAdapter(isPreview, path, wpath);
-				}
-				
-				// look in the domain's static file system
-				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www", path);
-				
-				if ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))
-						wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/", path);
-				
-				if (wpath != null) 
-					return this.pathToAdapter(isPreview, path, wpath);
-			}
-			
-			if ((pacfs != null) && (this.webconfig != null)) {
-				// if not in the domain, then go look in the packages 
-				for (XElement pel :  this.webconfig.selectAll("Package")) {
-					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Name") + "/www", path);
-					
-					if (wpath != null) 
-						return this.pathToAdapter(isPreview, path, wpath);
-				}
-			}
-			
-			if ((pacfs != null) && (ext != null) && (ext.getLoader().getConfig() != null)) {
-				// if not in the domain, then go look in the packages (older config used Id not Name)
-				for (XElement pel :  ext.getLoader().getConfig().selectAll("Package")) {
-					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Id") + "/www", path);
-					
-					if (wpath != null) 
-						return this.pathToAdapter(isPreview, path, wpath);
-				}
-			}
+			if (wpath != null) 
+				return this.pathToAdapter(isPreview, path, wpath);
 			
 			// TODO not found file!!
 			OperationContext.get().errorTr(150007);		
@@ -458,9 +401,99 @@ public class WebDomain {
 			
 			pdepth--;
 		}
-
-		// not in paths so check now on the file system
-		pdepth = path.getNameCount();
+		
+		Path wpath = this.findFilePath(isPreview, path, ext);
+		
+		if (wpath != null) 
+			return this.pathToAdapter(isPreview, path, wpath);
+		
+		OperationContext.get().errorTr(150007);		
+		return null;
+	}
+	
+	public Path findFilePath(boolean isPreview, CommonPath path, IWebExtension ext) {
+		LocalFileStore pubfs = Hub.instance.getPublicFileStore();
+		LocalFileStore pacfs = Hub.instance.getPackageFileStore();
+		LocalFileStore prifs = Hub.instance.getPrivateFileStore();
+		
+		// =====================================================
+		//  if request has an extension do specific file lookup
+		// =====================================================
+		
+		// if we have an extension then we don't have to do the search below
+		// never go up a level past a file (or folder) with an extension
+		if (path.hasFileExtension()) {
+			if (prifs != null) {
+				// look in the domain's www-preview file system
+				if (isPreview) {
+					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www-preview", path);
+					
+					if (wpath != null) 
+						return wpath;
+				}
+				
+				// look in the domain's static file system
+				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www", path);
+				
+				if ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))
+						wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/", path);
+				
+				if (wpath != null) 
+					return wpath;
+			}
+			
+			if (pubfs != null) {
+				// look in the domain's www-preview file system
+				if (isPreview) {
+					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www-preview", path);
+					
+					if (wpath != null) 
+						return wpath;
+				}
+				
+				// look in the domain's static file system
+				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www", path);
+				
+				if ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))
+						wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/", path);
+				
+				if (wpath != null) 
+					return wpath;
+			}
+			
+			if ((pacfs != null) && (this.webconfig != null)) {
+				// if not in the domain, then go look in the packages 
+				for (XElement pel :  this.webconfig.selectAll("Package")) {
+					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Name") + "/www", path);
+					
+					if (wpath != null) 
+						return wpath;
+				}
+			}
+			
+			if ((pacfs != null) && (ext != null) && (ext.getLoader().getConfig() != null)) {
+				// if not in the domain, then go look in the packages (older config used Id not Name)
+				for (XElement pel :  ext.getLoader().getConfig().selectAll("Package")) {
+					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Id") + "/www", path);
+					
+					if (wpath != null) 
+						return wpath;
+				}
+			}
+			
+			// TODO not found file!!
+			OperationContext.get().errorTr(150007);		
+			return null;
+		}
+		
+		// =====================================================
+		//  if request does not have an extension look for files
+		//  that might match this path or one of its parents
+		//  using the special extensions
+		// =====================================================
+		
+		// we get here if we have no extension - thus we need to look for path match with specials
+		int pdepth = path.getNameCount();
 		
 		// check file system
 		while (pdepth > 0) {
@@ -472,14 +505,14 @@ public class WebDomain {
 					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www-preview", ppath);
 					
 					if (wpath != null) 
-						return this.pathToAdapter(isPreview, ppath, wpath);
+						return wpath;
 				}
 				
 				// look in the domain's static file system
 				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www", ppath);
 				
 				if (wpath != null) 
-					return this.pathToAdapter(isPreview, ppath, wpath);
+					return wpath;
 			}
 			
 			if (pubfs != null) {
@@ -488,14 +521,14 @@ public class WebDomain {
 					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www-preview", ppath);
 					
 					if (wpath != null) 
-						return this.pathToAdapter(isPreview, ppath, wpath);
+						return wpath;
 				}
 				
 				// look in the domain's static file system
 				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www", ppath);
 				
 				if (wpath != null) 
-					return this.pathToAdapter(isPreview, ppath, wpath);
+					return wpath;
 			}
 			
 			if ((pacfs != null) && (this.webconfig != null)) {
@@ -504,7 +537,7 @@ public class WebDomain {
 					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Name") + "/www", ppath);
 					
 					if (wpath != null) 
-						return this.pathToAdapter(isPreview, ppath, wpath);
+						return wpath;
 				}
 			}
 			
@@ -514,7 +547,7 @@ public class WebDomain {
 					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Id") + "/www", path);
 					
 					if (wpath != null) 
-						return this.pathToAdapter(isPreview, path, wpath);
+						return wpath;
 				}
 			}
 			

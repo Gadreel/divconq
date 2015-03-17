@@ -812,9 +812,16 @@ public class Main implements ILocalCommandLine {
 				        	if (diff.getChangeType() == ChangeType.DELETE) {
 					        	if (inst.containsPathExtended(opath)) {
 					        		System.out.println("- " + diff.getChangeType().name() + " - " + opath);
-					        		
-					        		sftp.rm(opath.toString());
-					        		System.out.println("deleted!!");
+
+					        		try {
+						        		sftp.rm(opath.toString());
+						        		System.out.println("deleted!!");
+					        		}
+									catch (SftpException x) {
+										System.out.println(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+										System.out.println("Sftp Error: " + x);
+										System.out.println(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+									} 
 					        	}
 					        	else {
 					        		System.out.println("/ " + diff.getChangeType().name() + " - " + gopath + " !!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -824,11 +831,18 @@ public class Main implements ILocalCommandLine {
 					        	if (inst.containsPathExtended(npath)) {
 					        		System.out.println("+ " + diff.getChangeType().name() + " - " + npath);
 					        		
-									ssh.makeDirSftp(sftp, npath.getParent());
-										
-					        		sftp.put(npath.toString(), npath.toString(), ChannelSftp.OVERWRITE);
-					        		sftp.chmod(npath.endsWith(".sh") ? 484 : 420, npath.toString());		// 644 octal = 420 dec, 744 octal = 484 dec
-					        		System.out.println("uploaded!!");
+					        		try {
+										ssh.makeDirSftp(sftp, npath.getParent());
+											
+						        		sftp.put(npath.toString(), npath.toString(), ChannelSftp.OVERWRITE);
+						        		sftp.chmod(npath.endsWith(".sh") ? 484 : 420, npath.toString());		// 644 octal = 420 dec, 744 octal = 484 dec
+						        		System.out.println("uploaded!!");
+					        		}
+									catch (SftpException x) {
+										System.out.println(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+										System.out.println("Sftp Error: " + x);
+										System.out.println(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+									} 
 					        	}
 					        	else {
 					        		System.out.println("> " + diff.getChangeType().name() + " - " + gnpath + " !!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -839,8 +853,15 @@ public class Main implements ILocalCommandLine {
 					        	if (inst.containsPathExtended(opath)) {
 					        		System.out.println("- " + diff.getChangeType().name() + " - " + opath);
 					        		
-					        		sftp.rm(opath.toString());
-					        		System.out.println("deleted!!");
+					        		try {
+						        		sftp.rm(opath.toString());
+						        		System.out.println("deleted!!");
+					        		}
+									catch (SftpException x) {
+										System.out.println(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+										System.out.println("Sftp Error: " + x);
+										System.out.println(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+									} 
 					        	}
 					        	else {
 					        		System.out.println("/ " + diff.getChangeType().name() + " - " + gopath + " !!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -850,11 +871,18 @@ public class Main implements ILocalCommandLine {
 					        	if (inst.containsPathExtended(npath)) {
 					        		System.out.println("+ " + diff.getChangeType().name() + " - " + npath);
 					        		
-									ssh.makeDirSftp(sftp, npath.getParent());
-										
-					        		sftp.put(npath.toString(), npath.toString(), ChannelSftp.OVERWRITE);
-					        		sftp.chmod(npath.endsWith(".sh") ? 484 : 420, npath.toString());		// 644 octal = 420 dec, 744 octal = 484 dec
-					        		System.out.println("uploaded!!");
+					        		try {
+										ssh.makeDirSftp(sftp, npath.getParent());
+											
+						        		sftp.put(npath.toString(), npath.toString(), ChannelSftp.OVERWRITE);
+						        		sftp.chmod(npath.endsWith(".sh") ? 484 : 420, npath.toString());		// 644 octal = 420 dec, 744 octal = 484 dec
+						        		System.out.println("uploaded!!");
+					        		}
+									catch (SftpException x) {
+										System.out.println(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+										System.out.println("Sftp Error: " + x);
+										System.out.println(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+									} 
 					        	}
 					        	else {
 					        		System.out.println("> " + diff.getChangeType().name() + " - " + gnpath + " !!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -872,9 +900,6 @@ public class Main implements ILocalCommandLine {
 				        repository.close();
 				        
 				        releases.saveData();
-					} 
-					catch (SftpException x) {
-						System.out.println("Sftp Error: " + x);
 					} 
 					catch (JSchException x) {
 						System.out.println("Sftp Error: " + x);

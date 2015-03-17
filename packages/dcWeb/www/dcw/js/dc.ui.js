@@ -437,10 +437,13 @@ dc.pui = {
 					for (var x = 0; x < dc.pui.Loader.__current.Timers.length; x++) {
 						var tim = dc.pui.Loader.__current.Timers[x];
 						
+						if (!tim)
+							continue;
+						
 						if (tim.__tid)
 							window.clearTimeout(tim.__tid);
 						else if (tim.__iid)
-							window.clearTimeout(tim.__iid);
+							window.clearInterval(tim.__iid);
 					}
 				}
 				
@@ -650,7 +653,7 @@ dc.pui = {
 			
 			options.__tid = window.setTimeout(function () {
 					window.clearTimeout(options.__tid);		// no longer need to clear this later, it is called
-					entry.Timers.splice(pos, 1);
+					entry.Timers[pos] = null;
 					
 					options.Op(options.Data);
 				}, 
@@ -2150,15 +2153,16 @@ dc.pui = {
 				$('#puConfirm').enhanceWithin().popup();
 				
 				$("#puConfirm").on("popupafterclose", function () {
-					if (dc.pui.Popup.__cb)
+					if (dc.pui.Popup.__cbApprove && dc.pui.Popup.__cb)
 						dc.pui.Popup.__cb();
 
+					dc.pui.Popup.__cb = null;
+					
 					//console.log('aaaa');
 				});
 				
 				$('#btnConfirmPopup').click(function(e) {
-					//$('#puConfirm').popup('close').promise().then(function() {
-					//});
+					dc.pui.Popup.__cbApprove = true;
 					
 					$('#puConfirm').popup('close');
 						
@@ -2167,8 +2171,6 @@ dc.pui = {
 				});
 				
 				$('#btnRejectPopup').click(function(e) {
-					dc.pui.Popup.__cb = null;
-					
 					$('#puConfirm').popup('close');
 						
 					e.preventDefault();
@@ -2177,6 +2179,7 @@ dc.pui = {
 			}
 			
 			dc.pui.Popup.__cb = callback;
+			dc.pui.Popup.__cbApprove = false;
 			$('#puConfirmHtml').html(msg);
 			$('#puConfirm').popup('open', { positionTo: 'window', transition: 'pop' });
 		},

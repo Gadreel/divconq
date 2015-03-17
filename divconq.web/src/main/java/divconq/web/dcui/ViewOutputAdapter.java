@@ -135,9 +135,6 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 					)
 			);
 		}
-		
-		if (this.source.hasAttribute("AuthTags"))
-			this.auth = this.source.getAttribute("AuthTags").split("\\|");
 
 		if (this.source.hasAttribute("ViewClass")) {
 			try {
@@ -164,6 +161,10 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 				this.load(this.source);
 			}
 		}		
+
+		// cache auth tags - only after source has been fully loaded
+		if (this.source.hasAttribute("AuthTags"))
+			this.auth = this.source.getAttribute("AuthTags").split("\\|");
 	}
 	
 	// ContentInfo migration

@@ -1,5 +1,7 @@
 package divconq.web.dcui;
 
+import java.util.Map.Entry;
+
 import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
@@ -74,6 +76,8 @@ public class Document extends Html {
 				}
 			}
 		}		
+		
+		// TODO how about just copying
 
 		if (xel.hasAttribute("Skeleton")) {
 			String tpath = xel.getAttribute("Skeleton");
@@ -85,17 +89,33 @@ public class Document extends Html {
 			if (sf instanceof ViewTemplateAdapter) {
 				XElement layout = ((ViewTemplateAdapter)sf).getSource();			
 				
+				/*
 				//this.sxel = layout;
 		    	view.addLibs(layout.selectAll("RequireLib"));
 		    	view.addStyles(layout.selectAll("RequireStyle"));
 				view.addFunctions(layout.selectAll("Function"));
 				
-				view.contenttemplate = view.getDomain().parseXml(view, layout.find("Skeleton"));
+				// copy fixed page parts
+				for (XElement ppel : layout.selectAll("PagePart"))
+					xel.add(ppel);
+				
+				*/
+
+				// copy all attributes over, unless they have been overridden
+				for (Entry<String, String> attr : layout.getAttributes().entrySet())
+					if (!xel.hasAttribute(attr.getKey()))
+						xel.setAttribute(attr.getKey(), attr.getValue());
+				
+				// copy all child elements over
+				for (XElement chel : layout.selectAll("*"))
+					xel.add(chel);
+				
+				//view.contenttemplate = view.getDomain().parseXml(view, layout.find("Skeleton"));
 			}
 		}
-		else {
+		//else {
 			view.contenttemplate = view.getDomain().parseXml(view, xel.find("Skeleton"));
-		}
+		//}
 		
 		if (xel.hasAttribute("Title")) 
 			this.addParams("PageTitle", xel.getRawAttribute("Title"));
