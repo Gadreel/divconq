@@ -9898,7 +9898,7 @@ $.widget( "mobile.flipswitch", $.extend({
 			if ( !( "onpage" in this.element[ 0 ] ) ) {
 				this.element.css({
 					"height": 0,
-					"min-height": 0,
+					// APW "min-height": 0,
 					"max-height": 0
 				});
 			}
@@ -9926,7 +9926,7 @@ $.widget( "mobile.flipswitch", $.extend({
 
 			this.element.css({
 				"height": height,
-				"min-height": "",
+				// APW "min-height": "",
 				"max-height": ""
 			});
 

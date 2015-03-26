@@ -436,8 +436,10 @@ public class CmsService extends ExtensionBase implements IService {
 				IFileStoreFile fi = this.getResult();
 				
 				if (!fi.exists()) {
-					request.error("Meta file does not exist");
-					request.complete();
+					//request.error("Meta file does not exist");
+					// default is empty					
+					info.setField("GallerySettings", new RecordStruct(new FieldStruct("Variations", new ListStruct())));
+					cdcb.countDown();
 					return;
 				}
 				
@@ -663,9 +665,10 @@ public class CmsService extends ExtensionBase implements IService {
 						XElement root = xres.getResult();
 						
 						String spath = path.subpath(3).toString();						// remove the www 
-						String fspath = spath.substring(0, spath.length() - 10);		// remove the extension
 						
 						if (fpath.endsWith(".dcuis.xml")) {
+							String fspath = spath.substring(0, spath.length() - 10);		// remove the extension
+							
 							System.out.println("Importing skeleton: " + root.getAttribute("Title") + " " + fspath);
 							
 							InsertRecordRequest req = new InsertRecordRequest();
@@ -684,6 +687,7 @@ public class CmsService extends ExtensionBase implements IService {
 						}
 						else {
 							// TODO check for ReqLib, ReqStyle, Function - these cannot be imported so return an error
+							String fspath = spath.substring(0, spath.length() - 9);		// remove the extension
 							
 							System.out.println("Importing page: " + root.getAttribute("Title") + " " + root.getAttribute("Skeleton"));
 

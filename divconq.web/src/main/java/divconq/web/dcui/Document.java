@@ -118,7 +118,10 @@ public class Document extends Html {
 		//}
 		
 		if (xel.hasAttribute("Title")) 
-			this.addParams("PageTitle", xel.getRawAttribute("Title"));
+			view.addParams("PageTitle", xel.getRawAttribute("Title"));
+		
+		if (xel.hasAttribute("Id")) 
+			view.addParams("PageId", xel.getRawAttribute("Id"));
 		
 		// html
 		Html5AppHead hd = new Html5AppHead(xel, domconfig);

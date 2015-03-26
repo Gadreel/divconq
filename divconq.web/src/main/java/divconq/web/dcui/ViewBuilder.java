@@ -380,4 +380,15 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
         
         return os.toString();
 	}
+	
+	@Override
+	public String getParam(String name) {
+    	if ((this.valueparams != null) && this.valueparams.containsKey(name))
+    		return this.valueparams.get(name);
+    	
+    	if (this.view != null)
+    		return this.view.getParam(name);
+    	
+    	return this.getContext().getInternalParam(name);
+	}
 }

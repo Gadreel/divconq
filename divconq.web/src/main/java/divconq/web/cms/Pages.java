@@ -41,6 +41,7 @@ import divconq.filestore.CommonPath;
 import divconq.filestore.IFileStoreFile;
 import divconq.filestore.local.FileSystemDriver;
 import divconq.hub.Hub;
+import divconq.io.LocalFileStore;
 import divconq.lang.CountDownCallback;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.FuncResult;
@@ -426,7 +427,17 @@ public class Pages {
 
 				ListStruct pages = (ListStruct) result;
 				
-				CountDownCallback cdcb = new CountDownCallback(pages.getSize(), callback);
+				CountDownCallback cdcb = new CountDownCallback(pages.getSize(), new OperationCallback() {					
+					@Override
+					public void callback() {
+						LocalFileStore pubfs = Hub.instance.getPublicFileStore();		
+						
+						// TODO different for previews?
+						pubfs.fireEvent("dcw/" + OperationContext.get().getDomain().getAlias() + "/www/all", false);
+						
+						callback.complete();
+					}
+				});
 				
 				if (cdcb.value() == 0) {
 					callback.complete();
@@ -440,6 +451,7 @@ public class Pages {
 					
 					compiled.setAttribute("Title", page.getFieldAsString("Title"));				
 					compiled.setAttribute("Skeleton", page.getFieldAsString("SkeletonPath")); 
+					compiled.setAttribute("Id", page.getFieldAsString("Id")); 
 					
 					ListStruct contents = page.getFieldAsList("PartContent");
 					ListStruct attribs = page.getFieldAsList("PartAttributes");

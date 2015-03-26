@@ -138,8 +138,12 @@ dc.user = {
 	 */
 	signin2 : function(creds, remember, callback) {	
 		if (window.location.protocol != "https:") {
-			// TODO turn this into a handler event
-			dc.pui.Popup.alert('Connection is not secure, unable to sign in!');
+			// TODO turn this into a handler event 
+			console.log('Connection is not secure, unable to sign in!');
+			
+			if (callback)
+				callback();
+			
 			return;
 		}
 			
@@ -190,6 +194,58 @@ dc.user = {
 			if (callback)
 				callback();
 		});
+	},
+
+	signinFacebook: function(callback) {
+		if (dc.user.isVerified()) {
+			callback();
+			return;
+		}
+	
+		var fbsignin = function(auth) {
+			dc.comm.sendMessage({ 
+					Service: 'dcAuth',
+					Feature: 'Authentication',
+					Op: 'SignInFacebook',
+					Body: {
+						AccessToken: auth.accessToken,
+						UserId: auth.userID
+					}
+				}, 
+				function(rmsg) {
+					if (rmsg.Result > 0) 
+						callback();
+					else 
+						dc.user.updateUser(false, callback);
+				});
+		};
+		
+		var lstatus = function(response) {
+			if (response.status === 'connected') {
+				fbsignin(response.authResponse);
+			}
+			else {
+				FB.login(function(response2) {
+						if (response2.status === 'connected') 
+							fbsignin(response2.authResponse);
+						else
+							callback();
+					}, 
+					{ scope: 'public_profile,email' }
+				);	
+			}
+		};
+	
+		if (!window.FB) {
+			$.getScript('https://connect.facebook.net/en_US/all.js', function(){
+				FB.init({ appId: dc.handler.settings.fbAppId, version: 'v2.2' });     
+	
+				FB.getLoginStatus(lstatus);			
+			});
+		}
+		else {
+			FB.getLoginStatus(lstatus);			
+		}
 	},
 	
 	updateUser : function(remember, callback) {		

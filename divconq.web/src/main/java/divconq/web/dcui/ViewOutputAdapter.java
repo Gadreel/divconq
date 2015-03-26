@@ -21,7 +21,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import divconq.filestore.CommonPath;
 import divconq.hub.Hub;
@@ -47,6 +49,8 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 	protected Nodes pagetemplate = null; 
 	public Nodes contenttemplate = null;
 	protected Class<? extends IContentBuilder> pagebuilder = null;
+	
+	protected Map<String,String> valueparams = new HashMap<>();
 	
 	protected List<XElement> functions = new ArrayList<>();
 	protected List<XElement> libs = new ArrayList<>();
@@ -219,7 +223,7 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 			
 			String mode = ctx.getExternalParam("_dcui");
 
-			if ("dyn".equals(mode) || "dyn".equals(mode)) {
+			if ("dyn".equals(mode) || "dyn".equals(mode)) {		// TODO fix second dyn
 				ctx.getResponse().setHeader("Content-Type", "application/javascript");
 				PrintStream ps = ctx.getResponse().getPrintStream();
 				ps.println("dc.pui.Loader.failedPageLoad(1);");			
@@ -238,5 +242,13 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 		vex.setViewInfo(this);
 		
 		return vex.execute(ctx);
+	}
+	
+	public String getParam(String name) {
+   		return this.valueparams.get(name);
+	}
+	
+	public String addParams(String name, String value) {
+   		return this.valueparams.put(name, value);
 	}
 }

@@ -1,0 +1,11 @@
+<dcui Title="Sign Out">
+	<Skeleton>
+			<h1>Signing Out</h1>
+	</Skeleton>
+	<Function Name="Load">
+			dc.user.signout();
+			dc.user.saveRememberedUser();
+	
+			window.location = '/';
+	</Function>
+</dcui>
