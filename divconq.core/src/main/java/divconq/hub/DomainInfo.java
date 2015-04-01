@@ -16,6 +16,8 @@
 ************************************************************************ */
 package divconq.hub;
 
+import groovy.lang.GroovyObject;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,11 +27,13 @@ import java.util.stream.Stream;
 
 import divconq.bus.IService;
 import divconq.bus.ServiceRouter;
+import divconq.io.FileStoreEvent;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.schema.SchemaManager;
 import divconq.service.DomainServiceAdapter;
+import divconq.service.DomainWatcherAdapter;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.IOUtil;
@@ -46,6 +50,7 @@ public class DomainInfo {
 	protected SchemaManager schema = null;
 	protected Map<String, IService> registered = new HashMap<String, IService>();
 	protected Map<String, ServiceRouter> routers = new HashMap<String, ServiceRouter>();
+	protected DomainWatcherAdapter watcher = null;
 	
 	public String getId() {
 		return this.info.getFieldAsString("Id");
@@ -69,6 +74,15 @@ public class DomainInfo {
 	
 	public ServiceRouter getServiceRouter(String name) {
 		return this.routers.get(name);
+	}
+	
+	public GroovyObject getScript(String service, String feature) {
+		IService s = this.registered.get(service);
+		
+		if (s instanceof DomainServiceAdapter) 
+			return ((DomainServiceAdapter)s).getScript(feature);
+		
+		return null;
 	}
 	
 	public ISettingsObfuscator getObfuscator() {
@@ -101,7 +115,6 @@ public class DomainInfo {
 				info.getFieldAsString("ObscureSeed"));
 		
 		this.reloadSettings();
-		this.reloadServices();
 	}
 
 	/* TODO reload more settings too - consider:
@@ -158,43 +171,45 @@ public class DomainInfo {
 			this.schema.loadSchema(shpath);
 			this.schema.compile();
 		}		
-	}
-	
-	public void reloadServices() {
+
 		this.registered.clear();
 		this.routers.clear();
 		
-		LocalFileStore fs = Hub.instance.getPublicFileStore();
-		
-		if (fs == null)
-			return;
-		
 		Path dpath = fs.getFilePath().resolve("dcw/" + this.getAlias());
-		Path cpath = dpath.resolve("services");
+		Path spath = dpath.resolve("services");
 
-		if (Files.notExists(cpath))
-			return;
-
-		try (Stream<Path> str = Files.list(cpath)) {
-			str.forEach(path -> {
-				// only directories are services - files in dir are features
-				if (!Files.isDirectory(path))
-					return;
-				
-				String name = path.getFileName().toString();
-				
-				this.registered.put(name, new DomainServiceAdapter(name, path, dpath));
-				
-				ServiceRouter r = new ServiceRouter(name);
-				r.indexLocal();
-				
-				this.routers.put(name, r);
-			});
-		} 
-		catch (IOException x) {
-			// TODO Auto-generated catch block
-			x.printStackTrace();
+		if (Files.exists(spath)) {
+			try (Stream<Path> str = Files.list(spath)) {
+				str.forEach(path -> {
+					// only directories are services - files in dir are features
+					if (!Files.isDirectory(path))
+						return;
+					
+					String name = path.getFileName().toString();
+					
+					this.registerService(new DomainServiceAdapter(name, path, dpath));
+				});
+			} 
+			catch (IOException x) {
+				// TODO Auto-generated catch block
+				x.printStackTrace();
+			}
 		}
+		
+		// watcher comes after services so it can register a service if it likes... if this came before it would be cleared from the registered list
+		if (this.watcher == null)
+			this.watcher = new DomainWatcherAdapter(dpath);
+		
+		this.watcher.init(this);
+	}
+	
+	public void registerService(IService service) {
+		this.registered.put(service.serviceName(), service);
+		
+		ServiceRouter r = new ServiceRouter(service.serviceName());
+		r.indexLocal();
+		
+		this.routers.put(service.serviceName(), r);
 	}
 	
 	@Override
@@ -226,5 +241,9 @@ public class DomainInfo {
 		));
 		
 		return obfuscator;
+	}
+
+	public void fileChanged(FileStoreEvent result) {
+		this.watcher.tryExecuteMethod("FileChanged", new Object[] { result });
 	}
 }

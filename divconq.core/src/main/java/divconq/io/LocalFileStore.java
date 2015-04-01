@@ -42,6 +42,18 @@ public class LocalFileStore {
 	public Path getFilePath() {
 		return this.path;
 	}
+
+	public Path resolvePath(String path) {
+		return this.path.resolve(path);
+	}
+
+	public Path resolvePath(Path path) {
+		return this.path.resolve(path);
+	}
+
+	public Path resolvePath(CommonPath path) {
+		return this.path.resolve(path.toString().substring(1));
+	}
 	
 	public void register(FuncCallback<FileStoreEvent> callback) {
 		this.listeners.add(callback);

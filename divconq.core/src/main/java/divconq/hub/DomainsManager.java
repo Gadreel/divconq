@@ -180,21 +180,15 @@ public class DomainsManager {
 					String domain = p.getName(1);
 					String section = p.getName(2);
 					
-					if ("dcw".equals(mod) && "config".equals(section)) {
+					if ("dcw".equals(mod)) {
 						for (DomainInfo wdomain : DomainsManager.this.dsitemap.values()) {
 							if (domain.equals(wdomain.getAlias())) {
-								wdomain.reloadSettings();
-								Hub.instance.fireEvent(HubEvents.DomainConfigChanged, wdomain);
-								break;
-							}
-						}
-					}
-					
-					if ("dcw".equals(mod) && ("services".equals(section) || "glib".equals(section))) {
-						for (DomainInfo wdomain : DomainsManager.this.dsitemap.values()) {
-							if (domain.equals(wdomain.getAlias())) {
-								wdomain.reloadServices();
-								Hub.instance.fireEvent(HubEvents.DomainConfigChanged, wdomain);
+								if (("config".equals(section) || "services".equals(section) || "glib".equals(section))) {
+									wdomain.reloadSettings();
+									Hub.instance.fireEvent(HubEvents.DomainConfigChanged, wdomain);
+								}
+								
+								wdomain.fileChanged(this.getResult());								
 								break;
 							}
 						}

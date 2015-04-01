@@ -81,7 +81,7 @@
 	{
 		Name: [name],
 		
-		Hash: [hash],
+		Id: [id],
 		
 		Loaded: t/f - once t then does a thaw next visit to this entry
 		
@@ -138,10 +138,10 @@
 dc.pui = {
 	Loader: {
 		__content: null,
-		__loadPageHash: null,
+		__loadPageId: null,
 		__current: null,
 		__devmode: false,
-		__hashes: { },
+		__ids: { },
 		__pages: { },
 		__stalePages: { },
 		__libs: { },
@@ -156,14 +156,18 @@ dc.pui = {
 		init: function() {
 			dc.pui.Loader.__content = document.querySelector('body'); 
 			
-			$(window).on('hashchange', function() {
-				var hash = location.hash.substring(1); 
+			$(window).bind('popstate', function(e) {
+				//console.log("pop - location: " + document.location + ", state: " + JSON.stringify(e.originalEvent.state));
 				
-				if (hash)
-					dc.pui.Loader.manifestPage(dc.pui.Loader.__hashes[hash]);
+				var state = e.originalEvent.state;
 				
-				return false;
-			});
+				var id = state.Id; 
+				
+				if (id && dc.pui.Loader.__ids[id])
+					dc.pui.Loader.manifestPage(dc.pui.Loader.__ids[id]);
+				else
+					dc.pui.Loader.loadPage(document.location, state.Params);
+		    });
 			
 			// watch for orientation change or resize events
 			$(window).bind('orientationchange resize', function (e) {
@@ -184,19 +188,6 @@ dc.pui = {
 					}
 				}
 			});
-			
-			/* no swipe!!
-			$(document).on("swipeleft swiperight", "#pgMain", function( e ) {
-				// We check if there is no open panel on the page because otherwise
-				// a swipe to close the left panel would also open the right panel (and v.v.).
-				// We do this by checking the data that the framework stores on the page element (panel: open).
-				if ( $(".ui-page-active").jqmData("panel") !== "open") {
-					if (e.type === "swipeleft") {
-						$( "#notifyPanel" ).panel( "open" );
-					} 
-				}
-			});
-			*/
 			
 			// setup some validators
 			
@@ -265,8 +256,6 @@ dc.pui = {
 		loadDestPage: function() {
 			if (dc.pui.Loader.__destPage)
 				dc.pui.Loader.loadPage(dc.pui.Loader.__destPage);
-			//else
-			//	dc.pui.Loader.loadPortalPage();
 		},
 		
 		signout: function() {
@@ -279,6 +268,14 @@ dc.pui = {
 		loadPage: function(page, params) {
 			if (!page)
 				return;
+			
+			// really old browsers simply navigate again, rather than do the advanced page view
+			if (!history.pushState) {
+				if (window.location.pathname != page)
+					window.location = page;
+				
+				return;
+			}
 			
 			var rp = dc.handler ? dc.handler.reroute(page, params) : null;
 			
@@ -315,7 +312,7 @@ dc.pui = {
 				}
 			};
 			
-			dc.pui.Loader.__loadPageHash = dc.pui.Loader.addPageEntry(entry);
+			dc.pui.Loader.__loadPageId = dc.pui.Loader.addPageEntry(entry);
 		
 			//console.log('checking staleness a: ' + dc.pui.Loader.__stalePages[page])
 			
@@ -338,7 +335,7 @@ dc.pui = {
 		},
 		
 		resumePageLoad: function() {
-			var entry = dc.pui.Loader.__hashes[dc.pui.Loader.__loadPageHash];
+			var entry = dc.pui.Loader.__ids[dc.pui.Loader.__loadPageId];
 			
 			// TODO error
 			if (!entry)
@@ -395,7 +392,12 @@ dc.pui = {
 				return;
 			}
 			
-			window.location.hash = dc.pui.Loader.__loadPageHash;				
+			history.pushState(
+					{ Id: dc.pui.Loader.__loadPageId, Params: entry.Params }, 
+					page.Title, 
+					entry.Name);
+			
+			dc.pui.Loader.manifestPage(entry);
 		},
 		
 		clearPageCache: function(page) {
@@ -408,20 +410,20 @@ dc.pui = {
 		},
 		
 		failedPageLoad: function(reason) {
-			dc.pui.Loader.__destPage = dc.pui.Loader.__hashes[dc.pui.Loader.__loadPageHash].Name;
+			dc.pui.Loader.__destPage = dc.pui.Loader.__ids[dc.pui.Loader.__loadPageId].Name;
 			
 			if (reason == 1)
 				dc.pui.Loader.loadSigninPage({FromFail: true});
 		},
 		
 		addPageEntry: function(entry) {
-			var hash = entry.Name + '@' + dc.util.Uuid.create().replace(/-/g,'');
+			var id = entry.Name + '@' + dc.util.Uuid.create().replace(/-/g,'');
 			
-			entry.Hash = hash;
+			entry.Id = id;
 			
-			dc.pui.Loader.__hashes[hash] = entry;
+			dc.pui.Loader.__ids[id] = entry;
 			
-			return hash;
+			return id;
 		},
 		
 		addPageDefinition: function(name, def) {
@@ -2221,45 +2223,7 @@ $(document).on('mobileready', function () {
 	if ((dmode == 'html') || (dmode == 'print'))
 		return;
 	
-	// if we are not at this page using the correct Main then switch main
-	var hash = location.hash;
-	
-	if (hash) {
-		var atpos = hash.indexOf('@');
-		
-		if (atpos > -1)
-			hash = hash.substring(1, atpos);
-		else
-			hash = hash.substring(1);
-	}
-	
-	// if hash does not contain / or if it contains only / then skip hash as home hint 
-	if ((hash == '/') || (hash.indexOf('/') == -1))
-		hash = '';
-	
-	var dpath = hash ? hash : location.pathname;
-
-	// if path does not contain / or if it contains only / then skip path as home hint 
-	if ((dpath == '/') || (dpath.indexOf('/') == -1))
-		dpath = '';
-	
-	// look for home hint in html attr
-	if (!dpath)
-		dpath = $('html').attr('data-dcw-Home');
-	
-	if (!dpath)
-		dpath = dc.pui.Loader.__homePage;
-
-	// by this point we always want some dpath - home or otherwise - due to fact that we want to 
-	// go through the dynamic load for the initial page showing - so __destPath is our way to get
-	// home, etc via dynamic
-	
-	if (location.pathname != '/') {
-		window.location = '/#' + dpath;
-		return;
-	}
-	
-	dc.pui.Loader.__destPage = dpath;
+	dc.pui.Loader.__destPage = location.pathname;
 	
 	dc.comm.init(function() {
 		/*

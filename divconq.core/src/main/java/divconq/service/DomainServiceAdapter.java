@@ -25,6 +25,26 @@ public class DomainServiceAdapter implements IService {
 		this.domainpath = dpath;
 	}
 	
+	public GroovyObject getScript(String name) {
+		ServiceFeature f = this.getFeature(name);
+		
+		if (f != null) 
+			return f.script;
+		
+		return null;
+	}
+	
+	public ServiceFeature getFeature(String name) {
+		ServiceFeature f = this.features.get(name);
+		
+		if (f == null) {
+			f = new ServiceFeature(name);
+			this.features.put(name, f);
+		}
+		
+		return f;
+	}
+	
 	@Override
 	public String serviceName() {
 		return this.name;
@@ -36,14 +56,10 @@ public class DomainServiceAdapter implements IService {
 		
 		String feature = msg.getFieldAsString("Feature");
 		
-		ServiceFeature f = this.features.get(feature);
+		ServiceFeature f = this.getFeature(feature);
 		
-		if (f == null) {
-			f = new ServiceFeature(feature);
-			this.features.put(feature, f);
-		}
-		
-		f.handle(request);
+		if (f != null)
+			f.handle(request);
 	}
 	
 	public class ServiceFeature {
