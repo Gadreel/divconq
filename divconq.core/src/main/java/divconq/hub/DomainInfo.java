@@ -85,6 +85,13 @@ public class DomainInfo {
 		return null;
 	}
 	
+	public GroovyObject getWatcherScript() {
+		if (this.watcher != null) 
+			return this.watcher.getScript();
+		
+		return null;
+	}
+	
 	public ISettingsObfuscator getObfuscator() {
 		return this.obfuscator;
 	}

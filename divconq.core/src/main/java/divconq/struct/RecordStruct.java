@@ -689,6 +689,18 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 		return cp;
 	}
 	
+	public RecordStruct deepCopyFields(String... include) {
+		RecordStruct cp = new RecordStruct();
+    	super.doCopy(cp);
+    	
+    	for (String fld : include) {
+    		if (this.hasField(fld))
+				cp.setField(this.fields.get(fld).deepCopy());				
+		}    	
+		
+		return cp;
+	}
+	
 	public RecordStruct deepCopyExclude(String... exclude) {
 		RecordStruct cp = new RecordStruct();
     	super.doCopy(cp);

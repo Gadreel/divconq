@@ -161,12 +161,14 @@ dc.pui = {
 				
 				var state = e.originalEvent.state;
 				
-				var id = state.Id; 
+				var id = state ? state.Id : null; 
 				
-				if (id && dc.pui.Loader.__ids[id])
-					dc.pui.Loader.manifestPage(dc.pui.Loader.__ids[id]);
-				else
-					dc.pui.Loader.loadPage(document.location, state.Params);
+				if (id) {
+					if (dc.pui.Loader.__ids[id])
+						dc.pui.Loader.manifestPage(dc.pui.Loader.__ids[id]);
+					else
+						dc.pui.Loader.loadPage(document.location, state.Params);
+				}
 		    });
 			
 			// watch for orientation change or resize events
@@ -561,6 +563,51 @@ dc.pui = {
 		},		
 		currentPageEntry: function() {
 			return dc.pui.Loader.__current;
+		},
+		
+		callbackExtraLibs: function() {
+			if (dc.pui.Loader.__extraLibsCallback)
+				dc.pui.Loader.__extraLibsCallback();
+		},
+		
+		addExtraLibs: function(scripts, cb) {
+			var needWait = false;
+			
+			dc.pui.Loader.__extraLibsCallback = cb;
+			
+			for (var i = 0; i < scripts.length; i++) {
+				var path = scripts[i];
+				
+				if (dc.pui.Loader.__libs[path])
+					continue;
+				
+				var script = document.createElement('script');
+				script.src = path + '?nocache=' + dc.util.Crypto.makeSimpleKey();
+				script.id = 'req' + path.replace(/\//g,'.');					
+				script.async = false;  	// needed when loading additional libraries, we can inject a final fake script that echos 
+										// a param (e.g. ?opid=3345) to us saying that it is loaded and hence all preceding scripts are also loaded
+				
+				document.head.appendChild(script);
+				
+				dc.pui.Loader.__libs[path] = true;		// not really yet, but as good as we can reasonably get
+				needWait = true;
+			}
+			
+			if (needWait) {
+				var key = dc.util.Crypto.makeSimpleKey();
+				
+				var script = document.createElement('script');
+				script.src = '/dcw/js/dc.extra-lib-callback.js?nocache=' + key;
+				script.id = 'lib' + key;					
+				script.async = false;  	// needed when loading additional libraries, we can inject a final fake script that echos 
+										// a param (e.g. ?opid=3345) to us saying that it is loaded and hence all preceding scripts are also loaded
+				
+				document.head.appendChild(script);
+			}
+			else {
+				if (dc.pui.Loader.__extraLibsCallback)
+					dc.pui.Loader.__extraLibsCallback();
+			}
 		},
 		
 		requestFrame: function() {

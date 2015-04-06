@@ -914,6 +914,102 @@ public class Main implements ILocalCommandLine {
 					
 					break;
 				}
+				
+				case 7: {
+					Path sfolder = Paths.get("/Work/Projects/awww-current/dairy-graze/poly");
+					Path dfolder = Paths.get("/Work/Projects/awww-current/dairy-graze/poly-js");
+					
+					Files.list(sfolder).forEach(file -> {
+						String fname = file.getFileName().toString();
+
+						if (!fname.endsWith(".xml"))
+							return;
+						
+						FuncResult<XElement> lres = XmlReader.loadFile(file, false);
+						
+						if (lres.isEmptyResult()) {
+							System.out.println("Unable to parse: " + file);
+							return;
+						}
+						
+						String zc = fname.substring(5, 8);
+						String code = "zipsData['" + zc + "'] = ";
+						XElement root = lres.getResult();
+						
+/*
+<polyline1 lng="-90.620897" lat="45.377447"/>
+<polyline1 lng="-90.619327" lat="45.3805"/>
+
+					[-71.196845,41.67757],[-71.120168,41.496831],[-71.317338,41.474923],[-71.196845,41.67757]
+ */
+						ListStruct center = new ListStruct();
+						ListStruct cords = new ListStruct();
+						ListStruct currentPoly = null;
+						//String currentName = null;
+						
+						for (XElement child : root.selectAll("*")) {
+							String cname = child.getName();
+							
+							if (cname.startsWith("marker")) {
+								// not always accurate
+								if (center.isEmpty())
+									center.addItem(Struct.objectToDecimal(child.getAttribute("lng")), Struct.objectToDecimal(child.getAttribute("lat")));
+								
+								currentPoly = new ListStruct();
+								cords.addItem(new ListStruct(currentPoly));
+								
+								continue;
+							}
+							
+							/*
+							if (cname.startsWith("info")) {
+								System.out.println("areas: " + child.getAttribute("areas"));
+								continue;
+							}
+							*/
+							
+							if (!cname.startsWith("polyline"))
+								continue;
+							
+							if (currentPoly == null) {
+							//if (!cname.equals(currentName)) {
+							//if (currentName == null) {
+							//	currentName = cname;
+								
+							//	System.out.println("new poly: " + cname);
+								
+								currentPoly = new ListStruct();
+								cords.addItem(new ListStruct(currentPoly));
+							}
+							
+							currentPoly.addItem(new ListStruct(Struct.objectToDecimal(child.getAttribute("lng")), Struct.objectToDecimal(child.getAttribute("lat"))));
+						}
+						
+						RecordStruct feat = new RecordStruct()
+							.withField("type", "Feature")
+							.withField("id", "zip" + zc)
+							.withField("properties", 
+								new RecordStruct()
+									.withField("name", "Prefix " + zc)
+									.withField("alias", zc)
+							)
+							.withField("geometry", 
+									new RecordStruct()
+										.withField("type", "MultiPolygon")
+										.withField("coordinates", cords)
+							);
+								
+						RecordStruct entry = new RecordStruct()
+							.withField("code", zc)
+							.withField("geo", feat)
+							.withField("center", center);
+						
+						IOUtil.saveEntireFile2(dfolder.resolve("us-zips-" + zc + ".js"), code + entry.toPrettyString() + ";");
+					});
+					
+					break;
+				}
+				
 				}
 			}
 			catch(Exception x) {

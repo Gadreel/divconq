@@ -17,6 +17,10 @@ public class DomainWatcherAdapter {
 	public DomainWatcherAdapter(Path dpath) {
 		this.domainpath = dpath;
 	}
+	
+	public GroovyObject getScript() {
+		return this.script;
+	}
 
 	public void init(DomainInfo domaininfo) {
 		if (this.script != null) {
