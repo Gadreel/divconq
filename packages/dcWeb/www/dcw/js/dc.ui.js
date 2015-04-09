@@ -513,6 +513,15 @@ dc.pui = {
 						}
 							
 						entry.Loaded = true;
+
+						if (typeof ga == 'function') {
+							ga('set', {
+								  page: entry.Name,
+								  title: page.Title
+							});
+	
+							ga('send', 'pageview');
+						}
 						
 						// TODO
 						//$.mobile.loading('hide'); 
@@ -2271,6 +2280,11 @@ $(document).on('mobileready', function () {
 		return;
 	
 	dc.pui.Loader.__destPage = location.pathname;
+	
+	if (typeof ga == 'function') {
+		ga('create', dc.handler.settings.ga, 'auto');
+		ga('set', 'forceSSL', true);
+	}
 	
 	dc.comm.init(function() {
 		/*

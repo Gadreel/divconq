@@ -144,9 +144,9 @@ public class Pages {
 						.withForeignField("dcmAuthor", "AuthorName", "dcUsername")
 						.withField("dcmCreated", "Created")
 						.withField("dcmModified", "Modified")
-						.withField("dcmModified", "Modified")
 						.withField("dcmPublished", "Published")
 						.withField("dcmDescription", "Description")
+						.withField("dcmKeywords", "Keywords")
 						.withField("dcmPartContent", "PartContent", null, true)
 						.withField("dcmPartAttributes", "PartAttributes", null, true)
 				);  
@@ -410,8 +410,8 @@ public class Pages {
 				.withForeignField("dcmAuthor", "AuthorName", "dcUsername")
 				.withField("dcmCreated", "Created")
 				.withField("dcmModified", "Modified")
-				.withField("dcmModified", "Modified")
 				.withField("dcmPublished", "Published")
+				.withField("dcmKeywords", "Keywords")
 				.withField("dcmDescription", "Description")
 				.withField("dcmPartContent", "PartContent", null, true)
 				.withField("dcmPartAttributes", "PartAttributes", null, true))
@@ -452,6 +452,12 @@ public class Pages {
 					compiled.setAttribute("Title", page.getFieldAsString("Title"));				
 					compiled.setAttribute("Skeleton", page.getFieldAsString("SkeletonPath")); 
 					compiled.setAttribute("Id", page.getFieldAsString("Id")); 
+					
+					if (!page.isFieldEmpty("Keywords"))
+						compiled.add(new XElement("Keywords", page.getFieldAsString("Keywords")));
+					
+					if (!page.isFieldEmpty("Description"))
+						compiled.add(new XElement("Description", page.getFieldAsString("Description")));
 					
 					ListStruct contents = page.getFieldAsList("PartContent");
 					ListStruct attribs = page.getFieldAsList("PartAttributes");

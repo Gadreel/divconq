@@ -21,6 +21,9 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -36,6 +39,9 @@ import org.yaml.snakeyaml.events.ScalarEvent;
 import org.yaml.snakeyaml.events.SequenceEndEvent;
 import org.yaml.snakeyaml.events.SequenceStartEvent;
 */
+
+
+
 
 
 
@@ -113,6 +119,50 @@ public class CompositeParser {
 		}
 		catch (IOException x) {
 			ret.error("Error reading file " + path + ", error: " + x);
+		}
+		
+		return ret;
+	}
+	
+	static public FuncResult<CompositeStruct> parseJsonUrl(String url) {
+		try {
+			return CompositeParser.parseJson(new URL(url));
+		} 
+		catch (MalformedURLException x) {
+			FuncResult<CompositeStruct> ret = new FuncResult<CompositeStruct>();
+			ret.error("Error opening url " + url + ", error: " + x);
+			return ret;
+		}
+	}
+	
+	static public FuncResult<CompositeStruct> parseJson(URL url) {
+		FuncResult<CompositeStruct> ret = new FuncResult<CompositeStruct>();
+		
+		try {
+			HttpURLConnection con = (HttpURLConnection) url.openConnection();
+			 
+			con.setRequestMethod("GET");
+			con.setRequestProperty("User-Agent", "Mozilla/5.0");
+	 
+			if (con.getResponseCode() != 200) {
+				ret.error("Error reading url " + url + ", error code: " + con.getResponseCode());
+				return ret;
+			}
+			
+			try (InputStream in = con.getInputStream()) {
+				try (JsonParser jp = JsonParser.createParser(in)) {
+					ret.setResult(CompositeParser.parseJson(jp));
+				}
+				catch (Exception x) {
+					ret.error("Error parsing JSON url " + url + ", error: " + x);
+				}
+			}
+			catch (IOException x) {
+				ret.error("Error reading url " + url + ", error: " + x);
+			}
+		}
+		catch (IOException x) {
+			ret.error("Error opening url " + url + ", error: " + x);
 		}
 		
 		return ret;

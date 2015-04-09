@@ -29,4 +29,8 @@ abstract public class WhereGroupExpression extends WhereExpression {
 
 		this.params.setField("Children",  dlst); 
 	}
+	
+	public void addWhere(WhereExpression ex) {
+		this.params.getFieldAsList("Children").addItem(ex.getFields()); 
+	}
 }

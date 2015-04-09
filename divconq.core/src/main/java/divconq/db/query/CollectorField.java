@@ -51,6 +51,12 @@ public class CollectorField implements ICollector {
 		return this;
 	}
 	
+	public CollectorField withValues(ListStruct values) {
+		this.column.setField("Values", values);
+		
+		return this;
+	}
+	
 	public CollectorField withFrom(Object v) {
 		this.column.setField("From", v);
 		

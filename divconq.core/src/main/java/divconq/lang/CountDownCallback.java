@@ -69,6 +69,10 @@ public class CountDownCallback {
 	public int increment() {
 		return this.count.incrementAndGet();
 	}
+	
+	public int increment(int amt) {
+		return this.count.addAndGet(amt);
+	}
 
 	/* TODO remove if possible
 	public void setContext(OperationContext taskContext) {

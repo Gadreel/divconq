@@ -22,5 +22,6 @@ dc.handler = {
 		return null;		// don't reroute if null
 	},
 	settings: {		
+		ga: 'UA-XXXX-Y'
 	}
 };

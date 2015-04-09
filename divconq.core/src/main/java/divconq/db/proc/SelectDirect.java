@@ -119,8 +119,12 @@ public class SelectDirect extends LoadRecord {
 				ListStruct values = collector.getFieldAsList("Values");
 				
 				if (values != null) {
-					for (Struct s : values.getItems()) 
-						db.traverseIndex(table, fname, Struct.objectToCore(s), when, historical, uniqueConsumer);
+					for (Struct s : values.getItems()) { 
+						if ("Id".equals(fname))
+							uniqueConsumer.accept(s);
+						else
+							db.traverseIndex(table, fname, Struct.objectToCore(s), when, historical, uniqueConsumer);
+					}
 				}
 				else {
 					Object from = Struct.objectToCore(collector.getField("From"));

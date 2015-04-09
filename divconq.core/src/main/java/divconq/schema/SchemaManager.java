@@ -460,16 +460,21 @@ public class SchemaManager {
 			
 			DataType t1 = this.getType(parts[0]);
 			
-			if (t1 == null) 
-				return ld;
-						
-			if (t1.fields == null)
-				return ld;
+			if ((t1 == null) || (t1.fields == null)) {
+				if (this.chain == null)
+					return ld;
+				
+				return this.chain.lookupOptionsType(name);
+			}
 			
 			Field f1 = t1.fields.get(parts[1]);
 			
-			if (f1 == null) 
-				return ld;
+			if (f1 == null) {
+				if (this.chain == null)
+					return ld;
+				
+				return this.chain.lookupOptionsType(name);
+			}
 			
 			return f1.options;
 		}
