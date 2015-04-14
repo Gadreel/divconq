@@ -523,6 +523,9 @@ dc.pui = {
 							ga('send', 'pageview');
 						}
 						
+						if (page.Title)
+							document.title = page.Title;
+						
 						// TODO
 						//$.mobile.loading('hide'); 
 					});

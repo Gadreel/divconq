@@ -406,6 +406,10 @@ public class WebContext {
 		return this.preview;
 	}
 	
+	public Path findPath(String path) {
+		return this.domain.findFilePath(false, new CommonPath(path), null);
+	}
+	
 	// string path is relative to dcw/[alias]/[path]
 	public CompositeStruct getJsonResource(String path) {
 		Path fpath = this.domain.findFilePath(false, new CommonPath(path), null);
