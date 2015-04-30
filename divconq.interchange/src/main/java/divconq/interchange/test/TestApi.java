@@ -114,7 +114,7 @@ public class TestApi {
 					}
 					
 					case 3: {
-						System.out.println("Session Key: " + capi.getSessionKey());
+						//System.out.println("Session Key: " + capi.getSessionKey());
 						System.out.println("User: " + capi.getUser());
 						
 						break;

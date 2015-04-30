@@ -660,8 +660,8 @@ public class RecordStruct extends CompositeStruct implements IItemCollection, Gr
 	 * 
 	 * @param name of field to remove
 	 */
-	public void removeField(String name) {
-		this.fields.remove(name);
+	public FieldStruct removeField(String name) {
+		return this.fields.remove(name);
 	}
 
 	public Struct sliceField(String name) {

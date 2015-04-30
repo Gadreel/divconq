@@ -460,6 +460,8 @@ public class SchemaManager {
 			
 			DataType t1 = this.getType(parts[0]);
 			
+			t1.compile();
+			
 			if ((t1 == null) || (t1.fields == null)) {
 				if (this.chain == null)
 					return ld;

@@ -79,8 +79,10 @@ import divconq.hub.ILocalCommandLine;
 import divconq.lang.BigDateTime;
 import divconq.lang.Memory;
 import divconq.lang.TimeoutPlan;
+import divconq.lang.op.FuncCallback;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationContextBuilder;
 import divconq.lang.op.OperationObserver;
 import divconq.lang.op.OperationResult;
 import divconq.lang.stem.IndexInfo;
@@ -91,6 +93,7 @@ import divconq.log.Logger;
 import divconq.mail.MailTaskFactory;
 import divconq.script.Activity;
 import divconq.script.ui.ScriptUtility;
+import divconq.session.Session;
 import divconq.struct.CompositeParser;
 import divconq.struct.CompositeStruct;
 import divconq.struct.FieldStruct;
@@ -101,6 +104,8 @@ import divconq.util.FileUtil;
 import divconq.util.HexUtil;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
+import divconq.web.cms.OrderUtil;
+import divconq.work.IWork;
 import divconq.work.Task;
 import divconq.work.TaskRun;
 import divconq.xml.XElement;
@@ -2010,6 +2015,154 @@ public class FileStoreClient implements ILocalCommandLine {
 						for (int i = 0; i < e.getValue().positions.size(); i++)
 							System.out.println("    @ " + e.getValue().positions.get(i));
 					}
+					
+					break;
+				}
+				
+				case 400: {
+					IWork procorder = new IWork() {
+						@Override
+						public void run(TaskRun trun) {
+							RecordStruct order = new RecordStruct();
+							
+							ListStruct items = new ListStruct();
+							
+							items.addItem(
+									new RecordStruct()
+										.withField("EntryId", Session.nextUUId())
+										.withField("Product", "00700_000000000000010")
+										//.withField("Title", "Gulf Seaweed")
+										//.withField("Alias", "Gulf-Seaweed")
+										//.withField("Sku", "AD-1")
+										//.withField("Description", "**20\" w x 25\" h**\n**Fused glass, willow on painted wood**\n\nThe blues and greens in this joyful flower intend to uplift, inspire and bring joy to your home. To be present with color in an intentional way is good medicine for bringing us closer to the physical and emotional reactions colors evoke.  Surrounding ourselves with colors can impact our daily lives, as color has physical and emotional properties when viewed, worn or displayed. ")
+										//.withField("Tags", new ListStruct())
+										//.withField("Price", new BigDecimal("2950"))
+										//.withField("SalePrice", null)
+										.withField("Quantity", 1)
+										//.withField("Total", new BigDecimal("2950"))
+										//.withField("TaxFree", false)
+										//.withField("ShipFree", false)
+							);
+							
+							items.addItem(
+									new RecordStruct()
+										.withField("EntryId", Session.nextUUId())
+										.withField("Product", "00700_000000000000012")
+										.withField("Title", "Elder's Gifts")
+										.withField("Alias", "Elder-Gifts")
+										.withField("Sku", "AD-4")
+										.withField("Description", "**19\" w x 25\" h**\n**Fused glass, willow on painted wood**\n\nThe joyful sharing of plants be it dividing bulbs or digging roots provides a special gift to others.  An intimate gift filled with love and memories. Each year my great grandmother’s lilies emerge from their slumber and I am reminded of her courage and unconditional love.")
+										.withField("Tags", new ListStruct())
+										.withField("Price", new BigDecimal("1200"))
+										.withField("SalePrice", null)
+										.withField("Quantity", 2)
+										.withField("Total", new BigDecimal("2400"))
+										.withField("TaxFree", false)
+										.withField("ShipFree", false)
+							);
+							
+							items.addItem(
+									new RecordStruct()
+										.withField("EntryId", Session.nextUUId())
+										.withField("Product", "00700_000000000000017")
+										//.withField("Title", "Prairie Coneflower Infusion")
+										//.withField("Alias", "Prairie-Coneflower")
+										//.withField("Sku", "SU-3")
+										//.withField("Description", "**14\" w x 18\" h**\n**Fused glass, willow on painted wood**\n\nPurple Cone Flower (Echinacea Purpurea) is a native flower of the Tall Grass Prairie. Medicinally it is known for its ability to strengthen the human immune system when ingested. This work of art has been made with a similar intent--to bring strength and courage into your life and dwelling.")
+										//.withField("Tags", new ListStruct())
+										//.withField("Price", new BigDecimal("750"))
+										//.withField("SalePrice", null)
+										.withField("Quantity", 3)
+										//.withField("Total", new BigDecimal("2250"))
+										//.withField("TaxFree", false)
+										//.withField("ShipFree", false)
+							);
+							
+							order.withField("Items", items);
+							order.withField("Delivery", "Ship");
+							
+							order.withField("CustomerInfo",
+									new RecordStruct()
+										.withField("FirstName", "Andrew")
+										.withField("LastName", "White")
+										.withField("Email", "apwhite@tds.net")
+										.withField("Phone", "6082380739")
+										.withField("CustomerId", "00877")
+							);
+							
+							order.withField("ShippingInfo",
+									new RecordStruct()
+										.withField("FirstName", "Andrew")
+										.withField("LastName", "Wright")
+										.withField("Address", "3704 Hillcrest Dr")
+										.withField("City", "Madison")
+										.withField("State", "WI")
+										.withField("Zip", "53705")
+							);
+							
+							order.withField("BillingInfo",
+									new RecordStruct()
+										.withField("FirstName", "Andy")
+										.withField("LastName", "White")
+										.withField("Address", "3704 Hillcrest Dr")
+										.withField("City", "Madison")
+										.withField("State", "WI")
+										.withField("Zip", "53705")
+							);
+							
+							order.withField("PaymentInfo",
+									new RecordStruct()
+										.withField("PaymentMethod", "CreditCard")
+										.withField("CardNumber", "4111111111111111")
+										.withField("Expiration", "1218")
+										.withField("Code", "731")
+							);
+							
+							/*
+							order.withField("CalcInfo",
+									new RecordStruct()
+										.withField("ItemCalc", new BigDecimal("41.00"))
+										.withField("ProductDiscount", new BigDecimal("0"))
+										.withField("ItemTotal", new BigDecimal("41.00"))
+										.withField("ShipCalc", new BigDecimal("41.00"))
+										.withField("ShipAmount", new BigDecimal("4.50"))
+										.withField("ShipDiscount", new BigDecimal("0"))
+										.withField("ShipTotal", new BigDecimal("4.50"))
+										.withField("TaxCalc", new BigDecimal("41.00"))
+										.withField("TaxAt", new BigDecimal("0.07"))
+										.withField("TaxTotal", new BigDecimal("3.29"))
+										.withField("GrandTotal", new BigDecimal("48.79"))
+							);
+							*/
+							
+							OrderUtil.processAuthOrder(order, new FuncCallback<String>() {
+								@Override
+								public void callback() {
+									System.out.println("Here is order detail now: " + order.toPrettyString());
+									
+									trun.complete();							
+								}
+							});
+						}
+					};
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User")
+							.withDomainId("00700_000000000000002")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(procorder)
+						.withTitle("Test order processing")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
 					
 					break;
 				}

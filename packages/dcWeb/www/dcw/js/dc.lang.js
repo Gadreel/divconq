@@ -103,8 +103,11 @@ String.prototype.urldecode = function() {
 }
 
 String.escapeHtml = function(val) {
-	if (!dc.util.String.isString(val))
+	if (dc.util.Struct.isEmpty(val))
 		return '';
+
+	if (!dc.util.String.isString(val))
+		return val + '';
 		
 	return val.escapeHtml();
 }
@@ -291,6 +294,12 @@ var dc = {
 					return null;
 			
 				return parseFloat(n);
+			},
+			toNumberStrict: function(n) {
+				if (isNaN(parseFloat(n)) || !isFinite(n))
+					return 0;
+			
+				return parseFloat(n);
 			}			
 		},
 		String: {
@@ -411,6 +420,11 @@ var dc = {
 				
 				return new Date(year, month, day, hours, minutes, seconds, ms);
 			},
+			
+			stamp: function() {
+				return moment.utc().format('YYYYMMDDTHHmmssSSS') + 'Z';
+			},
+						
 			toMonth : function(date) {
 				var month = date.getMonth();
 				
@@ -512,7 +526,11 @@ var dc = {
 			    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
 			},
 			getHashParam : function(name) {
-			    var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.hash);
+			    var match = RegExp('[?&#]' + name + '=([^&]*)').exec(window.location.hash);
+			    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+			},
+			getFromParams : function(params,name) {
+			    var match = RegExp('[?&#]' + name + '=([^&]*)').exec(params);
 			    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
 			}
 		},
@@ -622,6 +640,16 @@ var dc = {
 
 				return firsterror;
 			}
+		},
+		Misc: {
+			sleep: function(millis) {
+				var start = new Date().getTime();
+
+				for (var i = 0; i < 1e7; i++) {
+					if ((new Date().getTime() - start) > millis)
+						break;
+				}
+  			}		
 		},
 		Crypto: {
 			makeSimpleKey : function() {

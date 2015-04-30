@@ -12,6 +12,7 @@ import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.db.DataRequest;
 import divconq.db.IDatabaseManager;
+import divconq.db.ObjectFinalResult;
 import divconq.db.ObjectResult;
 import divconq.db.common.RequestFactory;
 import divconq.db.query.LoadRecordRequest;
@@ -57,7 +58,46 @@ public class AuthService extends ExtensionBase implements IService {
 		
 		//System.out.println("Auth: " + feature + " - " + op);
 		
-		if ("Authentication".equals(feature)) {
+		if ("Facebook".equals(feature)) {
+			if ("LinkAccount".equals(op)) {
+				// try to authenticate
+				RecordStruct creds = msg.getFieldAsRecord("Body");
+				
+				String fbtoken = creds.getFieldAsString("AccessToken");
+				
+				RecordStruct fbinfo = AuthService.fbSignIn(fbtoken, null);		// TODO use FB secret key someday? for app proof...
+				
+				if (request.hasErrors() || (fbinfo == null)) {
+					AuthService.this.clearUserContext(OperationContext.get());
+					request.errorTr(442);
+					request.complete();
+					return;
+				}
+				
+				// TODO allow only `verified` fb users?
+				if (fbinfo.isFieldEmpty("id") || fbinfo.isFieldEmpty("email")
+						 || fbinfo.isFieldEmpty("first_name") || fbinfo.isFieldEmpty("last_name")) {		
+					AuthService.this.clearUserContext(OperationContext.get());
+					request.errorTr(442);
+					request.complete();
+					return;
+				}
+				
+				String uid = fbinfo.getFieldAsString("id");
+									
+				UpdateRecordRequest req = new UpdateRecordRequest();
+				
+				req
+					.withTable("dcUser")
+					.withId(OperationContext.get().getUserContext().getUserId())
+					.withUpdateField("dcmFacebookId", uid);
+				
+				db.submit(req, new ObjectFinalResult(request) );
+				
+				return;
+			}
+		}
+		else if ("Authentication".equals(feature)) {
 			if ("SignIn".equals(op)) {
 				LoadRecordRequest req = new LoadRecordRequest()
 					.withTable("dcUser")
@@ -92,7 +132,7 @@ public class AuthService extends ExtensionBase implements IService {
 				// try to authenticate
 				RecordStruct creds = msg.getFieldAsRecord("Body");
 				
-				String uid = creds.getFieldAsString("UserId");
+				//String uid = creds.getFieldAsString("UserId");
 				String fbtoken = creds.getFieldAsString("AccessToken");
 				
 				RecordStruct fbinfo = AuthService.fbSignIn(fbtoken, null);		// TODO use FB secret key someday? for app proof...
@@ -105,13 +145,15 @@ public class AuthService extends ExtensionBase implements IService {
 				}
 				
 				// TODO allow only `verified` fb users?
-				if (!uid.equals(fbinfo.getFieldAsString("id")) || fbinfo.isFieldEmpty("email")
+				if (fbinfo.isFieldEmpty("id") || fbinfo.isFieldEmpty("email")
 						 || fbinfo.isFieldEmpty("first_name") || fbinfo.isFieldEmpty("last_name")) {		
 					AuthService.this.clearUserContext(OperationContext.get());
 					request.errorTr(442);
 					request.complete();
 					return;
 				}
+				
+				String uid = fbinfo.getFieldAsString("id");
 				
 				// sigin callback
 				Consumer<String> signincb = new Consumer<String>() {					

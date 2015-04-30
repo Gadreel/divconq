@@ -52,7 +52,8 @@ public class WebSession extends HyperSession {
 		
 		// make sure Session is in Cookies (client handler) too, so that session can work with upload and download
 		if (StringUtil.isNotEmpty(this.sessionid)) {
-			Cookie k = new DefaultCookie("SessionId", this.sessionid + "_" + this.sessionKey);
+			//Cookie k = new DefaultCookie("SessionId", this.sessionid + "_" + this.sessionKey);
+			Cookie k = new DefaultCookie("SessionId", this.sessionid + "_XXX");		// TODO resolve this
 			this.handler.getCookies().put("SessionId", k);
 		}
 	}

@@ -48,7 +48,7 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 	}
 	
 	protected String sessionid = null;
-	protected String sessionKey = null;
+	//protected String sessionKey = null;
 	protected String hubid = null;
 	protected UserContext user = null;
 	protected ReplyService replies = new ReplyService();
@@ -89,9 +89,11 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 		return this.hubid;
 	}
 	
+	/*
 	public String getSessionKey() {
 		return this.sessionKey;
 	}
+	*/
 	
 	abstract public void sendForgetMessage(Message msg);
 	
@@ -225,7 +227,7 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 		
 		this.user = UserContext.allocate(info);		
 		
-		this.sessionKey = info.getFieldAsString("SessionKey");
+		//this.sessionKey = info.getFieldAsString("SessionKey");
 		this.sessionid =  info.getFieldAsString("SessionId");
 		
 		this.hubid = this.sessionid.substring(0, this.sessionid.indexOf('_'));

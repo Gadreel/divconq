@@ -429,7 +429,8 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		
 		OperationContext tc = sess.setContext(origin);
 
-		tc.info("Web request for host: " + req.getHeader("Host") +  " url: " + req.getPath() + " by: " + origin + " session: " + sess.getId());
+		if (!"rpc".equals(req.getPath().getName(0)))
+			tc.info("Web request for host: " + req.getHeader("Host") +  " url: " + req.getPath() + " by: " + origin + " session: " + sess.getId());
 		
 		/*
 		System.out.println("sess proto: " + ((SslHandler)ctx.channel().pipeline().get("ssl")).engine().getSession().getProtocol());

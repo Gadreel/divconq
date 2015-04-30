@@ -98,6 +98,7 @@ import divconq.web.dcui.AssetImage;
 import divconq.web.dcui.ButtonLink;
 import divconq.web.dcui.Document;
 import divconq.web.dcui.FormButton;
+import divconq.web.dcui.FormInstruction;
 import divconq.web.dcui.ServerScript;
 import divconq.web.dcui.Html5AppHead;
 import divconq.web.dcui.HyperLink;
@@ -107,6 +108,7 @@ import divconq.web.dcui.IncludePart;
 import divconq.web.dcui.LiteralText;
 import divconq.web.dcui.Nodes;
 import divconq.web.dcui.PagePart;
+import divconq.web.dcui.TitledSection;
 import divconq.web.dcui.ViewOutputAdapter;
 import divconq.web.dcui.ViewTemplateAdapter;
 import divconq.web.http.SslContextFactory;
@@ -820,6 +822,7 @@ public class WebDomain {
 		this.codetags.put("Script", Script.class);
 		this.codetags.put("PagePart", PagePart.class);
 		this.codetags.put("ServerScript", ServerScript.class);
+		this.codetags.put("TitledSection", TitledSection.class);
 
 		// TODO these should eventually be migrated so they can be shown in html mode too
 		// though they wouldn't work correctly, it would just be for show (unless we do a lot more)
@@ -836,5 +839,6 @@ public class WebDomain {
 		this.codetags.put("Select", AdvElement.class);
 		this.codetags.put("TextArea", AdvElement.class);
 		this.codetags.put("HiddenInput", AdvElement.class);
+		this.codetags.put("FormInstruction", FormInstruction.class);
 	}
 }

@@ -68,6 +68,8 @@ public class DataType {
 	
 	// for scalar
 	protected CoreType core = null;
+	
+	protected boolean compiled = false;
 
 	public String getId() {
 		return this.id;
@@ -163,6 +165,11 @@ public class DataType {
 	}
 
 	public void compile() {
+		if (this.compiled)
+			return;
+		
+		this.compiled = true;
+		
 		if (this.kind == DataKind.Record)
 			this.compileRecord();
 		else if (this.kind == DataKind.List)
@@ -209,6 +216,7 @@ public class DataType {
 			this.fields.put(f.name, f);
 		}
 		
+		// TODO Review how we use xtraDefinitions 
 		if (this.xtraDefinitions != null) {
 			for (XElement el : this.xtraDefinitions) {
 				for (XElement fel : el.selectAll("Field")) {
@@ -219,6 +227,7 @@ public class DataType {
 			}
 		}
 		
+		// TODO these should probably come before the local definitions
 		for (DataType dt : inheritTypes) {
 			for (Field fld : dt.getFields()) {
 				if (!this.fields.containsKey(fld.name))

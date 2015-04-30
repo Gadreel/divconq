@@ -168,7 +168,7 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 
 		// cache auth tags - only after source has been fully loaded
 		if (this.source.hasAttribute("AuthTags"))
-			this.auth = this.source.getAttribute("AuthTags").split("\\|");
+			this.auth = this.source.getAttribute("AuthTags").split(",");
 	}
 	
 	// ContentInfo migration

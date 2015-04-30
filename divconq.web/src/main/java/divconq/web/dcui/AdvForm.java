@@ -19,6 +19,7 @@ package divconq.web.dcui;
 import java.io.PrintStream;
 
 import w3.html.Form;
+import divconq.util.StringUtil;
 import divconq.web.dcui.Element;
 import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
@@ -27,6 +28,7 @@ import divconq.xml.XElement;
 
 public class AdvForm extends Form {
 	protected String fname = null;
+	protected String recordOrder = null;
 	
     public AdvForm() {
     	super();
@@ -48,6 +50,7 @@ public class AdvForm extends Form {
 	protected void doCopy(Node n) {
 		super.doCopy(n);
 		((AdvForm)n).fname = this.fname;
+		((AdvForm)n).recordOrder = this.recordOrder;
 	}
 
 	@Override
@@ -61,6 +64,9 @@ public class AdvForm extends Form {
 			attrs.add("AlwaysNew", xel.getRawAttribute("AlwaysNew"));
 		
 		this.fname = xel.getAttribute("Name");
+		
+		if (xel.hasAttribute("RecordOrder"))
+			this.recordOrder = xel.getRawAttribute("RecordOrder");
 
         this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
 		
@@ -74,6 +80,9 @@ public class AdvForm extends Form {
     	this.name = "Form";
     	
     	this.attributes.put("Name", this.fname);		// only with dynamic, let stream appear as "form"
+    	
+    	if (StringUtil.isNotEmpty(this.recordOrder))
+        	this.attributes.put("RecordOrder", this.recordOrder);		
     	
     	return super.writeDynamic(buffer, tabs, first);
     }

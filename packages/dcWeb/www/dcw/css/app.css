@@ -7,6 +7,10 @@ html {
 	font-family: Arial, sans-serif; 
 }
 
+html, body {
+	height: 100%;
+}
+
 h1,h2 {
 	font-family: Arial, sans-serif; 
 }
@@ -103,14 +107,14 @@ body {
 }
 
 .genericFlexOne, .dcFlex1 {
-	-webkit-box-flex: 1;
-	-moz-box-flex: 1;
-	-webkit-flex: 1;
-	-ms-flex: 1;
-	flex: 1;
+	-webkit-box-flex: 1 0;
+	-moz-box-flex: 1 0;
+	-webkit-flex: 1 0;
+	-ms-flex: 1 0;
+	flex: 1 0;
 }
 
-.dcNoSelect {
+.dcNoSelect, .dcNoSelect canvas {
   -moz-user-select: none;
   -ms-user-select: none;
   -webkit-user-select: none;
@@ -144,3 +148,26 @@ body {
 	}
 }
 
+/* mid tables with 4 to 7 columns */
+@media (min-width: 909px) {
+	/* Show the table header rows and set all cells to display: table-cell */
+	.table-mid-breakpoint td,
+	.table-mid-breakpoint th,
+	.table-mid-breakpoint tbody th,
+	.table-mid-breakpoint tbody td,
+	.table-mid-breakpoint thead td,
+	.table-mid-breakpoint thead th {
+		display: table-cell;
+		margin: 0;
+	}
+	
+	/* Hide the labels in each cell */
+	.table-mid-breakpoint td .ui-table-cell-label,
+	.table-mid-breakpoint th .ui-table-cell-label {
+		display: none;
+	}
+}
+
+.ui-field-contain .ui-controlgroup-label > legend {
+	margin: 0 auto;
+}

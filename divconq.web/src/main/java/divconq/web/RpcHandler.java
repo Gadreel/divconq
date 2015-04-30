@@ -72,19 +72,31 @@ public class RpcHandler implements IBodyCallback {
 		
 		//System.out.println("got rpc message: " + msg);
 		
+    	String sessionid = msg.getFieldAsString("Session");
+
+    	msg.removeField("Session");
+		
 		// for SendForget don't wait for a callback, just return success
     	if ("SendForget".equals(msg.getFieldAsString("RespondTag"))) {
     		// send to bus
     		this.context.getSession().sendMessage(msg);
     		
+    		Message rmsg = MessageUtil.success();
+    		
+			String currsessid = RpcHandler.this.context.getSession().getId();
+			
+			rmsg.setField("Session", currsessid);
+			
+			if ((sessionid != null) && !currsessid.equals(sessionid))
+				rmsg.setField("SessionChanged", true);
+    		
+			// TODO pickup from mailbox
+			
     		// reply to client, don't wait for response
-    		this.context.send(MessageUtil.success());
+    		this.context.send(rmsg);
 			
 			return;
     	}
-		
-		// TODO something about this flow prevents multiple RPC calls on the same session from working
-		// need to fix that!  TODO
     	
     	this.context.getSession().sendMessageWait(msg, new ServiceResult() {			
 			@Override
@@ -117,6 +129,13 @@ public class RpcHandler implements IBodyCallback {
 						if (reply.hasField("Body"))
 							rmsg.setField("Body", reply.getField("Body"));
 					}
+					
+					String currsessid = RpcHandler.this.context.getSession().getId();
+					
+					rmsg.setField("Session", currsessid);
+					
+					if ((sessionid != null) && !currsessid.equals(sessionid))
+						rmsg.setField("SessionChanged", true);
 					
 					//System.out.println("outgoing rpc: " + rmsg);
 					

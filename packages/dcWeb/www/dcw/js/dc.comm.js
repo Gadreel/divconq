@@ -17,27 +17,10 @@
 
 dc.comm = {
 	/**
-	 * Track replies.  Each value is 
-	 * {
-	 *    Func: [callback],
-	 *    Timeout: [time at which it will timeout in ms],
-	 *    Tag: [relpy tag id]
-	 * }
-	 *
-	 * So replies contatins [tag] = [reply tracker]
-	 */
-	_replies: { },
-	
-	// the web socket object
-	_ws: null,
-	
-	// the close/error handler
-	_donehandler: null,
-
-	/**
 	 * Only init once.
 	 */
 	_initFlag: false,
+	_session: null,
 	
 	init: function(callback) {
 		// only init once per page load
@@ -54,134 +37,74 @@ dc.comm = {
 		// accounts - never shared accounts or public devices.
 		dc.user.loadRememberedUser();
 		
-		try {
-			var url = dc.util.Ws.getConnUrl('/bus');
+		// periodically keep session going
+		setInterval(function() {
+			dc.comm.sendForgetMessage({ 
+				Service: 'Session',
+				Feature: 'Control',
+				Op: 'Touch'
+			});
 			
-			dc.comm._ws = new WebSocket(url);
+			// TODO check for messages on server
 			
-			dc.comm._ws.onmessage = function(e) {
-				//console.log('msg: ' + e.data);
-				
-				try {
-					var msg = JSON.parse(e.data);
-						
-					var ee = dc.util.Messages.findExitEntry(msg.Messages);
-					
-					// setup the "result" of the message based on the exit entry
-					if (!ee) {
-						msg.Result = 0;
-					}
-					else {
-						msg.Result = ee.Code;
-						msg.Message = ee.Message;
-					}
-					
-					if (msg.Service == 'Replies') {
-						if (msg.Feature == 'Reply') {
-							if (msg.Op == 'Deliver') {
-								var hand = dc.comm._replies[msg.Tag];
-								
-								if (hand) {
-									delete dc.comm._replies[msg.Tag];
-									
-									hand.Func(msg);
-								}
-							}
-						}
-					}
-					
-					// TODO add services...
-				}
-				catch (x) {
-					console.log('bad msg: ' + x);
-					console.log('bad msg: ' + e.data);
-				}
-			};
+			// also periodically run the timeout checker for replies
 			
-			dc.comm._ws.onerror = function(e) {
-				//console.log('error: ' + e);
-				
-				if (dc.comm._donehandler)
-					dc.comm._donehandler();
-			};
-			
-			dc.comm._ws.onopen = function(e) {
-				//console.log('opened: ' + e);
+			// TODO check for timeouts in Replies
 
-				callback();
-			}
-			
-			dc.comm._ws.onclose = function(e) {
-				if (dc.comm._donehandler)
-					dc.comm._donehandler();
-			
-				//console.log('closed: ' + e);
-			}
-			
-			// periodic 
-			setInterval(function() {
-				// periodically keep session going
-				
-				dc.comm.sendForgetMessage({ 
-					Service: 'Session',
-					Feature: 'Control',
-					Op: 'Touch'
-				});
-				
-				// also periodically run the timeout checker for replies
-				
-				// TODO check for timeouts in Replies
+			// TODO		callbackfunc( { Result: 1, Message: "AJAX call failed or timed out." } );
+		}, 55000);
 
-				// TODO		callbackfunc( { Result: 1, Message: "AJAX call failed or timed out." } );
-			}, 55000);
-		}
-		catch(x) {
-			console.log('Unabled to create web socket: ' + x);
-			callback();
-			return;
-		}
-	},
-	
-	setDoneHandler: function(v) {
-		dc.comm._donehandler = v;
-	},
-	
-	close: function() {
-		if (dc.comm._ws)
-			dc.comm._ws.close();
+		callback();				
 	},
 	
 	sendForgetMessage : function(msg) {
 		msg.RespondTag = 'SendForget';
 		
-		if (dc.comm._ws && (dc.comm._ws.readyState == 1))
-			dc.comm._ws.send(JSON.stringify(msg));
+		dc.comm.sendMessage(msg);
 	},
 	
 	sendMessage : function(msg, callbackfunc, timeout) {
-		if (!dc.comm._ws || (dc.comm._ws.readyState != 1)) {
-			if (callbackfunc)
-				callbackfunc( { Result: 1, Message: "Unable to send data to server, connection is not ready." } );
+		if (dc.comm._session)
+			msg.Session = dc.comm._session;
 			
-			return;
-		}
-			
-		if (msg.RespondTag != 'SendForget') {
-			var tag = dc.util.Crypto.makeSimpleKey();	
-			
-			msg.RespondTo = 'Replies';
-			msg.RespondTag = tag;
-			
-			timeout = (timeout ? timeout : 60) * 1000,
-			
-			dc.comm._replies[tag] = {
-				Func: callbackfunc,
-				Timeout: (new Date()).getTime() + timeout,
-				Tag: tag
-			};
-		}
-	
-		dc.comm._ws.send(JSON.stringify(msg));
+		$.ajax( { 
+			type: 'POST', 
+			url: '/rpc?nocache=' + dc.util.Crypto.makeSimpleKey(), 
+			contentType: 'application/json; charset=utf-8',
+			data: JSON.stringify(msg), 
+			processData: false,
+			success: function(rmsg) {
+				//console.log('after rpc: ' + JSON.stringify(rmsg));	
+				
+				var ee = dc.util.Messages.findExitEntry(rmsg.Messages);
+				
+				// setup the "result" of the message based on the exit entry
+				if (!ee) {
+					rmsg.Result = 0;
+				}
+				else {
+					rmsg.Result = ee.Code;
+					rmsg.Message = ee.Message;
+				}
+				
+				if (rmsg.SessionChanged) {
+					console.log('session changed');
+					
+					if (dc.pui && dc.pui.Loader)
+						dc.pui.Loader.SessionChanged();
+				}
+
+				dc.comm._session = rmsg.Session; 
+				
+				if (callbackfunc) 
+					callbackfunc(rmsg);
+			}, 
+			timeout: timeout ? timeout : 60000,
+			error: function() {
+				if (callbackfunc) 
+					callbackfunc( { Result: 1, Message: "AJAX call failed or timed out." } );
+			}
+		} );
 	},
 	
 	sendTestMessage : function(msg) {

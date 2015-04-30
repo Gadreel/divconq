@@ -151,6 +151,9 @@ dc.pui = {
 		__portalPage: '/Portal',
 		__signInPage: '/SignIn',
 		__destPage: null,
+		__originPage: null,
+		__originHash: null,
+		__originSearch: null,
 		__frameRequest: false,
 		
 		init: function() {
@@ -267,6 +270,15 @@ dc.pui = {
 			window.location = '/';
 		},
 		
+		SessionChanged: function() {
+			//console.log('session changed');
+			
+			if (dc.handler.sessionChanged)
+				dc.handler.sessionChanged();
+			else if (dc.user.isVerified()) 
+				window.location = '/';		// start fresh if signed in
+		},
+		
 		loadPage: function(page, params) {
 			if (!page)
 				return;
@@ -279,7 +291,7 @@ dc.pui = {
 				return;
 			}
 			
-			var rp = dc.handler ? dc.handler.reroute(page, params) : null;
+			var rp = dc.handler.reroute ? dc.handler.reroute(page, params) : null;
 			
 			if (rp != null)
 				page = rp;
@@ -899,6 +911,9 @@ dc.pui = {
 									InternalValues: { }
 								}, child);
 								
+								if (child.RecordOrder)
+									form.RecordOrder = child.RecordOrder.split(',');
+								
 								form.AlwaysNew = (form.AlwaysNew == 'true');
 								
 								form.input = function(name) {
@@ -1114,7 +1129,7 @@ dc.pui = {
 							node = $('<input type="range" data-mini="true" />');
 						}
 						else if (itype == 'Select') {
-							node = $('<select data-mini="true" data-native-menu="false" />');
+							node = $('<select data-mini="true" data-native-menu="true" />');
 						}
 						else if (itype == 'YesNo') {
 							dtype = 'Boolean';
@@ -1172,6 +1187,12 @@ dc.pui = {
 						if (child.ErrorMessage)
 							form.ValidationMessages[fname] = child.ErrorMessage;
 					}
+					else if (child.Element == 'FormInstruction') {
+						node = $('<div class="ui-input-text ui-body-c" style="border: none;" />');
+						
+						var id = dc.util.Uuid.create();
+						node.attr('id', id);
+					}
 					else {
 						node = $('<' + child.Element + '>');
 					}
@@ -1192,7 +1213,7 @@ dc.pui = {
 						// post processing
 						if (child.Element == 'FieldContainer') {
 							var fndLabelTarget = false;
-							var lblText = child.Label ? child.Label : '';
+							var lblText = child.Label ? child.Label : '&nbsp;';
 						
 							if (child.Children && child.Children.length) {
 								var fldname = child.Children[0].Name;
@@ -1572,6 +1593,11 @@ dc.pui = {
 			if (!parentchain)
 				return null;
 				
+			if (!parentchain.Definition || !parentchain.Definition.Element) {
+				debugger;
+				return null;
+			}
+		
 			if (parentchain.Definition.Element != 'Form') 
 				return dc.pui.Page.findFormForLayout(page, entry, parentchain.Parent);
 				
@@ -2268,10 +2294,12 @@ $(document).on('mobileready', function () {
 	dc.pui.Popup.init();
 	dc.pui.Loader.init();
 	
+	/*
 	dc.comm.setDoneHandler(function() {
 		console.log('done!!');
 		//window.location = '/';
 	});
+	*/
 
 	// stop with Googlebot.  Googlebot may load page and run script, but no further than this so indexing is correct (index this page)
 	if (navigator.userAgent.indexOf('Googlebot') > -1) 
@@ -2283,6 +2311,9 @@ $(document).on('mobileready', function () {
 		return;
 	
 	dc.pui.Loader.__destPage = location.pathname;
+	dc.pui.Loader.__originPage = location.pathname;
+	dc.pui.Loader.__originHash = location.hash;
+	dc.pui.Loader.__originSearch = location.search;
 	
 	if (typeof ga == 'function') {
 		ga('create', dc.handler.settings.ga, 'auto');

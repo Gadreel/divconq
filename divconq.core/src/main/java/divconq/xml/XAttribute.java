@@ -39,7 +39,7 @@ public class XAttribute {
 	 * @return attributes value
 	 */
 	public String getValue() {
-		return XNode.unquote(this.value);
+		return XNode.quote(this.value);
 	}
 	
 	public String getRawValue() {
@@ -54,6 +54,6 @@ public class XAttribute {
 	 */
 	public XAttribute(String name, String value) {
 		this.name = name;
-		this.value = XNode.quote(value);
+		this.value = value;
 	}
 }

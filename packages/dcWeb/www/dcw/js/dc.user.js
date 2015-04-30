@@ -30,6 +30,7 @@ dc.user = {
 	 *		Email: string,
 	 *		RememberMe: boolean,			
 	 *		DomainId: string,
+	 *		SessionId: string,			// note this does not have session key which is why session hijacking cannot work
 	 *		Locale: string,
 	 *		Chronology: string,
 	 *		Verified: boolean,			// logged in
@@ -171,6 +172,7 @@ dc.user = {
 						Email: resdata.Email,
 						AuthTags: resdata.AuthTags,
 						DomainId: resdata.DomainId,
+						SessionId: resdata.SessionId,
 						Locale: resdata.Locale,
 						Chronology: resdata.Chronology
 					}
@@ -196,7 +198,7 @@ dc.user = {
 		});
 	},
 
-	signinFacebook: function(callback) {
+	signinFacebook: function(page, callback) {
 		if (dc.user.isVerified()) {
 			callback();
 			return;
@@ -208,8 +210,8 @@ dc.user = {
 					Feature: 'Authentication',
 					Op: 'SignInFacebook',
 					Body: {
-						AccessToken: auth.accessToken,
-						UserId: auth.userID
+						AccessToken: auth.accessToken
+						//UserId: auth.userID
 					}
 				}, 
 				function(rmsg) {
@@ -224,12 +226,93 @@ dc.user = {
 			if (response.status === 'connected') {
 				fbsignin(response.authResponse);
 			}
+			else if (page) {
+				window.location = 'https://www.facebook.com/dialog/oauth?state=signin&client_id='
+					+ dc.handler.settings.fbAppId + '&response_type=token&scope=public_profile,email&redirect_uri='
+					+ window.location.origin + page
+			}
 			else {
 				FB.login(function(response2) {
 						if (response2.status === 'connected') 
 							fbsignin(response2.authResponse);
 						else
 							callback();
+					}, 
+					{ scope: 'public_profile,email' }
+				);	
+			}
+		};
+	
+		if (!window.FB) {
+			$.getScript('https://connect.facebook.net/en_US/all.js', function(){
+				FB.init({ appId: dc.handler.settings.fbAppId, version: 'v2.2' });     
+	
+				FB.getLoginStatus(lstatus);			
+			});
+		}
+		else {
+			FB.getLoginStatus(lstatus);			
+		}
+	},
+
+	signinFacebookToken: function(accessToken, callback) {
+		if (dc.user.isVerified()) {
+			callback();
+			return;
+		}
+		
+		dc.comm.sendMessage({ 
+				Service: 'dcAuth',
+				Feature: 'Authentication',
+				Op: 'SignInFacebook',
+				Body: {
+					AccessToken: accessToken
+				}
+			}, 
+			function(rmsg) {
+				if (rmsg.Result > 0) 
+					callback();
+				else 
+					dc.user.updateUser(false, callback);
+			});
+	},
+
+	linkFacebook: function(page, callback) {
+		if (!dc.user.isVerified()) {
+			callback(false);
+			return;
+		}
+	
+		var fblink = function(auth) {
+			dc.comm.sendMessage({ 
+					Service: 'dcAuth',
+					Feature: 'Facebook',
+					Op: 'LinkAccount',
+					Body: {
+						AccessToken: auth.accessToken
+						//UserId: auth.userID
+					}
+				}, 
+				function(rmsg) {
+					callback(rmsg.Result == 0);
+				});
+		};
+		
+		var lstatus = function(response) {
+			if (response.status === 'connected') {
+				fblink(response.authResponse);
+			}
+			else if (page) {
+				window.location = 'https://www.facebook.com/dialog/oauth?state=link&client_id='
+					+ dc.handler.settings.fbAppId + '&response_type=token&scope=public_profile,email&redirect_uri='
+					+ window.location.origin + page
+			}
+			else {
+				FB.login(function(response2) {
+						if (response2.status === 'connected') 
+							fblink(response2.authResponse);
+						else
+							callback(false);
 					}, 
 					{ scope: 'public_profile,email' }
 				);	
@@ -271,6 +354,7 @@ dc.user = {
 						Email: resdata.Email,
 						AuthTags: resdata.AuthTags,
 						DomainId: resdata.DomainId,
+						SessionId: resdata.SessionId,
 						Locale: resdata.Locale,
 						Chronology: resdata.Chronology
 					}
@@ -309,7 +393,7 @@ dc.user = {
 			Feature: 'Control',
 			Op: 'Stop'
 		}, function() {
-			dc.comm.close();
+			//dc.comm.close();
 		},
 		1000);			
 	}

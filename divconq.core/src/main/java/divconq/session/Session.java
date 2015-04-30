@@ -83,9 +83,7 @@ public class Session {
 	protected HashMap<String, DataStreamChannel> channels = new HashMap<>();
 	
 	protected ISessionAdapter adapter = null;
-	protected ServiceResult sendwaitCallback = null;
-	protected Message sendwaitMessage = null;
-	protected ReentrantLock sendwaitLock = null;
+	protected HashMap<String, SendWaitInfo> sendwaits = new HashMap<>();
 	
 	protected boolean keep = false;
 	
@@ -416,6 +414,70 @@ Context: {
 		return rec;
 	}
 	
+	public void deliver(Message msg) {
+		String serv = msg.getFieldAsString("Service"); 
+		String feat = msg.getFieldAsString("Feature"); 
+		String op = msg.getFieldAsString("Op"); 
+		
+		if ("Replies".equals(serv)) {
+			if ("Reply".equals(feat)) {
+				if ("Deliver".equals(op)) {
+					String tag = msg.getFieldAsString("Tag");
+					
+					SendWaitInfo info = this.sendwaits.remove(tag);
+					
+					// if null fall through to adapter
+					if (info == null) {
+						//if (!"SendForget".equals(tag))
+						//	OperationContext.get().error("Missing reply handler for tag: " + tag);
+					}
+					else {
+						// restore original respond tag
+						msg.setField("RespondTag", info.respondtag);
+						
+						info.callback.setReply(msg);
+						info.callback.complete();
+						
+						return;
+					}
+				}
+			}
+		}
+		
+		if (this.adapter != null)
+			this.adapter.deliver(msg);
+	}
+	
+	// only allowed to be called on local session replies, not for external use because of threading
+	protected void reply(Message rmsg, Message msg) {
+		// put the reply on a new thread because of how LocalSession will build up a large call stack
+		// if threads don't change 
+    	rmsg.setField("Service", "Replies");  // msg.getFieldAsString("RespondTo"));
+    	rmsg.setField("Feature", "Reply");
+    	rmsg.setField("Op", "Deliver");
+    	
+		String tag = msg.getFieldAsString("RespondTag");
+
+		// should always have a tag if got here
+		if (StringUtil.isNotEmpty(tag)) {
+			// pull session id out of the tag
+			int pos = tag.indexOf('_', 30);
+			
+			if (pos != -1)
+				tag = tag.substring(pos + 1);
+			
+			// strip out session id, restore original tag
+			rmsg.setField("Tag", tag);
+			
+			Hub.instance.getWorkPool().submit(new ISynchronousWork() {
+				@Override
+				public void run(TaskRun run) {
+			    	Session.this.deliver(rmsg);
+				}
+			});
+		}
+	}
+	
 	/*
 	 * Typically called by Hyper RPC
 	 * 
@@ -425,24 +487,14 @@ Context: {
 	 * @param serviceResult
 	 */
 	public void sendMessageWait(Message msg, ServiceResult serviceResult) {
-		// only create if needed
-		if (this.sendwaitLock == null)
-			this.sendwaitLock = new ReentrantLock();
+		SendWaitInfo swi = new SendWaitInfo();
+		swi.original = msg;
+		swi.callback = serviceResult;
+		swi.respondtag = msg.getFieldAsString("RespondTag");
+
+		msg.setField("RespondTag", swi.id);
 		
-		this.sendwaitLock.lock();
-		
-		try {
-			// a single HTTP session can handle only 1 request at a time
-			// TODO log
-			if (this.sendwaitMessage != null) 
-				System.out.println("Sending another message when we haven't finished with ####################################: " + msg.toPrettyString());
-			
-			this.sendwaitCallback = serviceResult;		
-			this.sendwaitMessage = msg;
-		}
-		finally {
-			this.sendwaitLock.unlock();
-		}
+		this.sendwaits.put(swi.id, swi);
 		
 		this.sendMessage(msg);
 	}
@@ -452,7 +504,7 @@ Context: {
 	 * 
 	 * @param msg
 	 */
-	public void sendMessage(final Message msg) {
+	public void sendMessage(Message msg) {
 		// be sure we are using a proper context
 		if (!OperationContext.hasContext()) 
 			this.setContext();
@@ -503,7 +555,7 @@ Context: {
 							Session.this.user.freezeRpc(body);
 							
 							body.setField("SessionId", Session.this.id);		
-							body.setField("SessionKey", Session.this.key);		
+							//body.setField("SessionKey", Session.this.key);		// TODO remove this, use only the HTTPONLY cookie for key - resolve for Java level clients
 							
 							Session.this.reply(rmsg, msg);
 						}
@@ -530,7 +582,7 @@ Context: {
 					Session.this.user.freezeRpc(body);
 					
 					body.setField("SessionId", Session.this.id);		
-					body.setField("SessionKey", Session.this.key);		
+					//body.setField("SessionKey", Session.this.key);				// TODO remove this, use only the HTTPONLY cookie for key - resolve for Java level clients
 					
 					Session.this.reply(rmsg, msg);
 					
@@ -724,68 +776,6 @@ Context: {
 		if (smor.hasErrors())
 			Session.this.reply(smor.toLogMessage(), msg);		
 	}
-	
-	public void deliver(Message msg) {
-		if ("SendWait".equals(msg.getFieldAsString("Tag"))) {
-			// only create if needed
-			if (this.sendwaitLock == null)
-				this.sendwaitLock = new ReentrantLock();
-			
-			this.sendwaitLock.lock();
-			
-			try {
-				if (this.sendwaitCallback != null) {
-					this.sendwaitCallback.setReply(msg);
-					this.sendwaitCallback.complete();
-					
-					this.sendwaitCallback = null;
-					this.sendwaitMessage = null;
-				}
-			}
-			finally {
-				this.sendwaitLock.unlock();
-			}
-			
-			return;
-		}
-		
-		if (this.adapter != null)
-			this.adapter.deliver(msg);
-	}
-	
-	// only allowed to be called on local session replies, not for external use because of threading
-	protected void reply(final Message rmsg, final Message msg) {
-		// put the reply on a new thread because of how LocalSession will build up a large call stack
-		// if threads don't change 
-		
-		Hub.instance.getWorkPool().submit(new ISynchronousWork() {
-			@Override
-			public void run(TaskRun run) {
-		    	rmsg.setField("Service", "Replies");  // msg.getFieldAsString("RespondTo"));
-		    	rmsg.setField("Feature", "Reply");
-		    	rmsg.setField("Op", "Deliver");
-		    	
-				String tag = msg.getFieldAsString("RespondTag");
-
-				// should always have a tag if got here
-				if (StringUtil.isNotEmpty(tag)) {
-					// pull session id out of the tag
-					int pos = tag.indexOf('_', 30);
-					
-					if (pos != -1)
-						tag = tag.substring(pos + 1);
-					
-					// strip out session id, restore original tag
-					rmsg.setField("Tag", tag);
-					
-			    	Session.this.deliver(rmsg);
-				}
-				else {
-					// TODO
-				}
-			}
-		});
-	}
 
 	public void addChannel(DataStreamChannel v) {
 		this.channellock.lock();
@@ -951,6 +941,34 @@ Context: {
 			}
 		}
 		
+		if (this.sendwaits.size() > 0) {
+			// cleannup expired channels
+			List<SendWaitInfo> killlist = null;
+			
+			this.channellock.lock();
+			
+			try {
+				for (SendWaitInfo chan : this.sendwaits.values()) {
+					if (chan.isHung()) {
+						if (killlist == null)
+							killlist = new ArrayList<>();
+						
+						killlist.add(chan);
+					}
+				}
+			}
+			finally {
+				this.channellock.unlock();
+			}
+			
+			if (killlist != null) {
+				for (SendWaitInfo chan : killlist) {
+					Logger.warn("Session " + this.id + " found hung send wait: " + chan);
+					this.sendwaits.remove(chan.id);
+				}		
+			}
+		}
+		
 		if (this.isLongRunning())
 			return ((this.lastAccess > clearUser) || this.keep); 
 		
@@ -972,4 +990,17 @@ Context: {
 	public CtpAdapter allocateCtpAdapter() {
 		return new CtpAdapter(this.allocateContext());
 	}
+	
+	public class SendWaitInfo {
+		protected String id = StringUtil.buildSecurityCode();  // Session.nextUUId();
+		protected ServiceResult callback = null;
+		protected Message original = null;
+		protected String respondtag = null;
+		protected long started = System.currentTimeMillis();
+		
+		// give two minutes
+		protected boolean isHung() {
+			return (this.started < (System.currentTimeMillis() - 120000));
+		}
+ 	}
 }

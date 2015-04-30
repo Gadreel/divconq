@@ -510,8 +510,17 @@ public class CoreType {
 				if ((this.conform == ConformKind.BigInteger) && (!(x instanceof BigInteger) && !(x instanceof Long)))
 					return false;
 				
-				if ((this.conform == ConformKind.Integer) && (!(x instanceof Long)))
+				if ((this.conform == ConformKind.Integer) && (!(x instanceof Long))) {
+					if (x instanceof BigInteger)
+						try {
+							((BigInteger)x).longValueExact();
+							return true;
+						}
+						catch (ArithmeticException x2) {
+						}
+					
 					return false;
+				}
 				
 				// TODO support min/max and conform
 				/*
@@ -539,7 +548,7 @@ public class CoreType {
 			if ((this.conform == ConformKind.BigInteger) && (!(x instanceof BigInteger) && !(x instanceof Long)))
 				OperationContext.get().errorTr(402, x);		
 			
-			if ((this.conform == ConformKind.Integer) && (!(x instanceof Long)))
+			if ((this.conform == ConformKind.Integer) && (!(x instanceof Long))) 
 				OperationContext.get().errorTr(403, x);		
 		}				
 
