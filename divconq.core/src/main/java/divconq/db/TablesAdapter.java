@@ -1653,15 +1653,11 @@ public class TablesAdapter {
 			if ((a == null) || (b == null))
 				return false;
 			
-			for (int i = 0; i < Math.max(a.size(), b.size()); i++) {
-				if (i >= a.size())					
-					return false;
-				
-				if (i >= b.size())
-					return false;
-				
-				if (ByteUtil.compareKeys(a.get(i), b.get(i)) == 0)
-					return true;
+			for (int i = 0; i < a.size(); i++) {
+				for (int i2 = 0; i2 < b.size(); i2++) {
+					if (ByteUtil.compareKeys(a.get(i), b.get(i2)) == 0)
+						return true;
+				}
 			}
 			
 			return false;
@@ -1833,6 +1829,7 @@ public class TablesAdapter {
 								out.accept(rid);
 							}
 							else {
+								// TODO this stuff is probably out of date, remove?
 								int pos = range.indexOf(':');
 								
 								BigDateTime from = null;
@@ -1853,7 +1850,7 @@ public class TablesAdapter {
 									out.accept(rid);
 							}
 							
-							recsid = conn.nextPeerKey(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rsid);
+							recsid = conn.nextPeerKey(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rid, rsid);
 						}
 					}
 				}

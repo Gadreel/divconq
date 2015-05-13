@@ -92,7 +92,7 @@ public class ListDirect extends LoadRecord {
 					db.checkSelect(table, id, fwhen, where, historical);
 	
 					try {
-						ListDirect.this.writeField(conn, task, log, out, db, table, id, fwhen, select, select.getItemAsRecord(0),
+						ListDirect.this.writeField(conn, task, log, out, db, table, id, fwhen, select.getItemAsRecord(0),
 								historical, compact);
 					}
 					catch (Exception x) {

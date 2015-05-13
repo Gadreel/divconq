@@ -21,6 +21,11 @@ public class SelectSubquery extends SelectFields implements ISelectField {
 		this.subquery.setField("Name", v);		
 		return this;
 	}
+	
+	public SelectSubquery withSelect(SelectFields flds) {
+		this.fields = flds.fields;
+		return this;
+	}
 
 	@Override
 	public SelectSubquery withSelect(ISelectField... items) {

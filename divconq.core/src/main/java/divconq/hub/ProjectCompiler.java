@@ -45,6 +45,8 @@ public class ProjectCompiler {
 				})) {					
 					OperationContext.get().trace(0, "Loading schema: " + schema.getAbsolutePath());
 					
+					//System.out.println("Loading schema: " + schema.getAbsolutePath());
+					
 					sm.loadSchema(schema.toPath());
 				}
 		}

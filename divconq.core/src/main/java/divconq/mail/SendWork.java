@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
 
@@ -74,14 +76,21 @@ public class SendWork implements IWork {
 				: null;
 		
 		String debugBCC = settings.getAttribute("BccDebug");
+		String skipto = settings.getAttribute("SkipToAddress");
 		
 		RecordStruct req = (RecordStruct) task.getTask().getParams();
 		
 		try {
 			String from = req.getFieldAsString("From");		
 			String reply = req.getFieldAsString("ReplyTo");		
+			
+			if (StringUtil.isEmpty(from))
+				from = settings.getAttribute("DefaultFrom");
+			
+			if (StringUtil.isEmpty(reply))
+				reply = settings.getAttribute("DefaultReplyTo");
+			
 			String to = req.getFieldAsString("To");
-			String bccdebug = debugBCC;
 			String subject = req.getFieldAsString("Subject");
 			String body = req.getFieldAsString("Body");
 			
@@ -110,9 +119,22 @@ public class SendWork implements IWork {
 	    	javax.mail.Message email = new MimeMessage(session);
 		        
 			InternetAddress fromaddr = StringUtil.isEmpty(from) ? null : InternetAddress.parse(from)[0];
-			InternetAddress[] rplyaddrs = StringUtil.isEmpty(reply) ? new InternetAddress[0] : InternetAddress.parse(reply.replace(';', ','));
+			InternetAddress[] rplyaddrs = StringUtil.isEmpty(reply) ? null : InternetAddress.parse(reply.replace(';', ','));
 			InternetAddress[] toaddrs = StringUtil.isEmpty(to) ? new InternetAddress[0] : InternetAddress.parse(to.replace(';', ','));
-			InternetAddress[] dbgaddrs = StringUtil.isEmpty(bccdebug) ? new InternetAddress[0] : InternetAddress.parse(bccdebug.replace(';', ','));
+			InternetAddress[] dbgaddrs = StringUtil.isEmpty(debugBCC) ? new InternetAddress[0] : InternetAddress.parse(debugBCC.replace(';', ','));
+			
+			if (StringUtil.isNotEmpty(skipto)) {
+				List<InternetAddress> passed = new ArrayList<InternetAddress>();
+				
+				for (int i = 0; i < toaddrs.length; i++) {
+					InternetAddress toa = toaddrs[i];
+					
+					if (!toa.getAddress().contains(skipto))
+						passed.add(toa);
+				}
+				
+				toaddrs = passed.stream().toArray(InternetAddress[]::new);
+			}
 			
 	        try {				
 				email.setFrom(fromaddr);
@@ -185,8 +207,10 @@ public class SendWork implements IWork {
 	        catch (Exception x) {
 	        	task.error(1, "dciSendMail unable to send message due to invalid fields.");
 	        }
-	
-        	if (!task.hasErrors()) {
+
+	        InternetAddress[] recip = Stream.concat(Arrays.stream(toaddrs), Arrays.stream(dbgaddrs)).toArray(InternetAddress[]::new);
+	        
+        	if (!task.hasErrors() && (recip.length > 0)) {
     	    	Transport t = null;
 	        	
 		        try {
@@ -194,7 +218,7 @@ public class SendWork implements IWork {
 					
 					t.connect(smtpHost, smtpPort, smtpUsername, smtpPassword);
 					
-	        		t.sendMessage(email, Stream.concat(Arrays.stream(toaddrs), Arrays.stream(dbgaddrs)).toArray(InternetAddress[]::new));
+	        		t.sendMessage(email, recip);
 					
 		            t.close();
 		        	

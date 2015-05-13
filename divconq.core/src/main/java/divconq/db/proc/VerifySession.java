@@ -21,7 +21,7 @@ public class VerifySession extends LoadRecord {
 		BigDateTime when = BigDateTime.nowDateTime();
 		
 		RecordStruct params = task.getParamsAsRecord();
-		String token = params.getFieldAsString("Token");
+		String token = params.getFieldAsString("AuthToken");
 		
 		String uid = OperationContext.get().getUserContext().getUserId();
 
@@ -38,22 +38,55 @@ public class VerifySession extends LoadRecord {
 				else {					
 					conn.set("dcSession", token, "LastAccess", task.getStamp());
 					
+
 					// load info about the user
 					ListStruct select = new ListStruct(
+							new RecordStruct(
+									new FieldStruct("Field", "dcFirstName"),
+									new FieldStruct("Name", "FirstName")
+							),
+							new RecordStruct(
+									new FieldStruct("Field", "dcLastName"),
+									new FieldStruct("Name", "LastName")
+							),
+							new RecordStruct(
+									new FieldStruct("Field", "dcEmail"),
+									new FieldStruct("Name", "Email")
+							),
+							new RecordStruct(
+									new FieldStruct("Field", "dcLocale"),
+									new FieldStruct("Name", "Locale")
+							),
+							new RecordStruct(
+									new FieldStruct("Field", "dcChronology"),
+									new FieldStruct("Name", "Chronology")
+							),
+							// TODO we actually need group tags too - extend how this works
 							new RecordStruct(
 									new FieldStruct("Field", "dcAuthorizationTag"),		
 									new FieldStruct("Name", "AuthorizationTags")
 							)
 					);		
 
-					out.startRecord();
-					out.field("UserInfo");
+					//out.startRecord();
+					//out.field("UserInfo");
 					
 					this.writeRecord(conn, task, log, out, db, "dcUser",
 							uid, when, select, true, false, false);
 					
-					out.field("AdditionalTags", null);		// TODO we actually need group tags too
+					/*
+					// load info about the user
+					out.startRecord();
+					
+					out.field("AuthorizationTags");
+					
+					this.writeField(conn, task, log, out, db, "dcUser",
+							uid, when, "dcAuthorizationTag", false, false);
+					
+					// TODO someday get group tags too
+					
 					out.endRecord();
+					*/
 				}
 			}
 		}

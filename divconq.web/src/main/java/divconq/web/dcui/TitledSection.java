@@ -35,7 +35,9 @@ public class TitledSection extends MixedElement implements ICodeTag {
 
 		Div title = new Div(new Attributes("class", "ui-bar ui-bar-a"), new H4(xel.getAttribute("Title")));
 		
-		Div body = new Div(new Attributes("class", "ui-body ui-body-a"), view.getDomain().parseXml(view, xel));
+		Div body = (xel.hasAttribute("id"))
+				? new Div(new Attributes("id", xel.getAttribute("id") + "Body", "class", "ui-body ui-body-a"), view.getDomain().parseXml(view, xel))
+				: new Div(new Attributes("class", "ui-body ui-body-a"), view.getDomain().parseXml(view, xel));
 		
         this.myArguments = new Object[] { attrs, title, body };
 		

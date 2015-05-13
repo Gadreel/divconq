@@ -113,9 +113,12 @@ String.escapeHtml = function(val) {
 }
 
 String.formatMoney = function(total) {
-	if (!dc.util.Number.isNumber(total))
-		total = 0;
-		
+	//if (!dc.util.Number.isNumber(total))
+	//	total = 0;
+	
+	return dc.util.Number.toNumberStrict(total).toFixed(2);
+
+	/*		
 	var ttotal = total + '';		// to string
 	
 	var dp = ttotal.indexOf('.');
@@ -144,6 +147,7 @@ String.formatMoney = function(total) {
 		ttotal += '.00';
 	
 	return ttotal;
+	*/
 }
 
 window.requestAnimationFrame = (function(){

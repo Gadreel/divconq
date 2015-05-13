@@ -180,7 +180,7 @@
 					<Field Name="AuthToken" Type="dcAuthToken" Required="True" />
 				</Request>
 			</Procedure>			
-			<Procedure Name="dcVerifySession" Execute="divconq.db.proc.Verify">
+			<Procedure Name="dcVerifySession" Execute="divconq.db.proc.VerifySession">
 				<Description>
 					Verify a user session.
 				</Description>
@@ -189,14 +189,13 @@
 					<Field Name="AuthToken" Type="dcAuthToken" Required="True" />
 				</Request>
 				<Response>
-					<Field Name="UserInfo">
-						<Record>
-							<Field Name="AuthorizationTags">
-								<List Type="dcUser:dcAuthorizationTag" />
-							</Field>
-						</Record>
-					</Field>
-					<Field Name="AdditionalTags">
+					<Field Name="Username" Type="dcUser:dcUsername" />
+					<Field Name="FirstName" Type="dcUser:dcFirstName" />
+					<Field Name="LastName" Type="dcUser:dcLastName" />
+					<Field Name="Email" Type="dcUser:dcEmail" />
+					<Field Name="Locale" Type="dcUser:dcLocale" />
+					<Field Name="Chronology" Type="dcUser:dcChronology" />
+					<Field Name="AuthorizationTags">
 						<List Type="dcUser:dcAuthorizationTag" />
 					</Field>
 				</Response>

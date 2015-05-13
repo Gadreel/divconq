@@ -10,7 +10,6 @@ import divconq.db.TablesAdapter;
 import divconq.lang.BigDateTime;
 import divconq.lang.op.OperationResult;
 import divconq.schema.DbField;
-import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.builder.BuilderStateException;
 import divconq.struct.builder.ICompositeBuilder;
@@ -18,7 +17,7 @@ import divconq.struct.builder.ICompositeBuilder;
 public class ListCounter implements IComposer {
 	@Override
 	public void writeField(DatabaseInterface conn, DatabaseTask task, OperationResult log, ICompositeBuilder out, TablesAdapter db,
-			String table, String id, BigDateTime when, ListStruct select, RecordStruct field, boolean historical, boolean compact)
+			String table, String id, BigDateTime when, RecordStruct field, boolean historical, boolean compact)
 	{	
 		try {
 			String fname = field.getFieldAsString("Field");

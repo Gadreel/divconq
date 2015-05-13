@@ -71,7 +71,7 @@ public class LoadRecord implements IStoredProc {
 			
 			out.field(fld.isFieldEmpty("Name") ? fld.getFieldAsString("Field") : fld.getFieldAsString("Name"));
 			
-			this.writeField(conn, task, log, out, db, table, id, when, select, fld, historical, compact);
+			this.writeField(conn, task, log, out, db, table, id, when, fld, historical, compact);
 		}
 		
 		if (!skipWriteRec)
@@ -79,7 +79,17 @@ public class LoadRecord implements IStoredProc {
 	}
 	
 	public void writeField(DatabaseInterface conn, DatabaseTask task, OperationResult log, ICompositeBuilder out,
-			TablesAdapter db, String table, String id, BigDateTime when, ListStruct select, RecordStruct field, 
+			TablesAdapter db, String table, String id, BigDateTime when, String field, 
+			boolean historical, boolean compact) throws Exception 
+	{		
+		RecordStruct fld = new RecordStruct()
+			.withField("Field", field);
+		
+		this.writeField(conn, task, log, out, db, table, id, when, fld, historical, compact);
+	}
+	
+	public void writeField(DatabaseInterface conn, DatabaseTask task, OperationResult log, ICompositeBuilder out,
+			TablesAdapter db, String table, String id, BigDateTime when, RecordStruct field, 
 			boolean historical, boolean compact) throws Exception 
 	{		
 		// some fields may request full details even if query is not in general
@@ -106,7 +116,7 @@ public class LoadRecord implements IStoredProc {
 			try {
 				Class<?> cpclass = Class.forName(cpname);				
 				IComposer sp = (IComposer) cpclass.newInstance();
-				sp.writeField(conn, task, log, out, db, table, id, when, select, field, historical, myCompact);
+				sp.writeField(conn, task, log, out, db, table, id, when, field, historical, myCompact);
 			} 
 			catch (Exception x) {
 				log.error("Unable to run composer: " + x);
@@ -154,7 +164,7 @@ public class LoadRecord implements IStoredProc {
 					else if (sfield != null) 
 						// if a single field the write out the field out "inlined"
 						LoadRecord.this.writeField(conn, task, log, out, db, fktable, fid.toString(), when, 
-							subselect, sfield, historical, myCompact);
+							sfield, historical, myCompact);
 					else
 						// otherwise write the field out as a record within the list
 						LoadRecord.this.writeRecord(conn, task, log, out, db, fktable, fid.toString(), when, 

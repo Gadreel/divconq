@@ -293,7 +293,7 @@ public class AuthService extends ExtensionBase implements IService {
 			}			
 			
 			// TODO now that we trust the token in Session this won't get called often - think about how to keep
-			// auth token fresh in database
+			// auth token fresh in database - especially since the token will expire in 30 minutes
 			if ("Verify".equals(op)) {
 				String authToken = uc.getAuthToken();
 				
@@ -311,10 +311,15 @@ public class AuthService extends ExtensionBase implements IService {
 							}
 							else {
 								//System.out.println("verify existing");
+								ListStruct atags = urec.getFieldAsList("AuthorizationTags");
+								atags.addItem("User");								
 	
 								OperationContext.switchUser(ctx, ctx.getUserContext().toBuilder() 
 										.withVerified(true)
-										.withAuthTags(urec.getFieldAsList("AuthorizationTags"))
+										.withUsername(tc.getUserContext().getCredentials().getFieldAsString("Username"))
+										.withFullName(urec.getFieldAsString("FirstName") + " " + urec.getFieldAsString("LastName"))		// TODO make locale smart
+										.withEmail(urec.getFieldAsString("Email"))
+										.withAuthTags(atags)
 										.toUserContext()
 								);
 							}

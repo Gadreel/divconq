@@ -588,6 +588,35 @@ Context: {
 					
 					return;
 				}
+				else if ("ReloadUser".equals(op)) {
+					Message vmsg = new Message("dcAuth", "Authentication", "Verify");
+			    	
+					Hub.instance.getBus().sendMessage(vmsg, r ->	{	
+						UserContext uc = r.hasErrors() ? UserContext.allocateGuest() : r.getContext().getUserContext();
+						
+						Session.this.user = uc;
+						
+						if (r.hasErrors()) {
+							Session.this.reply(r.getResult(), msg);
+							return;
+						}
+						
+						Message rmsg = new Message();
+						
+						// TODO review how this is used/give less info to caller by default
+						RecordStruct body = new RecordStruct();							
+						rmsg.setField("Body", body);
+						
+						Session.this.user.freezeRpc(body);
+						
+						body.setField("SessionId", Session.this.id);		
+						//body.setField("SessionKey", Session.this.key);				// TODO remove this, use only the HTTPONLY cookie for key - resolve for Java level clients
+						
+						Session.this.reply(rmsg, msg);
+					});
+					
+					return;
+				}
 			}
 		}
 		
@@ -612,7 +641,7 @@ Context: {
 
 	// if session has an unverified user, verify it
 	public void verifySession(FuncCallback<Message> cb) {
-		boolean waslikequest = this.user.looksLikeGuest();
+		boolean waslikeguest = this.user.looksLikeGuest();
 		
 		OperationContext tc = OperationContext.get();
 		
@@ -632,7 +661,7 @@ Context: {
 					
 					boolean nowlikeguest = uc.looksLikeGuest();
 					
-					if (nowlikeguest && !waslikequest)
+					if (nowlikeguest && !waslikeguest)
 						cb.error(1, "User not authenticated!");
 				}
 				

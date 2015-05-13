@@ -331,13 +331,13 @@ dc.user = {
 		}
 	},
 	
-	updateUser : function(remember, callback) {		
+	updateUser : function(remember, callback, reload) {		
 		dc.user._info = { };
 
 		var msg = {
 			Service: 'Session',
 			Feature: 'Control',
-			Op: 'LoadUser'
+			Op: reload ? 'ReloadUser' : 'LoadUser'
 		};
 		
 		dc.comm.sendMessage(msg, function(rmsg) { 

@@ -31,6 +31,15 @@ public class ByteUtil {
 	static final public DateTimeFormatter localTime = DateTimeFormat.forPattern("HHmmssSSS"); 
 	
 	static public int compareKeys(byte[] a, byte[] b) {
+		if ((a == null) && (b == null))
+			return 0;
+		
+		if (a == null)
+			return -1;
+		
+		if (b == null)
+			return 1;
+		
 		for (int i = 0; i < Math.min(a.length, b.length); i++) {
 			if (a[i] > b[i])
 				return 1;

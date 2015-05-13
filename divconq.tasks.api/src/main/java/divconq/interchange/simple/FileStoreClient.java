@@ -2167,6 +2167,344 @@ public class FileStoreClient implements ILocalCommandLine {
 					break;
 				}
 				
+				case 401: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								RecordStruct content = new RecordStruct()
+									.withField("Content", "here is a message with *bold* text")
+									.withField("ContentType", "SafeMD")
+									.withField("Attributes", 
+											new RecordStruct()
+												.withField("Key", "abc")
+									);
+							
+								RecordStruct party = new RecordStruct()
+									.withField("Party", "/StaffPool")
+									.withField("Folder", "/InBox")
+									.withField("PartyLabels", 
+											new ListStruct("Keyholder")
+									);
+								
+								RecordStruct thread = new RecordStruct()
+									.withField("Title", "hey, i'm interested in keys!")
+									.withField("Parties", new ListStruct(party))
+									.withField("Content", content)
+									.withField("Labels", new ListStruct("Work", "Priority"))
+									.withField("TargetDate", new DateTime(2015, 8, 13, 0, 0))
+									.withField("EndDate", new DateTime(2015, 8, 31, 0, 0));
+								
+								Message msg = new Message("dcmCms", "Threads", "NewThread", thread);
+								
+								Hub.instance.getBus().sendMessage(msg, new DumpCallback("new thread") {
+									@Override
+									public void callback() {
+										super.callback();
+										
+										trun.complete();
+									}
+								});
+							}
+						})
+						.withTitle("Test thread processing")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+				
+				case 402: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								RecordStruct thread = new RecordStruct()
+									.withField("Uuid", "5e2c7d0bbe7b479dadafacdc3161c311")
+									.withField("Title", "hey, i'm interested in keystores!")
+									.withField("Labels", new ListStruct("Play", "Priority"))
+									.withField("TargetDate", new DateTime(2015, 8, 13, 0, 30))
+									.withField("EndDate", new DateTime(2015, 8, 31, 10, 0));
+								
+								Message msg = new Message("dcmCms", "Threads", "UpdateThreadCore", thread);
+								
+								Hub.instance.getBus().sendMessage(msg, new DumpCallback("update thread core") {
+									@Override
+									public void callback() {
+										super.callback();
+										
+										trun.complete();
+									}
+								});
+							}
+						})
+						.withTitle("Test thread processing")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+
+				case 403: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								RecordStruct thread = new RecordStruct()
+									.withField("Uuid", "5e2c7d0bbe7b479dadafacdc3161c311")
+									.withField("Parties", new ListStruct("/StaffPool"))
+									.withField("Folder", "/Archive");
+								
+								Message msg = new Message("dcmCms", "Threads", "ChangeFolderAction", thread);
+								
+								Hub.instance.getBus().sendMessage(msg, new DumpCallback("cb for ChangeFolderAction") {
+									@Override
+									public void callback() {
+										super.callback();
+										
+										trun.complete();
+									}
+								});
+							}
+						})
+						.withTitle("Test thread processing")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+
+				case 404: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								RecordStruct thread = new RecordStruct()
+									.withField("Uuid", "5e2c7d0bbe7b479dadafacdc3161c311")
+									.withField("Parties", new ListStruct("/StaffPool"))
+									.withField("Read", true);
+								
+								Message msg = new Message("dcmCms", "Threads", "ChangeStatusAction", thread);
+								
+								Hub.instance.getBus().sendMessage(msg, new DumpCallback("cb for ChangeStatusAction") {
+									@Override
+									public void callback() {
+										super.callback();
+										
+										trun.complete();
+									}
+								});
+							}
+						})
+						.withTitle("Test thread processing")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+
+				case 405: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								RecordStruct thread = new RecordStruct()
+									.withField("FilterParties", new ListStruct("/StaffPool", "/Usr/007"));
+								
+								Message msg = new Message("dcmCms", "Threads", "FolderCounting", thread);
+								
+								Hub.instance.getBus().sendMessage(msg, new DumpCallback("cb for FolderCounting") {
+									@Override
+									public void callback() {
+										super.callback();
+										
+										trun.complete();
+									}
+								});
+							}
+						})
+						.withTitle("Test thread processing")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+
+				case 406: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								RecordStruct thread = new RecordStruct()
+									.withField("Folder", "/Archive")
+									.withField("FilterParties", new ListStruct("/StaffPool", "/Usr/007"));
+								
+								Message msg = new Message("dcmCms", "Threads", "FolderListing", thread);
+								
+								Hub.instance.getBus().sendMessage(msg, new DumpCallback("cb for FolderListing") {
+									@Override
+									public void callback() {
+										super.callback();
+										
+										trun.complete();
+									}
+								});
+							}
+						})
+						.withTitle("Test thread processing")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+
+				case 407: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								RecordStruct thread = new RecordStruct()
+									.withField("Uuid", "5e2c7d0bbe7b479dadafacdc3161c311")
+									.withField("Party", "/StaffPool");
+								
+								Message msg = new Message("dcmCms", "Threads", "ThreadDetail", thread);
+								
+								Hub.instance.getBus().sendMessage(msg, new DumpCallback("cb for ThreadDetail") {
+									@Override
+									public void callback() {
+										super.callback();
+										
+										trun.complete();
+									}
+								});
+							}
+						})
+						.withTitle("Test thread processing")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+
+				case 408: {
+					LoadRecordRequest req = new LoadRecordRequest() 
+						.withTable("dcUser")
+						.withId("00700_000000000000025")
+						.withSelect(new SelectFields()
+							.withField("Id")
+							.withField("dgaZipPrefix", "ZipPrefix")
+							.withField("dcFirstName", "FirstName")
+							.withSubquery("dgaCurrentPairs","Pairs", new SelectFields()
+								.withField("Id")
+								.withField("dgaZipPrefix", "ZipPrefix")
+								.withField("dcFirstName", "FirstName")
+							)
+						);
+	
+					req.withDomain("00700_000000000000005");
+	
+					Hub.instance.getDatabase().submit(req,
+							new ObjectResult() {
+								@Override
+								public void process(CompositeStruct result) {
+									System.out.println(result.toPrettyString());
+								}								
+							});
+					
+					break;
+				}
+				
 				}
 			}
 			catch (Exception x) {

@@ -25,8 +25,10 @@ import org.joda.time.DateTime;
 import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.bus.MessageUtil;
+import divconq.db.DataRequest;
 import divconq.db.ObjectFinalResult;
 import divconq.db.ObjectResult;
+import divconq.db.ReplicatedDataRequest;
 import divconq.db.query.SelectDirectRequest;
 import divconq.db.query.SelectFields;
 import divconq.db.query.WhereEqual;
@@ -287,6 +289,26 @@ public class CmsService extends ExtensionBase implements IService {
 			Pages.handlePages(request, this.fsd, op, msg, sectionpath);
 			return;
 
+		}
+		
+		// =========================================================
+		//  cms Threads
+		// =========================================================
+		
+		if ("Threads".equals(feature)) {
+			DataRequest req = null;
+			
+			if ("NewThread".equals(op) || "UpdateThreadCore".equals(op) || "ChangePartiesAction".equals(op) || "ChangeFolderAction".equals(op) || "AddContentAction".equals(op) || "ChangeStatusAction".equals(op) || "ChangeLabelsAction".equals(op))
+				req = new ReplicatedDataRequest("dcmThread" + op)
+					.withParams(msg.getFieldAsComposite("Body"));
+			else if ("ThreadDetail".equals(op) || "FolderListing".equals(op) || "FolderCounting".equals(op))
+				req = new DataRequest("dcmThread" + op)
+					.withParams(msg.getFieldAsComposite("Body"));
+			
+			if (req != null) {
+				Hub.instance.getDatabase().submit(req, new ObjectFinalResult(request));
+				return;
+			}
 		}
 		
 		request.errorTr(441, this.serviceName(), feature, op);

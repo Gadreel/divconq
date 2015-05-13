@@ -41,6 +41,15 @@ public class DatabaseTask {
 	protected DatabaseResult result = null;		// this is the official OC
 	protected RecordStruct request = null;
 	protected List<String> domains = null;
+	protected IDatabaseManager dbm = null;
+	
+	public IDatabaseManager getDbm() {
+		return this.dbm;
+	}
+	
+	public void setDbm(IDatabaseManager v) {
+		this.dbm = v;
+	}
 	
 	public DatabaseResult getResult() {
 		return this.result;

@@ -105,7 +105,8 @@
 				ValidationMessages: { },
 				RecordOrder: [ "Default" ],
 				AsNew: { },
-				InternalValues: { }
+				InternalValues: { },
+				FreezeValues: null or { }
 				
 			}
 		}
@@ -167,6 +168,8 @@ dc.pui = {
 				var id = state ? state.Id : null; 
 				
 				if (id) {
+					dc.pui.Loader.__loadPageId = id;
+					
 					if (dc.pui.Loader.__ids[id])
 						dc.pui.Loader.manifestPage(dc.pui.Loader.__ids[id]);
 					else
@@ -291,6 +294,11 @@ dc.pui = {
 				return;
 			}
 			
+			var oldentry = dc.pui.Loader.__ids[dc.pui.Loader.__loadPageId];
+			
+			if (oldentry)
+				oldentry.freeze();
+
 			var rp = dc.handler.reroute ? dc.handler.reroute(page, params) : null;
 			
 			if (rp != null)
@@ -323,6 +331,19 @@ dc.pui = {
 						return $('#frm' + this.Forms[name].Name);
 					
 					return $('#__unreal');
+				},
+				freeze: function() {
+					var page = dc.pui.Loader.__pages[this.Name];
+					
+					this.FreezeTop = $(window).scrollTop();
+					
+					if (page.Functions.Freeze) 
+						page.Functions.Freeze.call(this);
+					
+					for (var name in this.Forms) {
+						if (this.Forms.hasOwnProperty(name)) 
+							dc.pui.Page.freezeForm(page, this, name);
+					}
 				}
 			};
 			
@@ -503,7 +524,10 @@ dc.pui = {
 				});
 				
 				$(dc.pui.Loader.__content).enhanceWithin().promise().then(function() {			
-					$("html, body").animate({ scrollTop: 0 }, "fast");
+					if (entry.Loaded && entry.FreezeTop)
+						$("html, body").animate({ scrollTop: entry.FreezeTop }, "fast");
+					else
+						$("html, body").animate({ scrollTop: 0 }, "fast");
 					
 					dc.pui.Loader.enhancePage();
 					
@@ -908,7 +932,8 @@ dc.pui = {
 									ValidationMessages: { },
 									RecordOrder: [ "Default" ],
 									AsNew: { },
-									InternalValues: { }
+									InternalValues: { },
+									FreezeValues: null
 								}, child);
 								
 								if (child.RecordOrder)
@@ -932,6 +957,14 @@ dc.pui = {
 								
 								form.values = function() {
 									return dc.pui.Page.getFormValues(child.Name);
+								};
+								
+								form.getInput = function(field) { 
+									return dc.pui.Page.getInput(child.Name, field);
+								};
+								
+								form.setInput = function(field, value) { 
+									return dc.pui.Page.getInput(child.Name, field, value);
 								};
 								
 								entry.Forms[form.Name] = form;
@@ -1293,7 +1326,7 @@ dc.pui = {
 				if (page.Functions[funcname]) 
 					page.Functions[funcname].call(entry, event);
 			
-				dc.pui.Page.loadRecord.call(entry, formname, event.Record, event.Data, event.AsNew);
+				dc.pui.Page.loadRecord.call(entry, formname, event.Record, event.Data, event.AsNew, false);
 					
 				// process next record in queue
 				qProcess();
@@ -1411,6 +1444,7 @@ dc.pui = {
 			var qProcess = function() {
 				// all done with thaw
 				if (rnames.length == 0) {
+					form.FreezeValues = null;
 					callback();					
 					return;
 				}
@@ -1420,7 +1454,7 @@ dc.pui = {
 				var event = { 
 					Record: rname,
 					Result: 0,
-					Data: form.InternalValues,
+					Data: form.FreezeValues ? form.FreezeValues : form.InternalValues,
 					AsNew: form.AsNew[rname]
 				};
 
@@ -1430,7 +1464,7 @@ dc.pui = {
 				if (page.Functions[funcname]) 
 					page.Functions[funcname].call(entry, event);
 			
-				dc.pui.Page.loadRecord.call(entry, formname, event.Record, event.Data, event.AsNew);
+				dc.pui.Page.loadRecord.call(entry, formname, event.Record, event.Data, event.AsNew, (form.FreezeValues != null));
 					
 				// process next record in queue
 				qProcess();
@@ -1438,6 +1472,16 @@ dc.pui = {
 			
 			// start the queue processing
 			qProcess();
+		},
+		
+		freezeForm: function(page, entry, formname) {
+			var form = entry.Forms[formname];
+			
+			if(!form.RecordOrder) 
+				return;
+			
+			for (var i = 0; i < form.RecordOrder.length; i++)
+				dc.pui.Page.freezeRecord.call(entry, formname, form.RecordOrder[i]);
 		},
 		
 		validate: function() {
@@ -1460,8 +1504,9 @@ dc.pui = {
 			
 			//console.log('saving form: ' + formname + ' - ' + form);
 						
-			var anychanged = false;
-			var event = { };
+			var event = { 
+				Changed: false
+			};
 			
 			var funcname = form.Prefix ? form.Prefix + 'BeforeSave' : 'BeforeSave';
 		
@@ -1473,6 +1518,8 @@ dc.pui = {
 				callback();
 				return;
 			}
+			
+			var anychanged = event.Changed;
 					
 			// build a queue of record names to load 
 			var rnames = form.RecordOrder.concat(); 
@@ -1506,7 +1553,7 @@ dc.pui = {
 				
 				var rname = rnames.shift();
 
-				if (!dc.pui.Page.isChanged.call(entry, formname, rname)) {
+				if (!anychanged && !dc.pui.Page.isChanged.call(entry, formname, rname)) {
 					// process next record in queue
 					qProcess();
 					return;
@@ -1541,9 +1588,15 @@ dc.pui = {
 							}
 						
 							dc.pui.Page.clearChanges.call(entry, formname, rname);
+							
+							var aftersavecntdwn = new dc.lang.CountDownCallback(1, function() { 
+								// process next record in queue
+								qProcess();
+							});
 					
 							event.Result = e;
 							event.Data = e.Body;
+							event.CountDown = aftersavecntdwn;
 			
 							var funcname = form.Prefix ? form.Prefix + 'AfterSaveRecord' : 'AfterSaveRecord';
 						
@@ -1562,8 +1615,7 @@ dc.pui = {
 								return;
 							}
 							
-							// process next record in queue
-							qProcess();
+							aftersavecntdwn.dec();						
 						});
 					}
 					else {
@@ -1620,13 +1672,13 @@ dc.pui = {
 			return null;
 		},		
 		
-		loadDefault: function(formname, data, asNew) {
+		loadDefault: function(formname, data, asNew, thawMode) {
 			var entry = dc.pui.Loader.currentPageEntry();
 			
-			return dc.pui.Page.loadRecord.call(entry, formname, 'Default', data, asNew);
+			return dc.pui.Page.loadRecord.call(entry, formname, 'Default', data, asNew, thawMode);
 		},
 		
-		loadRecord: function(formname, recname, data, asNew) {
+		loadRecord: function(formname, recname, data, asNew, thawMode) {
 			// this = entry
 			var form = this.Forms[formname];
 			
@@ -1647,7 +1699,29 @@ dc.pui = {
 						continue;
 					
 					if (dc.pui.Controls[iinfo.Type] && dc.pui.Controls[iinfo.Type].Set)
-						dc.pui.Controls[iinfo.Type].Set.call(this, form, iinfo, data[iinfo.Field]);
+						dc.pui.Controls[iinfo.Type].Set.call(this, form, iinfo, data[iinfo.Field], thawMode);
+				}
+			}
+		},
+		
+		freezeRecord: function(formname, recname) { 
+			// this = entry
+			var form = this.Forms[formname];
+			
+			if (!form || !form.Inputs)
+				return;
+			
+			form.FreezeValues = { };
+
+			for (var name in form.Inputs) {
+				if (form.Inputs.hasOwnProperty(name)) {
+					var iinfo = form.Inputs[name];
+
+					if (iinfo.Record != recname)
+						continue;
+					
+					if (dc.pui.Controls[iinfo.Type] && dc.pui.Controls[iinfo.Type].FreezeChanges)
+						dc.pui.Controls[iinfo.Type].FreezeChanges.call(this, form, iinfo);
 				}
 			}
 		},
@@ -1768,6 +1842,7 @@ dc.pui = {
 				return;
 			
 			form.AsNew[recname] = false;							
+			form.FreezeValues = null;
 
 			for (var name in form.Inputs) {
 				if (form.Inputs.hasOwnProperty(name)) {
@@ -1842,6 +1917,7 @@ dc.pui = {
 			var entry = dc.pui.Loader.currentPageEntry();
 			var form = entry.Forms[formname];
 			
+			// TODO what about FreezeValues
 			if (!form || !form.InternalValues)
 				return null;
 			
@@ -1850,13 +1926,15 @@ dc.pui = {
 	},
 	Controls: {	
 		PasswordInput:{
-			Set: function(form, field, value) {
+			Set: function(form, field, value, thawMode) {
 				value = dc.util.String.toString(value);
 
 				if (!value)
 					value = '';
 				
-				form.InternalValues[field.Field] = value;
+				if (!thawMode)
+					form.InternalValues[field.Field] = value;
+				
 				$('#' + field.Id).val(value);
 			},
 			Get: function(form, field) {
@@ -1872,20 +1950,25 @@ dc.pui = {
 			},
 			IsChanged: function(form, field) {
 				var val = $('#' + field.Id).val();				
-				return (form.InternalValues[field.Field] != val);				
+				return (form.InternalValues[field.Field] != val);
 			},
 			ClearChanges: function(form, field) {
 				form.InternalValues[field.Field] = $('#' + field.Id).val();
+			},
+			FreezeChanges: function(form, field) {
+				form.FreezeValues[field.Field] = $('#' + field.Id).val();
 			}
 		},
 		TextInput: {
-			Set: function(form, field, value) {
+			Set: function(form, field, value, thawMode) {
 				value = dc.util.String.toString(value);
 
 				if (!value)
 					value = '';
 				
-				form.InternalValues[field.Field] = value;
+				if (!thawMode)
+					form.InternalValues[field.Field] = value;
+				
 				$('#' + field.Id).val(value);
 			},
 			Get: function(form, field) {
@@ -1905,16 +1988,21 @@ dc.pui = {
 			},
 			ClearChanges: function(form, field) {
 				form.InternalValues[field.Field] = $('#' + field.Id).val();
+			},
+			FreezeChanges: function(form, field) {
+				form.FreezeValues[field.Field] = $('#' + field.Id).val();
 			}
 		},
 		HiddenInput:{
-			Set: function(form, field, value) {
+			Set: function(form, field, value, thawMode) {
 				value = dc.util.String.toString(value);
 
 				if (!value)
 					value = '';
 				
-				form.InternalValues[field.Field] = value;
+				if (!thawMode)
+					form.InternalValues[field.Field] = value;
+				
 				$('#' + field.Id).val(value);
 			},
 			Get: function(form, field) {
@@ -1934,18 +2022,24 @@ dc.pui = {
 			},
 			ClearChanges: function(form, field) {
 				form.InternalValues[field.Field] = $('#' + field.Id).val();
+			},
+			FreezeChanges: function(form, field) {
+				form.FreezeValues[field.Field] = $('#' + field.Id).val();
 			}
 		},
 		RadioSelect: { 
-			Set: function(form, field, value) {
+			Set: function(form, field, value, thawMode) {
 				value = dc.util.String.toString(value);
 
 				if (!value) {
 					value = 'NULL';
-					form.InternalValues[field.Field] = null;
+					
+					if (!thawMode)
+						form.InternalValues[field.Field] = null;
 				}
 				else
-					form.InternalValues[field.Field] = value;
+					if (!thawMode)
+						form.InternalValues[field.Field] = value;
 				
 				$('#' + field.Id + '-' + value).prop('checked',true);
 				$('#frm' + form.Name + ' input[name=' + field.Field + ']').checkboxradio("refresh");
@@ -1978,14 +2072,23 @@ dc.pui = {
 					form.InternalValues[field.Field] = null;
 				else
 					form.InternalValues[field.Field] = val;
+			},
+			FreezeChanges: function(form, field) {
+				var val = $('#frm' + form.Name + ' input[name=' + field.Field + ']:checked').val();
+				
+				if (val == 'NULL')
+					form.FreezeValues[field.Field] = null;
+				else
+					form.FreezeValues[field.Field] = val;
 			}
 		},
 		RadioCheck: { 
-			Set: function(form, field, values) {
+			Set: function(form, field, values, thawMode) {
 				if (!dc.util.Struct.isList(values))
 					values = [];
 
-				form.InternalValues[field.Field] = values;
+				if (!thawMode)
+					form.InternalValues[field.Field] = values;
 				
 				for (var i = 0; i < values.length; i++)
 					$('#' + field.Id + '-' + values[i]).prop('checked',true).checkboxradio("refresh");
@@ -2030,16 +2133,23 @@ dc.pui = {
 				var values = $('#frm' + form.Name + ' input[name=' + field.Field + ']:checked').map(function() { return this.value; }).get();
 				
 				form.InternalValues[field.Field] = values;
+			},
+			FreezeChanges: function(form, field) {
+				var values = $('#frm' + form.Name + ' input[name=' + field.Field + ']:checked').map(function() { return this.value; }).get();
+				
+				form.FreezeValues[field.Field] = values;
 			}
 		},
 		YesNo: {
-			Set: function(form, field, value) {
+			Set: function(form, field, value, thawMode) {
 				value = dc.util.Boolean.toBoolean(value);
 
 				if (!value)
 					value = false;
 				
-				form.InternalValues[field.Field] = value;
+				if (!thawMode)
+					form.InternalValues[field.Field] = value;
+				
 				$('#' + field.Id).val(value + '').flipswitch("refresh");
 			},
 			Get: function(form, field) {
@@ -2056,16 +2166,21 @@ dc.pui = {
 			},
 			ClearChanges: function(form, field) {
 				form.InternalValues[field.Field] = $('#' + field.Id).val() == 'true';
+			},
+			FreezeChanges: function(form, field) {
+				form.FreezeValues[field.Field] = $('#' + field.Id).val() == 'true';
 			}
 		},
 		Range: { 
-			Set: function(form, field, value) {
+			Set: function(form, field, value, thawMode) {
 				value = dc.util.String.toString(value);
 
 				if (!value)
 					value = '';
 				
-				form.InternalValues[field.Field] = value;
+				if (!thawMode)
+					form.InternalValues[field.Field] = value;
+				
 				$('#' + field.Id).val(value);
 				$('#' + field.Id).slider('refresh');
 			},
@@ -2086,18 +2201,24 @@ dc.pui = {
 			},
 			ClearChanges: function(form, field) {
 				form.InternalValues[field.Field] = $('#' + field.Id).val();
+			},
+			FreezeChanges: function(form, field) {
+				form.FreezeValues[field.Field] = $('#' + field.Id).val();
 			}
 		},
 		Select: { 
-			Set: function(form, field, value) {
+			Set: function(form, field, value, thawMode) {
 				value = dc.util.String.toString(value);
 
 				if (!value) {
 					value = 'NULL';
-					form.InternalValues[field.Field] = null;
+					
+					if (!thawMode)
+						form.InternalValues[field.Field] = null;
 				}
 				else
-					form.InternalValues[field.Field] = value;
+					if (!thawMode)
+						form.InternalValues[field.Field] = value;
 				
 				$('#' + field.Id).val(value).selectmenu("refresh");
 			},
@@ -2130,6 +2251,14 @@ dc.pui = {
 				else
 					form.InternalValues[field.Field] = val;
 			},
+			FreezeChanges: function(form, field) {
+				var val = $('#' + field.Id).val();
+				
+				if (val == 'NULL')
+					form.FreezeValues[field.Field] = null;
+				else
+					form.FreezeValues[field.Field] = val;
+			},
 			Add: function(form, field, values) {
 				for (var i = 0; i < values.length; i++) {
 					var opt = values[i];			
@@ -2145,7 +2274,7 @@ dc.pui = {
 			}
 		},
 		TextArea: { 
-			Set: function(form, field, value) {
+			Set: function(form, field, value, thawMode) {
 				if (dc.util.Struct.isComposite(value))
 					value = JSON.stringify(value, undefined, 3);
 				else
@@ -2154,7 +2283,9 @@ dc.pui = {
 				if (!value)
 					value = '';
 				
-				form.InternalValues[field.Field] = value;
+				if (!thawMode)
+					form.InternalValues[field.Field] = value;
+				
 				$('#' + field.Id).val(value);
 			},
 			Get: function(form, field) {
@@ -2181,6 +2312,9 @@ dc.pui = {
 			},
 			ClearChanges: function(form, field) {
 				form.InternalValues[field.Field] = $('#' + field.Id).val();
+			},
+			FreezeChanges: function(form, field) {
+				form.FreezeValues[field.Field] = $('#' + field.Id).val();
 			}
 		}
 	},
@@ -2339,7 +2473,7 @@ $(document).on('mobileready', function () {
 			// load user from current server session
 			dc.user.updateUser(false, function() {
 				dc.pui.Loader.loadDestPage();
-			});
+			}, true);
 		}
 	});
 });

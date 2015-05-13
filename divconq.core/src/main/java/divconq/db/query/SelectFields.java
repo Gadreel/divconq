@@ -148,6 +148,17 @@ public class SelectFields {
 		return this;
 	}	
 	
+	public SelectFields withSubquery(String field, String name, SelectFields flds) {
+		SelectSubquery sub = new SelectSubquery()
+			.withName(name)
+			.withField(field)
+			.withSelect(flds);
+		
+		this.fields.addItem(sub.getParams());
+		
+		return this;
+	}	
+	
 	/**
 	 * @param field name of foreign key field
 	 * @param name display (return) name

@@ -24,7 +24,7 @@ public class SignIn extends LoadRecord {
 				
 		String token = null;
 		String uid = null;
-		boolean confirmed = false;
+		//boolean confirmed = false;
 		String password = params.getFieldAsString("Password");
 		String uname = params.getFieldAsString("Username");
 		//String code = params.getFieldAsString("Code");
@@ -34,7 +34,7 @@ public class SignIn extends LoadRecord {
 			if (task.isReplicating()) {
 				token = params.getFieldAsString("Token");
 				uid = params.getFieldAsString("Uid");
-				confirmed = params.getFieldAsBooleanOrFalse("Confirmed");
+				//confirmed = params.getFieldAsBooleanOrFalse("Confirmed");
 			}
 			else {
 				Object userid = db.firstInIndex("dcUser", "dcUsername", uname, when, false);
@@ -116,8 +116,8 @@ public class SignIn extends LoadRecord {
 			conn.set("dcSession", token, "User", uid);
 			conn.set("dcSession", token, "Domain", did);
 			
-			if (confirmed) 
-				db.setStaticScalar("dcUser", uid, "dcConfirmed", confirmed);
+			//if (confirmed) 
+			//	db.setStaticScalar("dcUser", uid, "dcConfirmed", confirmed);
 			
 			// TODO create some way to track last login that doesn't take up db space
 			// or make last login an audit thing...track all logins in StaticList?

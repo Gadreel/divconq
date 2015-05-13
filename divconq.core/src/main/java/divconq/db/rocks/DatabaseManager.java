@@ -218,7 +218,7 @@ public class DatabaseManager implements IDatabaseManager {
 		
 		// ========== build request ===============
 		
-		// TODO use DB context, restore after call
+		// TODO use DB context, restore after call (hmmm, keep current op context though) 
 		
 		boolean replicate = request.isReplicate();
 		String name = request.getProcedure();
@@ -248,6 +248,7 @@ public class DatabaseManager implements IDatabaseManager {
 		DatabaseTask task = new DatabaseTask();
 		task.setResult(cb);
 		task.setRequest(req);
+		task.setDbm(this);
 		
 		//DatabaseTask task = this.buildRequest(request, cb);
 		
@@ -273,6 +274,9 @@ public class DatabaseManager implements IDatabaseManager {
 		try {
 			Class<?> spclass = Class.forName(spname);				
 			IStoredProc sp = (IStoredProc) spclass.newInstance();
+			
+			cb.touch();		// keep us alive
+			
 			sp.execute(new RocksInterface(this), task, cb);
 			
 			// TODO is audit level is high enough? then audit request
