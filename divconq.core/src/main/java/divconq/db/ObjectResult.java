@@ -78,6 +78,8 @@ abstract public class ObjectResult extends DatabaseResult {
 		
 		if (this.value != null)
 			msg.setField("Body", this.getResultAsComposite());
+		else
+			msg.setField("Body", null);
 		
 		return msg;
 	}

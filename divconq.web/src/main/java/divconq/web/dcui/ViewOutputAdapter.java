@@ -16,6 +16,7 @@
 ************************************************************************ */
 package divconq.web.dcui;
 
+import groovy.lang.GroovyObject;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 import java.io.PrintStream;
@@ -28,9 +29,12 @@ import java.util.Map;
 import divconq.filestore.CommonPath;
 import divconq.hub.Hub;
 import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
+import divconq.mail.EmailInnerContext;
 import divconq.util.IOUtil;
+import divconq.web.IInnerContext;
 import divconq.web.IOutputAdapter;
 import divconq.web.WebDomain;
 import divconq.web.WebContext;
@@ -48,7 +52,10 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 	// content info
 	protected Nodes pagetemplate = null; 
 	public Nodes contenttemplate = null;
+	public Nodes textcontenttemplate = null;
 	protected Class<? extends IContentBuilder> pagebuilder = null;
+	
+	public GroovyObject viewloader = null;
 	
 	protected Map<String,String> valueparams = new HashMap<>();
 	
@@ -190,18 +197,48 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 			}
 		}
 		
-		if ("dcui".equals(root.getName()))
+		if ("dcui".equals(root.getName())) {
 			this.pagetemplate = domain.parseElement(this, root);
-		else
-			this.contenttemplate = domain.parseXml(this, root.find("Skeleton"));		
+		}
+		else if ("dcem".equals(root.getName())) {
+			this.pagetemplate = domain.parseElement(this, root);
+			this.adapter = divconq.mail.ViewBuilder.class;
+		}
+		else {
+			this.contenttemplate = domain.parseXml(this, root.find("Skeleton"));
+		}
 		
 		return true;
+	}
+	
+	public void loadContext(WebContext ctx, OperationCallback cb) {
+		if (this.viewloader == null) {
+			cb.complete();
+			return;
+		}
+		
+		try {
+			Object[] args2 = { ctx, cb };
+			
+			this.viewloader.invokeMethod("run", args2);
+		}
+		catch (Exception x) {
+			OperationContext.get().error("Unable to execute loader script!");
+			OperationContext.get().error("Error: " + x);
+			
+			cb.complete();
+		}
 	}
 	
 	public Nodes getOutput(Fragment frag, WebContext ctx, boolean dynamic) {
 		try {
 			if (this.pagebuilder != null)
 				return this.pagebuilder.newInstance().getContent(ctx, this, frag);
+
+			IInnerContext ictx = ctx.getInnerContext();
+			
+			if ((ictx instanceof EmailInnerContext) && ((EmailInnerContext)ictx).isTextMode()) 
+				return this.textcontenttemplate.deepCopy();
 			
 			if (!dynamic && (this.pagetemplate != null))
 				return this.pagetemplate.deepCopy();

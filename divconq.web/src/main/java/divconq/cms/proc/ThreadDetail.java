@@ -6,6 +6,7 @@ import divconq.db.IStoredProc;
 import divconq.db.TablesAdapter;
 import divconq.lang.op.OperationResult;
 import divconq.struct.RecordStruct;
+import divconq.struct.Struct;
 import divconq.struct.builder.ICompositeBuilder;
 
 public class ThreadDetail implements IStoredProc {
@@ -32,7 +33,16 @@ public class ThreadDetail implements IStoredProc {
 			out.field("EndDate", db.getStaticScalar("dcmThread", id, "dcmEndDate"));
 			out.field("Created", db.getStaticScalar("dcmThread", id, "dcmCreated"));
 			out.field("Modified", db.getStaticScalar("dcmThread", id, "dcmModified"));
-			out.field("Originator", db.getStaticScalar("dcmThread", id, "dcmOriginator"));
+			
+			String oid = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmOriginator"));
+			
+			out.field("Originator", oid);
+			
+			if (params.isFieldEmpty("DisplayNameField"))
+				out.field("OriginatorName", db.getStaticScalar("dcUser", oid, "dcFirstName") + " " + db.getStaticScalar("dcUser", oid, "dcLastName"));
+			else
+				out.field("OriginatorName", db.getStaticScalar("dcUser", oid, params.getFieldAsString("DisplayNameField")));
+			
 			out.field("Read", db.getStaticList("dcmThread", id, "dcmRead", party));
 			out.field("Folder", db.getStaticList("dcmThread", id, "dcmFolder", party));
 			

@@ -69,6 +69,12 @@ public class CollectorField implements ICollector {
 		return this;
 	}
 	
+	public CollectorField withSubId(Object v) {
+		this.column.setField("SubId", v);
+		
+		return this;
+	}
+	
 	@Override
 	public Struct getParams() {
 		return this.column;

@@ -29,7 +29,6 @@ import java.util.stream.Stream;
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.mail.MessagingException;
-import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.AddressException;
@@ -93,6 +92,7 @@ public class SendWork implements IWork {
 			String to = req.getFieldAsString("To");
 			String subject = req.getFieldAsString("Subject");
 			String body = req.getFieldAsString("Body");
+			String textbody = req.getFieldAsString("TextBody");
 			
 			task.info(0, "Sending email from: " + from);
 			task.info(0, "Sending email to: " + to);
@@ -118,7 +118,7 @@ public class SendWork implements IWork {
 	        // Create a new Message
 	    	javax.mail.Message email = new MimeMessage(session);
 		        
-			InternetAddress fromaddr = StringUtil.isEmpty(from) ? null : InternetAddress.parse(from)[0];
+			InternetAddress fromaddr = StringUtil.isEmpty(from) ? null : InternetAddress.parse(from.replace(';', ','))[0];
 			InternetAddress[] rplyaddrs = StringUtil.isEmpty(reply) ? null : InternetAddress.parse(reply.replace(';', ','));
 			InternetAddress[] toaddrs = StringUtil.isEmpty(to) ? new InternetAddress[0] : InternetAddress.parse(to.replace(';', ','));
 			InternetAddress[] dbgaddrs = StringUtil.isEmpty(debugBCC) ? new InternetAddress[0] : InternetAddress.parse(debugBCC.replace(';', ','));
@@ -149,32 +149,48 @@ public class SendWork implements IWork {
 	        		email.addRecipients(javax.mail.Message.RecipientType.BCC, dbgaddrs);
 	        	
 	        	email.setSubject(subject);
-	        	
-	            Multipart multipart = new MimeMultipart();
+	     
+	            // ALTERNATIVE TEXT/HTML CONTENT
+	            MimeMultipart cover = new MimeMultipart((textbody != null) ? "alternative" : "mixed");
+	            
+	            if (textbody != null) {
+		            MimeBodyPart txt = new MimeBodyPart();
+		            txt.setText(textbody);
+		            cover.addBodyPart(txt);
+	            }
 	        	
 	            // add the message part 
-	            MimeBodyPart messageBodyPart = new MimeBodyPart();
-	            messageBodyPart.setContent(body, "text/html");
-	            multipart.addBodyPart(messageBodyPart);
-	
+	            MimeBodyPart html = new MimeBodyPart();
+	            html.setContent(body, "text/html");
+	            cover.addBodyPart(html);
+	     
 	            // add the attachment parts, if any
 	            ListStruct attachments = req.getFieldAsList("Attachments");
 	            
-	            if (attachments != null) {
+	            if ((attachments != null) && (attachments.getSize() > 0)) {
+	            	// hints - https://mlyly.wordpress.com/2011/05/13/hello-world/
+		            // COVER WRAP
+		            MimeBodyPart wrap = new MimeBodyPart();
+		            wrap.setContent(cover);
+		            
+		            MimeMultipart content = new MimeMultipart("related");
+		            content.addBodyPart(wrap);	        	
+	            	
 	            	for (Struct itm : attachments.getItems()) {
 	            		RecordStruct attachment = (RecordStruct) itm;
 	            	
 	            		final String name = attachment.getFieldAsString("Name"); 
 	            		final String mime = attachment.getFieldAsString("Mime"); 
-	            		final Memory content = attachment.getFieldAsBinary("Content");
+	            		final Memory mem = attachment.getFieldAsBinary("Content");
 	            		
-	            		content.setPosition(0);
+	            		mem.setPosition(0);
 	            		
-			            messageBodyPart = new MimeBodyPart();
+	            		MimeBodyPart apart = new MimeBodyPart();
+
 			            DataSource source = new DataSource() {								
 							@Override
 							public OutputStream getOutputStream() throws IOException {
-								return new OutputWrapper(content);		// TODO technically we should reset mem to pos 0
+								return new OutputWrapper(mem);		// TODO technically we should reset mem to pos 0
 							}
 							
 							@Override
@@ -184,7 +200,7 @@ public class SendWork implements IWork {
 							
 							@Override
 							public InputStream getInputStream() throws IOException {
-								return new InputWrapper(content);		// TODO technically we should reset mem to pos 0 
+								return new InputWrapper(mem);		// TODO technically we should reset mem to pos 0 
 							}
 							
 							@Override
@@ -193,14 +209,17 @@ public class SendWork implements IWork {
 							}
 						};
 						
-			            messageBodyPart.setDataHandler(new DataHandler(source));
-			            messageBodyPart.setFileName(name);
+						apart.setDataHandler(new DataHandler(source));
+						apart.setFileName(name);
 			            
-			            multipart.addBodyPart(messageBodyPart);
+			            content.addBodyPart(apart);
 	            	}
+	            	
+	            	email.setContent(content);
 	            }
-	            
-	            email.setContent(multipart);
+	            else {
+	            	email.setContent(cover);
+	            }
 	            
 	        	email.saveChanges();		        	
 	        } 

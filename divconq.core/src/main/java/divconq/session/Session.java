@@ -68,7 +68,8 @@ public class Session {
 	protected String id = null;
 	protected String key = null;
 	protected long lastAccess = 0;
-	protected long lastTetherAccess = 0;
+	protected long lastTetherAccess = System.currentTimeMillis();
+	protected long lastReauthAccess = System.currentTimeMillis();
 	protected UserContext user = null;
 	protected DebugLevel level = null;
 	protected String originalOrigin = null;
@@ -231,6 +232,32 @@ Context: {
 			
 			// keep this up to date whether we are gateway or not, this way fewer checks
 			this.lastTetherAccess = this.lastAccess;
+		}
+
+		// keep auth session alive by pinging them at least once every 25 minutes
+		if ((this.lastAccess - this.lastReauthAccess > (25 * 60000)) && this.user.isAuthenticated()) {
+			if (!Hub.instance.getResources().isGateway()) {			// if we are NOT a gateway
+				OperationContext curr = OperationContext.get();
+				
+				try {
+					// be sure to send the message with the correct context
+					OperationContext.set(this.allocateContext());
+					
+					Message vmsg = new Message("dcAuth", "Authentication", "Verify");
+			    	
+					Hub.instance.getBus().sendMessage(vmsg, r ->	{	
+						Session.this.user = r.hasErrors() ? UserContext.allocateGuest() : r.getContext().getUserContext();
+						
+						// TODO communicate to session initiator that our context has changed
+					});
+				}
+				finally {
+					OperationContext.set(curr);
+				}
+			}
+			
+			// keep this up to date whether we are gateway or not, this way fewer checks
+			this.lastReauthAccess = this.lastAccess;
 		}
 	}
 	

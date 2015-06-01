@@ -115,6 +115,7 @@ public class SelectDirect extends LoadRecord {
 				};				
 				
 				String fname = collector.getFieldAsString("Field");
+				String subid = collector.getFieldAsString("SubId");
 				
 				ListStruct values = collector.getFieldAsList("Values");
 				
@@ -123,7 +124,7 @@ public class SelectDirect extends LoadRecord {
 						if ("Id".equals(fname))
 							uniqueConsumer.accept(s);
 						else
-							db.traverseIndex(table, fname, Struct.objectToCore(s), when, historical, uniqueConsumer);
+							db.traverseIndex(table, fname, Struct.objectToCore(s), subid, when, historical, uniqueConsumer);
 					}
 				}
 				else {

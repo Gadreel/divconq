@@ -27,7 +27,7 @@ public class UpdateThreadCore implements IStoredProc {
 		DbRecordRequest req = new UpdateRecordRequest()
 			.withId(tid)
 			.withTable("dcmThread")
-			.withConditionallyUpdateFields(params, "Title", "dcmTitle", "EndDate", "dcmEndDate", "TargetDate", "dcmTargetDate");
+			.withConditionallyUpdateFields(params, "Title", "dcmTitle", "EndDate", "dcmEndDate", "TargetDate", "dcmTargetDate", "Originator", "dcmOriginator");
 			
 		ListStruct lbs = params.getFieldAsList("Labels");
 		

@@ -20,6 +20,7 @@ import divconq.hub.Hub;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationObserver;
 import divconq.struct.RecordStruct;
+import divconq.util.StringUtil;
 import divconq.work.Task;
 import divconq.xml.XElement;
 
@@ -51,7 +52,16 @@ public class SimpleSchedule extends OperationObserver implements ISchedule {
 	}
 	
 	public void init(XElement config) {
-		// TODO load a SimpleSchedule element
+		if (config.hasAttribute("Seconds")) {
+			long every = StringUtil.parseInt(config.getAttribute("Seconds"), 0);
+			
+			if (every > 0) {
+				this.repeat = true;
+				this.every = (int)every;
+				
+				this.nextrunat = System.currentTimeMillis() + (this.every * 1000);
+			}
+		}
 	}
 	
 	@Override

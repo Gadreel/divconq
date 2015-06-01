@@ -90,6 +90,17 @@ public class SelectFields {
 		return this;
 	}
 	
+	public SelectFields withSubField(String field, String subid, String name) {
+		SelectField sub = new SelectField()
+			.withField(field)
+			.withSubId(subid)
+			.withName(name);
+		
+		this.fields.addItem(sub.getParams());
+		
+		return this;
+	}
+	
 	/**
 	 * @param field name of foreign key field
 	 * @param name display (return) name

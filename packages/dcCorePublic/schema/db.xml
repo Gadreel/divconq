@@ -367,6 +367,7 @@
 							<Field Name="Name" Type="dcTinyString" />
 							<!-- or -->
 							<Field Name="Field" Type="dcTinyString" />
+							<Field Name="SubId" Type="dcTinyString" />
 							<Field Name="From" Type="Any" />
 							<Field Name="To" Type="Any" />
 							<Field Name="Values">

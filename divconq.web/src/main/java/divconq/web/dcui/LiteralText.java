@@ -51,6 +51,8 @@ public class LiteralText extends Node implements ICodeTag {
 	@Override
 	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
 		this.value = xel.getText();
+		
+		nodes.add(this);
 	}
 	
     @Override

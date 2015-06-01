@@ -27,12 +27,13 @@ import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.stream.ChunkedInput;
 import divconq.bus.Message;
+import divconq.hub.DomainInfo;
 import divconq.session.Session;
 import divconq.util.MimeUtil;
 import divconq.xml.XElement;
 
 // TODO combine with WebContext??
-public class HttpContext {
+public class HttpContext implements IInnerContext {
 	protected Channel chan = null;
     protected XElement config = null;
     
@@ -110,7 +111,7 @@ public class HttpContext {
 	}
 	
 	public void offerContent(HttpContent v) {
-		this.session.touch();
+		this.session.touch();		// TODO make sure we are in proper context when this is called - as well as any calls to getSession above - then remove this extra reference to current session
 		
 		IContentDecoder d = this.decoder;
 		
@@ -284,5 +285,20 @@ public class HttpContext {
 		
 		if (d != null) 
 			d.release();
+	}
+	
+	@Override
+	public WebDomain getDomain() {
+		DomainInfo domaininfo = this.siteman.resolveDomainInfo(this.request);
+		
+		if (domaininfo != null)
+			return this.siteman.getDomain(domaininfo.getId());
+		
+		return null;
+	}
+	
+	@Override
+	public IWebMacro getMacro(String name) {
+		return this.siteman.getMacro(name);
 	}
 }

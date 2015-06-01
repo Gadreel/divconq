@@ -133,6 +133,16 @@ public class CmsService extends ExtensionBase implements IService {
 				return;
 			}
 			
+			if ("DomainFileStore".equals(feature) && "LoadFile".equals(op)) {
+				this.handleLoadFile(request, this.fsd, sectionpath);
+				return;
+			}
+			
+			if ("DomainFileStore".equals(feature) && "SaveFile".equals(op)) {
+				this.handleSaveFile(request, this.fsd, sectionpath);
+				return;
+			}
+			
 			if ("DeleteFile".equals(op)) {
 				this.handleDeleteFile(request, this.fsd, sectionpath);
 				return;
@@ -822,6 +832,79 @@ public class CmsService extends ExtensionBase implements IService {
 									}
 								});
 						}
+					}
+				});
+			}
+		});
+	}
+	
+	public void handleLoadFile(TaskRun request, FileSystemDriver fs, CommonPath sectionpath) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String fpath = rec.getFieldAsString("FilePath");
+		
+		CommonPath path = sectionpath.resolve(fpath);
+		
+		fs.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
+			@Override
+			public void callback() {
+				if (request.hasErrors()) {
+					request.complete();
+					return;
+				}
+				
+				IFileStoreFile fi = this.getResult();
+				
+				if (!fi.exists()) {
+					request.error("File does not exist");
+					request.complete();
+					return;
+				}
+				
+				if (fi.getSize() > 16 * 1000 * 1000) {
+					request.error("File too large");
+					request.complete();
+					return;
+				}
+				
+				fi.readAllText(new FuncCallback<String>() {					
+					@Override
+					public void callback() {
+						if (this.hasErrors()) {
+							request.error("Unable to read file");
+							request.complete();
+							return;
+						}
+						
+						String text = this.getResult();
+
+						request.returnValue(new RecordStruct().withField("Content", text));
+					}
+				});
+			}
+		});
+	}
+	
+	public void handleSaveFile(TaskRun request, FileSystemDriver fs, CommonPath sectionpath) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String fpath = rec.getFieldAsString("FilePath");
+		
+		CommonPath path = sectionpath.resolve(fpath);
+		
+		fs.getFileDetail(path, new FuncCallback<IFileStoreFile>() {			
+			@Override
+			public void callback() {
+				if (request.hasErrors()) {
+					request.complete();
+					return;
+				}
+				
+				String content = rec.getFieldAsString("Content");
+				IFileStoreFile fi = this.getResult();
+				
+				fi.writeAllText(content, new OperationCallback() {			
+					@Override
+					public void callback() {
+						request.complete();
 					}
 				});
 			}

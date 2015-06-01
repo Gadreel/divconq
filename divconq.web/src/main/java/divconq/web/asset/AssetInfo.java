@@ -104,27 +104,43 @@ public class AssetInfo {
 		return this.when;
 	}
 	
-	public AssetInfo(CommonPath path, Path content, long when) {
-		this.path = path;
-		this.when = when;
-		this.fpath = content;
+	static public AssetInfo build(CommonPath path, Path content) {
+		if (!Files.isReadable(content))
+			return null;
+		
+		AssetInfo asset = new AssetInfo();
+		
+		asset.path = path;
+		
+		try {
+			asset.when = Files.getLastModifiedTime(content).toMillis();
+		} 
+		catch (IOException x) {
+			asset.when = System.currentTimeMillis();
+		}
+		
+		asset.fpath = content;
 		
 		String fname = content.getFileName().toString();
 		
-		this.setMimeForFile(fname);
+		asset.setMimeForFile(fname);
 		
-		this.region = !fname.endsWith(".html") && !fname.endsWith(".js");		// TODO we need these until we support nxxUploader with translations
+		asset.region = !fname.endsWith(".html") && !fname.endsWith(".js");		// TODO we need these until we support nxxUploader with translations
+		
+		return asset;
 	}
 	
-	public AssetInfo(CommonPath path, long when) {
-		this.path = path;
-		this.when = when;
+	static public AssetInfo build(CommonPath path, ByteBufWriter content) {
+		AssetInfo asset = new AssetInfo();
+		
+		asset.path = path;
+		asset.buffer = content;
+		asset.when = System.currentTimeMillis();
+		
+		return asset;
 	}
 	
-	public AssetInfo(CommonPath path, ByteBufWriter content, long when) {
-		this.path = path;
-		this.buffer = content;
-		this.when = when;
+	protected AssetInfo() {
 	}
 	
 	public void load(WebContext ctx) {

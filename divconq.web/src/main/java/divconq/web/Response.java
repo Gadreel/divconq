@@ -95,6 +95,11 @@ public class Response {
 		this.keepAlive = v;
 	}
     
+    public void write(PrintStream out) {
+        this.body.setPosition(0);
+        this.body.copyToStream(out);
+	}
+    
     public void write(Channel ch) {
         if ((this.status != HttpResponseStatus.OK) && (this.body.getLength() == 0))
         	this.body.write(this.status.toString());
@@ -280,6 +285,9 @@ public class Response {
 	public void load(ChannelHandlerContext ctx, HttpRequest req) {
 		this.keepAlive = HttpHeaders.isKeepAlive(req);
 	}
+	
+	public void loadVoid() {
+	}
 
 	public void setBody(Message m) {
 		// TODO make more efficient
@@ -293,5 +301,9 @@ public class Response {
 
 	public void setBody(Memory v) {
 		this.body = v;
+	}
+	
+	public Memory getBody() {
+		return this.body;
 	}
 }

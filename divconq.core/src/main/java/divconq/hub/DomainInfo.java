@@ -21,9 +21,13 @@ import groovy.lang.GroovyObject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.joda.time.DateTime;
 
 import divconq.bus.IService;
 import divconq.bus.ServiceRouter;
@@ -31,6 +35,9 @@ import divconq.io.FileStoreEvent;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
+import divconq.scheduler.ISchedule;
+import divconq.scheduler.SimpleSchedule;
+import divconq.scheduler.common.CommonSchedule;
 import divconq.schema.SchemaManager;
 import divconq.service.DomainServiceAdapter;
 import divconq.service.DomainWatcherAdapter;
@@ -39,6 +46,7 @@ import divconq.struct.RecordStruct;
 import divconq.util.IOUtil;
 import divconq.util.ISettingsObfuscator;
 import divconq.util.StringUtil;
+import divconq.work.Task;
 import divconq.xml.XAttribute;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
@@ -51,6 +59,7 @@ public class DomainInfo {
 	protected Map<String, IService> registered = new HashMap<String, IService>();
 	protected Map<String, ServiceRouter> routers = new HashMap<String, ServiceRouter>();
 	protected DomainWatcherAdapter watcher = null;
+	protected List<ISchedule> schedulenodes = new ArrayList<>();
 	
 	public String getId() {
 		return this.info.getFieldAsString("Id");
@@ -208,6 +217,8 @@ public class DomainInfo {
 			this.watcher = new DomainWatcherAdapter(dpath);
 		
 		this.watcher.init(this);
+		
+		this.prepDomainSchedule();
 	}
 	
 	public void registerService(IService service) {
@@ -248,6 +259,52 @@ public class DomainInfo {
 		));
 		
 		return obfuscator;
+	}
+	
+	public void prepDomainSchedule() {
+		// cancel and remove any previous schedules 
+		if (this.schedulenodes.size() > 0) {
+			OperationContext.get().info("Cancelling schedules for " + this.getAlias());
+			
+			for (ISchedule sch : this.schedulenodes) {
+				OperationContext.get().info("- schedule: " + sch.task().getTitle());
+				sch.cancel();
+			}
+		}
+		
+		this.schedulenodes.clear();
+		
+		if (this.overrideSettings == null)
+			return;
+		
+		// now load new schedules
+		OperationContext.get().info("Prepping schedules for " + this.getAlias());
+		
+		for (XElement schedule : this.overrideSettings.selectAll("Schedules/*")) {
+			OperationContext.get().info("- find schedule: " + schedule.getAttribute("Title"));
+			
+			ISchedule sched = "CommonSchedule".equals(schedule.getName()) ? new CommonSchedule() : new SimpleSchedule();
+			
+			sched.init(schedule);
+			
+			sched.setTask(new Task()
+				.withId(Task.nextTaskId("DomainSchedule"))
+				.withTitle("Domain Scheduled Task: " + schedule.getAttribute("Title"))
+				.withRootContext()
+				.withWork(trun -> {
+					OperationContext.get().info("Executing schedule: " + trun.getTask().getTitle() + " for domain " + DomainInfo.this.getAlias());
+					
+					if (schedule.hasAttribute("MethodName") && (this.watcher != null))
+						this.watcher.tryExecuteMethod(schedule.getAttribute("MethodName"), new Object[] { trun });
+				})
+			);
+		
+			OperationContext.get().info("- prepped schedule: " + schedule.getAttribute("Title") + " next run " + new DateTime(sched.when()));
+			
+			this.schedulenodes.add(sched);
+			
+			Hub.instance.getScheduler().addNode(sched);
+		}
 	}
 
 	public void fileChanged(FileStoreEvent result) {

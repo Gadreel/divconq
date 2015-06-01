@@ -112,6 +112,11 @@ public class SelectField implements ISelectField {
 		this.column.setField("Full", v);		
 		return this;
 	}
+
+	public SelectField withSubId(String v) {
+		this.column.setField("SubId", v);		
+		return this;
+	}
 	
 	@Override
 	public Struct getParams() {

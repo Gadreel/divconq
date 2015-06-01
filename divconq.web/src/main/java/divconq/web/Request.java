@@ -29,6 +29,7 @@ import divconq.www.http.parse.DateParser;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.Cookie;
 import io.netty.handler.codec.http.CookieDecoder;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.HttpMethod;
@@ -144,5 +145,14 @@ public class Request {
         this.orgpath = this.path;
         
         this.contentType = new ContentTypeParser(this.headers.get(Names.CONTENT_TYPE));
+	}
+    
+	public void loadVoid(CommonPath path) {
+		this.method = HttpMethod.GET;
+		this.headers = new  DefaultHttpHeaders();
+        
+        this.parameters = new HashMap<>();
+        this.path = path;
+        this.orgpath = this.path;
 	}
 }

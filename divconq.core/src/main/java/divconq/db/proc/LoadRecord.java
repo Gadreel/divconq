@@ -193,9 +193,19 @@ public class LoadRecord implements IStoredProc {
 			
 			return;
 		}
+		
+		String subid = field.getFieldAsString("SubId");
 
+		if (StringUtil.isNotEmpty(subid) && fdef.isList()) {
+			if (subselect != null)
+				foreignSink.accept(db.getDynamicList(table, id, fname, subid, when, format));
+			else if (compact)
+				out.value(db.getDynamicList(table, id, fname, subid, when, format));
+			else
+				out.value(db.getDynamicListExtended(table, id, fname, subid, when, format));
+		}
 		// DynamicList, StaticList (or DynamicScalar is when == null)
-		if (fdef.isList() || (fdef.isDynamic() && when == null)) {
+		else if (fdef.isList() || (fdef.isDynamic() && when == null)) {
 			out.startList();
 			
 			// keep in mind that `id` is the "value" in the index

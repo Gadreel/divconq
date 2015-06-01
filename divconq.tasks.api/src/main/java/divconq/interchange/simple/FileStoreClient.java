@@ -81,6 +81,7 @@ import divconq.lang.Memory;
 import divconq.lang.TimeoutPlan;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.FuncResult;
+import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationContextBuilder;
 import divconq.lang.op.OperationObserver;
@@ -90,7 +91,10 @@ import divconq.lang.stem.IndexInfo.StemEntry;
 import divconq.lang.stem.IndexUtility;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
+import divconq.mail.EmailInnerContext;
 import divconq.mail.MailTaskFactory;
+import divconq.mail.SimpleFactory;
+import divconq.mod.IModule;
 import divconq.script.Activity;
 import divconq.script.ui.ScriptUtility;
 import divconq.session.Session;
@@ -104,7 +108,13 @@ import divconq.util.FileUtil;
 import divconq.util.HexUtil;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
+import divconq.web.IInnerContext;
+import divconq.web.IOutputAdapter;
+import divconq.web.IWebExtension;
+import divconq.web.WebContext;
+import divconq.web.WebModule;
 import divconq.web.cms.OrderUtil;
+import divconq.web.dcui.ViewOutputAdapter;
 import divconq.work.IWork;
 import divconq.work.Task;
 import divconq.work.TaskRun;
@@ -2501,6 +2511,263 @@ public class FileStoreClient implements ILocalCommandLine {
 									System.out.println(result.toPrettyString());
 								}								
 							});
+					
+					break;
+				}
+				
+				case 409: {
+					/*
+					Session sess = Hub.instance.getSessions().create("http:", "00700_000000000000005");
+					
+					*/
+					
+					CommonPath path = new CommonPath("/Test.dcm.xml");
+					
+					IModule mod = Hub.instance.getModule("Web");
+					IWebExtension ex = ((WebModule) mod).getWebSiteManager().getDefaultExtension();
+
+					IInnerContext ic = new EmailInnerContext(path, ((WebModule) mod).getWebSiteManager().getDomain("00700_000000000000004"), new FuncCallback<EmailInnerContext>() {
+						@Override
+						public void callback() {
+							EmailInnerContext eic = this.getResult();
+							
+							System.out.println("--------");
+							System.out.println("subject: " + eic.getSubject());
+							System.out.println("--------");
+							System.out.println("html output from email template: ");
+							System.out.println("--------");
+							
+							eic.getHtmlResponse().write(System.out);
+							
+							System.out.println("--------");
+							System.out.println("text output from email template: ");
+							System.out.println("--------");
+							
+							eic.getTextResponse().write(System.out);
+						}
+					});
+					
+					WebContext ctx = new WebContext(ic, ex);
+					
+					IOutputAdapter output = new ViewOutputAdapter(ctx.getDomain(), path, 
+							Paths.get("./public/dcw/gei-wrestling/email/Test-Both.dcm.xml"), false);
+
+					if (OperationContext.get().hasErrors() || (output == null)) {
+						OperationContext.get().errorTr(150001);			
+						return;
+					}
+					
+					try {
+						ctx.setAdapter(output);
+						
+						output.execute(ctx);
+					} 
+					catch (Exception x) {
+						System.out.println("Unable to process web file: " + x);
+						x.printStackTrace();
+					}
+					
+					break;
+				}
+
+				case 410: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000004")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								RecordStruct thread = new RecordStruct()
+									.withField("Path", "/Test-Both.dcm.xml");
+								
+								Message msg = new Message("dcmEmailBuilder", "Message", "Build", thread);
+								
+								Hub.instance.getBus().sendMessage(msg, new DumpCallback("cb for msg Build") {
+									@Override
+									public void callback() {
+										super.callback();
+										
+										trun.complete();
+									}
+								});
+							}
+						})
+						.withTitle("Test msg builder")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+				
+				case 411: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000004")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								Task r = MailTaskFactory.createBuildSendEmailTask(null, "lightofgadrel@gmail.com", new CommonPath("/Test-Both.dcm.xml"), null);
+								
+								MailTaskFactory.sendEmail(r);
+								
+								trun.complete();
+							}
+						})
+						.withTitle("Test msg builder")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+				
+				case 412: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000004")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								Task r = MailTaskFactory.createBuildSendEmailTask(null, 
+										"lightofgadrel@gmail.com", 
+										new CommonPath("/Password-Reset.dcm.xml"), 
+										new RecordStruct()
+											.withField("Code", "abc123")
+											.withField("To", "lightofgadrel@gmail.com")
+								);
+								
+								r.withObserver(new OperationObserver() {
+									@Override
+									public void completed(OperationContext ctx) {
+										System.out.println("412 done");
+										trun.complete();
+									}
+								});
+								
+								Hub.instance.getWorkPool().submit(r);
+							}
+						})
+						.withTitle("Test msg builder")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+
+				case 413: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000004")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								RecordStruct thread = new RecordStruct()
+									.withField("Path", "/Order-Update.dcm.xml")
+									.withField("Params", new RecordStruct()
+										.withField("Id", "00700_000000000000033")
+									);
+								
+								Message msg = new Message("dcmEmailBuilder", "Message", "Build", thread);
+								
+								Hub.instance.getBus().sendMessage(msg, new DumpCallback("cb for msg Build") {
+									@Override
+									public void callback() {
+										super.callback();
+										
+										trun.complete();
+									}
+								});
+							}
+						})
+						.withTitle("Test msg builder")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+
+				case 414: {
+
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								SimpleFactory.simpleBuildThread("00000_000000000000001", 
+										new ListStruct("00700_000000000000029", "/StaffPool"),
+										"HiredApprentice",
+										new RecordStruct()
+											.withField("UserId", "00700_000000000000029"),
+										true,
+										"dgaDisplayName",
+										new OperationCallback() {
+											@Override
+											public void callback() {
+												System.out.println("done with test send");
+												
+												trun.complete();
+											}
+										}
+								);
+							}
+						})
+						.withTitle("Test dgaBuildSendMessage")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
 					
 					break;
 				}

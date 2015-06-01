@@ -1,7 +1,6 @@
 package divconq.web.asset;
 
 import java.lang.reflect.Method;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import groovy.lang.GroovyClassLoader;
@@ -36,10 +35,10 @@ public class AssetOutputAdapter implements IOutputAdapter {
 		
 		AssetInfo asset = null;
 
-		if (fpstr.endsWith(".pui.xml"))
-			asset = new PuiAssetInfo(ctx, this.webpath, this.filepath, Files.getLastModifiedTime(this.filepath).toMillis());
-		
-		if (fpstr.endsWith(".gas")) {
+		if (fpstr.endsWith(".pui.xml")) {
+			asset = PuiAssetInfo.build(ctx, this.webpath, this.filepath);	
+		}
+		else if (fpstr.endsWith(".gas")) {
 			@SuppressWarnings("resource")
 			GroovyClassLoader loader = new GroovyClassLoader();
 			Class<?> groovyClass = loader.parseClass(this.filepath.toFile());
@@ -55,7 +54,7 @@ public class AssetOutputAdapter implements IOutputAdapter {
 			
 			if (runmeth != null) {
 				ByteBufWriter mem = ByteBufWriter.createLargeHeap();
-				asset = new AssetInfo(this.webpath, mem, System.currentTimeMillis());
+				asset = AssetInfo.build(this.webpath, mem);
 				asset.setMime("text/html");
 				
 				GroovyObject groovyObject = (GroovyObject) groovyClass.newInstance();
@@ -66,9 +65,14 @@ public class AssetOutputAdapter implements IOutputAdapter {
 			
 			OperationContext.get().error("Unable to execute script!");
 		}
+		else {
+			asset = AssetInfo.build(this.webpath, this.filepath);
+		}
 
-		if (asset == null)
-			asset = new AssetInfo(this.webpath, this.filepath, Files.getLastModifiedTime(this.filepath).toMillis());
+		if (asset == null) {
+			res.errorTr(150001);
+			return res;
+		}
 		
 		String fpath = asset.getPath().toString();
 		

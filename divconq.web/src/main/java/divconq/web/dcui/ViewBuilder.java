@@ -70,8 +70,10 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
     	try {
 			Nodes content = this.view.getOutput(this, this.context, this.dynamic);  
 	
+			/*
 			if (this.context.isCompleted())
 				return;
+				*/
 		
 			this.build(content);
 		} 
@@ -326,14 +328,17 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
 		
 		this.doBuild();
 		
+		/* TODO restore if useful
 		if (this.context.isCompleted()) {
 			this.context.send();
 			return or;
 		}
+		*/
 	
 		this.awaitForFutures(new OperationCallback() {
 			@Override
 			public void callback() {
+				/* TODO restore if useful - see also email ViewBuilder
 				if (!ViewBuilder.this.context.isCompleted()) {
 					try {
 						ViewBuilder.this.write();
@@ -342,6 +347,15 @@ public class ViewBuilder extends Fragment implements IViewExecutor {
 						// TODO log
 						System.out.println("View builder execute error: " + x);
 					}
+				}
+				*/
+				
+				try {
+					ViewBuilder.this.write();
+				} 
+				catch (IOException x) {
+					// TODO log
+					System.out.println("View builder execute error: " + x);
 				}
 				
 				ViewBuilder.this.context.send();

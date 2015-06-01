@@ -52,6 +52,12 @@ public class Img extends Element implements ICodeTag {
 		if (xel.hasAttribute("src"))
 			attrs.add("src", xel.getRawAttribute("src"));
 		
+		if (xel.hasAttribute("srcset"))
+			attrs.add("srcset", xel.getRawAttribute("srcset"));
+		
+		if (xel.hasAttribute("sizes"))
+			attrs.add("sizes", xel.getRawAttribute("sizes"));
+		
 		if (xel.hasAttribute("height"))
 			attrs.add("height", xel.getRawAttribute("height"));
 		

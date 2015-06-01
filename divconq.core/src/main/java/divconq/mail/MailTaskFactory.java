@@ -18,12 +18,18 @@ package divconq.mail;
 
 import java.util.Collection;
 
+import divconq.bus.Message;
+import divconq.bus.ServiceResult;
+import divconq.filestore.CommonPath;
+import divconq.hub.Hub;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.work.IWork;
 import divconq.work.Task;
+import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class MailTaskFactory {
@@ -106,5 +112,63 @@ public class MailTaskFactory {
 		MailTaskFactory.processor.embilishTask(task);
 		
 		return task;
+	}
+	
+	static public Task createBuildSendEmailTask(String from, String to, CommonPath template, RecordStruct params) {
+		RecordStruct tparams = new RecordStruct(
+			new FieldStruct("Path", template),
+			new FieldStruct("Params", params)
+		);
+		
+		RecordStruct sparams = new RecordStruct(
+				new FieldStruct("From", from),
+				new FieldStruct("To", to)
+			);
+			
+		return MailTaskFactory.createBuildSendEmailTask(tparams, sparams);
+	}
+	
+	static public Task createBuildSendEmailTask(RecordStruct tparams, RecordStruct sparams) {
+		if (MailTaskFactory.processor == null)
+			return null;
+		
+		String tid = Task.nextTaskId("EMAIL");
+		
+		XElement settings = MailTaskFactory.getSettings();
+		
+		// unfortunately this uses the current domain - which may not be the domain that is sending
+		String useBucket = (settings != null) ? settings.getAttribute("Bucket", "Default") : "Default";
+		
+		Task ttask = new Task()
+			.withId(tid)
+			.withTitle("Build and Send Email To " + sparams.getFieldAsString("To"))
+			.withBucket(useBucket)
+			.withDefaultLogger()
+			.withSubContext()
+			.withMaxTries(2)
+			.withTimeout(3)
+			.withWork(new IWork() {
+				@Override
+				public void run(TaskRun trun) {
+					Message msg = new Message("dcmEmailBuilder", "Message", "Build", tparams);
+					
+					Hub.instance.getBus().sendMessage(msg, new ServiceResult() {						
+						@Override
+						public void callback() {
+							RecordStruct params = this.getBodyAsRec();
+							
+							params.copyFields(sparams);
+							
+							Task stask = MailTaskFactory.createSendEmailTask(params);
+							
+							MailTaskFactory.sendEmail(stask);
+							
+							trun.complete();
+						}
+					});
+				}
+			});
+		
+		return ttask;
 	}
 }

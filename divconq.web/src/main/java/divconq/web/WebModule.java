@@ -46,6 +46,10 @@ public class WebModule extends ModuleBase {
     protected ReentrantLock listenlock = new ReentrantLock();
     protected WebSiteManager siteman = new WebSiteManager();
 
+    public WebSiteManager getWebSiteManager() {
+    	return this.siteman;
+    }
+    
 	@Override
 	public void start() {
 		// prepare the web site manager from settings in module config

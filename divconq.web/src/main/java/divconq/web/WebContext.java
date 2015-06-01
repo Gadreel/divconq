@@ -30,13 +30,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import divconq.filestore.CommonPath;
-import divconq.hub.DomainInfo;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.UserContext;
 import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
-import divconq.session.Session;
 import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -47,15 +45,14 @@ import divconq.web.dcui.Node;
 import divconq.xml.XElement;
 
 public class WebContext {
-	protected HttpContext innerctx = null;
+	protected IInnerContext innerctx = null;
 	protected IWebExtension extension = null; // originating extension
-	protected WebDomain domain = null;  // originating domain
 	
 	protected IOutputAdapter adapter = null;
 	protected LocaleInfo selectedlocale = null;
 	protected String theme = null;
 	protected boolean preview = false;
-	protected boolean completed = false;
+	// TODO restore if useful protected boolean completed = false;
 	//protected Map<String, ContentPlaceholder> holders = new HashMap<String, ContentPlaceholder>();
 	protected Map<String, String> innerparams = new HashMap<String, String>();
 	
@@ -115,7 +112,7 @@ public class WebContext {
 
 	public String getExternalParam(String name, String defaultvalue) {
 		try {
-			String ret = this.innerctx.getRequest().getParameter(name);
+			String ret = this.getRequest().getParameter(name);
 
 			if (ret == null)
 				ret = defaultvalue;
@@ -144,7 +141,7 @@ public class WebContext {
 		if ("dcmVersion".equals(name))
 			return true;
 		
-		UserContext uc = this.innerctx.getSession().getUser();
+		UserContext uc = OperationContext.get().getUserContext();
 		
 		if (uc != null) {
 			if ("dcUserId".equals(name))
@@ -167,7 +164,7 @@ public class WebContext {
 		if ("dcmVersion".equals(name))
 			return "0.9.6";
 		
-		UserContext uc = this.innerctx.getSession().getUser();
+		UserContext uc = OperationContext.get().getUserContext();
 		
 		if (uc != null) {
 			if ("dcUserId".equals(name))
@@ -184,6 +181,10 @@ public class WebContext {
 		}
 		
 		return this.innerparams.get(name);
+	}
+	
+	public IInnerContext getInnerContext() {
+		return this.innerctx;
 	}
 	  
 	  public String expandMacros(String value) {
@@ -229,8 +230,8 @@ public class WebContext {
 		  // definitions in the dictionary
 		  else if ("tr".equals(parts[0]))
 			  val = this.getDomain().tr(this.getLocale(), parts[1]);		// TODO support tr params 
-		  else {
-			  IWebMacro macroproc = this.innerctx.getSiteman().getMacro(parts[0]);
+		  else if (this.innerctx != null) {
+			  IWebMacro macroproc = this.innerctx.getMacro(parts[0]);
 			  
 			  if (macroproc != null)
 				  val = macroproc.process(this, parts); 
@@ -247,7 +248,7 @@ public class WebContext {
 			
 			String locale = tc.getUserContext().getLocale();
 			
-			Cookie ck = this.innerctx.getRequest().getCookie("dcmLocale");
+			Cookie ck = this.getRequest().getCookie("dcmLocale");
 			
 			if (ck != null)
 				locale = ck.getValue(); 
@@ -258,7 +259,7 @@ public class WebContext {
 			this.selectedlocale = LocaleUtil.getStrictLocaleInfo(locale);
 			
 			if (this.selectedlocale == null)
-				this.selectedlocale = this.domain.getDefaultLocaleInfo();
+				this.selectedlocale = this.innerctx.getDomain().getDefaultLocaleInfo();
 		}
 		
 		return this.selectedlocale;
@@ -269,10 +270,21 @@ public class WebContext {
 	}
 	
 	public WebDomain getDomain() {
-		return this.domain;
+		return this.innerctx.getDomain();
 	}
 	
-	public WebContext(HttpContext httpctx, IWebExtension ext) {
+	/*
+	public WebContext(WebDomain domain, Request request, Response response, Session session) {
+		this.domain = domain;
+		this.request = request;
+		this.response = response;
+		this.session = session;
+		
+		this.init();
+	}
+	*/
+	
+	public WebContext(IInnerContext httpctx, IWebExtension ext) {
 		this.innerctx = httpctx;
 		this.extension = ext;		
 		
@@ -289,11 +301,6 @@ public class WebContext {
 		// TODO get default theme from WebExtension 
 		
 		// TODO add device override support too
-		
-		DomainInfo domaininfo = this.innerctx.getSiteman().resolveDomainInfo(this.innerctx.getRequest());
-		
-		if (domaininfo != null)
-			this.domain = this.innerctx.getSiteman().getDomain(domaininfo.getId());
 	}
 
 	/*
@@ -342,18 +349,16 @@ public class WebContext {
 	public Request getRequest() {
 		return this.innerctx.getRequest();
 	}
-
-	public Session getSession() {
-		return this.innerctx.getSession();
-	}
     
     public Map<String, List<String>> getParameters() {
-    	return this.innerctx.getRequest().getParameters();
+    	return this.getRequest().getParameters();
     }
 	
+    /* TODO restore this if we can find a use
 	public boolean isCompleted() {
 		return this.completed;
 	}
+	*/
 
 	public String getTheme() {
 		return this.theme;
@@ -364,7 +369,7 @@ public class WebContext {
 	}
 	
 	public String getHost() {
-		return this.innerctx.getSiteman().resolveHost(this.innerctx.getRequest());
+		return WebSiteManager.resolveHost(this.innerctx.getRequest());
 	}
 	
 	public Collection<String> getThemeSearch() {
@@ -407,12 +412,12 @@ public class WebContext {
 	}
 	
 	public Path findPath(String path) {
-		return this.domain.findFilePath(false, new CommonPath(path), null);
+		return this.innerctx.getDomain().findFilePath(false, new CommonPath(path), null);
 	}
 	
 	// string path is relative to dcw/[alias]/[path]
 	public CompositeStruct getJsonResource(String path) {
-		Path fpath = this.domain.findFilePath(false, new CommonPath(path), null);
+		Path fpath = this.innerctx.getDomain().findFilePath(false, new CommonPath(path), null);
 		
 		if (fpath != null) 
 			return this.getJsonResource(fpath);
@@ -430,7 +435,7 @@ public class WebContext {
 	}
 	
 	public CompositeStruct getGalleryMeta(String path) {
-		Path fpath = this.domain.findFilePath(false, new CommonPath("/galleries" + path + "/meta.json"), null);
+		Path fpath = this.innerctx.getDomain().findFilePath(false, new CommonPath("/galleries" + path + "/meta.json"), null);
 		
 		if (fpath != null) 
 			return this.getJsonResource(fpath);

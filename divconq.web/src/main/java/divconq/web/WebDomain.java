@@ -88,6 +88,7 @@ import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
 import divconq.locale.Localization;
+import divconq.mail.EmailPart;
 import divconq.net.ssl.SslHandler;
 import divconq.struct.Struct;
 import divconq.util.StringUtil;
@@ -806,6 +807,7 @@ public class WebDomain {
 		// ==============================================================
 
 		this.codetags.put("dcui", Document.class);		
+		this.codetags.put("dcem", divconq.mail.Document.class);		
 		
 		this.codetags.put("AssetImage", AssetImage.class);
 		this.codetags.put("Button", ButtonLink.class);
@@ -821,6 +823,7 @@ public class WebDomain {
 		this.codetags.put("Style", Style.class);
 		this.codetags.put("Script", Script.class);
 		this.codetags.put("PagePart", PagePart.class);
+		this.codetags.put("EmailPart", EmailPart.class);
 		this.codetags.put("ServerScript", ServerScript.class);
 		this.codetags.put("TitledSection", TitledSection.class);
 

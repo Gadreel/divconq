@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
@@ -58,7 +59,7 @@ import divconq.xml.XElement;
  * @author Andy
  *
  */
-public class ListStruct extends CompositeStruct implements IItemCollection {
+public class ListStruct extends CompositeStruct implements IItemCollection, Iterable<Object> {
 	protected List<Struct> items = new CopyOnWriteArrayList<Struct>();		// TODO can we make a more efficient list (one that allows modifications but won't crash an iterator)
 
 	@Override
@@ -597,5 +598,26 @@ public class ListStruct extends CompositeStruct implements IItemCollection {
 				nlist.add(((ScalarStruct)s).getGenericValue());
 		
 		return nlist;
+	}
+
+	@Override
+	public Iterator<Object> iterator() {
+		return new Iterator<Object>() {
+			protected int cnt = 0;
+			
+			@Override
+			public boolean hasNext() {
+				return (cnt < ListStruct.this.items.size());
+			}
+
+			@Override
+			public Object next() {
+				Object o = ListStruct.this.getAt(cnt);
+				
+				this.cnt++;
+				
+				return o;
+			}
+		};
 	}
 }

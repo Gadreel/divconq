@@ -69,8 +69,8 @@ abstract public class FuncCallback<T> extends OperationCallback {
 	public Message toLogMessage() {
 		Message msg = super.toLogMessage();
 		
-		if (this.value != null)
-			msg.setField("Body", this.value);
+		//if (this.value != null)
+		msg.setField("Body", this.value);
 		
 		return msg;
 	}

@@ -56,6 +56,7 @@ import divconq.locale.LocaleUtil;
 import divconq.locale.Localization;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
+import divconq.mod.IModule;
 import divconq.mod.ModuleLoader;
 import divconq.scheduler.Scheduler;
 import divconq.schema.SchemaManager;
@@ -1057,6 +1058,22 @@ public class Hub {
 		or.info(0, "Hub stopped");
 		
 		return or;
+	}
+	
+	/**
+	 * Please don't use this, it goes against design principles of divconq.
+	 * 
+	 * @param name of the module desired
+	 * 
+	 * @return the module if loaded
+	 */
+	public IModule getModule(String name) {
+		ModuleLoader ml = this.modules.get(name);
+		
+		if (ml != null)
+			return ml.getModule();
+		
+		return null;
 	}
 	
 	public void subscribeToEvent(Integer event, IEventSubscriber sub) {

@@ -16,6 +16,8 @@
 ************************************************************************ */
 package divconq.web.asset;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map.Entry;
 
@@ -32,12 +34,24 @@ import divconq.xml.XmlReader;
 
 public class PuiAssetInfo extends AssetInfo {
 	
-	public PuiAssetInfo(WebContext ctx, CommonPath path, Path content, long when) {
-		super(path, when);
+	static public PuiAssetInfo build(WebContext ctx, CommonPath path, Path content) {
+		if (!Files.isReadable(content))
+			return null;
 		
-		this.buffer = ByteBufWriter.createLargeHeap();
+		PuiAssetInfo asset = new PuiAssetInfo();
+		
+		asset.path = path;
+		
+		try {
+			asset.when = Files.getLastModifiedTime(content).toMillis();
+		} 
+		catch (IOException x) {
+			asset.when = System.currentTimeMillis();
+		}
+		
+		asset.buffer = ByteBufWriter.createLargeHeap();
 
-		this.buffer.writeLine("dc.pui.Loader.addPageDefinition('" + path + "', {");
+		asset.buffer.writeLine("dc.pui.Loader.addPageDefinition('" + path + "', {");
 		
 		FuncResult<CharSequence> xmlres = IOUtil.readEntireFile(content);
 		
@@ -49,26 +63,26 @@ public class PuiAssetInfo extends AssetInfo {
 			FuncResult<XElement> pres = XmlReader.parse(xml, true);
 			
 			if (pres.hasErrors())
-				return;
+				return null;
 			
 			XElement root = pres.getResult();
 			
 			if (root.hasAttribute("Title")) {
-				this.buffer.write("\tTitle: '");
-				this.writeJsString(root.getAttribute("Title"));
-				this.buffer.writeLine("',");
+				asset.buffer.write("\tTitle: '");
+				asset.writeJsString(root.getAttribute("Title"));
+				asset.buffer.writeLine("',");
 			}
 			
-			this.buffer.writeLine("\tLayout: [");
+			asset.buffer.writeLine("\tLayout: [");
 			
 			XElement layout = root.selectFirst("Layout");
 			
-			this.writeLayoutChildren("\t", layout);
+			asset.writeLayoutChildren("\t", layout);
 			
-			this.buffer.writeLine();
-			this.buffer.writeLine("\t],");
+			asset.buffer.writeLine();
+			asset.buffer.writeLine("\t],");
 			
-			this.buffer.writeLine("\tFunctions: {");
+			asset.buffer.writeLine("\tFunctions: {");
 			
 			boolean first = true;
 			
@@ -79,27 +93,32 @@ public class PuiAssetInfo extends AssetInfo {
 				if (first)
 					first = false;
 				else
-					this.buffer.writeLine(",");
+					asset.buffer.writeLine(",");
 				
-				this.buffer.write("\t\t" + func.getAttribute("Name") + ": function(" + func.getAttribute("Params", "") + ") {");
+				asset.buffer.write("\t\t" + func.getAttribute("Name") + ": function(" + func.getAttribute("Params", "") + ") {");
 				
-				this.buffer.write(func.getText());
+				asset.buffer.write(func.getText());
 				
-				this.buffer.write("\t\t}");
+				asset.buffer.write("\t\t}");
 			}
 			
-			this.buffer.writeLine();
+			asset.buffer.writeLine();
 			
-			this.buffer.writeLine("\t}");
+			asset.buffer.writeLine("\t}");
 		}
 		
-		this.buffer.writeLine("});");
+		asset.buffer.writeLine("});");
 		
-		this.buffer.writeLine();
+		asset.buffer.writeLine();
 		
-		this.buffer.writeLine("dc.pui.Loader.resumePageLoad();");
+		asset.buffer.writeLine("dc.pui.Loader.resumePageLoad();");
+		
+		return asset;
 	}
-
+	
+	protected PuiAssetInfo() {		
+	}
+	
 	public void writeLayoutChildren(String tabs, XElement parent) {
 		boolean first = true;
 		

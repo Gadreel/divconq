@@ -140,12 +140,12 @@ public class WebSiteManager {
 	    		Bundle bundle = this.module.getLoader().getExtension(name);
 	    		
 	    		if (! (bundle instanceof ExtensionLoader))
-	    			return;
+	    			continue;
 
 	    		IExtension ex = ((ExtensionLoader)bundle).getExtension();
 	    		
 	    		if (! (ex instanceof IWebExtension))
-	    			return;
+	    			continue;
 	    		
 	    		// only compute if this is a web extension
 	    		/* TODO try to recreate this concept
@@ -287,11 +287,12 @@ public class WebSiteManager {
 	public void online() {
 		this.dsitemap.clear();
 	}	
-	public String resolveHost(Request req) {
-		return this.resolveHost(req.getHeader("Host"));
+	
+	static public String resolveHost(Request req) {
+		return WebSiteManager.resolveHost(req.getHeader("Host"));
 	}
 	
-	public String resolveHost(String dname) {
+	static public String resolveHost(String dname) {
 		if (StringUtil.isNotEmpty(dname)) {
 			int cpos = dname.indexOf(':');
 			
@@ -306,11 +307,11 @@ public class WebSiteManager {
 	}
 	
 	public DomainInfo resolveDomainInfo(Request req) {
-		return Hub.instance.getDomains().resolveDomainInfo(this.resolveHost(req));
+		return Hub.instance.getDomains().resolveDomainInfo(WebSiteManager.resolveHost(req));
 	}
 	
 	public DomainInfo resolveDomainInfo(String dname) {
-		return Hub.instance.getDomains().resolveDomainInfo(this.resolveHost(dname));
+		return Hub.instance.getDomains().resolveDomainInfo(WebSiteManager.resolveHost(dname));
 	}
 
 	// only call this with normalized hostnames 

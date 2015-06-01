@@ -156,6 +156,7 @@ dc.pui = {
 		__originHash: null,
 		__originSearch: null,
 		__frameRequest: false,
+		__busy: false,				// dcui is busy and not accepting new clicks right now - especially for submits 
 		
 		init: function() {
 			dc.pui.Loader.__content = document.querySelector('body'); 
@@ -296,7 +297,7 @@ dc.pui = {
 			
 			var oldentry = dc.pui.Loader.__ids[dc.pui.Loader.__loadPageId];
 			
-			if (oldentry)
+			if (oldentry && oldentry.Loaded)
 				oldentry.freeze();
 
 			var rp = dc.handler.reroute ? dc.handler.reroute(page, params) : null;
@@ -786,6 +787,14 @@ dc.pui = {
 		}
 	},
 	Page: {		
+		busyCheck: function() {
+			if (dc.pui.Loader.__busy) {		// proect again user submit such as Enter in a TextField
+				console.log('click denied, dcui is busy');			// TODO if we have been busy for more than 2 seconds show a message screen...obviously someone is trying to click while nothing appears to be happening, hide the screen after load is done - unless someone else updated it
+				return true;
+			}
+			
+			return false;
+		},
 		layout: function(page, entry, children, parentchain) {
 			// TODO more layout
 			
@@ -816,7 +825,7 @@ dc.pui = {
 					
 						if (dc.util.String.isString(child.Click)) 
 							node.click(page.Functions[child.Click], function(e) {
-								if (e.data)
+								if (!dc.pui.Page.busyCheck() && e.data)
 									e.data.call(entry, e, this);
 								
 								e.preventDefault();
@@ -825,7 +834,9 @@ dc.pui = {
 						
 						if (dc.util.String.isString(child.Page)) 
 							node.click(child.Page, function(e) {
-								dc.pui.Loader.loadPage(e.data);
+								if (!dc.pui.Page.busyCheck())
+									dc.pui.Loader.loadPage(e.data);
+								
 								e.preventDefault();
 								return false;
 							});
@@ -841,7 +852,7 @@ dc.pui = {
 					
 						if (dc.util.String.isString(child.Click)) 
 							node.click(page.Functions[child.Click], function(e) {
-								if (e.data)
+								if (!dc.pui.Page.busyCheck() && e.data)
 									e.data.call(entry, e, this);
 								
 								e.preventDefault();
@@ -850,7 +861,9 @@ dc.pui = {
 						
 						if (dc.util.String.isString(child.Page)) 
 							node.click(child.Page, function(e) {
-								dc.pui.Loader.loadPage(e.data);
+								if (!dc.pui.Page.busyCheck())
+									dc.pui.Loader.loadPage(e.data);
+								
 								e.preventDefault();
 								return false;
 							});
@@ -866,7 +879,7 @@ dc.pui = {
 						
 						if (dc.util.String.isString(child.Click)) 
 							node.click(page.Functions[child.Click], function(e) {
-								if (e.data)
+								if (!dc.pui.Page.busyCheck() && e.data)
 									e.data.call(entry, e, this);
 								
 								e.preventDefault();
@@ -875,7 +888,9 @@ dc.pui = {
 						
 						if (dc.util.String.isString(child.Page)) 
 							node.click(child.Page, function(e) {
-								dc.pui.Loader.loadPage(e.data);
+								if (!dc.pui.Page.busyCheck())
+									dc.pui.Loader.loadPage(e.data);
+								
 								e.preventDefault();
 								return false;
 							});
@@ -891,7 +906,7 @@ dc.pui = {
 						
 						if (dc.util.String.isString(child.Click)) 
 							node.click(page.Functions[child.Click], function(e) {
-								if (e.data)
+								if (!dc.pui.Page.busyCheck() && e.data)
 									e.data.call(entry, e);
 								
 								e.preventDefault();
@@ -1281,6 +1296,39 @@ dc.pui = {
 			}
 		},
 		
+		loadFormCommon: function(page, entry, formname, form, fnode) {
+			$(fnode).validate({
+				rules: form.ValidationRules || { },
+				messages: form.ValidationMessages || { },
+				invalidHandler: function() {
+					dc.pui.Popup.alert('Missing or invalid inputs, please correct.');
+				},
+				submitHandler: function(frm) {
+					if (dc.pui.Page.busyCheck()) 		// proect again user submit such as Enter in a TextField
+						return false;
+					
+					dc.pui.Loader.__busy = true;
+					
+					dc.pui.Page.saveForm(page, entry, formname, function() {
+						if (page.Functions.Save) 
+							page.Functions.Save.call(entry, dc.pui.Loader.__content);
+						
+						// TODO
+						//$.mobile.loading('hide'); 
+						dc.pui.Loader.__busy = false;
+					});
+				
+					return false;
+				}
+			});
+			
+			if (form.SaveButton)
+				$('#' + form.SaveButton).click(function() { 
+					if (!dc.pui.Page.busyCheck())
+						$(fnode).validate().form(); 
+				});			
+		},
+		
 		loadForm: function(page, entry, formname, callback) {
 			var form = entry.Forms[formname];
 			var fnode = $('#' + form.Id);
@@ -1292,29 +1340,7 @@ dc.pui = {
 				return;
 			}
 			
-			$(fnode).validate({
-				rules: form.ValidationRules || { },
-				messages: form.ValidationMessages || { },
-				invalidHandler: function() {
-					dc.pui.Popup.alert('Missing or invalid inputs, please correct.');
-				},
-				submitHandler: function(form) {
-					dc.pui.Page.saveForm(page, entry, formname, function() {
-						if (page.Functions.Save) 
-							page.Functions.Save.call(entry, dc.pui.Loader.__content);
-						
-						// TODO
-						//$.mobile.loading('hide'); 
-					});
-				
-					return false;
-				}
-			});
-			
-			if (form.SaveButton)
-				$('#' + form.SaveButton).click(function() { 
-					$(fnode).validate().form(); 
-				});			
+			dc.pui.Page.loadFormCommon(page, entry, formname, form, fnode);
 			
 			// build a queue of record names (copy array) to load 
 			var rnames = form.RecordOrder.concat(); 
@@ -1413,29 +1439,7 @@ dc.pui = {
 				return;
 			}
 			
-			$(fnode).validate({
-				rules: form.ValidationRules || { },
-				messages: form.ValidationMessages || { },
-				invalidHandler: function() {
-					dc.pui.Popup.alert('Missing or invalid inputs, please correct.');
-				},
-				submitHandler: function(form) {
-					dc.pui.Page.saveForm(page, entry, formname, function() {
-						if (page.Functions.Save) 
-							page.Functions.Save.call(entry, dc.pui.Loader.__content);
-						
-						// TODO
-						//$.mobile.loading('hide'); 
-					});
-				
-					return false;
-				}
-			});
-			
-			if (form.SaveButton)
-				$('#' + form.SaveButton).click(function() { 
-					$(fnode).validate().form(); 
-				});			
+			dc.pui.Page.loadFormCommon(page, entry, formname, form, fnode);
 			
 			// build a queue of record names (copy array) to load 
 			var rnames = form.RecordOrder.concat(); 

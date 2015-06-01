@@ -126,8 +126,8 @@ public class RpcHandler implements IBodyCallback {
 						if (reply.hasField("FromHub"))
 							rmsg.setField("FromHub", reply.getField("FromHub"));
 						
-						if (reply.hasField("Body"))
-							rmsg.setField("Body", reply.getField("Body"));
+						//if (reply.hasField("Body"))  - always even if null
+						rmsg.setField("Body", reply.getField("Body"));
 					}
 					
 					String currsessid = RpcHandler.this.context.getSession().getId();

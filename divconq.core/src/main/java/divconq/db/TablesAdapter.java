@@ -1796,6 +1796,10 @@ public class TablesAdapter {
 	}
 	
 	public void traverseIndex(String table, String fname, Object val, BigDateTime when, boolean historical, Consumer<Object> out) {
+		this.traverseIndex(table, fname, val, null, when, historical, out);
+	}
+	
+	public void traverseIndex(String table, String fname, Object val, String subid, BigDateTime when, boolean historical, Consumer<Object> out) {
 		String did = this.task.getDomain();
 		
 		DbField ffdef = this.task.getSchema().getDbField(table, fname);
@@ -1822,32 +1826,32 @@ public class TablesAdapter {
 						while (recsid != null) {
 							Object rsid = ByteUtil.extractValue(recsid);
 							
-							
-							String range = conn.getAsString(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rid, rsid);
-							
-							if (StringUtil.isEmpty(range) || (when == null)) {
-								out.accept(rid);
-							}
-							else {
-								// TODO this stuff is probably out of date, remove?
-								int pos = range.indexOf(':');
+							if ((subid == null) || subid.equals(rsid)) {							
+								String range = conn.getAsString(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rid, rsid);
 								
-								BigDateTime from = null;
-								BigDateTime to = null;
-								
-								if (pos == -1) {
-									from = BigDateTime.parseOrNull(range);
-								}
-								else if (pos == 0) {
-									to = BigDateTime.parseOrNull(range.substring(1));
+								if (StringUtil.isEmpty(range) || (when == null)) {
+									out.accept(rid);
 								}
 								else {
-									from = BigDateTime.parseOrNull(range.substring(0, pos));
-									to = BigDateTime.parseOrNull(range.substring(pos + 1));
+									int pos = range.indexOf(':');
+									
+									BigDateTime from = null;
+									BigDateTime to = null;
+									
+									if (pos == -1) {
+										from = BigDateTime.parseOrNull(range);
+									}
+									else if (pos == 0) {
+										to = BigDateTime.parseOrNull(range.substring(1));
+									}
+									else {
+										from = BigDateTime.parseOrNull(range.substring(0, pos));
+										to = BigDateTime.parseOrNull(range.substring(pos + 1));
+									}
+									
+									if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) 
+										out.accept(rid);
 								}
-								
-								if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) 
-									out.accept(rid);
 							}
 							
 							recsid = conn.nextPeerKey(DB_GLOBAL_INDEX_SUB, did, table, fname, val, rid, rsid);

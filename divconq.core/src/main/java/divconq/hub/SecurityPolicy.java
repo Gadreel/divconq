@@ -157,8 +157,8 @@ public class SecurityPolicy {
 	        engine.setEnabledCipherSuites(new String[] {
 	        		// AES 256 GCM SHA 384
 	        		"TLS_RSA_WITH_AES_256_GCM_SHA384",
-	        		"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-	        		"TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
+	        		//-- "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+	        		//-- "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
 	        		"TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
 	        		"TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
 	        		"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
@@ -170,18 +170,20 @@ public class SecurityPolicy {
 	        		"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
 	        		// AES 256 CBC SHA 256
 	        		"TLS_RSA_WITH_AES_256_CBC_SHA256",
-	        		"TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
-	        		"TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
+	        		//-- "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+	        		//-- "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
 	        		// AES 128 GCM SHA 256
 	        		"TLS_RSA_WITH_AES_128_GCM_SHA256",
-	        		"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-	        		"TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",        		
+	        		//-- "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+	        		//-- "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",        		
 	        		"TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
 	        		"TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
 	        		"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-	        		"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+	        		"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
 	        		// SCSV
-	        		"TLS_EMPTY_RENEGOTIATION_INFO_SCSV" });
+	        		//++ "TLS_FALLBACK_SCSV"
+	        		//-- "TLS_EMPTY_RENEGOTIATION_INFO_SCSV" 
+	        	});
 		}
 		else if ("Loose".equals(tls.getAttribute("Mode"))) {
 	        engine.setEnabledProtocols(new String[] { "TLSv1", "TLSv1.1", "TLSv1.2" });
@@ -189,8 +191,8 @@ public class SecurityPolicy {
 	        engine.setEnabledCipherSuites(new String[] {
 	        		// AES 256 GCM SHA 384
 	        		"TLS_RSA_WITH_AES_256_GCM_SHA384",
-	        		"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-	        		"TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
+	        		//-- "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+	        		//-- "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
 	        		"TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
 	        		"TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
 	        		"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
@@ -202,39 +204,40 @@ public class SecurityPolicy {
 	        		"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
 	        		// AES 256 CBC SHA 256
 	        		"TLS_RSA_WITH_AES_256_CBC_SHA256",
-	        		"TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
-	        		"TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
+	        		//-- "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+	        		//-- "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
 	        		// AES 128 GCM SHA 256
 	        		"TLS_RSA_WITH_AES_128_GCM_SHA256",
-	        		"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-	        		"TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",        		
+	        		//-- "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+	        		//-- "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",        		
 	        		"TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
 	        		"TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
 	        		"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
 	        		"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
 	        		// AES 128 CBC SHA 256
 	        		"TLS_RSA_WITH_AES_128_CBC_SHA256",
-	        		"TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
-	        		"TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
+	        		//-- "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+	        		//-- "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
 	        		"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
 	        		"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
 	        		"TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",
 	        		"TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",
 	        		// AES 128 CBC SHA 128
 	        		"TLS_RSA_WITH_AES_128_CBC_SHA",
-	        		"TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-	        		"TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
+	        		//-- "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+	        		//-- "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
 	        		"TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
 	        		"TLS_ECDH_RSA_WITH_AES_128_CBC_SHA",
 	        		"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-	        		"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+	        		"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA"
 	        		// SCSV
-	        		"TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
+	        		//++ "TLS_FALLBACK_SCSV"
+	        		//-- "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
 	        		// RC4 128 SHA1
-	        		"TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
-	        		"TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-	        		"TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
-	        		"TLS_ECDH_RSA_WITH_RC4_128_SHA"
+	        		//-- "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
+	        		//-- "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
+	        		//-- "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
+	        		//-- "TLS_ECDH_RSA_WITH_RC4_128_SHA"
 	       		});
 		}
 		// custom

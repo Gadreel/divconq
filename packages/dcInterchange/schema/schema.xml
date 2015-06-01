@@ -36,6 +36,26 @@
 		
 		<!-- foundations of messages for File Store services -->
 		
+		<Record Id="dciEmailCore">
+			<Field Name="Subject" Type="String" Required="True" />
+			<Field Name="Body" Type="String" Required="True" />
+			<Field Name="TextBody" Type="String" />
+			<Field Name="Attachments">
+				<List>
+					<Record>
+						<Field Name="Name" Type="dcSmallString" Required="True" />
+						<Field Name="Mime" Type="dcSmallString" Required="True" />
+						<Field Name="Content" Type="Binary" Required="True" />
+					</Record>
+				</List>
+			</Field>
+		</Record>
+		
+		<Record Id="dciEmailRecord" Inherits="dciEmailCore">
+			<Field Name="To" Type="dcSmallString" Required="True" />
+			<Field Name="From" Type="dcSmallString" />
+			<Field Name="ReplyTo" Type="dcSmallString" />
+		</Record>
 	</Shared>
 	
 	<Services>
@@ -47,24 +67,7 @@
 							Send emails.
 						</Description>
 						<Request Inherits="RequestMessage">
-							<Field Name="Body" Required="True">
-								<Record>
-									<Field Name="To" Type="dcSmallString" Required="True" />
-									<Field Name="From" Type="dcSmallString" />
-									<Field Name="ReplyTo" Type="dcSmallString" />
-									<Field Name="Subject" Type="String" Required="True" />
-									<Field Name="Body" Type="String" Required="True" />
-									<Field Name="Attachments">
-										<List>
-											<Record>
-												<Field Name="Name" Type="dcSmallString" Required="True" />
-												<Field Name="Mime" Type="dcSmallString" Required="True" />
-												<Field Name="Content" Type="Binary" Required="True" />
-											</Record>
-										</List>
-									</Field>
-								</Record>
-							</Field>
+							<Field Name="Body" Required="True" Type="dciEmailRecord" />
 						</Request>
 						<Response Inherits="TaskResponseMessage" />
 					</Op>
@@ -76,9 +79,7 @@
 						</Description>
 						<Request Inherits="RequestMessage" />
 						<Response Inherits="ResponseMessage">
-							<Field Name="Body">
-								<Record Inherits="dciSendMailStatus" />
-							</Field>
+							<Field Name="Body" Type="dciSendMailStatus" />
 						</Response>
 					</Op>
 				</Feature>

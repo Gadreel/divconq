@@ -67,13 +67,17 @@ public class NewThread implements IStoredProc {
 		if (target == null)
 			target = now;
 		
+		String originator = !params.isFieldEmpty("Originator") 
+				? params.getFieldAsString("Originator") 
+				: log.getContext().getUserContext().getUserId();
+		
 		DbRecordRequest req = new InsertRecordRequest()
 			.withTable("dcmThread")
 			.withUpdateField("dcmUuid", uuid)
 			.withUpdateField("dcmHash", hash)
 			.withUpdateField("dcmCreated", now)
 			.withUpdateField("dcmModified", now)			
-			.withUpdateField("dcmOriginator", log.getContext().getUserContext().getUserId())
+			.withUpdateField("dcmOriginator", originator)
 			.withConditionallyUpdateFields(params, "Title", "dcmTitle", "EndDate", "dcmEndDate");
 
 		if (target != null)

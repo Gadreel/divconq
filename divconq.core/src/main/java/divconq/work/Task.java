@@ -199,7 +199,8 @@ public class Task {
 		if (this.observers == null)
 			this.observers = new ArrayList<>();
 
-		this.observers.add(watcher);
+		if (!this.observers.contains(watcher))
+			this.observers.add(watcher);
 		
 		if (watcher instanceof RecordStruct) {
 			RecordStruct w = (RecordStruct)watcher;
@@ -227,6 +228,13 @@ public class Task {
 		if (buildobservers == null) {
 			buildobservers = new ListStruct();
 			this.info.setField("Observers", buildobservers);
+		}
+		
+		for (Struct rs : buildobservers.getItems()) {
+			RecordStruct rob = (RecordStruct)rs;
+			
+			if (observer.getFieldAsString("_Classname").equals(rob.getFieldAsString("_Classname")))
+					return this;
 		}
 		
 		buildobservers.addItem(observer);

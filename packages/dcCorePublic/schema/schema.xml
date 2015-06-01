@@ -339,6 +339,7 @@
 				<List Type="dcDbSelectField" />
 			</Field>
 			<Field Name="Full" Type="Boolean" />
+			<Field Name="SubId" Type="dcTinyString" />
 			<Field Name="ForeignField" Type="dcTinyString" />
 			<Field Name="Composer" Type="dcTinyString" />
 			<Field Name="Table" Type="dcTinyString" />

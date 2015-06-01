@@ -279,6 +279,10 @@ public class CommonSchedule extends OperationObserver implements ISchedule {
 
 	@Override
 	public boolean reschedule() {
+		// it is important to remove the old observers because we are going to add a new one - us - and the others 
+		//if (this.task != null)
+		//	this.task.clearObservers();
+		
 		if (this.helper != null) {
 			// TODO if script then use that to help with finding next
 			this.last = this.helper.next();
