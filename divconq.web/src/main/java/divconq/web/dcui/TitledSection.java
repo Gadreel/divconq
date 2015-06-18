@@ -24,9 +24,9 @@ public class TitledSection extends MixedElement implements ICodeTag {
 	@Override
 	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
 		if (xel.hasAttribute("class"))
-			xel.setAttribute("class", xel.getAttribute("class") + " ui-corner-all custom-corners");
+			xel.setAttribute("class", xel.getAttribute("class") + " ui-corner-all custom-corners section");
 		else
-			xel.setAttribute("class", "ui-corner-all custom-corners");
+			xel.setAttribute("class", "ui-corner-all custom-corners section");
 		
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 		

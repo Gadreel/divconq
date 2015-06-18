@@ -49,6 +49,7 @@ import divconq.struct.scalar.DecimalStruct;
 import divconq.struct.scalar.IntegerStruct;
 import divconq.struct.scalar.NullStruct;
 import divconq.struct.scalar.StringStruct;
+import divconq.struct.scalar.TimeStruct;
 import divconq.util.StringUtil;
 import divconq.util.TimeUtil;
 import divconq.xml.XElement;
@@ -573,6 +574,8 @@ abstract public class Struct {
 			o = ((AnyStruct)o).getValue();
 		else if (o instanceof DateStruct)
 			o = ((DateStruct)o).getValue();
+		else if (o instanceof TimeStruct)
+			o = ((TimeStruct)o).getValue();
 		else if (o instanceof StringStruct)
 			o = ((StringStruct)o).getValue();
 		
@@ -610,6 +613,8 @@ abstract public class Struct {
 			o = ((AnyStruct)o).getValue();
 		else if (o instanceof DateStruct)
 			o = ((DateStruct)o).getValue();
+		else if (o instanceof TimeStruct)
+			o = ((TimeStruct)o).getValue();
 		else if (o instanceof StringStruct)
 			o = ((StringStruct)o).getValue();
 		
@@ -621,7 +626,7 @@ abstract public class Struct {
 		
 		if (o instanceof CharSequence) {
 			try {
-				return LocalTime.parse(o.toString());
+				return LocalTime.parse(o.toString()); 	//, TimeUtil.parseTimeFormat);
 			}
 			catch (Exception x) {
 			}
@@ -661,6 +666,8 @@ abstract public class Struct {
 			o = ((DateTimeStruct)o).getValue();
 		else if (o instanceof DateStruct)
 			o = ((DateStruct)o).getValue();
+		else if (o instanceof TimeStruct)
+			o = ((TimeStruct)o).getValue();
 		else if (o instanceof BigDateTimeStruct)
 			o = ((BigDateTimeStruct)o).getValue();
 		else if (o instanceof BigIntegerStruct)
@@ -736,6 +743,8 @@ abstract public class Struct {
 			o = ((DateTimeStruct)o).getValue();
 		else if (o instanceof DateStruct)
 			o = ((DateStruct)o).getValue();
+		else if (o instanceof TimeStruct)
+			o = ((TimeStruct)o).getValue();
 		else if (o instanceof BigDateTimeStruct)
 			o = ((BigDateTimeStruct)o).getValue();
 		else if (o instanceof BigIntegerStruct)
@@ -993,6 +1002,18 @@ abstract public class Struct {
 		if (o instanceof DateTime) {
 			svalue = new DateTimeStruct();
 			((DateTimeStruct)svalue).adaptValue(o);
+			return svalue;
+		}
+		
+		if (o instanceof LocalTime) {
+			svalue = new TimeStruct();
+			((TimeStruct)svalue).adaptValue(o);
+			return svalue;
+		}
+		
+		if (o instanceof LocalDate) {
+			svalue = new DateStruct();
+			((DateStruct)svalue).adaptValue(o);
 			return svalue;
 		}
 		

@@ -35,6 +35,7 @@ import divconq.io.FileStoreEvent;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationContextBuilder;
 import divconq.scheduler.ISchedule;
 import divconq.scheduler.SimpleSchedule;
 import divconq.scheduler.common.CommonSchedule;
@@ -290,9 +291,9 @@ public class DomainInfo {
 			sched.setTask(new Task()
 				.withId(Task.nextTaskId("DomainSchedule"))
 				.withTitle("Domain Scheduled Task: " + schedule.getAttribute("Title"))
-				.withRootContext()
+				.withContext(new OperationContextBuilder().withRootTaskTemplate().withDomainId(this.getId()).toOperationContext())
 				.withWork(trun -> {
-					OperationContext.get().info("Executing schedule: " + trun.getTask().getTitle() + " for domain " + DomainInfo.this.getAlias());
+					OperationContext.get().info("Executing schedule: " + trun.getTask().getTitle() + " for domain " + trun.getTask().getContext().getDomain().getAlias());
 					
 					if (schedule.hasAttribute("MethodName") && (this.watcher != null))
 						this.watcher.tryExecuteMethod(schedule.getAttribute("MethodName"), new Object[] { trun });
@@ -309,5 +310,9 @@ public class DomainInfo {
 
 	public void fileChanged(FileStoreEvent result) {
 		this.watcher.tryExecuteMethod("FileChanged", new Object[] { result });
+	}
+
+	public void fireAfterReindex() {
+		this.watcher.tryExecuteMethod("AfterReindex", new Object[] { });
 	}
 }

@@ -43,6 +43,11 @@ abstract public class ScalarStruct extends Struct {
 	@Override
 	abstract public int hashCode();
 	
+	// interior method - don't call unless you understand - TODO maybe move to Struct level...
+	public boolean validateData(DataType type) {
+		return true;
+	}
+	
 	abstract public Object toInternalValue(RootType t);
 	
 	abstract public boolean checkLogic(StackEntry stack, XElement source);

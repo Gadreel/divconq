@@ -294,7 +294,7 @@ public class BigDateTime implements Comparable<BigDateTime> {
 			return fr;
 		}
 		
-		if (!ct.validate(date)) {
+		if (!ct.validateData(date)) {
 			fr.errorTr(231, date);
 			return fr;
 		}

@@ -113,6 +113,8 @@ public class StringStruct extends ScalarStruct {
 					this.value = DateTimeFormat.forPattern(pat).print(((DateTimeStruct)sref).getValue());			
 				else if (sref instanceof DateStruct)
 					this.value = DateTimeFormat.forPattern(pat).print(((DateStruct)sref).getValue());			
+				else if (sref instanceof TimeStruct)
+					this.value = DateTimeFormat.forPattern(pat).print(((TimeStruct)sref).getValue());			
 				else if (sref instanceof DecimalStruct)
 					this.value = new DecimalFormat(pat).format(((DecimalStruct)sref).getValue());			
 				else if (sref instanceof IntegerStruct || sref instanceof BigIntegerStruct)		

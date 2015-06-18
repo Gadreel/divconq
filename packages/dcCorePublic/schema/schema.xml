@@ -935,6 +935,24 @@
 						<Response Inherits="ResponseMessage" />
 					</Op>
 				</Feature>
+				<Feature Name="Database">
+					<Op Name="ExecuteProc">
+						<Description>
+							Run a database procedure.
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Proc" Type="dcTinyString" Required="True" />
+									<Field Name="Params" Type="Any" />
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body" Type="Any" />
+						</Response>
+					</Op>
+				</Feature>
 			</Secure>
 			<Secure Tags="Admin">
 				<!-- users -->

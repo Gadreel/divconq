@@ -133,6 +133,46 @@ public class Field {
 		OperationContext.get().errorTr(440, data);			
 		return;
 	}
+		
+	// don't call this with data == null from a field if field required - required means "not null" so put the error in
+	public Struct normalizeValidate(boolean present, Struct data) {
+		if (data == null) {
+			this.valueUnresolved(present, data);
+			return null;
+		}   
+		
+		if (this.options.size() == 0) {
+			OperationContext.get().errorTr(423, data);			
+			return null;
+		}
+		
+		if (this.options.size() == 1) { 
+			Struct nv = this.options.get(0).normalizeValidate(data);
+			
+			if (nv == null) {
+				this.valueUnresolved(present, data);
+				return null;
+			}
+			
+			return nv;
+		}
+		
+		for (DataType dt : this.options) {
+			if (dt.match(data)) {
+				Struct nv = dt.normalizeValidate(data);
+				
+				if (nv == null) {
+					this.valueUnresolved(present, data);
+					return null;
+				}
+				
+				return nv;
+			}
+		}
+		
+		OperationContext.get().errorTr(440, data);			
+		return null;
+	}
 	
 	protected void valueUnresolved(boolean present, Object data) {
 		if (data != null) {

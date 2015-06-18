@@ -35,6 +35,7 @@ import divconq.lang.Memory;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.schema.DataType;
+import divconq.schema.TypeOptionsList;
 import divconq.script.StackEntry;
 import divconq.struct.builder.BuilderStateException;
 import divconq.struct.builder.ICompositeBuilder;
@@ -197,10 +198,14 @@ public class ListStruct extends CompositeStruct implements IItemCollection, Iter
 				value = ((ICompositeBuilder)value).toLocal();
 			
 			if (this.explicitType != null) {
-				Struct sv = this.explicitType.wrapItem(value);
+				TypeOptionsList itms = this.explicitType.getItems();
 				
-				if (sv != null)
-					svalue = sv;
+				if (itms != null) {
+					Struct sv = itms.wrap(value);
+					
+					if (sv != null)
+						svalue = sv;
+				}
 			}
 			
 			if (svalue == null) 
@@ -231,6 +236,11 @@ public class ListStruct extends CompositeStruct implements IItemCollection, Iter
 			this.addItem(o);		// extra slow, enhance TOTO
 		
 		return or;
+	}
+
+	public void replaceItem(int i, Struct o) {
+		if (i < this.items.size())
+			this.items.set(i, o);
 	}
 	
 	/**

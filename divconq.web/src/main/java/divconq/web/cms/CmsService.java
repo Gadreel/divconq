@@ -16,11 +16,21 @@
 ************************************************************************ */
 package divconq.web.cms;
 
+import java.io.IOException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import divconq.bus.IService;
 import divconq.bus.Message;
@@ -53,6 +63,7 @@ import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
+import divconq.util.IOUtil;
 import divconq.util.MimeUtil;
 import divconq.util.StringUtil;
 import divconq.work.TaskRun;
@@ -302,6 +313,17 @@ public class CmsService extends ExtensionBase implements IService {
 		}
 		
 		// =========================================================
+		//  cms Site
+		// =========================================================
+		
+		if ("Site".equals(feature)) {
+			if ("BuildMap".equals(op)) {
+				this.handleSiteBuildMap(request);
+				return;
+			}
+		}
+		
+		// =========================================================
 		//  cms Threads
 		// =========================================================
 		
@@ -325,6 +347,131 @@ public class CmsService extends ExtensionBase implements IService {
 		request.complete();
 	}
 	
+	public void handleSiteBuildMap(TaskRun request) {
+		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+
+		Path webdir = Hub.instance.getPublicFileStore().resolvePath("dcw/" + domain.getAlias() + "/www");
+		
+		XElement dsel = domain.getSettings();
+		
+		if (dsel == null) {
+			request.warn("Missing IndexUrl");
+			request.complete();
+			return;
+		}
+		
+		XElement wsel = dsel.find("Web");
+		
+		if (wsel == null) {
+			request.warn("Missing IndexUrl");
+			request.complete();
+			return;
+		}
+		
+		String indexurl = wsel.getAttribute("IndexUrl");
+		
+		if (StringUtil.isEmpty(indexurl)) {
+			request.warn("Missing IndexUrl");
+			request.complete();
+			return;
+		}
+		
+		XElement smel = new XElement("urlset")
+			.withAttribute("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9");
+		
+		DateTimeFormatter lmFmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+		
+        try {
+        	if (Files.exists(webdir)) { 
+				Files.walkFileTree(webdir, EnumSet.of(FileVisitOption.FOLLOW_LINKS), 5,
+				        new SimpleFileVisitor<Path>() {
+				            @Override
+				            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+				                throws IOException
+				            {
+				            	String fname = file.getFileName().toString();
+				            	
+				            	if (!fname.endsWith(".dcui.xml")) 
+					                return FileVisitResult.CONTINUE;
+				            	
+				            	FuncResult<CharSequence> textres = IOUtil.readEntireFile(file);
+				            	
+				            	if (textres.isEmptyResult())
+					                return FileVisitResult.CONTINUE;
+				            	
+								FuncResult<XElement> xres = XmlReader.parse(textres.getResult(), true);
+								
+								if (xres.hasErrors()) 
+					                return FileVisitResult.CONTINUE;
+								
+								XElement root = xres.getResult();
+								
+								if (!root.getName().equals("dcui"))
+					                return FileVisitResult.CONTINUE;
+								
+								String auth = root.getAttribute("AuthTags");
+								
+								if (StringUtil.isNotEmpty(auth) && !auth.contains("Guest"))
+					                return FileVisitResult.CONTINUE;
+								
+								if ("True".equals(root.getAttribute("NoIndex")))
+					                return FileVisitResult.CONTINUE;
+			            		
+			            		int pos = -1;
+			            		
+			            		for (int i = 0; i < file.getNameCount(); i++) {
+			            			if ("www".equals(file.getName(i).toString())) {
+			            				pos = i;
+			            				continue;
+			            			}
+			            		}
+			            		
+			            		if (pos == -1)
+					                return FileVisitResult.CONTINUE;
+								
+			            		//System.out.println("- sitemap for " + file);
+			            		
+			            		// TODO look for an indexing script in the page
+			            		// TODO look for a gallery list in the page
+		            		
+			            		XElement sel = new XElement("url");
+			            		
+			            		sel.add(new XElement("loc", indexurl + file.subpath(pos + 1, file.getNameCount())));
+			            		sel.add(new XElement("lastmod", lmFmt.print(Files.getLastModifiedTime(file).toMillis())));
+			            		
+			            		smel.add(sel);
+			            		
+			            		/*
+								XElement keywords = root.find("Keywords");
+								
+								if ((keywords != null) && keywords.hasText())
+									req.withSetField("dcmKeywords", keywords.getText());
+								
+								XElement desc = root.find("Description");
+								
+								if ((desc != null) && desc.hasText())
+									req.withSetField("dcmDescription", desc.getText());
+				            	*/
+			            					            		
+				                return FileVisitResult.CONTINUE;
+				            }
+				        });
+        	}
+        	
+        	Path smfile = webdir.resolve("sitemap.xml");
+        	
+        	IOUtil.saveEntireFile2(smfile, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        			+ smel.toString(true));
+            
+            //System.out.println("map: " + smel.toString(true));
+		} 
+        catch (IOException x) {
+        	request.error("Error building sitemap file: " + x);
+		}
+        
+		request.complete();
+	}
+
 	/******************************************************************
 	 * Gallery Files
 	 ******************************************************************/

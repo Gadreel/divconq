@@ -506,7 +506,12 @@
 					<Field Name="ExpireThreshold" Type="DateTime" Required="True" />
 					<Field Name="LongExpireThreshold" Type="DateTime" Required="True" />
 				</Request>
-			</Procedure>			
+			</Procedure>	
+			<Procedure Name="dcReindexDomain" Execute="divconq.db.proc.ReindexDomain">
+				<Description>
+					kills and rebuilds the index for all tables in the domain.
+				</Description>
+			</Procedure>	
 			
 			<Procedure Name="dcKeyQuery" Execute="divconq.db.proc.KeyQuery">
 				<Description>

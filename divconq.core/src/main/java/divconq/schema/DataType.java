@@ -141,6 +141,10 @@ public class DataType {
 		return this.fields.get(name);
 	}
 	
+	public TypeOptionsList getItems() {
+		return this.items;
+	}
+	
 	public void load(XElement dtel) {
 		if (this.definition != null) {
 			if (this.xtraDefinitions == null)
@@ -310,7 +314,7 @@ public class DataType {
 		
 		if (this.kind == DataKind.Record) {
 			if (data instanceof ICompositeBuilder)
-				data = ((ICompositeBuilder)data).toLocal();			// TODO may be a source of a major inefficiency - may need to have configuration around it...
+				data = ((ICompositeBuilder)data).toLocal();		
 			
 			if (data instanceof RecordStruct)
 				return this.validateRecord((RecordStruct)data);
@@ -326,8 +330,64 @@ public class DataType {
 			OperationContext.get().errorTr(415, data);		
 			return false;
 		}
+		
+		if (this.core == null) {
+			OperationContext.get().errorTr(420, data);   
+			return false;
+		}
+		
+		if (this.core.root == RootType.Any)
+			return true;
+		
+		if (data instanceof ScalarStruct) 
+			return this.core.validate(this, (ScalarStruct) data);
+		
+		OperationContext.get().error("Data should be scalar: " + data);		
+		return false;
+	}
+	
+	public Struct normalizeValidate(Struct data) {
+		if (data == null)
+			return null;
+		
+		data.setType(this);
+		
+		if (this.kind == DataKind.Record) {
+			if (data instanceof ICompositeBuilder)
+				data = ((ICompositeBuilder)data).toLocal();	
+			
+			if (data instanceof RecordStruct) {
+				normalizeValidateRecord((RecordStruct)data);
+				return data;
+			}
 
-		return this.validateScalar(data);
+			OperationContext.get().errorTr(414, data);
+			return null;
+		}
+		
+		if (this.kind == DataKind.List) {
+			if (data instanceof ListStruct) {
+				this.normalizeValidateList((ListStruct)data);
+				return data;
+			}
+			
+			OperationContext.get().errorTr(415, data);		
+			return null;
+		}
+		
+		if (this.core == null) {
+			OperationContext.get().errorTr(420, data);   
+			return null;
+		}
+		
+		if (this.core.root == RootType.Any)
+			return data;
+		
+		if (data instanceof ScalarStruct) 
+			return this.core.normalizeValidate(this, (ScalarStruct) data);
+		
+		OperationContext.get().error("Data should be scalar: " + data);		
+		return null;
 	}
 
 	protected boolean validateRecord(RecordStruct data) {
@@ -347,6 +407,25 @@ public class DataType {
 		return true;
 	}
 
+	protected void normalizeValidateRecord(RecordStruct data) {
+		if (this.fields != null) {
+			// handles all but the case where data holds a field not allowed 
+			for (Field fld : this.fields.values()) {
+				Struct s = data.getField(fld.name);
+				Struct o  = fld.normalizeValidate(data.hasField(fld.name), data.getField(fld.name));
+				
+				if (s != o)
+					data.setField(fld.name, o);
+			}
+			
+			if (!this.anyRec)
+				for (FieldStruct fld : data.getFields()) {
+					if (! this.fields.containsKey(fld.getName()))
+						OperationContext.get().errorTr(419, fld.getName(), data);	
+				}
+		}
+	}
+
 	protected boolean validateList(ListStruct data) {
 		if (this.items == null) 
 			OperationContext.get().errorTr(416, data);   
@@ -363,23 +442,24 @@ public class DataType {
 		return true;		
 	}
 
-	protected boolean validateScalar(Struct data) {
-		if (this.core == null) {
-			OperationContext.get().errorTr(420, data);   
-			return false;
-		}
+	protected void normalizeValidateList(ListStruct data) {
+		if (this.items == null) 
+			OperationContext.get().errorTr(416, data);   
+		else
+			for (int i = 0; i < data.getSize(); i++) {
+				Struct s = data.getItem(i);
+				Struct o = this.items.normalizeValidate(s);
+				
+				if (s != o)
+					data.replaceItem(i, o);
+			}
 		
-		// if we are expecting a special class, try to resolve validation via that class 
-		if (this.definition.hasAttribute("Class") && (data != null)) {
-			String cname = this.definition.getAttribute("Class");
-			
-			if (data.getClass().getName().equals(cname) && (data instanceof ScalarStruct)) 
-				return this.core.validate(((ScalarStruct)data).toInternalValue(this.core.root));
-		}
+		if ((this.minItems > 0) && (data.getSize() < this.minItems))
+			OperationContext.get().errorTr(417, data);   
 		
-		return this.core.validate(data);
+		if ((this.maxItems > 0) && (data.getSize() > this.maxItems))
+			OperationContext.get().errorTr(418, data);   
 	}
-	
 	
 	public Struct wrap(Object data) {
 		if (data == null) 
@@ -389,7 +469,6 @@ public class DataType {
 			if (data instanceof RecordStruct) {
 				Struct s = (Struct)data;
 
-				// TODO check that type/inheritance is ok
 				if (!s.hasExplicitType())
 					s.setType(this);
 				
@@ -401,10 +480,11 @@ public class DataType {
 		}
 		
 		if (this.kind == DataKind.List) {
+			// TODO support Collection<Object> and Array<Object> as input too
+			
 			if (data instanceof ListStruct) {
 				Struct s = (Struct)data;
 				
-				// TODO check that type/inheritance is ok
 				if (!s.hasExplicitType())
 					s.setType(this);
 				
@@ -415,40 +495,7 @@ public class DataType {
 			return null;
 		} 
 		
-		Struct s = this.core.wrap(data);
-		
-		if (s != null) {
-			if (!s.hasExplicitType()  && (!"Any".equals(this.id)))
-				s.setType(this);
-			
-			return s;
-		}
-		
-		return null;
-	}
-	
-	public Struct wrapItem(Object data) {
-		if (data == null) 
-			return null;
-		
-		if (this.kind == DataKind.Record) {
-			OperationContext.get().errorTr(422, data);		
-			return null;
-		}
-		
-		if (this.kind == DataKind.List) 
-			return this.items.wrap(data);
-		
-		Struct s = this.core.wrap(data);
-		
-		if (s != null) {
-			if (!s.hasExplicitType())
-				s.setType(this);
-			
-			return s;
-		}
-		
-		return null;
+		return this.core.normalize(this, data);
 	}
 	
 	public FuncResult<Struct> create() {
@@ -456,26 +503,14 @@ public class DataType {
 		
 		Struct st = null;
 		
-		if (this.kind == DataKind.Record) {
+		// TODO not just core can have Class ...
+		
+		if (this.kind == DataKind.Record) 
 			st = new RecordStruct();
-		}		
-		if (this.kind == DataKind.List) {
+		else if (this.kind == DataKind.List) 
 			st = new ListStruct();
-		}
-		else {
-			if (this.definition.hasAttribute("Class")) {
-				try {
-					Class<?> spectype = this.getClass().getClassLoader().loadClass(this.definition.getAttribute("Class"));
-					st = (Struct) spectype.newInstance();
-				} 
-				catch (Exception x) {
-					// TODO log
-					return null;
-				}
-			}	
-			else if (this.core != null)
-				st = this.core.create();
-		}
+		else 
+			st = this.core.create(this);
 		
 		// TODO err message if null
 		

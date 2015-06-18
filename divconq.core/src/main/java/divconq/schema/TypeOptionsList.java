@@ -85,6 +85,27 @@ public class TypeOptionsList {
 		return false;
 	}
 	
+	public Struct normalizeValidate(Struct data) {
+		if (data == null)
+			return null;
+		
+		if (this.options.size() == 0) {
+			OperationContext.get().errorTr(437, data);			
+			return null;
+		}
+		
+		if (this.options.size() == 1) 
+			return this.options.get(0).normalizeValidate(data);
+		
+		for (DataType dt : this.options) {
+			if (dt.match(data)) 
+				return dt.normalizeValidate(data);
+		}
+		
+		OperationContext.get().errorTr(438, data);			
+		return null;
+	}
+	
 	public Struct wrap(Object data) {
 		if (data == null) 
 			return null;

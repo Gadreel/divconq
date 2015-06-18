@@ -255,7 +255,7 @@ public class SchemaManager {
 				System.out.println("cannot call: " + msg);
 			}
 			else
-				op.request.validate(msg);
+				op.request.normalizeValidate(msg);
 		}
 		
 		return mr;
@@ -289,7 +289,7 @@ public class SchemaManager {
 		if (dt == null)
 			mr.errorTr(435);		
 		else
-			dt.validate(msg);
+			dt.normalizeValidate(msg);
 		
 		return mr;
 	}
@@ -301,7 +301,7 @@ public class SchemaManager {
 	 * @param req procedure parameters
 	 * @return log of validation attempt
 	 */
-	public OperationResult validateProcRequest(String name, CompositeStruct req){
+	public OperationResult validateProcRequest(String name, CompositeStruct req) {
 		OperationResult mr = new OperationResult();
 		
 		DbProc proc = this.getDbProc(name);
@@ -317,7 +317,7 @@ public class SchemaManager {
 					mr.errorTr(428);		
 			}
 			else
-				proc.request.validate(req);
+				proc.request.normalizeValidate(req);
 		}
 		
 		return mr;
@@ -343,7 +343,7 @@ public class SchemaManager {
 					mr.errorTr(430);		
 			}
 			else
-				proc.response.validate(resp);
+				proc.response.normalizeValidate(resp);
 		}
 		
 		return mr;
@@ -365,6 +365,24 @@ public class SchemaManager {
 			mr.errorTr(436);		
 		else
 			dt.validate(data);
+		
+		return mr;
+	}
+	
+	public FuncResult<Struct> normalizeValidateType(Struct data, String type){
+		FuncResult<Struct> mr = new FuncResult<Struct>();
+		
+		DataType dt = this.getType(type);
+		
+		if (dt == null) {
+			mr.errorTr(436);
+		}
+		else {
+			Struct o = dt.normalizeValidate(data);
+			
+			if (!mr.hasErrors())
+				mr.setResult(o);
+		}
 		
 		return mr;
 	}

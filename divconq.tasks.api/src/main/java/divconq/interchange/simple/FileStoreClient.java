@@ -95,6 +95,7 @@ import divconq.mail.EmailInnerContext;
 import divconq.mail.MailTaskFactory;
 import divconq.mail.SimpleFactory;
 import divconq.mod.IModule;
+import divconq.schema.DbField;
 import divconq.script.Activity;
 import divconq.script.ui.ScriptUtility;
 import divconq.session.Session;
@@ -104,6 +105,11 @@ import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
+import divconq.struct.scalar.BooleanStruct;
+import divconq.struct.scalar.DateTimeStruct;
+import divconq.struct.scalar.DecimalStruct;
+import divconq.struct.scalar.IntegerStruct;
+import divconq.struct.scalar.StringStruct;
 import divconq.util.FileUtil;
 import divconq.util.HexUtil;
 import divconq.util.IOUtil;
@@ -2730,7 +2736,6 @@ public class FileStoreClient implements ILocalCommandLine {
 				}
 
 				case 414: {
-
 					OperationContext octx = new OperationContextBuilder()
 							.withVerified(true)
 							.withAuthTags("User","Admin")
@@ -2765,6 +2770,288 @@ public class FileStoreClient implements ILocalCommandLine {
 							}
 						})
 						.withTitle("Test dgaBuildSendMessage")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+
+				case 415: {
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								Message msg = new Message("dcmCms", "Site", "BuildMap", null);
+								
+								Hub.instance.getBus().sendMessage(msg, new DumpCallback("cb for BuildMap") {
+									@Override
+									public void callback() {
+										super.callback();
+										
+										trun.complete();
+									}
+								});
+							}
+						})
+						.withTitle("Test BuildMap processing")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+				
+				case 416: {
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								//			<Field Name="dgaZipPrefix" Type="dgaZipPrefix" Indexed="True" />  
+								System.out.println("test dgaZipPrefix");
+								
+								Struct value = new StringStruct("234");
+								DbField schema = trun.getContext().getSchema().getDbField("dcUser", "dgaZipPrefix");								
+								FuncResult<Struct> cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaZipPrefix res: " + cor.getResult());
+								
+								//			<Field Name="dgaConfirmProcess" Type="dgaConfirmProcessEnum" />
+								System.out.println("test dgaConfirmProcess");
+								
+								value = new StringStruct("Apprentice");
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaConfirmProcess");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaConfirmProcess res: " + cor.getResult());
+								
+								//			<Field Name="dgaBusinessEmployees" Type="Integer" />
+								System.out.println("test dgaBusinessEmployees");
+								
+								value = new StringStruct("579");
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaBusinessEmployees");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaBusinessEmployees res: " + cor.getResult());
+								
+								System.out.println("test dgaBusinessEmployees 2");
+								
+								value = new IntegerStruct(979);
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaBusinessEmployees");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaBusinessEmployees 2 res: " + cor.getResult());
+								
+								//			<Field Name="dgaExperience" Type="dcLargeString" />
+								System.out.println("test dgaExperience");
+								
+								value = new StringStruct("what ever - just some notes");
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaExperience");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaExperience res: " + cor.getResult());
+								
+								//			<Field Name="dgaEmergencyPhone" Type="dcSmallString" />
+								System.out.println("test dgaEmergencyPhone");
+								
+								value = new StringStruct("6081112222");
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaEmergencyPhone");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaEmergencyPhone res: " + cor.getResult());
+								
+								//			<Field Name="dgaEmergencyState" Type="dcTinyString" />
+								System.out.println("test dgaEmergencyState");
+								
+								value = new StringStruct("IA");
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaEmergencyState");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaEmergencyState res: " + cor.getResult());
+								
+								//			<Field Name="dgaPPRHireDate" Type="Date" />
+								System.out.println("test dgaPPRHireDate");
+								
+								value = new DateTimeStruct(new DateTime(2013, 7, 4, 19, 22));
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaPPRHireDate");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaPPRHireDate res: " + cor.getResult());
+								
+								System.out.println("test dgaPPRHireDate 2");
+								
+								value = new StringStruct("20140601T080001000Z");
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaPPRHireDate");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaPPRHireDate 2 res: " + cor.getResult());
+								
+								//			<Field Name="dgaPPREdCoord" Type="Id" ForeignKey="dcUser" Indexed="True" />
+								System.out.println("test dgaPPREdCoord");
+								
+								value = new StringStruct("00700_000000000000005");
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaPPREdCoord");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaPPREdCoord res: " + cor.getResult());
+								
+								//			<Field Name="dgaPPRNeedsSpotCheck" Type="Boolean" Indexed="True" />
+								System.out.println("test dgaPPRNeedsSpotCheck");
+								
+								value = new BooleanStruct(false);
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaPPRNeedsSpotCheck");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaPPRNeedsSpotCheck res: " + cor.getResult());
+								
+								System.out.println("test dgaPPRNeedsSpotCheck 2");
+								
+								value = new StringStruct("True");
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaPPRNeedsSpotCheck");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaPPRNeedsSpotCheck 2 res: " + cor.getResult());
+								
+								//			<Field Name="dgaPPRTotalRelatedHours" Type="Decimal" />
+								System.out.println("test dgaPPRTotalRelatedHours");
+								
+								value = new DecimalStruct(new BigDecimal(5.33));
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaPPRTotalRelatedHours");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaPPRTotalRelatedHours res: " + cor.getResult());
+								
+								System.out.println("test dgaPPRTotalRelatedHours 2");
+								
+								value = new StringStruct("8.33");
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaPPRTotalRelatedHours");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaPPRTotalRelatedHours 2 res: " + cor.getResult());
+								
+								//			<Field Name="dgaPPRGroups" Type="dgaGroupItem" List="True" />
+								/*
+									<Record Id="dgaGroupItem">
+										<!-- Ident = entered date/time -->
+										<Field Name="Ident" Type="DateTime" Required="True" />
+										<Field Name="Date" Type="LocalDate" Required="True" />
+										<Field Name="Time" Type="LocalTime" Required="True" />
+										<Field Name="Location" Type="dcSmallString" Required="True" />
+										<Field Name="Topics" Type="dcLargeString" Required="True" />
+										<Field Name="Notes" Type="dcLargeString" Required="True" />
+										<Field Name="Hours" Type="Decimal" Required="True" />
+									</Record>
+								 * 
+								 */
+								System.out.println("test dgaPPRGroups");
+								
+								value = new RecordStruct()
+									.withField("Ident", "20150605T180001000Z")
+									.withField("Date", "2015-08-13")
+									.withField("Time", "16:45:00.123")
+									.withField("Location", "software hut")
+									.withField("Topics", "something")
+									.withField("Notes", "some notes")
+									.withField("Hours", 6.75);
+								
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaPPRGroups");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaPPRGroups res: " + cor.getResult());
+								
+								System.out.println("test dgaPPRGroups 2");
+								
+								value = new RecordStruct()
+									.withField("Ident", "20150605T180001000Z")
+									.withField("Date", "2015-08-13")
+									.withField("Time", "16:45:15")
+									.withField("Location", "software hut")
+									.withField("Topics", "something")
+									.withField("Notes", "some notes")
+									.withField("Hours", 6.75);
+								
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaPPRGroups");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaPPRGroups 2 res: " + cor.getResult());
+								
+								System.out.println("test dgaPPRGroups 3");
+								
+								value = new RecordStruct()
+									.withField("Ident", "20150605T180001000Z")
+									.withField("Date", "2015-08-13")
+									.withField("Time", Struct.objectToTime("16:45"))
+									.withField("Location", "software hut")
+									.withField("Topics", "something")
+									.withField("Notes", "some notes")
+									.withField("Hours", 6.75);
+								
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaPPRGroups");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaPPRGroups 3 res: " + cor.getResult());
+								
+								//			<Field Name="dgaPPRWork" Type="dgaWorkItem" List="True" />
+								/*
+								<Record Id="dgaWorkItem">
+									<!-- Ident = entered date/time 
+									<Field Name="Ident" Type="dcTinyString" Required="True" />
+									-->
+									<!-- Month = YYMM -->
+									<Field Name="Month" Type="dcTinyString" Required="True" />
+									<Field Name="OJTHours" Type="Decimal" Required="True" />
+									<Field Name="TeachingHours" Type="Decimal" Required="True" />
+									<Field Name="Wages" Type="Decimal" />
+								 * 
+								 */
+								System.out.println("test dgaPPRWork");
+								
+								value = new RecordStruct()
+									.withField("Month", "08")
+									.withField("OJTHours", "12.5")
+									.withField("TeachingHours", "3")
+									.withField("Wages", "450.95");
+								
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaPPRWork");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaPPRWork res: " + cor.getResult());
+								
+								//			<Field Name="dgaWorkReportStatus" Type="dgaWorkReportEnum" List="True" Indexed="True" />
+								System.out.println("test dgaWorkReportStatus");
+								
+								value = new StringStruct("Needed");
+								schema = trun.getContext().getSchema().getDbField("dcUser", "dgaWorkReportStatus");								
+								cor = trun.getContext().getSchema().normalizeValidateType(value, schema.getTypeId()); 
+
+								System.out.println("test dgaWorkReportStatus res: " + cor.getResult());								
+								
+								trun.complete();
+							}
+						})
+						.withTitle("Test normalizeValidateType processing")
 						.withContext(octx);
 					
 					Hub.instance.getWorkPool().submit(task);

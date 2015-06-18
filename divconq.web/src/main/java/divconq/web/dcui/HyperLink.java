@@ -31,6 +31,7 @@ public class HyperLink extends A {
     protected String icon = null;
     protected String click = null;
     protected String page = null;
+    protected String css = null;
 
     public HyperLink() {
     	super();
@@ -82,6 +83,7 @@ public class HyperLink extends A {
 		((HyperLink)n).label = this.label;
 		((HyperLink)n).icon = this.icon;
 		((HyperLink)n).click = this.click;
+		((HyperLink)n).css = this.css;
 	}
 	
 	@Override
@@ -97,6 +99,7 @@ public class HyperLink extends A {
 		this.icon = xel.getRawAttribute("Icon");
 		this.click = xel.getRawAttribute("Click");
 		this.page = xel.getRawAttribute("Page");
+		this.css = xel.getRawAttribute("class");
 		
 		if (StringUtil.isNotEmpty(this.page))
 			this.to = this.page;
@@ -104,7 +107,7 @@ public class HyperLink extends A {
 
     @Override
     public void build(Object... args) {
-    	Attributes attrs = new Attributes("href", this.to, "class", "ui-button ui-theme-a");
+    	Attributes attrs = new Attributes("href", this.to, "class", "ui-button ui-theme-a " + StringUtil.toEmpty(this.css));
 		
 		if (this.id != null)
 			attrs.add("id", this.id);

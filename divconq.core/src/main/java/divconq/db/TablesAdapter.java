@@ -8,6 +8,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import divconq.db.util.ByteUtil;
+import divconq.hub.DomainInfo;
+import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
@@ -77,10 +79,19 @@ public class TablesAdapter {
 					return;
 				}
 				
+				/*
 				OperationResult cor = TablesAdapter.this.task.getSchema().validateType(value, schema.getTypeId()); 
 				
 				if (cor.hasErrors()) 
 					return;
+				*/
+				
+				FuncResult<Struct> cor = TablesAdapter.this.task.getSchema().normalizeValidateType(value, schema.getTypeId()); 
+				
+				if (cor.hasErrors()) 
+					return;
+				
+				data.setField("Data", cor.getResult());
 				
 				Object cValue = Struct.objectToCore(value);
 				
@@ -524,8 +535,8 @@ public class TablesAdapter {
 		return this.setFields(table, id, fields);
 	}
 	
+	/* 
 	public void rebiuldIndex(String table) {
-/* 
 	 ;
 	 ; don't run when Java connector is active
 	indexTable(table) n field
@@ -569,8 +580,8 @@ public class TablesAdapter {
 	 ;
 	 quit
 	 ;
-	 */
 	}	
+	 */
 	
 	public boolean isDeleted(String table, String id) {
 		try {
@@ -2298,5 +2309,155 @@ srchTxt2(params,ret) n score,table,field,id,sid,pos,word,sources,find,fnd,sscore
  ;
  	 * 
 	 */
+
+	public void rebuildIndexes() {
+		this.rebuildIndexes(Hub.instance.getDomainInfo(this.task.getDomain()), BigDateTime.nowDateTime());
+	}
+
+	public void rebuildIndexes(DomainInfo di, BigDateTime when) {
+		try {
+			byte[] traw = this.conn.nextPeerKey(DB_GLOBAL_RECORD, di.getId(), null);
+			
+			while (traw != null) {
+				Object table = ByteUtil.extractValue(traw);
+				
+				this.rebuildTableIndex(di, table.toString(), when);
+				
+				traw = this.conn.nextPeerKey(DB_GLOBAL_RECORD, di.getId(), table);
+			}
+		}
+		catch (Exception x) {
+			OperationContext.get().error("rebuildDomainIndexes error: " + x);
+		}
+		finally {
+			task.popDomain();
+		}
+	}
+
+	public void rebuildTableIndex(String table) {
+		this.rebuildTableIndex(Hub.instance.getDomainInfo(this.task.getDomain()), table, BigDateTime.nowDateTime());
+	}
 	
+	public void rebuildTableIndex(DomainInfo di, String table, BigDateTime when) {
+		try {
+			// kill the indexes
+			this.conn.kill(DB_GLOBAL_INDEX_SUB, di.getId(), table);			
+			this.conn.kill(DB_GLOBAL_INDEX, di.getId(), table);
+			
+			// see if there is even such a table in the schema
+			//DomainInfo di = this.dm.getDomainInfo(did);
+			
+			if (!di.getSchema().hasTable(table)) {
+				System.out.println("Skipping table, not known by this domain: " + table);
+			}
+			else {
+				System.out.println("Indexing table: " + table);
+				
+				this.traverseRecords(table, when, false, new Consumer<Object>() {
+					@Override
+					public void accept(Object id) {
+						for (DbField schema : di.getSchema().getDbFields(table)) {
+							if (!schema.isIndexed())
+								continue;
+							
+							String did = di.getId();
+							
+							try {
+								// --------------------------------------
+								// StaticScalar handling 
+								// --------------------------------------
+								if (!schema.isList() && !schema.isDynamic()) {
+									
+									// find the first, newest, stamp 
+									byte[] nstamp = TablesAdapter.this.conn.nextPeerKey(DB_GLOBAL_RECORD, did, table, id, schema.getName(), null);
+									
+									if (nstamp == null)
+										continue;
+									
+									BigDecimal stamp = Struct.objectToDecimal(ByteUtil.extractValue(nstamp));
+									
+									if (stamp == null)
+										continue;
+									
+									if (TablesAdapter.this.conn.getAsBooleanOrFalse(DB_GLOBAL_RECORD, did, table, id, schema.getName(), stamp, "Retired"))
+										continue;
+									
+									if (!TablesAdapter.this.conn.isSet(DB_GLOBAL_RECORD, did, table, id, schema.getName(), stamp, "Data"))
+										continue;
+										
+									Object value = TablesAdapter.this.conn.get(DB_GLOBAL_RECORD, did, table, id, schema.getName(), stamp, "Data");
+									
+									if (value instanceof String)
+										value = value.toString().toLowerCase(Locale.ROOT);
+								
+									// increment index count
+									// set the new index new
+									TablesAdapter.this.conn.inc(DB_GLOBAL_INDEX, did, table, schema.getName(), value);
+									TablesAdapter.this.conn.set(DB_GLOBAL_INDEX, did, table, schema.getName(), value, id, null);
+								}				
+								else {
+									TablesAdapter.this.traverseSubIds(table, id.toString(), schema.getName(), when, false, new Consumer<Object>() {
+										@Override
+										public void accept(Object sid) {
+											try {
+												// find the first, newest, stamp 
+												byte[] nstamp = TablesAdapter.this.conn.nextPeerKey(DB_GLOBAL_RECORD, did, table, id, schema.getName(), sid, null);
+												
+												if (nstamp == null)
+													return;
+												
+												BigDecimal stamp = Struct.objectToDecimal(ByteUtil.extractValue(nstamp));
+												
+												if (stamp == null)
+													return;
+												
+												if (TablesAdapter.this.conn.getAsBooleanOrFalse(DB_GLOBAL_RECORD, did, table, id, schema.getName(), sid, stamp, "Retired"))
+													return;
+												
+												if (!TablesAdapter.this.conn.isSet(DB_GLOBAL_RECORD, did, table, id, schema.getName(), sid, stamp, "Data"))
+													return;
+														
+												Object value = TablesAdapter.this.conn.get(DB_GLOBAL_RECORD, did, table, id, schema.getName(), sid, stamp, "Data");
+												Object from = TablesAdapter.this.conn.get(DB_GLOBAL_RECORD, did, table, id, schema.getName(), sid, stamp, "From");
+												Object to = TablesAdapter.this.conn.get(DB_GLOBAL_RECORD, did, table, id, schema.getName(), sid, stamp, "To");
+												
+												if (value instanceof String)
+													value = value.toString().toLowerCase(Locale.ROOT);
+												
+												String range = null;
+												
+												if (from != null)
+													range = from.toString();
+												
+												if (to != null) {
+													if (range == null)
+														range = ":" + to.toString();
+													else
+														range += ":" + to.toString();
+												}
+												
+												// increment index count
+												// set the new index new
+												TablesAdapter.this.conn.inc(DB_GLOBAL_INDEX_SUB, did, table, schema.getName(), value);
+												TablesAdapter.this.conn.set(DB_GLOBAL_INDEX_SUB, did, table, schema.getName(), value, id, sid, range);
+											}
+											catch (Exception x) {
+												System.out.println("Error indexing table: " + table + " - " + schema.getName() + " - " + id + " - " + sid + ": " + x);
+											}
+										}
+									});									
+								}
+							}
+							catch (Exception x) {
+								System.out.println("Error indexing table: " + table + " - " + schema.getName() + " - " + id + ": " + x);
+							}
+						}
+					}
+				});
+			}
+		} 
+		catch (DatabaseException x) {
+			System.out.println("Error indexing table: " + table + ": " + x);
+		}
+	}		
 }

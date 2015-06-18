@@ -26,6 +26,7 @@ import org.joda.time.Months;
 import org.joda.time.Weeks;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.DateTimeFormatterBuilder;
 import org.joda.time.format.ISODateTimeFormat;
 
 import divconq.bus.Message;
@@ -46,6 +47,12 @@ public class TimeUtil {
 	static public final DateTimeFormatter sqlStampFmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
 	static public final SimpleDateFormat sqlStampReformat = new SimpleDateFormat("yyyyMMdd'T'HHmmssSSS");
 
+	static public final DateTimeFormatter parseTimeFormat = new DateTimeFormatterBuilder()
+		//.appendPattern("HH:mm")
+		//.appendPattern("HH:mm:ss")
+		.appendPattern("HH:mm:ss.SSS")
+		.toFormatter();
+	
 	/*
 	System.out.println("pt: " + ISODateTimeFormat.localTimeParser().parseDateTime("16:20:45"));
 	

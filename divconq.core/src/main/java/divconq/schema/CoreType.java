@@ -22,21 +22,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import divconq.hub.Hub;
 import divconq.lang.Memory;
 import divconq.lang.op.OperationContext;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.ScalarStruct;
 import divconq.struct.Struct;
-import divconq.struct.scalar.AnyStruct;
-import divconq.struct.scalar.BigIntegerStruct;
-import divconq.struct.scalar.BinaryStruct;
-import divconq.struct.scalar.BooleanStruct;
-import divconq.struct.scalar.DateTimeStruct;
-import divconq.struct.scalar.DecimalStruct;
-import divconq.struct.scalar.IntegerStruct;
 import divconq.struct.scalar.NullStruct;
-import divconq.struct.scalar.StringStruct;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
@@ -143,53 +136,64 @@ public class CoreType {
 		return false;
 	}
 	
-	public Struct create() {
-		if (this.root == null) 
-			return null;
+	public String getClassName() {
+		if (this.def.hasAttribute("Class")) 
+			return this.def.getAttribute("Class");
 		
-		if (this.root == RootType.String) 
-			return new StringStruct();		
+		if (this.root == RootType.String)
+			return "divconq.struct.scalar.StringStruct";
 		
-		if (this.root == RootType.Number) { 
-			for (IDataRestriction dr : this.restrictions) {
-				if (dr instanceof NumberRestriction) {
-					NumberRestriction ndr = (NumberRestriction)dr;
-					
-					if (ndr.conform == ConformKind.Integer) 
-						return new IntegerStruct();
-					
-					if (ndr.conform == ConformKind.BigInteger) 
-						return new BigIntegerStruct();
-				}
-			}
-			
-			return new DecimalStruct();
-		}
+		if (this.root == RootType.Number) 
+			return "divconq.struct.scalar.DecimalStruct";
 		
 		if (this.root == RootType.Binary) 
-			return new BinaryStruct();		
+			return "divconq.struct.scalar.BiaryStruct";
 		
-		if (this.root == RootType.Boolean) 
-			return new BooleanStruct();		
+		if (this.root == RootType.Boolean)
+			return "divconq.struct.scalar.BooleanStruct";
 		
 		if (this.root == RootType.Null) 
-			return new NullStruct(); 	// need to do this because we set type later - could be a custom type
+			return "divconq.struct.scalar.NullStruct";
 		
-		if (this.root == RootType.Any) 
-			return new AnyStruct();
+		return "divconq.struct.scalar.AnyStruct";
+	}
+	
+	public ScalarStruct create(DataType dt) {
+		if (this.root == RootType.Null) 
+			return NullStruct.instance;
 		
-		return null;
+		// TODO support groovy code too - like Class 
+		
+		ScalarStruct data = (ScalarStruct) Hub.instance.getInstance(this.getClassName());
+		
+		data.setType(dt);
+		
+		return data;
 	}
 	
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public boolean validate(Object data) {
-		if (data == null)
+	public boolean validate(DataType dt, ScalarStruct in) {
+		if (in == null)
 			return false;
 		
 		if (this.root == null) {
-			OperationContext.get().errorTr(407, data);			
+			OperationContext.get().errorTr(407, in);			
 			return false;
 		}
+		
+		// make sure we are using the correct class to do the validation
+		in = this.reuseOrWrap(dt, in);
+		
+		if (this.validateData(in.toInternalValue(this.root)))
+			return in.validateData(dt);
+		
+		return false;
+	}
+	
+	// don't call this with data == null from a field if field required - required means "not null" so put the error in
+	public boolean validateData(Object data) {
+		if (data == null)
+			return false;
 		
 		if (this.root == RootType.String) {
 			CharSequence x = Struct.objectToCharsStrict(data);		// TODO use this more
@@ -282,63 +286,71 @@ public class CoreType {
 		OperationContext.get().errorTr(412, data);			
 		return false;
 	}
+	
+	// don't call this with data == null from a field if field required - required means "not null" so put the error in
+	public ScalarStruct normalizeValidate(DataType dt, ScalarStruct in) {
+		if (in == null)
+			return null;
+		
+		if (this.root == null) {
+			OperationContext.get().errorTr(407, in);			
+			return null;
+		}
+		
+		// make sure we are using the correct class to do the validation
+		in = this.reuseOrWrap(dt, in);
+		
+		if (this.validateData(in.toInternalValue(this.root)))
+			return in;
+		
+		return null;
+	}
 
-	public Struct wrap(Object data) {
+	public ScalarStruct normalize(DataType dt, Object data) {
+		if (data instanceof ScalarStruct)
+			return this.reuseOrWrap(dt, (ScalarStruct) data);
+		
+		return this.wrap(dt, data);
+	}
+
+	public ScalarStruct reuseOrWrap(DataType dt, ScalarStruct data) {
+		if (data == null)
+			return null;
+		
+		if (this.root == RootType.Any)
+			return data;
+		
+		String cname = this.getClassName();
+		
+		// TODO support groovy code too - like Class 
+		
+		// if we are expecting a special class, try to resolve validation via that class 
+		if (data.getClass().getName().equals(cname)) 
+			return data;
+		
+		return this.wrap(dt, data.getGenericValue());
+	}
+
+	// don't pass in scalar struct here, use normalize instead
+	public ScalarStruct wrap(DataType dt, Object data) {
 		if (this.root == null) 
 			return null;
 		
-		ScalarStruct ret = null;
+		// TODO support groovy code too - like Class 
 		
-		if (this.root == RootType.String) {
-			if ("DateTime".equals(this.def.getAttribute("Id")))		// TODO maybe generalize this, look at Class? (before this if/else structure)
-				ret = new DateTimeStruct();
-			else
-				ret = new StringStruct();		
-		}		
-		else if (this.root == RootType.Number) { 
-			for (IDataRestriction dr : this.restrictions) {
-				if (dr instanceof NumberRestriction) {
-					NumberRestriction ndr = (NumberRestriction)dr;
-					
-					if (ndr.conform == ConformKind.Integer) {
-						ret = new IntegerStruct();
-						break;
-					}
-					
-					if (ndr.conform == ConformKind.BigInteger) {
-						ret = new BigIntegerStruct();
-						break;
-					}
-					
-					if (ndr.conform == ConformKind.Decimal) {
-						ret = new DecimalStruct();
-						break;
-					}
-					
-					if (ndr.conform == ConformKind.BigDecimal) {
-						ret = new DecimalStruct();
-						break;
-					}
-				}
-			}
-		}
-		else if (this.root == RootType.Binary) 
-			ret = new BinaryStruct();				
-		else if (this.root == RootType.Boolean) 
-			ret = new BooleanStruct();				
-		else if (this.root == RootType.Null) 
-			ret = new NullStruct(); 	// need to do this because we set type later - could be a custom type
-		else if (this.root == RootType.Any) {
-			if (data instanceof Struct)
-				return (Struct)data;
-			
-			ret = new AnyStruct();
-		}
+		//String cname = this.getClassName();
 		
-		if (ret != null)
-			ret.adaptValue(data);
+		//System.out.println("Normalizing object from " + data.getClass().getName() + " to " + cname);
 		
-		return ret;
+		ScalarStruct nv  = this.create(dt);
+		nv.adaptValue(data);
+		
+		if (nv.isNull())
+			nv = null;
+		
+		//System.out.println("New value: " + nv + " - old value: " + data);
+		
+		return nv;
 	}
 
 	interface IDataRestriction {

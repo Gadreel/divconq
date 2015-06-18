@@ -183,6 +183,16 @@ public class XElement extends XNode {
 
 		this.attributes.put(name, value);
 	}
+	
+	public XElement withAttribute(String name, String value) {
+		if (this.attributes == null)
+			this.attributes = new HashMap<String, String>();
+
+		this.attributes.put(name, XNode.quote(value));
+		
+		return this;
+	}
+	
 
 	/**
 	 * gets the specified attribute of this element

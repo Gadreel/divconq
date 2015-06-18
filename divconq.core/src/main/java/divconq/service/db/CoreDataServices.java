@@ -525,6 +525,20 @@ public class CoreDataServices extends ExtensionBase implements IService {
 			}
 		}	
 		
+		// =========================================================
+		//  groups
+		// =========================================================
+		if ("Database".equals(feature)) {
+			if ("ExecuteProc".equals(op)) {
+				DataRequest req = new DataRequest(rec.getFieldAsString("Proc"))
+					.withParams(rec.getFieldAsComposite("Params"));
+				
+				db.submit(req, new ObjectFinalResult(request));
+				
+				return ;
+			}
+		}	
+		
 		request.errorTr(441, this.serviceName(), feature, op);
 		request.complete();
 	}

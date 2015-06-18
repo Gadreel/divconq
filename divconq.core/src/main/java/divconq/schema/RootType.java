@@ -21,7 +21,6 @@ public enum RootType {
 	Number(2),
 	Boolean(3),
 	Binary(4),
-	Component(5),		// for scripting
 	Null(6),
 	Any(7);
     
@@ -45,8 +44,6 @@ public enum RootType {
 			return Boolean;
 		case 4:
 			return Binary;
-		case 5:
-			return Component;
 		case 6:
 			return Null;
 		default:

@@ -52,7 +52,16 @@ public class HtmlUtil  {
 			attrs.add("title", xel.getRawAttribute("title"));   			
 		
 		if (xel.hasAttribute("onclick"))
-			attrs.add("onclick", xel.getRawAttribute("onclick"));   			
+			attrs.add("onclick", xel.getRawAttribute("onclick"));   	
+		
+		if (xel.hasAttribute("itemscope"))
+			attrs.add("itemscope", xel.getRawAttribute("itemscope"));   	
+		
+		if (xel.hasAttribute("itemtype"))
+			attrs.add("itemtype", xel.getRawAttribute("itemtype"));   	
+		
+		if (xel.hasAttribute("itemprop"))
+			attrs.add("itemprop", xel.getRawAttribute("itemprop"));   	
 		
 		// copy all data attributes
 		for (Entry<String, String> entry : xel.getAttributes().entrySet()) {
