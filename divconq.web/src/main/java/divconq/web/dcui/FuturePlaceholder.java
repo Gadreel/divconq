@@ -18,6 +18,8 @@ package divconq.web.dcui;
 
 import java.io.PrintStream;
 
+import divconq.web.WebContext;
+
 public class FuturePlaceholder extends Element {
     public FuturePlaceholder() {
     	super();
@@ -31,26 +33,18 @@ public class FuturePlaceholder extends Element {
     	// let the fragment know that there is something to wait on 
     	this.getPartRoot().incrementFuture();
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		FuturePlaceholder cp = new FuturePlaceholder();  
-		cp.setParent(parent);
-		this.doCopy(cp);		// no need to override, we don't care about view field
-		return cp;
-	}
 
     @Override
-    public void stream(PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
+    public void stream(WebContext ctx, PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
         boolean fromon = fromblock;
         boolean lastblock = false;
         boolean firstch = this.getBlockIndent();   // only true once, and only if bi
 
         for (Node node : this.children) {
             if (node.getBlockIndent() && !lastblock && !fromon) 
-            	this.print(strm, "", true, "");
+            	this.print(ctx, strm, "", true, "");
             
-            node.stream(strm, indent, (firstch || lastblock), this.getBlockIndent());
+            node.stream(ctx, strm, indent, (firstch || lastblock), this.getBlockIndent());
             
             lastblock = node.getBlockIndent();
             firstch = false;
@@ -71,9 +65,9 @@ public class FuturePlaceholder extends Element {
 		return true;
 	}
 
-	public void addChild(Node nn) {
+	public void addChild(WebContext ctx, Node nn) {
         nn.setParent(this);
 		this.children.add(nn);
-        nn.doBuild();
+        nn.doBuild(ctx);
 	}
 }

@@ -88,7 +88,6 @@ import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
 import divconq.locale.Localization;
-import divconq.mail.EmailPart;
 import divconq.net.ssl.SslHandler;
 import divconq.struct.Struct;
 import divconq.util.StringUtil;
@@ -109,9 +108,9 @@ import divconq.web.dcui.IncludePart;
 import divconq.web.dcui.LiteralText;
 import divconq.web.dcui.Nodes;
 import divconq.web.dcui.PagePart;
+import divconq.web.dcui.TextPart;
 import divconq.web.dcui.TitledSection;
 import divconq.web.dcui.ViewOutputAdapter;
-import divconq.web.dcui.ViewTemplateAdapter;
 import divconq.web.http.SslContextFactory;
 import divconq.web.http.WebTrustManager;
 import divconq.xml.XElement;
@@ -304,7 +303,7 @@ public class WebDomain {
 		}
 		
 		try {
-			ctx.setAdapter(output);
+			//ctx.setAdapter(output);
 			
 			output.execute(ctx);
 		} 
@@ -609,11 +608,13 @@ public class WebDomain {
 		IOutputAdapter ioa = null;
 		
 		if (wpathname.endsWith(".dcui.xml"))
-			ioa = new ViewOutputAdapter(this, path, filepath, isPreview);
+			ioa = new ViewOutputAdapter();
 		else if (wpathname.endsWith(".dcuis.xml"))
-			ioa = new ViewTemplateAdapter(path, filepath);
+			ioa = new ViewOutputAdapter();
 		else
-			ioa = new AssetOutputAdapter(path, filepath);
+			ioa = new AssetOutputAdapter();
+		
+		ioa.init(this, filepath, path, isPreview);
 		
 		if (isPreview)
 			this.previewpaths.put(path.toString(), ioa);
@@ -623,6 +624,45 @@ public class WebDomain {
 		return ioa;
 	}
 
+	public Path findSectionFile(WebContext ctx, String section, String path) {		
+		return this.findSectionFile(ctx.isPreview(), section, path);
+	}
+	
+	public Path findSectionFile(boolean isPreview, String section, String path) {
+		LocalFileStore pubfs = Hub.instance.getPublicFileStore();
+		LocalFileStore prifs = Hub.instance.getPrivateFileStore();
+		
+		if (prifs != null) {
+			if (isPreview) {
+				Path wpath = Paths.get(prifs.getPath() + "/dcw/" + this.alias + "/" + section + "-preview" + path);		
+				
+				if ((wpath != null) && Files.exists(wpath)) 
+					return wpath;
+			}
+			
+			Path wpath = Paths.get(prifs.getPath() + "/dcw/" + this.alias + "/" + section + path);		
+			
+			if ((wpath != null) && Files.exists(wpath)) 
+				return wpath;
+		}
+		
+		if (pubfs != null) {
+			if (isPreview) {
+				Path wpath = Paths.get(pubfs.getPath() + "/dcw/" + this.alias + "/" + section + "-preview" + path);		
+				
+				if ((wpath != null) && Files.exists(wpath)) 
+					return wpath;
+			}
+			
+			Path wpath = Paths.get(pubfs.getPath() + "/dcw/" + this.alias + "/" + section + path);		
+			
+			if ((wpath != null) && Files.exists(wpath)) 
+				return wpath;
+		}
+		
+		return null;
+	}
+	
 	public String route(Request req, SslHandler ssl) {
 		DomainInfo domain = Hub.instance.getDomainInfo(this.id);
 		
@@ -686,12 +726,12 @@ public class WebDomain {
 	
 	// Html, Qx, Xml parsing
 	
-    public Nodes parseXml(ViewOutputAdapter view, XElement container) {
+    public Nodes parseXml(WebContext ctx, XElement container) {
     	Nodes nodes = new Nodes();
     	
     	for (XNode xnode : container.getChildren()) {
     		if (xnode instanceof XElement) {
-    			this.parseElement(view, nodes, (XElement)xnode);
+    			this.parseElement(ctx, nodes, (XElement)xnode);
     		}
     		else if (xnode instanceof XText) {
     			String content = ((XText)xnode).getRawValue();
@@ -705,14 +745,14 @@ public class WebDomain {
     }
     
     // parses the children of container
-    public Nodes parseElement(ViewOutputAdapter view, XElement xel) {
+    public Nodes parseElement(WebContext ctx, XElement xel) {
     	Nodes nodes = new Nodes();
-    	this.parseElement(view, nodes, xel);
+    	this.parseElement(ctx, nodes, xel);
     	return nodes;
     }
     
     // parses the children of container
-    public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+    public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		if (xel == null)
 			return;
 		
@@ -720,7 +760,7 @@ public class WebDomain {
 		
 		if (tag != null)
 			try {
-				tag.newInstance().parseElement(view, nodes, xel);
+				tag.newInstance().parseElement(ctx, nodes, xel);
 			} 
 			catch (Exception x) {
 				// TODO Auto-generated catch block
@@ -823,7 +863,7 @@ public class WebDomain {
 		this.codetags.put("Style", Style.class);
 		this.codetags.put("Script", Script.class);
 		this.codetags.put("PagePart", PagePart.class);
-		this.codetags.put("EmailPart", EmailPart.class);
+		this.codetags.put("TextPart", TextPart.class);
 		this.codetags.put("ServerScript", ServerScript.class);
 		this.codetags.put("TitledSection", TitledSection.class);
 

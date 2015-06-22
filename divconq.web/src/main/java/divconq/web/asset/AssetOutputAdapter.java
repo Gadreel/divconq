@@ -15,12 +15,14 @@ import divconq.util.StringUtil;
 import divconq.web.IOutputAdapter;
 import divconq.web.Response;
 import divconq.web.WebContext;
+import divconq.web.WebDomain;
+import divconq.xml.XElement;
 
 public class AssetOutputAdapter implements IOutputAdapter {
 	public CommonPath webpath = null;
 	public Path filepath = null;
 	
-	public AssetOutputAdapter(CommonPath web, Path file) {
+	public void init(WebDomain domain, Path file, CommonPath web, boolean isPreview) {
 		this.webpath = web;
 		this.filepath = file;
 	}
@@ -29,7 +31,7 @@ public class AssetOutputAdapter implements IOutputAdapter {
 	// better streaming for file output rather than build big memory blob and return
 	
 	@Override
-	public OperationResult execute(WebContext ctx) throws Exception {
+	public void execute(WebContext ctx) throws Exception {
 		OperationResult res = new OperationResult();
 		String fpstr = this.filepath.toString();
 		
@@ -71,7 +73,7 @@ public class AssetOutputAdapter implements IOutputAdapter {
 
 		if (asset == null) {
 			res.errorTr(150001);
-			return res;
+			return;
 		}
 		
 		String fpath = asset.getPath().toString();
@@ -79,13 +81,13 @@ public class AssetOutputAdapter implements IOutputAdapter {
 		//if ((fpath == null) || (asset.getSize() == -1)) {
 		if (fpath == null) {
 			res.errorTr(150001);
-			return res;
+			return;
 		}
 
 		// certain resource types cannot be delivered
 		if (fpath.endsWith(".class") || fpath.endsWith(".dcui.xml")) {
 			res.errorTr(150001);
-			return res;
+			return;
 		}
 
 		Response resp = ctx.getResponse(); 
@@ -105,7 +107,7 @@ public class AssetOutputAdapter implements IOutputAdapter {
 			if (dd < 1000) {
 				resp.setStatus(HttpResponseStatus.NOT_MODIFIED);
 				ctx.send();
-				return res;
+				return;
 			}
 		}
 		
@@ -138,7 +140,7 @@ public class AssetOutputAdapter implements IOutputAdapter {
 		//System.out.println("Sending: " + fpath + " as end");
 		ctx.sendEnd();
 		
-		return res;
+		return;
 		
 		/*
 		byte[] bis = this.extension.getBundle().findFileEntry(fpath);
@@ -149,5 +151,20 @@ public class AssetOutputAdapter implements IOutputAdapter {
 		else
 			notfound = true;
 			*/
+	}
+
+	@Override
+	public Path getFilePath() {
+		return this.filepath;
+	}
+
+	@Override
+	public CommonPath getLocationPath() {
+		return this.webpath;
+	}
+
+	@Override
+	public XElement getSource() {
+		return null;
 	}
 }

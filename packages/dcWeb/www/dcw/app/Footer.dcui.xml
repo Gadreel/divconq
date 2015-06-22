@@ -3,7 +3,7 @@
 		<footer id="dcappFooter">
 			<div class="dcappWrapper">
 				<div id="dcappFooterContent">
-					&copy; @val|SiteCopyright@ @val|SiteAuthor@
+					&copy; @ctx|SiteCopyright@ @ctx|SiteAuthor@
 				</div>
 			</div>
 		</footer>

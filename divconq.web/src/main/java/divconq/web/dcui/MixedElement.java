@@ -16,18 +16,20 @@
 ************************************************************************ */
 package divconq.web.dcui;
 
+import divconq.web.WebContext;
+
 abstract public class MixedElement extends Element {
     public MixedElement(Object... args) {
     	super(args);
 	}
 	
     @Override
-	public void build(Object... args) {
+	public void build(WebContext ctx, Object... args) {
 	    for (int i = 0; i < args.length; i++) {
 	        if ((i != 0) && (args[i] instanceof CharSequence)) 
 	            args[i] = new LiteralText(args[i].toString());
 	    }
 	
-	    super.build(args);
+	    super.build(ctx, args);
 	}
 }

@@ -16,32 +16,34 @@
 ************************************************************************ */
 package divconq.web.dcui;
 
+import divconq.web.WebContext;
+
 public class FutureNodes extends Nodes {
 	protected boolean done = false;
 	protected FuturePlaceholder placeholder = null;
 	
-	public void complete() {
+	public void complete(WebContext ctx) {
 		synchronized (this) {
 			this.done = true;
-			this.finish();
+			this.finish(ctx);
 		}
 	}
 
-	public void setNotify(FuturePlaceholder placeholder) {
+	public void setNotify(WebContext ctx, FuturePlaceholder placeholder) {
 		synchronized (this) {
 			this.placeholder = placeholder;
 			
 			if (this.done) 
-				this.finish();			
+				this.finish(ctx);			
 		}
 	}
 	
-	private void finish() {
+	private void finish(WebContext ctx) {
 		if (this.placeholder == null) 
 			return;
 		
         for (Node nn : this.getList()) 
-            this.placeholder.addChild(nn);
+            this.placeholder.addChild(ctx, nn);
         
         this.placeholder.decrementFuture();
 	}

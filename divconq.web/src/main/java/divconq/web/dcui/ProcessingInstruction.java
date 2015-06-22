@@ -18,6 +18,8 @@ package divconq.web.dcui;
 
 import java.io.PrintStream;
 
+import divconq.web.WebContext;
+
 public class ProcessingInstruction extends Node {
     protected String value = "";
 
@@ -29,28 +31,14 @@ public class ProcessingInstruction extends Node {
     	super();
         this.value = value;
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		ProcessingInstruction cp = new ProcessingInstruction();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((ProcessingInstruction)n).value = this.value;
-	}
 
     @Override
-    public void doBuild() {
+    public void doBuild(WebContext ctx) {
         // nothing to do
     }
 
     @Override
-    public void stream(PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
-        this.print(strm, firstchild ? indent : "", firstchild, "<? " + this.value + " ?>");
+    public void stream(WebContext ctx, PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
+        this.print(ctx, strm, firstchild ? indent : "", firstchild, "<? " + this.value + " ?>");
     }
 }

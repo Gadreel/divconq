@@ -17,6 +17,7 @@
 package divconq.web.dcui;
 
 import divconq.util.IProcessCallback;
+import divconq.web.WebContext;
 
 public class IncludeCallback extends FragmentProxy {
     protected IProcessCallback<IncludeCallback> callback = null;
@@ -29,23 +30,9 @@ public class IncludeCallback extends FragmentProxy {
     	super();
         this.callback = callback;
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		IncludeCallback cp = new IncludeCallback();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((IncludeCallback)n).callback = this.callback;
-	}
 
 	@Override
-	public void doBuild() {
+	public void doBuild(WebContext ctx) {
 		//WebContext ctx = this.getContext();
 		
 		this.callback.callback(this);	// should call add

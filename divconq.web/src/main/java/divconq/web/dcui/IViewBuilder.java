@@ -16,14 +16,9 @@
 ************************************************************************ */
 package divconq.web.dcui;
 
-import divconq.lang.op.OperationResult;
+import divconq.web.IOutputAdapter;
 import divconq.web.WebContext;
 
-
-public interface IViewExecutor {
-	WebContext getContext();
-	OperationResult execute(WebContext ctx) throws Exception;
-	
-	ViewOutputAdapter getView();
-	void setViewInfo(ViewOutputAdapter v);
+public interface IViewBuilder {
+	void execute(WebContext ctx, IOutputAdapter adapt) throws Exception;
 }

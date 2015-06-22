@@ -134,6 +134,15 @@ public class DomainInfo {
 		this.reloadSettings();
 	}
 
+	public Path resolvePath(String path) {
+		LocalFileStore fs = Hub.instance.getPublicFileStore();
+		
+		if (fs == null)
+			return null;
+		
+		return fs.getFilePath().resolve("dcw/" + this.getAlias() + path);
+	}
+
 	/* TODO reload more settings too - consider:
 	 * 
 			./dcw/[domain alias]/config     holds web setting for domain
@@ -150,12 +159,7 @@ public class DomainInfo {
 	public void reloadSettings() {
 		this.overrideSettings = null;
 		
-		LocalFileStore fs = Hub.instance.getPublicFileStore();
-		
-		if (fs == null)
-			return;
-		
-		Path cpath = fs.getFilePath().resolve("dcw/" + this.getAlias() + "/config");
+		Path cpath = this.resolvePath("/config");
 
 		if (Files.notExists(cpath))
 			return;
@@ -192,7 +196,7 @@ public class DomainInfo {
 		this.registered.clear();
 		this.routers.clear();
 		
-		Path dpath = fs.getFilePath().resolve("dcw/" + this.getAlias());
+		Path dpath = this.resolvePath("");
 		Path spath = dpath.resolve("services");
 
 		if (Files.exists(spath)) {

@@ -57,10 +57,4 @@ public class Attributes {
 
         return value;
     }
-
-	public Attributes deepCopy() {
-		Attributes attrs = new Attributes();
-   		attrs.args = this.args;    	
-    	return attrs;
-	}
 }

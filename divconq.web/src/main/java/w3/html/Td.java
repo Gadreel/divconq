@@ -16,14 +16,12 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
-import divconq.web.dcui.Element;
 import divconq.web.dcui.HtmlUtil;
 import divconq.web.dcui.ICodeTag;
 import divconq.web.dcui.MixedElement;
-import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public class Td extends MixedElement implements ICodeTag {
@@ -39,23 +37,9 @@ public class Td extends MixedElement implements ICodeTag {
         if ((args.length > 0) && (args[0] instanceof Boolean)) 
         	this.LTRAdaptable = (Boolean)args[0];
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		Td cp = new Td();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
 
 	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((Td)n).LTRAdaptable = this.LTRAdaptable;
-	}
-
-	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 		
 		if (xel.hasAttribute("colspan"))
@@ -70,16 +54,16 @@ public class Td extends MixedElement implements ICodeTag {
 		if (xel.hasAttribute("width"))
 			attrs.add("width", xel.getRawAttribute("width"));
 
-        this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
 		
 		nodes.add(this);
 	}
 	
     @Override
-    public void build(Object... args) {
-        String align = (this.LTRAdaptable && this.getContext().isRightToLeft()) 
+    public void build(WebContext ctx, Object... args) {
+        String align = (this.LTRAdaptable && ctx.isRightToLeft()) 
         	? "right" : "left";
 
-        super.build("td", true, new Attributes("valign", "top", "align", align), args);
+        super.build(ctx, "td", true, new Attributes("valign", "top", "align", align), args);
     }
 }

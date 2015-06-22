@@ -16,13 +16,12 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
 import divconq.web.dcui.Element;
 import divconq.web.dcui.HtmlUtil;
 import divconq.web.dcui.ICodeTag;
-import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public class Img extends Element implements ICodeTag {
@@ -33,17 +32,9 @@ public class Img extends Element implements ICodeTag {
     public Img(Object... args) {
     	super(args);
 	}
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		Img cp = new Img();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 		
 		if (xel.hasAttribute("alt"))
@@ -67,13 +58,13 @@ public class Img extends Element implements ICodeTag {
 		if (xel.hasAttribute("align"))
 			attrs.add("align", xel.getRawAttribute("align"));
 
-        this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
 		
 		nodes.add(this);
 	}
 
     @Override
-	public void build(Object... args) {
-	    super.build("img", new Attributes("border", "0", "alt", ""), args);
+	public void build(WebContext ctx, Object... args) {
+	    super.build(ctx, "img", new Attributes("border", "0", "alt", ""), args);
 	}
 }

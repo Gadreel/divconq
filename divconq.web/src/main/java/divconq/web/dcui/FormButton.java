@@ -19,11 +19,9 @@ package divconq.web.dcui;
 import java.io.PrintStream;
 
 import w3.html.Input;
+import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
-import divconq.web.dcui.Element;
-import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public class FormButton extends Input {
@@ -39,27 +37,10 @@ public class FormButton extends Input {
     public FormButton(Object... args) {
     	super(args);
 	}
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		FormButton cp = new FormButton();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((FormButton)n).label = this.label;
-		((FormButton)n).icon = this.icon;
-		((FormButton)n).click = this.click;
-		((FormButton)n).submit = this.submit;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
-		super.parseElement(view, nodes, xel);
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
+		super.parseElement(ctx, nodes, xel);
 		
 		this.label = xel.getRawAttribute("Label");
 		this.icon = xel.getRawAttribute("Icon");
@@ -68,11 +49,11 @@ public class FormButton extends Input {
 	}
 	
     @Override
-	public void build(Object... args) {
+	public void build(WebContext ctx, Object... args) {
 		Attributes attrs = new Attributes("value", this.label, "type", this.submit ? "submit" : "button",
-				 "data-icon", this.icon, "dir", this.getContext().isRightToLeft() ? "rtl" : "ltr");
+				 "data-icon", this.icon, "dir", ctx.isRightToLeft() ? "rtl" : "ltr");
 
-       	super.build("input", args, attrs);
+       	super.build(ctx, "input", args, attrs);
 	}
     
     @Override

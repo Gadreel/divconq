@@ -18,48 +18,34 @@ package w3.html;
 
 import java.io.PrintStream;
 
+import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
 import divconq.web.dcui.Element;
 import divconq.web.dcui.HtmlUtil;
 import divconq.web.dcui.ICodeTag;
-import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 
 public class Br extends Element implements ICodeTag {
 
 	@Override
-	public Node deepCopy(Element parent) {
-		Br cp = new Br();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-
-	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 
         this.myArguments = new Object[] { attrs };
 		
 		nodes.add(this);
 	}
-	
-	@Override
-    public void doBuild() {
-        this.build();
-    }
 
 	@Override
-    public void build(Object... args) {
-        super.build("br", false);  // TODO like to make this a block level, but right now that would create <br></br> which we don't want (but do need for div handling)
+    public void build(WebContext ctx, Object... args) {
+        super.build(ctx, "br", false);  // like to make this a block level, but right now that would create <br></br> which we don't want (but do need for div handling)
     }
 
 	// special case, want new line after <br/>
     @Override
-    public void stream(PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
-        this.print(strm, "", false, "<br />");
+    public void stream(WebContext ctx, PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
+        this.print(ctx, strm, "", false, "<br />");
     }
 }

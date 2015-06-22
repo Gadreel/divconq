@@ -19,6 +19,7 @@ package divconq.web.dcui;
 import java.io.PrintStream;
 
 import divconq.util.StringUtil;
+import divconq.web.WebContext;
 import divconq.xml.XElement;
 
 
@@ -33,36 +34,22 @@ public class LiteralText extends Node implements ICodeTag {
     	super();
         this.value = value;
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		LiteralText cp = new LiteralText();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((LiteralText)n).value = this.value;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		this.value = xel.getText();
 		
 		nodes.add(this);
 	}
 	
     @Override
-    public void doBuild() {
-       	this.value = this.expandMacro(this.value);        
+    public void doBuild(WebContext ctx) {
+       	this.value = this.expandMacro(ctx, this.value);        
     }
 
     @Override
-    public void stream(PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
-        this.print(strm, firstchild ? indent : "", false, this.value);
+    public void stream(WebContext ctx, PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
+        this.print(ctx, strm, firstchild ? indent : "", false, this.value);
     }
     
     @Override

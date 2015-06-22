@@ -23,12 +23,4 @@ public class InlineStyle extends Style {
     public InlineStyle(Object... args) {
     	super(args);
 	}
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		InlineStyle cp = new InlineStyle();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
 }

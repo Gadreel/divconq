@@ -19,6 +19,7 @@ package divconq.web.dcui;
 import java.io.PrintStream;
 
 import divconq.util.StringUtil;
+import divconq.web.WebContext;
 
 public class FormattedText extends Node {
     protected String value = "";
@@ -35,31 +36,14 @@ public class FormattedText extends Node {
     }
 
     @Override
-    protected void doCopy(Node n) {
-    	super.doCopy(n);
-    	
-    	FormattedText nn = (FormattedText)n;
-    	nn.value = this.value;
-    	nn.values = this.values;
-    }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		FormattedText cp = new FormattedText();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-
-    @Override
-    public void doBuild() {
-       	this.value = this.expandMacro(this.value);        
-        this.value = this.getContext().format(this.value, this.values);
+    public void doBuild(WebContext ctx) {
+       	this.value = this.expandMacro(ctx, this.value);        
+        this.value = ctx.format(this.value, this.values);
     }
 
     @Override
-    public void stream(PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
-        this.print(strm, firstchild ? indent : "", false, this.value);
+    public void stream(WebContext ctx, PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
+        this.print(ctx, strm, firstchild ? indent : "", false, this.value);
     }
     
     @Override

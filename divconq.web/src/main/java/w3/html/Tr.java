@@ -17,13 +17,12 @@
 package w3.html;
 
 import divconq.util.ArrayUtil;
+import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
 import divconq.web.dcui.Element;
 import divconq.web.dcui.HtmlUtil;
 import divconq.web.dcui.ICodeTag;
-import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 
@@ -40,35 +39,21 @@ public class Tr extends Element implements ICodeTag {
         if ((args.length > 0) && (args[0] instanceof Boolean)) 
         	this.LTRAdaptable = (Boolean)args[0];
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		Tr cp = new Tr();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
 
 	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((Tr)n).LTRAdaptable = this.LTRAdaptable;
-	}
-
-	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 
-        this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
 		
 		nodes.add(this);
 	}
 
     @Override
-    public void build(Object... args) {
-        if (this.LTRAdaptable && this.getContext().isRightToLeft()) 
+    public void build(WebContext ctx, Object... args) {
+        if (this.LTRAdaptable && ctx.isRightToLeft()) 
         	ArrayUtil.reverse(args);
 
-        super.build("tr", true, args);
+        super.build(ctx, "tr", true, args);
     }
 }

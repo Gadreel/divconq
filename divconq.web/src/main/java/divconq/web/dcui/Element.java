@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import divconq.web.WebContext;
 import divconq.xml.XNode;
 
 abstract public class Element extends Node {
@@ -74,62 +75,20 @@ abstract public class Element extends Node {
     }
 
     @Override
-    public void doBuild() {
-        this.build(this.myArguments);
+    public void doBuild(WebContext ctx) {
+        this.build(ctx, this.myArguments);
         this.myArguments = null;
     }
 
-    @Override
-    protected void doCopy(Node n) {
-    	super.doCopy(n);
-    	
-    	Element nn = (Element)n;
-    	
-    	nn.name = this.name;
-    	
-    	for (Node h : this.children) 
-    		nn.children.add(h.deepCopy(this));
-    	
-    	for (String s : this.attributes.keySet()) 
-    		nn.attributes.put(s, this.attributes.get(s));
-    	
-    	nn.myArguments = this.copyArgs(this.myArguments);
-    }
-    
-    protected Object[] copyArgs(Object... args) {
-    	Object[] results = new Object[args.length];
-    	
-        for (int i = 0; i < args.length; i++) {
-        	Object obj = args[i];
-        	
-            if (obj == null) 
-            	results[i] = obj;
-            else if (obj instanceof CharSequence) 
-            	results[i] = obj;
-            else if (obj instanceof Boolean) 
-            	results[i] = obj;
-            else if (obj instanceof Nodes) 
-            	results[i] = ((Nodes) obj).deepCopy();
-            else if (obj instanceof Object[]) 
-            	results[i] = this.copyArgs(obj);
-            else if (obj instanceof Attributes) 
-            	results[i] = ((Attributes) obj).deepCopy();
-            else if (obj instanceof Node) 
-            	results[i] = ((Node) obj).deepCopy(null);		// no parent yet
-        }
-        
-        return results;
-    }
-
-    public void build(Object... args) {
+    public void build(WebContext ctx, Object... args) {
         PartCollectInfo pci = new PartCollectInfo();
         pci.args = args;
         pci.top = true;
-        collectParts(pci);
+        collectParts(ctx, pci);
     }
 
     // changes to this, please also update copyArgs
-    private void collectParts(PartCollectInfo info) {
+    private void collectParts(WebContext ctx, PartCollectInfo info) {
     	if ((info == null) || (info.args == null))
     		return;
     	
@@ -145,7 +104,7 @@ abstract public class Element extends Node {
                 	LiteralText txt = new LiteralText(obj.toString());
                     txt.setParent(this);
                     this.children.add(txt);
-                    txt.doBuild();
+                    txt.doBuild(ctx);
                 }
             }
             else if (obj instanceof Boolean) {
@@ -157,14 +116,14 @@ abstract public class Element extends Node {
             	this.children.add(placeholder);
             	placeholder.incrementFuture();
             	
-            	((FutureNodes)obj).setNotify(placeholder);
+            	((FutureNodes)obj).setNotify(ctx, placeholder);
             }
             else if (obj instanceof Nodes) {
             	try {
 	                for (Node nn : ((Nodes)obj).getList()) {
 	                    nn.setParent(this);
 	                    this.children.add(nn);
-	                    nn.doBuild();
+	                    nn.doBuild(ctx);
 	                }
             	}
             	catch (Exception x) {
@@ -175,14 +134,14 @@ abstract public class Element extends Node {
                 PartCollectInfo pci = new PartCollectInfo();
                 pci.args = (Object[])obj;
                 pci.top = false;
-                collectParts(pci);
+                collectParts(ctx, pci);
             }
             else if (obj instanceof Attributes) {
                 Attributes attrs = (Attributes)obj;
 
                 while (attrs.hasMore()) {
                     String aname = attrs.pop();
-                    String avalue = this.expandMacro(attrs.pop());
+                    String avalue = this.expandMacro(ctx, attrs.pop());
                     
                     if (avalue != null)
                     	this.attributes.put(aname, avalue);
@@ -192,7 +151,7 @@ abstract public class Element extends Node {
                 Node nn = (Node)obj;
                 nn.setParent(this);
                 this.children.add(nn);
-                nn.doBuild();
+                nn.doBuild(ctx);
             }
         }
     }
@@ -324,28 +283,28 @@ abstract public class Element extends Node {
 	}
     
     @Override
-    public void stream(PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
+    public void stream(WebContext ctx, PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
         if (this.name == null) 
         	return;
 
         String newindent = indent;
 
         if (this.getBlockIndent() || firstchild) {
-            this.print(strm, indent, false, "<" + this.name);
+            this.print(ctx, strm, indent, false, "<" + this.name);
             newindent = indent + "   ";
         }
         else {
-        	this.print(strm, "", false, "<" + this.name);
+        	this.print(ctx, strm, "", false, "<" + this.name);
         }
 
         for (String name : this.attributes.keySet()) {
             String ev = this.attributes.get(name);
             //this.print(strm, "", false, " " + name + "=\"" + divconq.xml.XNode.quote(ev) + "\"");
-            this.print(strm, "", false, " " + name + "=\"" + ev + "\"");
+            this.print(ctx, strm, "", false, " " + name + "=\"" + ev + "\"");
         }
 
         if (this.children.size() > 0) {
-           	this.print(strm, "", this.getBlockIndent(), ">");
+           	this.print(ctx, strm, "", this.getBlockIndent(), ">");
 
             boolean fromon = fromblock;
             boolean lastblock = false;
@@ -353,9 +312,9 @@ abstract public class Element extends Node {
 
             for (Node node : this.children) {
                 if (node.getBlockIndent() && !lastblock && !fromon) 
-                	this.print(strm, "", true, "");
+                	this.print(ctx, strm, "", true, "");
                 
-                node.stream(strm, newindent, (firstch || lastblock), this.getBlockIndent());
+                node.stream(ctx, strm, newindent, (firstch || lastblock), this.getBlockIndent());
                 
                 lastblock = node.getBlockIndent();
                 firstch = false;
@@ -364,20 +323,20 @@ abstract public class Element extends Node {
 
             if (this.getBlockIndent()) {
                 if (!lastblock) 
-                	this.print(strm, "", true, "");
+                	this.print(ctx, strm, "", true, "");
                 
-                this.print(strm, indent, true, "</" + this.name + "> ");
+                this.print(ctx, strm, indent, true, "</" + this.name + "> ");
             }
             else {
-            	this.print(strm, "", false, "</" + this.name + "> ");
+            	this.print(ctx, strm, "", false, "</" + this.name + "> ");
             }
         }
         else {
             if (this.getBlockIndent()) {
-            	this.print(strm, "", true, "></" + this.name + "> ");
+            	this.print(ctx, strm, "", true, "></" + this.name + "> ");
             }
             else {
-            	this.print(strm, "", false, "/> ");
+            	this.print(ctx, strm, "", false, "/> ");
             }
         }
     }

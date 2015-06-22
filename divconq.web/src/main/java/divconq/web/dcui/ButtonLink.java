@@ -19,11 +19,10 @@ package divconq.web.dcui;
 import java.io.PrintStream;
 
 import divconq.util.StringUtil;
+import divconq.web.WebContext;
 import divconq.xml.XElement;
-import w3.html.A;
 
-
-public class ButtonLink extends A {
+public class ButtonLink extends MixedElement implements ICodeTag {
     protected String id = null;
     protected String to = null;
     protected String label = null;
@@ -75,31 +74,23 @@ public class ButtonLink extends A {
     	this.css = v;
     	return this;
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		ButtonLink cp = new ButtonLink();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
 	
 	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((ButtonLink)n).id = this.id;
-		((ButtonLink)n).to = this.to;
-		((ButtonLink)n).page = this.page;
-		((ButtonLink)n).label = this.label;
-		((ButtonLink)n).icon = this.icon;
-		((ButtonLink)n).css = this.css;
-		((ButtonLink)n).click = this.click;
-		((ButtonLink)n).wide = this.wide;
-	}
-	
-	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
-		super.parseElement(view, nodes, xel);
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
+		Attributes attrs = HtmlUtil.initAttrs(xel);
+		
+		if (xel.hasAttribute("href"))
+			attrs.add("href", xel.getRawAttribute("href"));
+		
+		if (xel.hasAttribute("rel"))
+			attrs.add("rel", xel.getRawAttribute("rel"));
+		
+		if (xel.hasAttribute("target"))
+			attrs.add("target", xel.getRawAttribute("target"));
+
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
+		
+		nodes.add(this);
 		
 		if (xel.hasAttribute("To"))
 			this.to = xel.getRawAttribute("To");
@@ -119,7 +110,7 @@ public class ButtonLink extends A {
 	}
 
     @Override
-    public void build(Object... args) {
+    public void build(WebContext ctx, Object... args) {
     	Attributes attrs = this.wide 
 			? new Attributes("href", this.to, "class", "ui-button ui-button-wide ui-theme-a " + StringUtil.toEmpty(this.css)) 
 			: new Attributes("href", this.to, "class", "ui-button ui-theme-a " + StringUtil.toEmpty(this.css));
@@ -127,7 +118,7 @@ public class ButtonLink extends A {
 		if (this.id != null)
 			attrs.add("id", this.id);
 		
-        super.build(args, attrs, this.label);
+        super.build(ctx, "a", args, attrs, this.label);
     }
     
     @Override

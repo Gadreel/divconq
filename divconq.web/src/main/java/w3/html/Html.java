@@ -24,7 +24,6 @@ import divconq.web.dcui.ICodeTag;
 import divconq.web.dcui.LiteralText;
 import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public class Html extends Element implements ICodeTag {
@@ -35,29 +34,19 @@ public class Html extends Element implements ICodeTag {
     public Html(Object... args) {
     	super(args);
 	}
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		Html cp = new Html();		// no view
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 
-        this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
 		
 		nodes.add(this);
 	}
 	
     @Override
-	public void build(Object... args) {
-    	WebContext ctx = this.getContext();
-    	
-	    super.build("html", 
+	public void build(WebContext ctx, Object... args) {
+	    super.build(ctx, "html", 
 	    		true, 
 	    		new Attributes("lang", ctx.getLanguage()), 
 	    		new Attributes("dir", ctx.isRightToLeft() ? "rtl" : "ltr"), 

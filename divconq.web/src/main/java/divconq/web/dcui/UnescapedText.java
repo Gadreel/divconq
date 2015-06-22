@@ -20,6 +20,7 @@ import java.io.PrintStream;
 
 import w3.html.Html;
 import divconq.util.StringUtil;
+import divconq.web.WebContext;
 
 public class UnescapedText extends Node {
     protected String value = "";
@@ -36,29 +37,12 @@ public class UnescapedText extends Node {
     }
 
     @Override
-    protected void doCopy(Node n) {
-    	super.doCopy(n);
-    	
-    	UnescapedText nn = (UnescapedText)n;
-    	nn.value = this.value;
-    	nn.cdata = this.cdata;
-    }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		UnescapedText cp = new UnescapedText();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-
-    @Override
-    public void doBuild() {
-       	this.value = this.expandMacro(this.value);
+    public void doBuild(WebContext ctx) {
+       	this.value = this.expandMacro(ctx, this.value);
     }
 
     @Override
-    public void stream(PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
+    public void stream(WebContext ctx, PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
     	String str = this.value;
     	
     	if (this.cdata)
@@ -66,7 +50,7 @@ public class UnescapedText extends Node {
     	else
     		str = Html.escapeHtml(str);
     	
-        this.print(strm, firstchild ? indent : "", false, str);        
+        this.print(ctx, strm, firstchild ? indent : "", false, str);        
     }
     
     @Override

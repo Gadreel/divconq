@@ -14,66 +14,42 @@
 #    * Andy White
 #
 ************************************************************************ */
-package divconq.mail;
+package divconq.web.dcui;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 
-import java.io.IOException;
 import java.io.PrintStream;
-import java.lang.reflect.Method;
+import java.nio.file.Path;
 
+import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleInfo;
-import divconq.web.dcui.Element;
-import divconq.web.dcui.FutureNodes;
-import divconq.web.dcui.ICodeTag;
-import divconq.web.dcui.LiteralText;
-import divconq.web.dcui.Node;
-import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
+import divconq.struct.Struct;
+import divconq.util.IOUtil;
+import divconq.web.WebContext;
 import divconq.xml.XElement;
 
-public class EmailPart extends Element implements ICodeTag {
+public class TextPart extends Element implements ICodeTag {
     protected String id = null;
-    protected String content = null;
-    protected XElement src = null;
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		EmailPart cp = new EmailPart();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		
-		((EmailPart)n).id = this.id;
-		((EmailPart)n).content = this.content;
-		((EmailPart)n).src = this.src;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
     	this.id = xel.getRawAttribute("id");
-    	this.content = xel.getRawAttribute("Content");
-		
-    	this.src = view.getSource();
     	
 		nodes.add(this);
 	}
 	
 	@Override
-	public void doBuild() {
+	public void doBuild(WebContext ctx) {
 		XElement ppel = null;
 		
-		LocaleInfo li = this.getContext().getLocale();
+		LocaleInfo li = ctx.getLocale();
 		String lname = li.getName();
 		
-		for (XElement pel : this.src.selectAll("EmailPart")) {
+		XElement src = this.getViewRoot().getSource();
+		
+		for (XElement pel : src.selectAll("TextPart")) {
 			if (this.id.equals(pel.getAttribute("For")) && (lname.equals(pel.getAttribute("Locale"))
 					|| "default".equals(pel.getAttribute("Locale")) || !pel.hasAttribute("Locale"))) {
 				ppel = pel;
@@ -84,7 +60,7 @@ public class EmailPart extends Element implements ICodeTag {
 		if (ppel == null) {
 			lname = li.getLanguage();
 			
-			for (XElement pel : this.src.selectAll("EmailPart")) {
+			for (XElement pel : src.selectAll("TextPart")) {
 				if (this.id.equals(pel.getAttribute("For")) && lname.equals(pel.getAttribute("Locale"))) {
 					ppel = pel;
 					break;
@@ -93,11 +69,11 @@ public class EmailPart extends Element implements ICodeTag {
 		}
 		
 		if (ppel == null) {
-			li = this.getContext().getDomain().getDefaultLocaleInfo();
+			li = ctx.getDomain().getDefaultLocaleInfo();
 			
 			lname = li.getName();
 			
-			for (XElement pel : this.src.selectAll("EmailPart")) {
+			for (XElement pel : src.selectAll("TextPart")) {
 				if (this.id.equals(pel.getAttribute("For")) && lname.equals(pel.getAttribute("Locale"))) {
 					ppel = pel;
 					break;
@@ -107,7 +83,7 @@ public class EmailPart extends Element implements ICodeTag {
 			if (ppel == null) {
 				lname = li.getLanguage();
 				
-				for (XElement pel : this.src.selectAll("EmailPart")) {
+				for (XElement pel : src.selectAll("TextPart")) {
 					if (this.id.equals(pel.getAttribute("For")) && lname.equals(pel.getAttribute("Locale"))) {
 						ppel = pel;
 						break;
@@ -119,11 +95,29 @@ public class EmailPart extends Element implements ICodeTag {
 		if (ppel != null) {
 			Nodes nl = null;
 			
+			CharSequence ppcontent = ppel.getText();
+			
+			if (Struct.objectToBooleanOrFalse(ppel.getAttribute("External"))) {
+				String sname = ppel.getAttribute("Source");
+				
+				Path srcpath = OperationContext.get().getDomain().resolvePath(sname);
+				
+				sname = srcpath.getFileName().toString();
+				
+				int pos = sname.indexOf('.');
+				sname = sname.substring(0, pos) + "." + this.id + "." + ppel.getAttribute("Format");
+				
+				FuncResult<CharSequence> mres = IOUtil.readEntireFile(srcpath.resolveSibling(sname));
+				
+				if (mres.isNotEmptyResult()) 
+					ppcontent = mres.getResult();
+			}
+			
 			if ("literal".equals(ppel.getAttribute("Format"))) {
-				nl = new Nodes(new LiteralText(ppel.getText()));
+				nl = new Nodes(new LiteralText(ppcontent.toString()));
 			}
 			else if ("md".equals(ppel.getAttribute("Format"))) {
-				nl = new Nodes(new LiteralText(ppel.getText()));
+				nl = new Nodes(new LiteralText(ppcontent.toString()));
 			}
 			else if ("groovy".equals(ppel.getAttribute("Format"))) {
 				//System.out.println("script: " + ppel.getText());
@@ -133,50 +127,50 @@ public class EmailPart extends Element implements ICodeTag {
 				
 				if (ppel.hasAttribute("ScriptMethod")) {
 					methname = ppel.getAttribute("ScriptMethod");
-					groovyObject = this.getViewRoot().getView().viewloader;
+					groovyObject = ctx.getServerScript();
 				}
 				else {
 					try (GroovyClassLoader loader = new GroovyClassLoader()) {
-						Class<?> groovyClass = loader.parseClass(ppel.getText());
-						
-						for (Method m : groovyClass.getMethods()) {
-							if (!m.getName().startsWith("run"))
-								continue;
-							
-							groovyObject = (GroovyObject) groovyClass.newInstance();
-							break;
-						}
+						Class<?> groovyClass = loader.parseClass(ppcontent.toString());
+						groovyObject = (GroovyObject) groovyClass.newInstance();
 					}
 					catch (Exception x) {
-						OperationContext.get().error("Unable to execute script!");
+						OperationContext.get().error("Unable to compile or create script!");
 						OperationContext.get().error("Error: " + x);
 					}
 				}
 				
-				if (groovyObject != null) {
-			    	FutureNodes future = new FutureNodes();
-					
-					Object[] args2 = { this.getContext(), future };
-					
-					groovyObject.invokeMethod(methname, args2);
-					
-					nl = future;
+				try {
+					if (groovyObject != null) {
+				    	FutureNodes future = new FutureNodes();
+						
+						Object[] args2 = { ctx, future };
+						
+						groovyObject.invokeMethod(methname, args2);
+						
+						nl = future;
+					}
+				}
+				catch (Exception x) {
+					OperationContext.get().error("Unable to execute script!");
+					OperationContext.get().error("Error: " + x);
 				}
 			}
 			
 			this.myArguments = new Object[] { this.myArguments, nl };
 		}
 		
-        super.doBuild();
+        super.doBuild(ctx);
 	}
-	
 
-	public void write() throws IOException {
-		this.stream(this.getContext().getResponse().getPrintStream(), "", false, true);
+	/*
+	public void write(WebContext ctx) throws IOException {
+		this.stream(ctx, ctx.getResponse().getPrintStream(), "", false, true);
 	}
+	*/
 
 	@Override
-	public void stream(PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
+	public void stream(WebContext ctx, PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
 		if (this.children.size() == 0)
 			return;
 
@@ -187,9 +181,9 @@ public class EmailPart extends Element implements ICodeTag {
 
 		for (Node node : this.children) {
 			if (node.getBlockIndent() && !lastblock && !fromon)
-				this.print(strm, "", true, "");
+				this.print(ctx, strm, "", true, "");
 
-			node.stream(strm, indent, (firstch || lastblock), this.getBlockIndent());
+			node.stream(ctx, strm, indent, (firstch || lastblock), this.getBlockIndent());
 
 			lastblock = node.getBlockIndent();
 			firstch = false;

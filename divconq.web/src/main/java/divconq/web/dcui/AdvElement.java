@@ -3,30 +3,17 @@ package divconq.web.dcui;
 import java.io.PrintStream;
 import java.util.Map.Entry;
 
+import divconq.web.WebContext;
 import divconq.xml.XElement;
 
 public class AdvElement extends Element implements ICodeTag {
     protected XElement src = null;
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		AdvElement cp = new AdvElement();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
 	
 	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((AdvElement)n).src = this.src;
-	}
-	
-	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		this.src = xel;
 
-        this.myArguments = new Object[] { view.getDomain().parseXml(view, xel) };
+        this.myArguments = new Object[] { ctx.getDomain().parseXml(ctx, xel) };
 		
 		nodes.add(this);
 	}

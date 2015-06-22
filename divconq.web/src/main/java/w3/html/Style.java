@@ -22,9 +22,7 @@ import divconq.web.dcui.Element;
 import divconq.web.dcui.HtmlUtil;
 import divconq.web.dcui.ICodeTag;
 import divconq.web.dcui.LiteralText;
-import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public class Style extends Element implements ICodeTag {
@@ -59,24 +57,9 @@ public class Style extends Element implements ICodeTag {
     	super();
     	this.source = source;
 	}    
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		Style cp = new Style();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((Style)n).source = this.source;
-		((Style)n).direction = this.direction;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 		
 		if (xel.hasAttribute("Src")) {
@@ -94,40 +77,23 @@ public class Style extends Element implements ICodeTag {
 		
 		nodes.add(this);
 	}
-
-	// TODO what?  maybe remove?
-    @Override
-    public void setParent(Element value) {
-    	this.parent = value; 
-    	
-    	if (value != null) {
-    		// it is possible to already have a part root assigned, if so keep the assigned
-    		if (this.partroot == null)
-    			this.partroot = value.getPartRoot();
-    		
-    		// our view root is always the same as the parent's
-	        this.viewroot = value.getViewRoot();
-    	}
-    }
 	
     @Override
-	public void build(Object... args) {
+	public void build(WebContext ctx, Object... args) {
     	if (this.direction != Style.DIR_BOTH) {
-    		WebContext mc = this.getContext();
-    		
     		// if incompatible directions then just skip
-    		if (mc.isRightToLeft() && (this.direction != Style.DIR_RTL))
+    		if (ctx.isRightToLeft() && (this.direction != Style.DIR_RTL))
     			return;
     		
-    		if (!mc.isRightToLeft() && (this.direction != Style.DIR_LTR))
+    		if (!ctx.isRightToLeft() && (this.direction != Style.DIR_LTR))
     			return;
     	}
     	
     	if (this.source != null) 
-    		super.build("link", true, new Attributes("type", "text/css", "rel", "stylesheet", "href", this.source), args);
+    		super.build(ctx, "link", true, new Attributes("type", "text/css", "rel", "stylesheet", "href", this.source), args);
     		//super.build("link", true, new Attributes("type", "text/css", "rel", "stylesheet", 
 			//	"href", this.getPartRoot().buildAssetPath(this.source)), args);
     	else
-    		super.build("style", true, new Attributes("type", "text/css"), args);
+    		super.build(ctx, "style", true, new Attributes("type", "text/css"), args);
 	}
 }

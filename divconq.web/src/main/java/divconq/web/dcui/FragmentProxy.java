@@ -18,22 +18,16 @@ package divconq.web.dcui;
 
 import java.io.PrintStream;
 
+import divconq.web.WebContext;
+
 
 public class FragmentProxy extends Element  {
     public FragmentProxy() {
     	super();
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		FragmentProxy cp = new FragmentProxy();  
-		cp.setParent(parent);
-		this.doCopy(cp);		// no need to override, we don't care about view field
-		return cp;
-	}
 
     @Override
-    public void stream(PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
+    public void stream(WebContext ctx, PrintStream strm, String indent, boolean firstchild, boolean fromblock) {
         if (this.children.size() == 0) 
         	return;
         
@@ -43,9 +37,9 @@ public class FragmentProxy extends Element  {
 
         for (Node node : this.children) {
             if (node.getBlockIndent() && !lastblock && !fromon) 
-            	this.print(strm, "", true, "");
+            	this.print(ctx, strm, "", true, "");
             
-            node.stream(strm, indent, (firstch || lastblock), this.getBlockIndent());
+            node.stream(ctx, strm, indent, (firstch || lastblock), this.getBlockIndent());
             
             lastblock = node.getBlockIndent();
             firstch = false;
@@ -66,11 +60,11 @@ public class FragmentProxy extends Element  {
 		return true;
 	}
 
-	public void addChild(Node... nn) {
+	public void addChild(WebContext ctx, Node... nn) {
 		for (Node n : nn) {
 	        n.setParent(this);
 			this.children.add(n);
-	        n.doBuild();
+	        n.doBuild(ctx);
 		}
 	}
 }

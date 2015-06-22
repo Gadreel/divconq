@@ -20,7 +20,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
+import java.nio.file.Path;
 
 import org.markdown4j.Markdown4jProcessor;
 
@@ -28,39 +28,20 @@ import w3.html.Img;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleInfo;
+import divconq.struct.Struct;
+import divconq.util.IOUtil;
+import divconq.web.WebContext;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
 
 public class PagePart extends Element implements ICodeTag {
     protected String id = null;
-    protected String content = null;
-    protected XElement src = null;
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		PagePart cp = new PagePart();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		
-		((PagePart)n).id = this.id;
-		((PagePart)n).content = this.content;
-		((PagePart)n).src = this.src;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 		
     	this.id = xel.getRawAttribute("id");
-    	this.content = xel.getRawAttribute("Content");
-		
-    	this.src = view.getSource();
     	
         this.myArguments = new Object[] { attrs };
     	
@@ -68,15 +49,15 @@ public class PagePart extends Element implements ICodeTag {
 	}
 	
 	@Override
-	public void doBuild() {
-		ViewOutputAdapter view = (ViewOutputAdapter) this.getContext().getAdapter();
-		
+	public void doBuild(WebContext ctx) {
 		XElement ppel = null;
 		
-		LocaleInfo li = this.getContext().getLocale();
+		LocaleInfo li = ctx.getLocale();
 		String lname = li.getName();
 		
-		for (XElement pel : this.src.selectAll("PagePart")) {
+		XElement src = this.getViewRoot().getSource();
+		
+		for (XElement pel : src.selectAll("PagePart")) {
 			if (this.id.equals(pel.getAttribute("For")) && (lname.equals(pel.getAttribute("Locale"))
 					|| "default".equals(pel.getAttribute("Locale")) || !pel.hasAttribute("Locale"))) {
 				ppel = pel;
@@ -87,7 +68,7 @@ public class PagePart extends Element implements ICodeTag {
 		if (ppel == null) {
 			lname = li.getLanguage();
 			
-			for (XElement pel : this.src.selectAll("PagePart")) {
+			for (XElement pel : src.selectAll("PagePart")) {
 				if (this.id.equals(pel.getAttribute("For")) && lname.equals(pel.getAttribute("Locale"))) {
 					ppel = pel;
 					break;
@@ -96,11 +77,11 @@ public class PagePart extends Element implements ICodeTag {
 		}
 		
 		if (ppel == null) {
-			li = this.getContext().getDomain().getDefaultLocaleInfo();
+			li = ctx.getDomain().getDefaultLocaleInfo();
 			
 			lname = li.getName();
 			
-			for (XElement pel : this.src.selectAll("PagePart")) {
+			for (XElement pel : src.selectAll("PagePart")) {
 				if (this.id.equals(pel.getAttribute("For")) && lname.equals(pel.getAttribute("Locale"))) {
 					ppel = pel;
 					break;
@@ -110,7 +91,7 @@ public class PagePart extends Element implements ICodeTag {
 			if (ppel == null) {
 				lname = li.getLanguage();
 				
-				for (XElement pel : this.src.selectAll("PagePart")) {
+				for (XElement pel : src.selectAll("PagePart")) {
 					if (this.id.equals(pel.getAttribute("For")) && lname.equals(pel.getAttribute("Locale"))) {
 						ppel = pel;
 						break;
@@ -124,23 +105,41 @@ public class PagePart extends Element implements ICodeTag {
 		if (ppel != null) {
 			Nodes nl = null;
 			
+			CharSequence ppcontent = ppel.getText();
+			
+			if (Struct.objectToBooleanOrFalse(ppel.getAttribute("External"))) {
+				String sname = ppel.getAttribute("Source");
+				
+				Path srcpath = OperationContext.get().getDomain().resolvePath(sname);
+				
+				sname = srcpath.getFileName().toString();
+				
+				int pos = sname.indexOf('.');
+				sname = sname.substring(0, pos) + "." + this.id + "." + ppel.getAttribute("Format");
+				
+				FuncResult<CharSequence> mres = IOUtil.readEntireFile(srcpath.resolveSibling(sname));
+				
+				if (mres.isNotEmptyResult()) 
+					ppcontent = mres.getResult();
+			}
+			
 			if ("pre".equals(ppel.getAttribute("Format"))) {
 				this.name = "pre"; 
-				nl = view.getDomain().parseXml(view, ppel);
+				nl = ctx.getDomain().parseXml(ctx, ppel);
 			}
 			else if ("html".equals(ppel.getAttribute("Format"))) {
 				this.name = "div"; 
-				nl = view.getDomain().parseXml(view, ppel);
+				nl = ctx.getDomain().parseXml(ctx, ppel);
 			}
 			else if ("literal".equals(ppel.getAttribute("Format"))) {
 				this.name = "div";
 				
-				FuncResult<XElement> pres = XmlReader.parse("<div>" + ppel.getText() + "</div>", true);
+				FuncResult<XElement> pres = XmlReader.parse("<div>" + ppcontent + "</div>", true);
 				
 				// TODO error message
 				
 				if (pres.isNotEmptyResult())
-					nl = view.getDomain().parseXml(view, pres.getResult());
+					nl = ctx.getDomain().parseXml(ctx, pres.getResult());
 			}
 			else if ("md".equals(ppel.getAttribute("Format"))) {
 				this.name = "div"; 
@@ -148,10 +147,10 @@ public class PagePart extends Element implements ICodeTag {
 				
 				String html = null;
 				
-				//System.out.println("md: " + ppel.getText());
+				//System.out.println("md: " + ppcontent);
 				
 				try {
-					html = new Markdown4jProcessor().process(ppel.getText());
+					html = new Markdown4jProcessor().process(ppcontent.toString());
 				} 
 				catch (IOException x) {
 					System.out.println("error: " + x);
@@ -162,43 +161,50 @@ public class PagePart extends Element implements ICodeTag {
 				nl = new Nodes();
 				nl.add(new LiteralText(html));
 				
-				//nl = view.getDomain().parseXml(view, ppel);
+				//nl = builder.getContext().getDomain().parseXml(view, ppel);
 			}
 			else if ("image".equals(ppel.getAttribute("Format"))) {
 				this.name = "div"; 
 				
-				//System.out.println("image: " + ppel.getText());
+				//System.out.println("image: " + ppcontent);
 				
 				nl = new Nodes();
-				//nl.add(new Img(new Attributes("src", "/galleries/" 
-				//		+ ppel.getText() + ".v/" + ppel.getAttribute("Variation") + ".jpg")));
-				nl.add(new Img(new Attributes("src", "/galleries/" 
-						+ ppel.getText())));
+
+				nl.add(new Img(new Attributes("src", ppcontent.charAt(0) == '/' 
+						? "/galleries" + ppcontent
+						: "/galleries/" + ppcontent
+				)));
 			}
 			else if ("groovy".equals(ppel.getAttribute("Format"))) {
 				this.name = "div"; 
 				
-				//System.out.println("script: " + ppel.getText());
+				//System.out.println("script: " + ppcontent);
 				
-				try (GroovyClassLoader loader = new GroovyClassLoader()) {
-					Class<?> groovyClass = loader.parseClass(ppel.getText());
-					Method runmeth = null;
-					
-					for (Method m : groovyClass.getMethods()) {
-						if (!m.getName().startsWith("run"))
-							continue;
-						
-						runmeth = m;
-						break;
+				String methname = "run";
+				GroovyObject groovyObject = null;
+				
+				if (ppel.hasAttribute("ScriptMethod")) {
+					methname = ppel.getAttribute("ScriptMethod");
+					groovyObject = ctx.getServerScript();
+				}
+				else {
+					try (GroovyClassLoader loader = new GroovyClassLoader()) {
+						Class<?> groovyClass = loader.parseClass(ppcontent.toString());
+						groovyObject = (GroovyObject) groovyClass.newInstance();
 					}
-					
-					if (runmeth != null) {
+					catch (Exception x) {
+						OperationContext.get().error("Unable to compile or create script!");
+						OperationContext.get().error("Error: " + x);
+					}
+				}
+				
+				try {
+					if (groovyObject != null) {
 				    	FutureNodes future = new FutureNodes();
 						
-						GroovyObject groovyObject = (GroovyObject) groovyClass.newInstance();
-						Object[] args2 = { this.getContext(), future };
+						Object[] args2 = { ctx, future };
 						
-						groovyObject.invokeMethod("run", args2);
+						groovyObject.invokeMethod(methname, args2);
 						
 						nl = future;
 					}
@@ -212,6 +218,6 @@ public class PagePart extends Element implements ICodeTag {
 			this.myArguments = new Object[] { this.myArguments, attrs, nl };
 		}
 		
-        super.doBuild();
+        super.doBuild(ctx);
 	}
 }

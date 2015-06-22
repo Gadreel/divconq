@@ -313,6 +313,16 @@ public class CmsService extends ExtensionBase implements IService {
 		}
 		
 		// =========================================================
+		//  cms Blog
+		// =========================================================
+		
+		if ("Blog".equals(feature)) {
+			Blogs.handleBlog(request, this.fsd, op, msg, sectionpath);
+			return;
+
+		}
+		
+		// =========================================================
 		//  cms Site
 		// =========================================================
 		

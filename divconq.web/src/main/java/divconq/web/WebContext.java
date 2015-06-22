@@ -16,6 +16,7 @@
 ************************************************************************ */
 package divconq.web;
 
+import groovy.lang.GroovyObject;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.Cookie;
 import io.netty.handler.codec.http.HttpContent;
@@ -30,6 +31,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import divconq.filestore.CommonPath;
+import divconq.hub.DomainInfo;
+import divconq.hub.Hub;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.UserContext;
@@ -43,12 +46,11 @@ import divconq.util.StringUtil;
 import divconq.web.dcui.GalleryImageConsumer;
 import divconq.web.dcui.Node;
 import divconq.xml.XElement;
+import divconq.xml.XmlReader;
 
 public class WebContext {
 	protected IInnerContext innerctx = null;
 	protected IWebExtension extension = null; // originating extension
-	
-	protected IOutputAdapter adapter = null;
 	protected LocaleInfo selectedlocale = null;
 	protected String theme = null;
 	protected boolean preview = false;
@@ -56,9 +58,7 @@ public class WebContext {
 	//protected Map<String, ContentPlaceholder> holders = new HashMap<String, ContentPlaceholder>();
 	protected Map<String, String> innerparams = new HashMap<String, String>();
 	
-	protected List<XElement> functions = new ArrayList<>();
-	protected List<XElement> libs = new ArrayList<>();
-	protected List<XElement> styles = new ArrayList<>();
+	protected GroovyObject serverScript = null;
 
 	/*
 	public ContentPlaceholder getHolder(String name) {
@@ -74,38 +74,14 @@ public class WebContext {
 	}
 	*/
 	
-	public void addFunction(XElement func) {
-		this.functions.add(func);
+	public GroovyObject getServerScript() {
+		return this.serverScript;
 	}
 	
-	public List<XElement> getFunctions() {
-		return this.functions;
+	public void setServerScript(GroovyObject v) {
+		this.serverScript = v;
 	}
 	
-	public void addLib(XElement func) {
-		this.libs.add(func);
-	}
-	
-	public void addLibs(List<XElement> func) {
-		this.libs.addAll(func);
-	}
-
-	public List<XElement> getLibs() {
-		return this.libs;
-	}
-	
-	public void addStyle(XElement func) {
-		this.styles.add(func);
-	}
-	
-	public void addStyles(List<XElement> func) {
-		this.styles.addAll(func);
-	}
-
-	public List<XElement> getStyles() {
-		return this.styles;
-	}
-
 	public String getExternalParam(String name) {
 		return this.getExternalParam(name, null);
 	}
@@ -124,62 +100,16 @@ public class WebContext {
 
 		return null;
 	}
-
-	public void setAdapter(IOutputAdapter v) {
-		this.adapter = v;
-	}
-	
-	public IOutputAdapter getAdapter() {
-		return this.adapter;
-	}
 	
 	public void putInternalParam(String name, String value) {
 		this.innerparams.put(name, value);
 	}
 	
 	public boolean hasInternalParam(String name) {
-		if ("dcmVersion".equals(name))
-			return true;
-		
-		UserContext uc = OperationContext.get().getUserContext();
-		
-		if (uc != null) {
-			if ("dcUserId".equals(name))
-				return true;
-			
-			if ("dcUsername".equals(name))
-				return true;
-			
-			if ("dcUserFullname".equals(name))
-				return true;
-			
-			if ("dcUserEmail".equals(name))
-				return true;
-		}
-		
 		return this.innerparams.containsKey(name);
 	}
 	
 	public String getInternalParam(String name) {		
-		if ("dcmVersion".equals(name))
-			return "0.9.6";
-		
-		UserContext uc = OperationContext.get().getUserContext();
-		
-		if (uc != null) {
-			if ("dcUserId".equals(name))
-				return uc.getUserId();
-			
-			if ("dcUsername".equals(name))
-				return uc.getUsername();
-			
-			if ("dcUserFullname".equals(name))
-				return uc.getFullName();
-			
-			if ("dcUserEmail".equals(name))
-				return uc.getEmail();
-		}
-		
 		return this.innerparams.get(name);
 	}
 	
@@ -220,21 +150,37 @@ public class WebContext {
 		  
 		  String val = null;
 		  
-		  // TODO check size of parts
+		  // TODO check size of parts @val
 		  
 		  // params on this tree
-		  if ("param".equals(parts[0]))
+		  if ("param".equals(parts[0])) {
 			  val = this.getExternalParam(parts[1]);
-		  else if ("ctx".equals(parts[0]))
+			  
+			  if (val == null)
+				  val = "";
+		  }
+		  else if ("ctx".equals(parts[0])) {
 			  val = this.getInternalParam(parts[1]);
+			  
+			  if (val == null)
+				  val = "";
+		  }
 		  // definitions in the dictionary
-		  else if ("tr".equals(parts[0]))
-			  val = this.getDomain().tr(this.getLocale(), parts[1]);		// TODO support tr params 
+		  else if ("tr".equals(parts[0])) {
+			  val = this.getDomain().tr(this.getLocale(), parts[1]);		// TODO support tr params
+			  
+			  if (val == null)
+				  val = "";
+		  }
 		  else if (this.innerctx != null) {
 			  IWebMacro macroproc = this.innerctx.getMacro(parts[0]);
 			  
-			  if (macroproc != null)
-				  val = macroproc.process(this, parts); 
+			  if (macroproc != null) {
+				  val = macroproc.process(this, parts);
+				  
+				  if (val == null)
+					  val = "";
+			  }
 		  }
 		  
 		  return val;
@@ -273,17 +219,6 @@ public class WebContext {
 		return this.innerctx.getDomain();
 	}
 	
-	/*
-	public WebContext(WebDomain domain, Request request, Response response, Session session) {
-		this.domain = domain;
-		this.request = request;
-		this.response = response;
-		this.session = session;
-		
-		this.init();
-	}
-	*/
-	
 	public WebContext(IInnerContext httpctx, IWebExtension ext) {
 		this.innerctx = httpctx;
 		this.extension = ext;		
@@ -301,6 +236,43 @@ public class WebContext {
 		// TODO get default theme from WebExtension 
 		
 		// TODO add device override support too
+		
+		this.putInternalParam("dcmVersion", "0.9.6");
+		
+		UserContext uc = OperationContext.get().getUserContext();
+		
+		this.putInternalParam("dcUserId", uc.getUserId());
+		this.putInternalParam("dcUsername", uc.getUsername());
+		this.putInternalParam("dcUserFullname", uc.getFullName());
+		this.putInternalParam("dcUserEmail", uc.getEmail());
+		
+		DomainInfo domain = Hub.instance.getDomainInfo(httpctx.getDomain().getId());
+		
+		XElement domconfig = domain.getSettings();
+		
+		if (domconfig!= null) {
+			XElement web = domconfig.selectFirst("Web");
+			
+			if (web != null) {
+				if (web.hasAttribute("SignInPath")) 
+					this.putInternalParam("SignInPath", web.getAttribute("SignInPath"));
+				
+				if (web.hasAttribute("HomePath")) 
+					this.putInternalParam("HomePath", web.getAttribute("HomePath"));
+				
+				if (web.hasAttribute("PortalPath")) 
+					this.putInternalParam("PortalPath", web.getAttribute("PortalPath"));
+				
+				if (web.hasAttribute("SiteTitle")) 
+					this.putInternalParam("SiteTitle", web.getRawAttribute("SiteTitle"));
+				
+				if (web.hasAttribute("SiteAuthor")) 
+					this.putInternalParam("SiteAuthor", web.getRawAttribute("SiteAuthor"));
+				
+				if (web.hasAttribute("SiteCopyright")) 
+					this.putInternalParam("SiteCopyright", web.getRawAttribute("SiteCopyright"));
+			}
+		}
 	}
 
 	/*
@@ -412,21 +384,33 @@ public class WebContext {
 	}
 	
 	public Path findPath(String path) {
-		return this.innerctx.getDomain().findFilePath(false, new CommonPath(path), null);
+		return this.innerctx.getDomain().findFilePath(this.isPreview(), new CommonPath(path), null);
+	}
+	
+	public Path findSectionPath(String section, String path) {
+		return this.innerctx.getDomain().findSectionFile(this.isPreview(), section, path);
 	}
 	
 	// string path is relative to dcw/[alias]/[path]
-	public CompositeStruct getJsonResource(String path) {
-		Path fpath = this.innerctx.getDomain().findFilePath(false, new CommonPath(path), null);
+	public XElement getXmlResource(String section, String path) {
+		Path fpath = this.innerctx.getDomain().findSectionFile(this.isPreview(), section, path);
 		
-		if (fpath != null) 
-			return this.getJsonResource(fpath);
+		if (fpath == null)
+			return null;
 		
-		return null;
+		FuncResult<XElement> mres = XmlReader.loadFile(fpath, false);
+		
+		return mres.getResult();
 	}
 	
-	public CompositeStruct getJsonResource(Path path) {
-		FuncResult<CharSequence> mres = IOUtil.readEntireFile(path);
+	// string path is relative to dcw/[alias]/[path]
+	public CompositeStruct getJsonResource(String section, String path) {
+		Path fpath = this.innerctx.getDomain().findSectionFile(this.isPreview(), section, path);
+		
+		if (fpath == null)
+			return null;
+
+		FuncResult<CharSequence> mres = IOUtil.readEntireFile(fpath);
 				
 		if (mres.isNotEmptyResult()) 
 			return Struct.objectToComposite(mres.getResult());
@@ -435,12 +419,7 @@ public class WebContext {
 	}
 	
 	public CompositeStruct getGalleryMeta(String path) {
-		Path fpath = this.innerctx.getDomain().findFilePath(false, new CommonPath("/galleries" + path + "/meta.json"), null);
-		
-		if (fpath != null) 
-			return this.getJsonResource(fpath);
-		
-		return null;
+		return this.getJsonResource("galleries", path + "/meta.json");
 	}
 	
 	public void forEachGalleryShowImage(String path, String show, GalleryImageConsumer consumer) {

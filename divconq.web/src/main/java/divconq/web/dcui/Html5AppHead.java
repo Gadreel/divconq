@@ -16,7 +16,11 @@
 ************************************************************************ */
 package divconq.web.dcui;
 
+import divconq.hub.DomainInfo;
+import divconq.hub.Hub;
+import divconq.lang.op.OperationContext;
 import divconq.util.StringUtil;
+import divconq.web.WebContext;
 import divconq.xml.XElement;
 import w3.html.Head;
 import w3.html.Link;
@@ -40,42 +44,32 @@ import w3.html.Title;
  */
 public class Html5AppHead extends Head implements ICodeTag {
 	protected divconq.xml.XElement source = null;
-	protected divconq.xml.XElement domconfig = null;
 	
     public Html5AppHead() {
     	super();
 	}
 	
-    public Html5AppHead(divconq.xml.XElement source, XElement domconfig, Object... args) {
+    public Html5AppHead(divconq.xml.XElement source, Object... args) {
     	super(args);
     	this.source = source;
-    	this.domconfig = domconfig;
-	}
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		Html5AppHead cp = new Html5AppHead(this.source, this.domconfig);
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
 	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 		
 		this.source = xel;
-        this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
 		
 		nodes.add(this);
 	}
 	
 	@Override
-	public void doBuild() {
+	public void doBuild(WebContext ctx) {
 		Nodes earlyadditional = new Nodes();
 		Nodes lateadditional = new Nodes();
 		
-		// TODO some of this - except for cookie - can move up into parse area
+		// TODO some of this can move to compile phase
 		
 		earlyadditional.add(
 				new Meta(new Attributes("chartset", "utf-8")),
@@ -95,19 +89,35 @@ public class Html5AppHead extends Head implements ICodeTag {
 				new Meta(new Attributes("name", "viewport", "content", "width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"))
 		);
 		
-		String title = "@val|PageTitle@ - @val|SiteTitle@";
+		String title = "@ctx|PageTitle@ - @ctx|SiteTitle@";
 		
 		if (StringUtil.isNotEmpty(title))
 			earlyadditional.add(
 					new Title(title)
 			);
 		
-		// TODO go with defaults
+		//WebDomain domain = this.getContext().getDomain();
+		
+		XElement domainwebconfig = null;
+		
+		String did = OperationContext.get().getUserContext().getDomainId();
+		
+		if (StringUtil.isNotEmpty(did)) {
+			DomainInfo domain = Hub.instance.getDomainInfo(did);
+			
+			XElement domainconfig = domain.getSettings();
+			
+			if (domainconfig!= null) 
+				domainwebconfig = domainconfig.selectFirst("Web");
+		}
 		
 		String icon = this.source.getRawAttribute("Icon");
 		
 		if (StringUtil.isEmpty(icon))
 			icon = this.source.getRawAttribute("Icon16");
+		
+		if (StringUtil.isEmpty(icon) && (domainwebconfig != null))
+			icon = domainwebconfig.getRawAttribute("Icon");
 		
 		if (StringUtil.isNotEmpty(icon)) { 
 			// if full name then use as the 16x16 version
@@ -146,7 +156,7 @@ public class Html5AppHead extends Head implements ICodeTag {
 		}
 		
 		divconq.xml.XElement del = this.source.find("Description");
-		String desc = (del != null) ? del.getText() : "@val|SiteDescription@";
+		String desc = (del != null) ? del.getText() : "@ctx|SiteDescription@";
 		
 		if (StringUtil.isNotEmpty(desc))
 			earlyadditional.add(
@@ -154,7 +164,7 @@ public class Html5AppHead extends Head implements ICodeTag {
 			);
 		
 		divconq.xml.XElement kel = this.source.find("Keywords");
-		String keywords = (kel != null) ? kel.getText() : "@val|SiteKeywords@";
+		String keywords = (kel != null) ? kel.getText() : "@ctx|SiteKeywords@";
 		
 		if (StringUtil.isNotEmpty(keywords))
 			earlyadditional.add(
@@ -188,10 +198,8 @@ public class Html5AppHead extends Head implements ICodeTag {
 				new Script("/dcw/js/jquery.mobile-1.4.5.cust.js")
 		);
 		
-		XElement web = this.domconfig.selectFirst("Web");
-		
-		if (web != null) {
-			for (XElement gel : web.selectAll("Global")) {
+		if (domainwebconfig != null) {
+			for (XElement gel : domainwebconfig.selectAll("Global")) {
 				if (gel.hasAttribute("Style"))
 					earlyadditional.add(new Style(gel.getAttribute("Style")));
 				else
@@ -205,6 +213,6 @@ public class Html5AppHead extends Head implements ICodeTag {
 		
 		//lateadditional.add(new IncludeHolder("Scripts"));
 		
-	    this.build(earlyadditional, this.myArguments, lateadditional);
+	    this.build(ctx, earlyadditional, this.myArguments, lateadditional);
 	}
 }

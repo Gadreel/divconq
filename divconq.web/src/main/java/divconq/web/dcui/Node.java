@@ -30,8 +30,6 @@ abstract public class Node {
 	public static Pattern macropatten =  Pattern.compile("@\\S+?@", Pattern.MULTILINE);
 
 	protected boolean blockindent = false;
-    protected Fragment viewroot = null;
-    protected Fragment partroot = null;
     protected Element parent = null;
 	
 	protected Map<String,String> valueparams = null;
@@ -46,51 +44,32 @@ abstract public class Node {
     }
 
     public Fragment getViewRoot() {
-        return this.viewroot; 
+    	if (this.parent == null) {
+    		if (this instanceof Fragment)
+    			return (Fragment) this;
+    		
+    		return null;
+    	}
+    	
+        return this.parent.getViewRoot(); 
     }
 
     public Fragment getPartRoot() {
-        return (this.partroot != null) ? this.partroot : this.viewroot; 
+		if (this instanceof Fragment)
+			return (Fragment) this;
+		
+    	if (this.parent == null)     		
+    		return null;
+    	
+        return this.parent.getPartRoot(); 
     }
 
     public Element getParent() {
         return this.parent;
     }
     
-    abstract public Node deepCopy(Element parent);
-    
-    protected void doCopy(Node n) {
-    	n.blockindent = this.blockindent;
-    	
-    	// make copies
-    	if (this.valueparams != null) {
-    		n.valueparams = new HashMap<String, String>();
-
-	    	for (String name : this.valueparams.keySet())
-	    		n.valueparams.put(name, this.valueparams.get(name));
-    	}
-    	
-    	if (this.complexparams != null) {
-    		n.complexparams = new HashMap<String, Nodes>();
-
-	    	for (String name : this.complexparams.keySet())
-	    		n.complexparams.put(name, this.complexparams.get(name).deepCopy());
-    	}
-    }
-    
-    public void setParent(Element value) {
-    	this.parent = value; 
-    	
-    	if (value != null) {
-    		this.partroot = value.getPartRoot();
-    		
-    		// our view root is always the same as the parent's
-	        this.viewroot = value.getViewRoot();
-    	}
-    }
-    
-    public void setPartRoot(Fragment part) {
-    	this.partroot = part;
+    public void setParent(Element v) {
+    	this.parent = v; 
     }
 
     public void setParams(Map<String, String> params) {
@@ -112,24 +91,24 @@ abstract public class Node {
     	this.valueparams.put(name, value);
     }
     
-    public boolean hasParam(String name) {
+    public boolean hasParam(WebContext ctx, String name) {
     	if ((this.valueparams != null) && this.valueparams.containsKey(name))
     		return true;
     	
     	if (this.parent != null)
-    		return this.parent.hasParam(name);
+    		return this.parent.hasParam(ctx, name);
     	
-    	return this.getContext().hasInternalParam(name);
+    	return ctx.hasInternalParam(name);
     }
     
-    public String getParam(String name) {
+    public String getParam(WebContext ctx, String name) {
     	if ((this.valueparams != null) && this.valueparams.containsKey(name))
     		return this.valueparams.get(name);
     	
     	if (this.parent != null)
-    		return this.parent.getParam(name);
+    		return this.parent.getParam(ctx, name);
     	
-    	return this.getContext().getInternalParam(name);
+    	return ctx.getInternalParam(name);
     }
 
     public void setComplexParams(Map<String, Nodes> params) {
@@ -152,15 +131,8 @@ abstract public class Node {
     	
     	return null;
     }
-    
-    public WebContext getContext() {
-    	if (this.viewroot != null)
-    		return this.viewroot.getContext();
-    	
-    	return null;
-    }
 	  
-	  public String expandMacro(String value) {
+	  public String expandMacro(WebContext ctx, String value) {
 		  if (StringUtil.isEmpty(value))
 			  return null;
 		  
@@ -178,9 +150,9 @@ abstract public class Node {
 				  
 				  // params on this tree
 				  if (macro.startsWith("val|"))
-					  val = this.getParam(macro.substring(4));
+					  val = this.getParam(ctx, macro.substring(4));
 				  else 
-					  val = this.getContext().expandMacro(macro);
+					  val = ctx.expandMacro(macro);
 				  
 				  // if any of these, then replace and check (expand) again 
 				  if (val != null) {
@@ -192,18 +164,18 @@ abstract public class Node {
 		  
 		  return value;
 	  }
+	    
+	public abstract void doBuild(WebContext ctx);
 
-    public void stream(PrintStream strm) {
-        this.stream(strm, "", false, false);
+    public void stream(WebContext ctx, PrintStream strm) {
+        this.stream(ctx, strm, "", false, false);
     }
 
-    public abstract void stream(PrintStream strm, String indent, boolean firstchild, boolean fromblock);
+    public abstract void stream(WebContext ctx, PrintStream strm, String indent, boolean firstchild, boolean fromblock);
     
-    public abstract void doBuild();
-    
-    public void print(PrintStream strm, String indent, boolean newline, String copy, Object... args) {
+    public void print(WebContext ctx, PrintStream strm, String indent, boolean newline, String copy, Object... args) {
         if (args.length > 0) 
-            strm.print(this.getContext().format(indent + copy, args));
+            strm.print(ctx.format(indent + copy, args));
         else 
             strm.print(indent + copy);
 

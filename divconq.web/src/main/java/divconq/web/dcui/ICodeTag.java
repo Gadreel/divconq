@@ -16,8 +16,9 @@
 ************************************************************************ */
 package divconq.web.dcui;
 
+import divconq.web.WebContext;
 import divconq.xml.XElement;
 
 public interface ICodeTag {
-	void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel);
+	void parseElement(WebContext ctx, Nodes nodes, XElement xel);
 }

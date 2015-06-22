@@ -22,10 +22,13 @@ import java.util.Map;
 import divconq.filestore.CommonPath;
 import divconq.lang.op.OperationCallback;
 import divconq.web.IOutputAdapter;
+import divconq.web.WebContext;
 import divconq.xml.XElement;
 
 public class IncludePart extends FragmentProxy implements ICodeTag {
     protected String src = null;
+    protected XElement xml = null;
+    protected Fragment frag = new Fragment();
 
     public IncludePart() {
     	super();
@@ -41,70 +44,62 @@ public class IncludePart extends FragmentProxy implements ICodeTag {
         this.src = src;
         this.complexparams = params;
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		IncludePart cp = new IncludePart();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	public void setParent(Element value) {
-		// TODO Auto-generated method stub
-		super.setParent(value);
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		
-		((IncludePart)n).src = this.src;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
-		Map<String,String> params = new HashMap<String,String>();
-    	
-    	for (divconq.xml.XElement iel : xel.selectAll("Param")) 
-			if (iel.hasAttribute("Name"))
-				params.put(iel.getRawAttribute("Name"), iel.getRawAttribute("Value"));
-    	
-		Map<String,Nodes> cparams = new HashMap<String,Nodes>();
-    	
-    	for (divconq.xml.XElement iel : xel.selectAll("ComplexParam")) 
-			if (iel.hasAttribute("Name"))
-				cparams.put(iel.getRawAttribute("Name"), view.getDomain().parseXml(view, iel));
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
+		Attributes attrs = HtmlUtil.initAttrs(xel);
     	
     	this.src = xel.getRawAttribute("Path");
-		
-		this.setComplexParams(cparams);
-		this.setParams(params);
-		
-		nodes.add(this);
+    	this.xml = xel;
+    	
+    	this.myArguments = new Object[] { attrs };
+    	
+    	nodes.add(this);
 	}
 	
 	@Override
-	public void doBuild() {
+	public void doBuild(WebContext ctx) {
+    	this.frag.setParent(this);
+		
 		CommonPath pp = new CommonPath(this.src);		
 		
-		IOutputAdapter sf = this.getContext().getDomain().findFile(this.getContext().isPreview(), pp, this.getContext().getExtension());
+		IOutputAdapter sf = ctx.getDomain().findFile(ctx.isPreview(), pp, ctx.getExtension());
 		
 		if (sf instanceof ViewOutputAdapter) {
+			if (this.xml != null) {
+				Map<String,String> params = new HashMap<String,String>();
+		    	
+		    	for (divconq.xml.XElement iel : this.xml.selectAll("Param")) 
+					if (iel.hasAttribute("Name"))
+						params.put(iel.getRawAttribute("Name"), iel.getRawAttribute("Value"));
+		    	
+				Map<String,Nodes> cparams = new HashMap<String,Nodes>();
+		    	
+		    	for (divconq.xml.XElement iel : this.xml.selectAll("ComplexParam")) 
+					if (iel.hasAttribute("Name"))
+						cparams.put(iel.getRawAttribute("Name"), ctx.getDomain().parseXml(ctx, iel));
+				
+		    	this.frag.setComplexParams(cparams);
+		    	this.frag.setParams(params);			
+			}
+			
 			this.getPartRoot().incrementFuture();
 			
-			PartBuilder pb = new PartBuilder((ViewOutputAdapter) sf);
-			pb.setParent(this);
-			
-	        super.build(pb);
-			
-			pb.awaitForFutures(new OperationCallback() {
+			this.frag.initializePart(ctx, sf, new OperationCallback() {				
 				@Override
 				public void callback() {
-					IncludePart.this.getPartRoot().decrementFuture();
+					//IncludePart.this.frag.doBuild(ctx);
+					
+					IncludePart.this.build(ctx, IncludePart.this.frag);
+					
+					IncludePart.this.frag.awaitForFutures(new OperationCallback() {						
+						@Override
+						public void callback() {
+							IncludePart.this.getPartRoot().decrementFuture();
+						}
+					});
 				}
-			});
-		}
+			}, this.myArguments);
+		}		
 	}
 }

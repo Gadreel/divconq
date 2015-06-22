@@ -23,9 +23,7 @@ import divconq.web.dcui.Element;
 import divconq.web.dcui.HtmlUtil;
 import divconq.web.dcui.ICodeTag;
 import divconq.web.dcui.LiteralText;
-import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public class Script extends Element implements ICodeTag {
@@ -56,24 +54,9 @@ public class Script extends Element implements ICodeTag {
     	super(args);
         this.source = source;
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		Script cp = new Script();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((Script)n).source = this.source;
-		((Script)n).direction = this.direction;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 		
 		if (xel.hasAttribute("type"))
@@ -101,23 +84,21 @@ public class Script extends Element implements ICodeTag {
 	}
 
     @Override
-    public void build(Object... args) {
+    public void build(WebContext ctx, Object... args) {
     	if (this.direction != Style.DIR_BOTH) {
-    		WebContext mc = this.getContext();
-    		
     		// if incompatible directions then just skip
-    		if (mc.isRightToLeft() && (this.direction != Style.DIR_RTL))
+    		if (ctx.isRightToLeft() && (this.direction != Style.DIR_RTL))
     			return;
     		
-    		if (!mc.isRightToLeft() && (this.direction != Style.DIR_LTR))
+    		if (!ctx.isRightToLeft() && (this.direction != Style.DIR_LTR))
     			return;
     	}
     	
     	if (this.source != null) 
-    		super.build("script", true, new Attributes("type", "text/javascript", "src", this.source), args);
+    		super.build(ctx, "script", true, new Attributes("type", "text/javascript", "src", this.source), args);
 			//super.build("script", true, new Attributes("type", "text/javascript", 
 			//		"src", this.getPartRoot().buildAssetPath(this.source)), args);
     	else
-    		super.build("script", true, new Attributes("type", "text/javascript"), args);
+    		super.build(ctx, "script", true, new Attributes("type", "text/javascript"), args);
     }
 }

@@ -16,14 +16,12 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
-import divconq.web.dcui.Element;
 import divconq.web.dcui.HtmlUtil;
 import divconq.web.dcui.ICodeTag;
 import divconq.web.dcui.MixedElement;
-import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public class Input extends MixedElement implements ICodeTag {
@@ -34,17 +32,9 @@ public class Input extends MixedElement implements ICodeTag {
     public Input(Object... args) {
     	super(args);
 	}
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		Input cp = new Input();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 		
 		if (xel.hasAttribute("alt"))
@@ -89,16 +79,16 @@ public class Input extends MixedElement implements ICodeTag {
 		if (xel.hasAttribute("max"))
 			attrs.add("max", xel.getRawAttribute("max"));
 
-        this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
 		
 		nodes.add(this);
 	}
 	
     @Override
-	public void build(Object... args) {
-        if (this.getContext().isRightToLeft())
-            super.build("input", new Attributes("dir", "rtl"), args);
+	public void build(WebContext ctx, Object... args) {
+        if (ctx.isRightToLeft())
+            super.build(ctx, "input", new Attributes("dir", "rtl"), args);
         else
-        	super.build("input", args);
+        	super.build(ctx, "input", args);
 	}
 }

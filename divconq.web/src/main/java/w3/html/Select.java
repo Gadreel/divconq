@@ -16,14 +16,13 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
-import divconq.web.dcui.Element;
 import divconq.web.dcui.HtmlUtil;
 import divconq.web.dcui.ICodeTag;
 import divconq.web.dcui.MixedElement;
 import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public class Select extends MixedElement implements ICodeTag {
@@ -36,23 +35,9 @@ public class Select extends MixedElement implements ICodeTag {
     public Select(Object... args) {
     	super(args);
 	}
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		Select cp = new Select();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((Select)n).selected = this.selected;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 		
 		if (xel.hasAttribute("disabled"))
@@ -70,20 +55,20 @@ public class Select extends MixedElement implements ICodeTag {
 		if (xel.hasAttribute("select"))
 			this.setSelected(xel.getRawAttribute("select"));
 
-        this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
 		
 		nodes.add(this);
 	}
 	
     @Override
-	public void build(Object... args) {
-        if (this.getContext().isRightToLeft())
-            super.build("select", new Attributes("dir", "rtl"), args);
+	public void build(WebContext ctx, Object... args) {
+        if (ctx.isRightToLeft())
+            super.build(ctx, "select", new Attributes("dir", "rtl"), args);
         else
-        	super.build("select", args);
+        	super.build(ctx, "select", args);
         
         if (this.selected != null) {
-        	this.selected = this.expandMacro(this.selected);
+        	this.selected = this.expandMacro(ctx, this.selected);
         	
         	for (Node n : this.children) {
         		if (n instanceof Option) {

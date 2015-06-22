@@ -15,6 +15,7 @@ import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.StringUtil;
 import divconq.work.Task;
+import divconq.xml.XElement;
 
 public class SimpleFactory {
 
@@ -79,7 +80,7 @@ public class SimpleFactory {
 					
 					RecordStruct thread = new RecordStruct()
 						.withField("Title", bresp.getFieldAsString("Subject"))
-						.withField("Originator", from)
+						.withField("Originator", ffrom)
 						.withField("Parties", parties)
 						.withField("Content", content);
 						
@@ -169,7 +170,7 @@ public class SimpleFactory {
 							
 							pfmt += " <" + pitem.getFieldAsString("Email") + ">; ";
 							
-							if (from.equals(pid)) 
+							if (ffrom.equals(pid)) 
 								fromfmt = pfmt;
 							
 							// pid can be in To and From, check both
@@ -185,6 +186,13 @@ public class SimpleFactory {
 							}							
 						}
 						
+						if (Constants.DB_GLOBAL_ROOT_USER.equals(ffrom)) {
+							XElement emel = MailTaskFactory.getSettings();
+							
+							if (emel.hasAttribute("DefaultFrom"))
+								fromfmt = emel.getAttribute("DefaultFrom");
+						}
+							
 						content
 							.withField("From", fromfmt)
 							.withField("To", tofmt);

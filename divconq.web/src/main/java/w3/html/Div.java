@@ -16,14 +16,12 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
-import divconq.web.dcui.Element;
 import divconq.web.dcui.HtmlUtil;
 import divconq.web.dcui.ICodeTag;
 import divconq.web.dcui.MixedElement;
-import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public class Div extends MixedElement implements ICodeTag {
@@ -44,37 +42,20 @@ public class Div extends MixedElement implements ICodeTag {
     	this.cssclass = cssclass;
 	}
 
-    @Override
-    protected void doCopy(Node n) {
-    	super.doCopy(n);
-    	
-    	Div nn = (Div)n;
-    	nn.id = this.id;
-    	nn.cssclass = this.cssclass;
-    }
-    
 	@Override
-	public Node deepCopy(Element parent) {
-		Div cp = new Div();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-
-	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 		
 		if (xel.hasAttribute("align"))
 			attrs.add("align", xel.getRawAttribute("align"));
 
-        this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
 		
 		nodes.add(this);
 	}
 	
     @Override
-	public void build(Object... args) {
+	public void build(WebContext ctx, Object... args) {
 		Attributes extra = new Attributes();
 		
 		if (this.id != null) 
@@ -83,6 +64,6 @@ public class Div extends MixedElement implements ICodeTag {
 		if (this.cssclass != null) 
 			extra.add("class", this.cssclass);
     	
-	    super.build("div", true, extra, args);
+	    super.build(ctx, "div", true, extra, args);
 	}
 }

@@ -22,7 +22,7 @@ import divconq.lang.Memory;
  * An XML element that simply contains text. This is normally a child element of
  * {@link XElement}.
  */
-public class XText extends XNode implements Cloneable {
+public class XText extends XNode {
 	/**
 	 * The value of the TextElement.
 	 */
@@ -46,18 +46,16 @@ public class XText extends XNode implements Cloneable {
 	public XText(boolean cdata, String string) {
 		this.setValue(string, cdata);
 	}
-
-	/*  TODO
+	
 	@Override
-	public Object clone() throws CloneNotSupportedException {
-		TextElement newText = (TextElement) super.clone();
+	public XNode deepCopy() {
+		XText copy = new XText();
 		
-		if (integer != null)
-			newText.integer = new Integer(integer.intValue());
+		copy.cdata = this.cdata;
+		copy.content = this.content;
 		
-		return newText;
+		return copy;
 	}
-	*/
 	
 	/**
 	 * Sets the value of this node

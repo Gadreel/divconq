@@ -19,12 +19,11 @@ package divconq.web.dcui;
 import java.io.PrintStream;
 
 import divconq.util.StringUtil;
+import divconq.web.WebContext;
 import divconq.xml.XElement;
-import w3.html.A;
 import w3.html.I;
 
-
-public class HyperLink extends A {
+public class HyperLink extends MixedElement implements ICodeTag {
     protected String id = null;
     protected String to = null;
     protected String label = null;
@@ -65,30 +64,23 @@ public class HyperLink extends A {
     	this.page = v;
     	return this;
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		HyperLink cp = new HyperLink();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
 	
 	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((HyperLink)n).id = this.id;
-		((HyperLink)n).to = this.to;
-		((HyperLink)n).page = this.page;
-		((HyperLink)n).label = this.label;
-		((HyperLink)n).icon = this.icon;
-		((HyperLink)n).click = this.click;
-		((HyperLink)n).css = this.css;
-	}
-	
-	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
-		super.parseElement(view, nodes, xel);
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
+		Attributes attrs = HtmlUtil.initAttrs(xel);
+		
+		if (xel.hasAttribute("href"))
+			attrs.add("href", xel.getRawAttribute("href"));
+		
+		if (xel.hasAttribute("rel"))
+			attrs.add("rel", xel.getRawAttribute("rel"));
+		
+		if (xel.hasAttribute("target"))
+			attrs.add("target", xel.getRawAttribute("target"));
+
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
+		
+		nodes.add(this);
 		
 		if (xel.hasAttribute("To"))
 			this.to = xel.getRawAttribute("To");
@@ -106,7 +98,7 @@ public class HyperLink extends A {
 	}
 
     @Override
-    public void build(Object... args) {
+    public void build(WebContext ctx, Object... args) {
     	Attributes attrs = new Attributes("href", this.to, "class", "ui-button ui-theme-a " + StringUtil.toEmpty(this.css));
 		
 		if (this.id != null)
@@ -117,7 +109,7 @@ public class HyperLink extends A {
 		if (StringUtil.isNotEmpty(this.icon))
 			icon.add(new I(new Attributes("class", "fa " + this.icon)));
 		
-        super.build(args, attrs, this.label, icon);
+        super.build(ctx, "a", args, attrs, this.label, icon);
     }
     
     @Override

@@ -91,10 +91,8 @@ import divconq.lang.stem.IndexInfo.StemEntry;
 import divconq.lang.stem.IndexUtility;
 import divconq.log.DebugLevel;
 import divconq.log.Logger;
-import divconq.mail.EmailInnerContext;
 import divconq.mail.MailTaskFactory;
 import divconq.mail.SimpleFactory;
-import divconq.mod.IModule;
 import divconq.schema.DbField;
 import divconq.script.Activity;
 import divconq.script.ui.ScriptUtility;
@@ -114,13 +112,7 @@ import divconq.util.FileUtil;
 import divconq.util.HexUtil;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
-import divconq.web.IInnerContext;
-import divconq.web.IOutputAdapter;
-import divconq.web.IWebExtension;
-import divconq.web.WebContext;
-import divconq.web.WebModule;
 import divconq.web.cms.OrderUtil;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.work.IWork;
 import divconq.work.Task;
 import divconq.work.TaskRun;
@@ -2527,6 +2519,7 @@ public class FileStoreClient implements ILocalCommandLine {
 					
 					*/
 					
+					/*
 					CommonPath path = new CommonPath("/Test.dcm.xml");
 					
 					IModule mod = Hub.instance.getModule("Web");
@@ -2564,7 +2557,7 @@ public class FileStoreClient implements ILocalCommandLine {
 					}
 					
 					try {
-						ctx.setAdapter(output);
+						//ctx.setAdapter(output);
 						
 						output.execute(ctx);
 					} 
@@ -2572,6 +2565,7 @@ public class FileStoreClient implements ILocalCommandLine {
 						System.out.println("Unable to process web file: " + x);
 						x.printStackTrace();
 					}
+					*/
 					
 					break;
 				}
@@ -2594,7 +2588,7 @@ public class FileStoreClient implements ILocalCommandLine {
 							@Override
 							public void run(TaskRun trun) {
 								RecordStruct thread = new RecordStruct()
-									.withField("Path", "/Test-Both.dcm.xml");
+									.withField("Path", "/Test-MD.dcm.xml");
 								
 								Message msg = new Message("dcmEmailBuilder", "Message", "Build", thread);
 								

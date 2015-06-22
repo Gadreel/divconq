@@ -17,6 +17,7 @@
 package w3.html;
 
 
+import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
 import divconq.web.dcui.Element;
 import divconq.web.dcui.HtmlUtil;
@@ -25,7 +26,6 @@ import divconq.web.dcui.LiteralText;
 import divconq.web.dcui.Node;
 import divconq.web.dcui.Nodes;
 import divconq.web.dcui.UnescapedText;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public class Title extends Element implements ICodeTag {
@@ -50,33 +50,17 @@ public class Title extends Element implements ICodeTag {
         this.title = title;
     }
 
-    @Override
-    protected void doCopy(Node n) {
-    	super.doCopy(n);
-    	
-    	Title nn = (Title)n;
-    	nn.title = this.title.deepCopy(null);  // no parent yet
-    }
-    
 	@Override
-	public Node deepCopy(Element parent) {
-		Title cp = new Title();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-
-	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 
-        this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
 		
 		nodes.add(this);
 	}
 
     @Override
-    public void build(Object... args) {
-        super.build("title", this.title);
+    public void build(WebContext ctx, Object... args) {
+        super.build(ctx, "title", this.title, args);
     }
 }

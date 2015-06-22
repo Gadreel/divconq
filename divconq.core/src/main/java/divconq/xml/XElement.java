@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -303,6 +304,12 @@ public class XElement extends XNode {
 	public void add(XNode element) {
 		this.add(-1, element);
 	}
+	
+	public XElement with(XNode v) {
+		this.add(-1, v);
+		
+		return this;
+	}
 
 	/**
 	 * inserts a child into this element. If the index is out of range, the
@@ -331,6 +338,18 @@ public class XElement extends XNode {
 	 */
 	public void add(String string) {
 		this.add(new XText(string));
+	}
+	
+	public XElement withText(String v) {
+		this.add(new XText(v));
+		
+		return this;
+	}
+	
+	public XElement withCData(String v) {
+		this.add(new XText(true, v));
+		
+		return this;
 	}
 
 	/**
@@ -436,6 +455,31 @@ public class XElement extends XNode {
 			return true;
 		
 		return this.children.remove(element);
+	}
+
+	@Override
+	public XNode deepCopy() {
+		XElement copy = new XElement(this.tagName);
+		
+		copy.line = this.line;
+		copy.col = this.col;
+		copy.comment = this.comment;
+		
+		if (this.attributes != null) {
+			copy.attributes = new HashMap<>();
+			
+			for (Entry<String, String> entry : this.attributes.entrySet()) 
+				copy.attributes.put(entry.getKey(), entry.getValue());
+		}
+		
+		if (this.children != null) {
+			copy.children = new ArrayList<XNode>();
+			
+			for (XNode entry : this.children) 
+				copy.children.add(entry.deepCopy());
+		}
+		
+		return copy;
 	}
 
 	/**

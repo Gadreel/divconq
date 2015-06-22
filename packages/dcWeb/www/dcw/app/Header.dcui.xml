@@ -4,7 +4,7 @@
 		<div class="dcappWrapper">
 			<div id="dcappHeaderGrid">
 				<Link id="dcappHeaderLogo" Page="/Portal"><img src="/dcw/img/logo64.png" /></Link>
-				<h1 id="dcappHeaderLbl">@val|SiteTitle@</h1>
+				<h1 id="dcappHeaderLbl">@ctx|SiteTitle@</h1>
 
 				<div id="dcappHeaderMenu">
 					<a href="#dcappHeaderMenuPop" data-rel="popup" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-icon-bars ui-btn-icon-notext ui-btn-a" />

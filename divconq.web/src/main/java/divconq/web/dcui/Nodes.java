@@ -40,15 +40,6 @@ public class Nodes {
         return this.nodes;
     }
 
-	public Nodes deepCopy() {
-		Nodes n = new Nodes();
-		
-    	for (Node h : this.nodes) 
-    		n.nodes.add(h.deepCopy(null));		// no parent yet
-    	
-    	return n;
-	}
-
 	public Node getFirst() {
 		return this.nodes.get(0);
 	}

@@ -16,9 +16,8 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
-import divconq.web.dcui.Element;
-import divconq.web.dcui.Node;
 
 public class LtrDiv extends Div {
 	public LtrDiv() {
@@ -28,20 +27,12 @@ public class LtrDiv extends Div {
     public LtrDiv(String id, String cssclass, Object... args) {
     	super(id, cssclass, args);
 	}
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		LtrDiv cp = new LtrDiv();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
 	
     @Override
-	public void build(Object... args) {
+	public void build(WebContext ctx, Object... args) {
         Attributes alignattr = new Attributes("align", 
-        		(this.getContext().isRightToLeft()) ? "right" : "left");
+        		(ctx.isRightToLeft()) ? "right" : "left");
         
-        super.build(alignattr, args);
+        super.build(ctx, alignattr, args);
 	}
 }

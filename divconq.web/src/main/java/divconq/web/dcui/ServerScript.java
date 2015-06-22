@@ -17,6 +17,7 @@
 package divconq.web.dcui;
 
 import divconq.hub.Hub;
+import divconq.web.WebContext;
 import w3.html.Div;
 import w3.html.P;
 
@@ -27,32 +28,18 @@ public class ServerScript extends Div {
     public ServerScript() {
     	super();
     }
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		ServerScript cp = new ServerScript();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((ServerScript)n).id = this.id;
-	}
 
     @Override
-    public void build(Object... args) {
+    public void build(WebContext ctx, Object... args) {
     	FutureNodes future = new FutureNodes();
     	
-        super.build(args, future);
+        super.build(ctx, args, future);
         
         Hub.instance.getClock().scheduleOnceInternal(new Runnable() {
 			@Override
 			public void run() {
 				future.add(new P("Cool!"));
-				future.complete();
+				future.complete(ctx);
 			}
 		}, 3);
     }

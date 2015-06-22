@@ -16,108 +16,50 @@
 ************************************************************************ */
 package divconq.web.dcui;
 
-import groovy.lang.GroovyObject;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 
 import divconq.filestore.CommonPath;
 import divconq.hub.Hub;
 import divconq.lang.op.FuncResult;
-import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationContext;
-import divconq.lang.op.OperationResult;
-import divconq.mail.EmailInnerContext;
 import divconq.util.IOUtil;
-import divconq.web.IInnerContext;
 import divconq.web.IOutputAdapter;
-import divconq.web.WebDomain;
 import divconq.web.WebContext;
+import divconq.web.WebDomain;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
 
 public class ViewOutputAdapter implements IOutputAdapter  {
 	protected XElement source = null;
-	protected WebDomain domain = null;
+	protected Path filepath = null;
 	protected CommonPath webpath = null;
-	protected String[] auth = null;
-
-	protected boolean isPreview = false;
-	
-	// content info
-	protected Nodes pagetemplate = null; 
-	public Nodes contenttemplate = null;
-	public Nodes textcontenttemplate = null;
-	protected Class<? extends IContentBuilder> pagebuilder = null;
-	
-	public GroovyObject viewloader = null;
-	
-	protected Map<String,String> valueparams = new HashMap<>();
-	
-	protected List<XElement> functions = new ArrayList<>();
-	protected List<XElement> libs = new ArrayList<>();
-	protected List<XElement> styles = new ArrayList<>();
+	protected String[] auth = null;		// TODO get auth from Skeleton alternatively --- copy skeleton in here at load time
 	
 	// content building
-	protected Class<? extends IViewExecutor> adapter = null;
+	protected Class<? extends IViewBuilder> builder = null;
 	
 	public XElement getSource() {
 		return this.source;
 	}
 	
-	public void addFunction(XElement func) {
-		this.functions.add(func);
-	}
-	
-	public void addFunctions(List<XElement> func) {
-		this.functions.addAll(func);
-	}
-	
-	public List<XElement> getFunctions() {
-		return this.functions;
-	}
-	
-	public void addLib(XElement func) {
-		this.libs.add(func);
-	}
-	
-	public void addLibs(List<XElement> func) {
-		this.libs.addAll(func);
+	@Override
+	public Path getFilePath() {
+		return this.filepath;
 	}
 
-	public List<XElement> getLibs() {
-		return this.libs;
-	}
-	
-	public void addStyle(XElement func) {
-		this.styles.add(func);
-	}
-	
-	public void addStyles(List<XElement> func) {
-		this.styles.addAll(func);
+	@Override
+	public CommonPath getLocationPath() {
+		return this.webpath;
 	}
 
-	public List<XElement> getStyles() {
-		return this.styles;
-	}
-	
-	public WebDomain getDomain() {
-		return this.domain;
-	}
-	
-	public boolean isPreview() {
-		return this.isPreview;
-	}
-	
-	public ViewOutputAdapter(WebDomain domain, CommonPath webpath, Path filepath, boolean isPreview) {
-		this.domain = domain;
+	@Override
+	public void init(WebDomain domain, Path filepath, CommonPath webpath, boolean isPreview) {
 		this.webpath = webpath;
-		this.isPreview = isPreview;
+		this.filepath = filepath;
 		
 		FuncResult<CharSequence> rres = IOUtil.readEntireFile(filepath);
 		
@@ -135,7 +77,7 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 			throw new IllegalArgumentException("Bad file path: cannot parse");
 		}
 		
-		this.adapter = ViewBuilder.class;
+		this.builder = ViewBuilder.class;
 		
 		this.source = xres.getResult();
 		
@@ -146,118 +88,56 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 					)
 			);
 		}
+		
+		if (this.source.getName().equals("dcem"))
+			this.builder = divconq.mail.ViewBuilder.class;
 
+		if (this.source.hasAttribute("Skeleton")) {
+			String tpath = this.source.getAttribute("Skeleton");
+			
+			CommonPath pp = new CommonPath(tpath + ".dcuis.xml");		
+			
+			IOutputAdapter sf = domain.findFile(isPreview, pp, null);
+			
+			if (sf instanceof ViewOutputAdapter) {
+				XElement layout = ((ViewOutputAdapter)sf).getSource();
+				
+				if (layout != null) {
+					layout = (XElement) layout.deepCopy();
+					
+					// copy all attributes over, unless they have been overridden
+					for (Entry<String, String> attr : layout.getAttributes().entrySet())
+						if (!this.source.hasAttribute(attr.getKey()))
+							this.source.setAttribute(attr.getKey(), attr.getValue());
+					
+					// copy all child elements over
+					for (XElement chel : layout.selectAll("*"))
+						this.source.add(chel);
+				}
+			}
+		}
+		
 		if (this.source.hasAttribute("ViewClass")) {
 			try {
-				// TODO ideally this would come from web extension or web module...
 				Class<?> cls = Hub.instance.getClass(this.source.getAttribute("ViewClass"));
 				
-				// TODO improve tracing
 				if (cls != null) 
-					this.adapter = cls.asSubclass(IViewExecutor.class);
+					this.builder = cls.asSubclass(IViewBuilder.class);
 			}
 			catch (Exception x) {
 				// TODO improve tracing
 				System.out.println("could not load class: " + this.source.getAttribute("ViewClass"));
 			}
 		}
-		else {
-			if (!this.load(this.source)) {
-				this.source = new XElement("dcui",
-						new XElement("Skeleton", 
-								new XElement("h1", "Compile Error!!")
-						)
-				);
-				
-				this.load(this.source);
-			}
-		}		
 
 		// cache auth tags - only after source has been fully loaded
 		if (this.source.hasAttribute("AuthTags"))
 			this.auth = this.source.getAttribute("AuthTags").split(",");
 	}
-	
-	// ContentInfo migration
-	public boolean load(XElement root) {
-		WebDomain domain = this.getDomain();
-		
-		if (root.hasAttribute("SkeletonClass")) {
-			try {
-				// TODO ideally this would come from web extension or web module...
-				Class<?> cls = Hub.instance.getClass(root.getAttribute("SkeletonClass"));
-				
-				// TODO improve tracing
-				if (cls != null) 
-					this.pagebuilder = cls.asSubclass(IContentBuilder.class);
-			}
-			catch (Exception x) {
-				// TODO improve tracing
-				System.out.println("Could not load Layout class: " + root.getAttribute("SkeletonClass"));
-			}
-		}
-		
-		if ("dcui".equals(root.getName())) {
-			this.pagetemplate = domain.parseElement(this, root);
-		}
-		else if ("dcem".equals(root.getName())) {
-			this.pagetemplate = domain.parseElement(this, root);
-			this.adapter = divconq.mail.ViewBuilder.class;
-		}
-		else {
-			this.contenttemplate = domain.parseXml(this, root.find("Skeleton"));
-		}
-		
-		return true;
-	}
-	
-	public void loadContext(WebContext ctx, OperationCallback cb) {
-		if (this.viewloader == null) {
-			cb.complete();
-			return;
-		}
-		
-		try {
-			Object[] args2 = { ctx, cb };
-			
-			this.viewloader.invokeMethod("run", args2);
-		}
-		catch (Exception x) {
-			OperationContext.get().error("Unable to execute loader script!");
-			OperationContext.get().error("Error: " + x);
-			
-			cb.complete();
-		}
-	}
-	
-	public Nodes getOutput(Fragment frag, WebContext ctx, boolean dynamic) {
-		try {
-			if (this.pagebuilder != null)
-				return this.pagebuilder.newInstance().getContent(ctx, this, frag);
-
-			IInnerContext ictx = ctx.getInnerContext();
-			
-			if ((ictx instanceof EmailInnerContext) && ((EmailInnerContext)ictx).isTextMode()) 
-				return this.textcontenttemplate.deepCopy();
-			
-			if (!dynamic && (this.pagetemplate != null))
-				return this.pagetemplate.deepCopy();
-			
-			if (this.contenttemplate != null)
-				return this.contenttemplate.deepCopy();
-		} 
-		catch (Exception x) {
-			// TODO Auto-generated catch block
-		}
-		
-		return null;
-	}
 
 	@Override
-	public OperationResult execute(WebContext ctx) throws Exception {
+	public void execute(WebContext ctx) throws Exception {
 		if ((this.auth != null) && !OperationContext.get().getUserContext().isTagged(this.auth)) {
-			OperationResult or = new OperationResult();
-			
 			String mode = ctx.getExternalParam("_dcui");
 
 			if ("dyn".equals(mode) || "dyn".equals(mode)) {		// TODO fix second dyn
@@ -272,20 +152,11 @@ public class ViewOutputAdapter implements IOutputAdapter  {
 				ctx.send();
 			}
 			
-			return or;
+			return;
 		}
 		
-		IViewExecutor vex = this.adapter.newInstance();
-		vex.setViewInfo(this);
+		IViewBuilder vex = this.builder.newInstance();
 		
-		return vex.execute(ctx);
-	}
-	
-	public String getParam(String name) {
-   		return this.valueparams.get(name);
-	}
-	
-	public String addParams(String name, String value) {
-   		return this.valueparams.put(name, value);
+		vex.execute(ctx, this);
 	}
 }

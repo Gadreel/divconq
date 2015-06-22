@@ -113,6 +113,8 @@ public abstract class XNode {
 	
 	abstract protected void toMemory(Memory sb, boolean formatted, int level);
 
+	abstract public XNode deepCopy();
+
   /**
    * quotes a string according to XML rules. When attributes and text elements
    * are written out special characters have to be quoted.

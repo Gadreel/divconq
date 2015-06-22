@@ -20,10 +20,8 @@ import java.io.PrintStream;
 
 import w3.html.Form;
 import divconq.util.StringUtil;
-import divconq.web.dcui.Element;
-import divconq.web.dcui.Node;
+import divconq.web.WebContext;
 import divconq.web.dcui.Nodes;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.xml.XElement;
 
 public class AdvForm extends Form {
@@ -37,24 +35,9 @@ public class AdvForm extends Form {
     public AdvForm(Object... args) {
     	super(args);
 	}
-    
-	@Override
-	public Node deepCopy(Element parent) {
-		AdvForm cp = new AdvForm();
-		cp.setParent(parent);
-		this.doCopy(cp);
-		return cp;
-	}
-	
-	@Override
-	protected void doCopy(Node n) {
-		super.doCopy(n);
-		((AdvForm)n).fname = this.fname;
-		((AdvForm)n).recordOrder = this.recordOrder;
-	}
 
 	@Override
-	public void parseElement(ViewOutputAdapter view, Nodes nodes, XElement xel) {
+	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 		
 		if (xel.hasAttribute("Prefix"))
@@ -68,7 +51,7 @@ public class AdvForm extends Form {
 		if (xel.hasAttribute("RecordOrder"))
 			this.recordOrder = xel.getRawAttribute("RecordOrder");
 
-        this.myArguments = new Object[] { attrs, view.getDomain().parseXml(view, xel) };
+        this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
 		
 		nodes.add(this);
 		

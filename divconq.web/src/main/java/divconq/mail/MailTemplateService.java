@@ -101,8 +101,8 @@ public class MailTemplateService extends ExtensionBase implements IService {
 						}
 					}
 					
-					IOutputAdapter output = new ViewOutputAdapter(ctx.getDomain(), path, 
-							Paths.get("./public/dcw/" + dom.getAlias()  + "/email" + path), false);
+					IOutputAdapter output = new ViewOutputAdapter();
+					output.init(dom, Paths.get("./public/dcw/" + dom.getAlias()  + "/email" + path), path, ctx.isPreview());
 
 					if (OperationContext.get().hasErrors() || (output == null)) {
 						request.errorTr(150001);
@@ -110,25 +110,15 @@ public class MailTemplateService extends ExtensionBase implements IService {
 						return;
 					}
 					
-					ctx.setAdapter(output);
-					
 					output.execute(ctx);
+					
+					request.complete();
 				} 
 				catch (Exception x) {
 					request.error("Unable to build email: " + x);
 					//x.printStackTrace();
 					request.complete();
 				}
-				
-				
-				/*
-				Task task = MailTaskFactory.createSendEmailTask(msg.getFieldAsRecord("Body"));
-				
-				FuncResult<RecordStruct> ares = this.submit(task);
-				
-				if (!ares.hasErrors()) 
-					request.setResult(ares.getResult());
-				*/
 				
 				return;
 			}

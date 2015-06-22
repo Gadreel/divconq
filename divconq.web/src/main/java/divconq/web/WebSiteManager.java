@@ -192,7 +192,7 @@ public class WebSiteManager {
 				String domain = p.getName(1);
 				String section = p.getName(2);
 				
-				if (!"dcw".equals(mod) || !"www".equals(section))
+				if (!"dcw".equals(mod) || (!"www".equals(section) && !"www-preview".equals(section) && !"cms".equals(section) && !"cms-preview".equals(section) && !"feed".equals(section) && !"feed-preview".equals(section)))
 					return;
 				
 				for (WebDomain wdomain : WebSiteManager.this.dsitemap.values()) {

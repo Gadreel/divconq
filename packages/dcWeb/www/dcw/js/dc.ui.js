@@ -1241,6 +1241,9 @@ dc.pui = {
 						var id = dc.util.Uuid.create();
 						node.attr('id', id);
 					}
+					else if (child.Element == 'nbsp') {
+						node = $('&nbsp;');
+					}
 					else {
 						node = $('<' + child.Element + '>');
 					}
