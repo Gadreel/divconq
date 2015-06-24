@@ -94,12 +94,12 @@ import divconq.util.StringUtil;
 import divconq.web.asset.AssetOutputAdapter;
 import divconq.web.dcui.AdvElement;
 import divconq.web.dcui.AdvForm;
+import divconq.web.dcui.AdvText;
 import divconq.web.dcui.AssetImage;
 import divconq.web.dcui.ButtonLink;
 import divconq.web.dcui.Document;
 import divconq.web.dcui.FormButton;
 import divconq.web.dcui.FormInstruction;
-import divconq.web.dcui.ServerScript;
 import divconq.web.dcui.Html5AppHead;
 import divconq.web.dcui.HyperLink;
 import divconq.web.dcui.ICodeTag;
@@ -850,6 +850,7 @@ public class WebDomain {
 		this.codetags.put("dcem", divconq.mail.Document.class);		
 		
 		this.codetags.put("AssetImage", AssetImage.class);
+		this.codetags.put("AdvText", AdvText.class);
 		this.codetags.put("Button", ButtonLink.class);
 		this.codetags.put("WideButton", ButtonLink.class);
 		this.codetags.put("SubmitButton", FormButton.class);
@@ -864,7 +865,7 @@ public class WebDomain {
 		this.codetags.put("Script", Script.class);
 		this.codetags.put("PagePart", PagePart.class);
 		this.codetags.put("TextPart", TextPart.class);
-		this.codetags.put("ServerScript", ServerScript.class);
+		//this.codetags.put("ServerScript", ServerScript.class);
 		this.codetags.put("TitledSection", TitledSection.class);
 
 		// TODO these should eventually be migrated so they can be shown in html mode too

@@ -418,6 +418,18 @@ public class WebContext {
 		return null;
 	}
 	
+	// string path is relative to dcw/[alias]/[path]
+	public String getTextResource(String section, String path) {
+		Path fpath = this.innerctx.getDomain().findSectionFile(this.isPreview(), section, path);
+
+		FuncResult<CharSequence> mres = IOUtil.readEntireFile(fpath);
+				
+		if (mres.isNotEmptyResult()) 
+			return mres.getResult().toString();
+		
+		return null;
+	}
+	
 	public CompositeStruct getGalleryMeta(String path) {
 		return this.getJsonResource("galleries", path + "/meta.json");
 	}
