@@ -5,13 +5,17 @@ import java.util.function.Consumer;
 
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
+import divconq.db.ICollector;
 import divconq.db.TablesAdapter;
+import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
 import divconq.lang.op.OperationResult;
+import divconq.schema.DbCollector;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.struct.builder.ICompositeBuilder;
+import divconq.util.StringUtil;
 
 public class SelectDirect extends LoadRecord {
 	/*
@@ -86,11 +90,16 @@ public class SelectDirect extends LoadRecord {
 		if (collector != null) {
 			try {
 				out.startList();
-				// TODO support script
 				
 				// TODO make sure we produce only unique records
 				// enhance by making this use ^dcTemp for large number of records
 				HashMap<String, Boolean> unique = new HashMap<>();
+				
+				String func = collector.getFieldAsString("Func");
+				String fname = collector.getFieldAsString("Field");
+				String subid = collector.getFieldAsString("SubId");
+				
+				ListStruct values = collector.getFieldAsList("Values");
 				
 				Consumer<Object> uniqueConsumer = new Consumer<Object>() {				
 					@Override
@@ -114,12 +123,24 @@ public class SelectDirect extends LoadRecord {
 					}
 				};				
 				
-				String fname = collector.getFieldAsString("Field");
-				String subid = collector.getFieldAsString("SubId");
-				
-				ListStruct values = collector.getFieldAsList("Values");
-				
-				if (values != null) {
+				if (StringUtil.isNotEmpty(func)) {
+					DbCollector proc = Hub.instance.getSchema().getDbCollector(func);
+					
+					if (proc != null) {
+						ICollector sp = proc.getCollector();
+
+						if (sp != null) {
+							sp.collect(conn, task, log, collector, uniqueConsumer);
+						}
+						else {
+							log.error("Stored func not found or bad: " + func);
+						}
+					}
+					else {
+						log.error("Stored func not found or bad: " + func);
+					}
+				}
+				else if (values != null) {
 					for (Struct s : values.getItems()) { 
 						if ("Id".equals(fname))
 							uniqueConsumer.accept(s);

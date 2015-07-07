@@ -1,4 +1,4 @@
-package divconq.cms.proc;
+package divconq.cms.thread.proc;
 
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;

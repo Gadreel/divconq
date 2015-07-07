@@ -19,6 +19,9 @@ package divconq.xml;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import divconq.lang.Memory;
 import divconq.util.StringUtil;
@@ -77,6 +80,37 @@ public class XmlWriter {
 		}
 		catch (IOException x) {
 			
+		}
+	}
+	
+	/**
+	 * Write a xml node and all children to a file
+	 * 
+	 * @param xml node to write
+	 * @param dest file to create/overwrite
+	 */
+	static public void writeToFile(XNode xml, Path dest) {
+		if ((xml == null) || (dest == null))
+			return;
+
+		try {
+			// make sure the folder is there
+			Path folder = dest.getParent();
+			Files.createDirectories(folder);
+		}
+		catch (IOException x) {
+			// ???
+		}
+		
+		// TODO use more efficient approach than copy to memory first		
+		Memory content = xml.toMemory(true);
+		content.setPosition(0);
+		
+		try (OutputStream fos = Files.newOutputStream(dest)) {
+			content.copyToStream(fos);
+		}
+		catch (IOException x) {
+			// ???
 		}
 	}
 }

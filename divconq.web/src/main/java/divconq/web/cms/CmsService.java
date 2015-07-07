@@ -25,7 +25,9 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.UUID;
 import java.util.Map.Entry;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.joda.time.DateTime;
@@ -39,6 +41,7 @@ import divconq.db.DataRequest;
 import divconq.db.ObjectFinalResult;
 import divconq.db.ObjectResult;
 import divconq.db.ReplicatedDataRequest;
+import divconq.db.query.CollectorField;
 import divconq.db.query.SelectDirectRequest;
 import divconq.db.query.SelectFields;
 import divconq.db.query.WhereEqual;
@@ -55,6 +58,8 @@ import divconq.lang.op.FuncCallback;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationContextBuilder;
+import divconq.lang.op.OperationResult;
 import divconq.mod.ExtensionBase;
 import divconq.session.Session;
 import divconq.session.DataStreamChannel;
@@ -66,6 +71,9 @@ import divconq.struct.Struct;
 import divconq.util.IOUtil;
 import divconq.util.MimeUtil;
 import divconq.util.StringUtil;
+import divconq.web.importer.ImportWebsiteTool;
+import divconq.work.IWork;
+import divconq.work.Task;
 import divconq.work.TaskRun;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
@@ -269,9 +277,6 @@ public class CmsService extends ExtensionBase implements IService {
 			}
 		}		
 		
-		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
-		CommonPath sectionpath = new CommonPath("/dcw/" + domain.getAlias() + "/");
-		
 		// =========================================================
 		//  store categories
 		// =========================================================
@@ -279,7 +284,6 @@ public class CmsService extends ExtensionBase implements IService {
 		if ("Category".equals(feature)) {
 			Products.handleCategories(request, this.fsd, op, msg);
 			return;
-
 		}
 		
 		// =========================================================
@@ -289,37 +293,6 @@ public class CmsService extends ExtensionBase implements IService {
 		if ("Product".equals(feature)) {
 			Products.handleProducts(request, this.fsd, op, msg);
 			return;
-
-		}
-		
-		// =========================================================
-		//  cms skeletons
-		// =========================================================
-		
-		if ("Skeleton".equals(feature)) {
-			Pages.handleSkeletons(request, this.fsd, op, msg, sectionpath);
-			return;
-
-		}
-		
-		// =========================================================
-		//  cms Pages
-		// =========================================================
-		
-		if ("Page".equals(feature)) {
-			Pages.handlePages(request, this.fsd, op, msg, sectionpath);
-			return;
-
-		}
-		
-		// =========================================================
-		//  cms Blog
-		// =========================================================
-		
-		if ("Blog".equals(feature)) {
-			Blogs.handleBlog(request, this.fsd, op, msg, sectionpath);
-			return;
-
 		}
 		
 		// =========================================================
@@ -329,6 +302,20 @@ public class CmsService extends ExtensionBase implements IService {
 		if ("Site".equals(feature)) {
 			if ("BuildMap".equals(op)) {
 				this.handleSiteBuildMap(request);
+				return;
+			}
+			
+			if ("ImportSite".equals(op)) {
+				// TODO turn this into a task in the service pool so all imports are processed separately
+				ImportWebsiteTool iutil = new ImportWebsiteTool();
+				
+				iutil.importSite(new OperationCallback() {
+					@Override
+					public void callback() {
+						request.complete();
+					}
+				});
+				
 				return;
 			}
 		}
@@ -353,7 +340,634 @@ public class CmsService extends ExtensionBase implements IService {
 			}
 		}
 		
+		// =========================================================
+		//  cms Feeds
+		// =========================================================
+		
+		if ("Feeds".equals(feature)) {
+			if ("LoadFeedsDefinition".equals(op)) {
+				this.handleLoadFeedsDefinitions(request);
+				return;
+			}
+			
+			if ("LoadList".equals(op)) {
+				this.handleFeedLoadList(request);
+				return;
+			}
+			
+			if ("AddFeedFiles".equals(op)) {
+				this.handleAddFeedFiles(request);
+				return;
+			}
+			
+			if ("AddPageFiles".equals(op)) {
+				this.handleAddPageFiles(request);
+				return;
+			}
+			
+			if ("LoadFeedFiles".equals(op)) {
+				this.handleLoadFeedFiles(request);
+				return;
+			}
+			
+			if ("UpdateFeedFiles".equals(op)) {
+				this.handleUpdateFeedFiles(request);
+				return;
+			}
+			
+			if ("PublishFeedFiles".equals(op)) {
+				this.handlePublishFeedFiles(request);
+				return;
+			}
+			
+			if ("ImportFeedFiles".equals(op)) {
+				this.handleImportFeedFiles(request);
+				return;
+			}
+		}
+		
 		request.errorTr(441, this.serviceName(), feature, op);
+		request.complete();
+	}
+	
+	public void handleFeedLoadList(TaskRun request) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String channel = rec.getFieldAsString("Channel");
+		
+		Hub.instance.getDatabase().submit(
+				new SelectDirectRequest() 
+					.withTable("dcmFeed")
+					.withSelect(new SelectFields()
+						.withField("Id")
+						.withField("dcmPath", "Path")
+						.withSubField("dcmFields", "Published.en", "Published")
+						.withSubField("dcmFields", "Title.en", "Title")
+						.withSubField("dcmFields", "Image.en", "Image")
+						.withSubField("dcmFields", "Description.en", "Description")
+				)
+				.withCollector(
+					new CollectorField("dcmChannel")
+						.withValues(channel)
+				),
+				new ObjectFinalResult(request));
+	}
+	
+	public void handleAddFeedFiles(TaskRun request) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		
+		String locale = "en";		// TODO elaborate
+		String channel = rec.getFieldAsString("Channel");
+		String path = rec.getFieldAsString("Path");
+		
+		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		
+		XElement feed = domain.getSettings().find("Feed");
+		
+		if (feed == null) { 
+			request.error("Unable to find feed settings: " + channel);
+			request.complete();
+			return;
+		}
+		
+		// there are two special channels - Pages and Blocks
+		for (XElement chan : feed.selectAll("Channel")) { 
+			String calias = chan.getAttribute("Alias");
+			
+			if (calias == null)
+				calias = chan.getAttribute("Name");
+			
+			if (calias.equals(channel)) {
+				path = chan.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
+				break;
+			}			
+		}
+
+		Path srcpath = domain.resolvePath("/feed-preview" + path + ".dcf.xml");
+		
+		try {
+			Files.createDirectories(srcpath.getParent());
+			
+			String uuid = UUID.randomUUID().toString();
+			
+			// put a record in database so we'll show up in the listing
+			Hub.instance.getDatabase().submit(
+				new ReplicatedDataRequest("dcmFeedUpdate")
+					.withParams(new RecordStruct()
+						.withField("Uuid", uuid)
+						.withField("Channel", channel)
+						.withField("Path", path)
+						.withField("Editable", true)
+						.withField("Fields", new ListStruct()
+							.withItems(new RecordStruct()
+								.withField("Name", "Title")
+								.withField("Locale", locale)		
+								.withField("Value", rec.getFieldAsString("Title"))
+							)
+						)
+					), 
+				new ObjectResult() {
+					@Override
+					public void process(CompositeStruct result3b) {
+						XElement root = new XElement("dcf")
+							.withAttribute("Locale", locale)
+							.withAttribute("Uuid", uuid)
+							.with(new XElement("Field")
+								.withAttribute("Value", rec.getFieldAsString("Title"))
+								.withAttribute("Name", "Title")
+							);
+						
+						// allow overwrites - else we will orphan new files that cannot be indexed
+						IOUtil.saveEntireFile(srcpath, root.toString(true));
+						
+						request.complete();
+					}
+				});
+		}
+		catch (Exception x) {
+			request.error("Unable to add feed: " + x);
+			request.complete();
+		}
+	}
+	
+	public void handleAddPageFiles(TaskRun request) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String channel = "Pages";
+		String locale = "en";		// TODO elaborate
+		String path = rec.getFieldAsString("Path");
+		
+		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		
+		XElement feed = domain.getSettings().find("Feed");
+		
+		if (feed == null) { 
+			request.error("Unable to find feed settings: " + channel);
+			request.complete();
+			return;
+		}
+		
+		String ipath = path;
+		
+		// there are two special channels - Pages and Blocks
+		for (XElement chan : feed.selectAll("Channel")) { 
+			String calias = chan.getAttribute("Alias");
+			
+			if (calias == null)
+				calias = chan.getAttribute("Name");
+			
+			if (calias.equals(channel)) {
+				ipath = chan.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
+				break;
+			}			
+		}
+
+		Path srcpath = domain.resolvePath("/feed-preview" + ipath + ".dcf.xml");
+
+		// TODO someday work this out so that it will go to www-preview at first
+		Path uisrcpath = domain.resolvePath("/www" + path + ".dcui.xml");
+		
+		try {
+			Files.createDirectories(srcpath.getParent());
+			Files.createDirectories(uisrcpath.getParent());
+			
+			String uuid = UUID.randomUUID().toString();
+			
+			// put a record in database so we'll show up in the listing
+			Hub.instance.getDatabase().submit(
+				new ReplicatedDataRequest("dcmFeedUpdate")
+					.withParams(new RecordStruct()
+						.withField("Uuid", uuid)
+						.withField("Channel", channel)
+						.withField("Path", path)
+						.withField("Editable", true)
+						.withField("Fields", new ListStruct()
+							.withItems(new RecordStruct()
+								.withField("Name", "Title")
+								.withField("Locale", locale)		
+								.withField("Value", rec.getFieldAsString("Title"))
+							)
+						)
+					), 
+				new ObjectResult() {
+					@Override
+					public void process(CompositeStruct result3b) {
+						IOUtil.saveEntireFile(uisrcpath, rec.getFieldAsString("UIContentXml"));
+	
+						XElement root = new XElement("dcf")
+							.withAttribute("Locale", locale)
+							.withAttribute("Uuid", uuid)
+							.with(new XElement("Field")
+								.withAttribute("Value", rec.getFieldAsString("Title"))
+								.withAttribute("Name", "Title")
+							);
+						
+						// allow overwrites - else we will orphan new files that cannot be indexed
+						IOUtil.saveEntireFile(srcpath, root.toString(true));
+						
+						request.complete();
+					}
+				});
+		}
+		catch (Exception x) {
+			request.error("Unable to add feed: " + x);
+			request.complete();
+		}
+	}
+	
+	public void handleUpdateFeedFiles(TaskRun request) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String channel = rec.getFieldAsString("Channel");
+		String path = rec.getFieldAsString("Path");
+		
+		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		
+		XElement feed = domain.getSettings().find("Feed");
+		
+		if (feed == null) { 
+			request.error("Unable to find feed settings: " + channel);
+			request.complete();
+			return;
+		}
+		
+		// there are two special channels - Pages and Blocks
+		for (XElement chan : feed.selectAll("Channel")) { 
+			String calias = chan.getAttribute("Alias");
+			
+			if (calias == null)
+				calias = chan.getAttribute("Name");
+			
+			if (calias.equals(channel)) {
+				path = chan.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
+				break;
+			}			
+		}
+
+		//if ("Pages".equals(channel)) 
+		//	path = "/Pages" + path;
+
+		Path srcpath = domain.resolvePath("/feed-preview" + path + ".dcf.xml");
+		
+		try {
+			Files.createDirectories(srcpath.getParent());
+			
+			for (Struct df : rec.getFieldAsList("DeleteFiles").getItems()) {
+				try {
+					Files.deleteIfExists(srcpath.resolveSibling(df.toString()));
+				}
+				catch (Exception x) {
+					System.out.println("Problem deleting: " + df);
+				}
+			}
+			
+			for (Struct uf : rec.getFieldAsList("UpdateFiles").getItems()) {
+				RecordStruct urec = (RecordStruct) uf;
+
+				IOUtil.saveEntireFile(srcpath.resolveSibling(urec.getFieldAsString("Name")), urec.getFieldAsString("Content"));
+			}
+			
+			IOUtil.saveEntireFile(srcpath, rec.getFieldAsString("ContentXml"));
+		}
+		catch (Exception x) {
+			request.error("Unable to update feed: " + x);
+		}
+		
+		request.complete();
+	}
+	
+	public void handleLoadFeedsDefinitions(TaskRun request) {
+		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		
+		XElement feed = domain.getSettings().find("Feed");
+		
+		if (feed == null) {
+			request.error("Feed definition does not exist.");
+			request.complete();
+			return;
+		}
+		
+		RecordStruct resp = new RecordStruct()
+			.withField("FeedsXml", feed);
+		 
+		request.returnValue(resp);
+	}
+		
+	public void handleLoadFeedFiles(TaskRun request) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String channel = rec.getFieldAsString("Channel");
+		String path = rec.getFieldAsString("Path");
+		
+		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		
+		XElement feed = domain.getSettings().find("Feed");
+		
+		if (feed == null) {
+			request.error("Feed definition does not exist.");
+			request.complete();
+			return;
+		}
+		
+		XElement definition = null;
+		
+		for (XElement chan : feed.selectAll("Channel")) {
+			String alias = chan.getAttribute("Alias");
+			
+			if (alias == null)
+				alias = chan.getAttribute("Name");
+			
+			if (channel.equals(alias)) {
+				definition = chan;
+				break;
+			}
+		}
+		
+		if (definition == null) {
+			request.error("Feed channel definition (" + channel + ") does not exist.");
+			request.complete();
+			return;
+		}
+		
+		// copy it because we might alter it
+		definition = (XElement) definition.deepCopy();
+		
+		// load Page definitions...
+		if ("Pages".equals(channel) || "Block".equals(channel)) {
+			Path srcpath = Hub.instance.getPublicFileStore().resolvePath("dcw/" + domain.getAlias() + "/www-preview/" + path + ".dcui.xml");
+			
+			if (Files.notExists(srcpath))
+				srcpath = Hub.instance.getPublicFileStore().resolvePath("dcw/" + domain.getAlias() + "/www/" + path + ".dcui.xml");
+			
+			if (Files.notExists(srcpath)) {
+				request.error("Feed page " + path + " does not exist.");
+				request.complete();
+				return;
+			}
+			
+			FuncResult<XElement> res = XmlReader.loadFile(srcpath, false);
+			
+			if (res.hasErrors()) {
+				request.error("Bad page file " + path + ".");
+				request.complete();
+				return;
+			}
+
+			for (XElement ppd : res.getResult().selectAll("PagePartDef"))
+				definition.add(ppd);
+
+			for (XElement ppd : res.getResult().selectAll("Help"))
+				definition.add(ppd);
+		}
+		
+		path = definition.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
+
+		//if ("Pages".equals(channel)) 
+		//	path = "/Pages" + path;
+			
+		Path previewpath = domain.resolvePath("/feed-preview" + path + ".dcf.xml");
+		Path pubpath = domain.resolvePath("/feed" + path + ".dcf.xml");
+		
+		Path srcpath = previewpath;
+		
+		if (Files.notExists(srcpath))
+			srcpath = pubpath;
+		
+		if (Files.notExists(srcpath)) {
+			request.error("Feed file " + path + " does not exist.");
+			request.complete();
+			return;
+		}
+		
+		FuncResult<XElement> res = XmlReader.loadFile(srcpath, false);
+		
+		if (res.hasErrors()) {
+			request.error("Bad feed file " + path + ".");
+			request.complete();
+			return;
+		}
+		
+		String fname = srcpath.getFileName().toString();
+		String ffname = fname.substring(0, fname.indexOf('.'));
+		
+		XElement xml = res.getResult();
+		
+		ListStruct files = new ListStruct();
+		
+		RecordStruct resp = new RecordStruct()
+			.withField("ChannelXml", definition)
+			.withField("ContentXml", xml.toString(true))
+			.withField("Files", files);
+		
+		BiConsumer<XElement, String> addfilefunc = new BiConsumer<XElement, String>() {			
+			@Override
+			public void accept(XElement part, String locale) {
+				String ext = part.getAttribute("External", "false").toLowerCase();
+				
+				if (!"true".equals(ext))
+					return;
+				
+				if (part.hasAttribute("Locale"))
+					locale = part.getAttribute("Locale");	// use the override locale if present
+			
+				String sname = ffname + "." + part.getAttribute("For") + "." + locale + "." + part.getAttribute("Format");
+				Path spath = previewpath.resolveSibling(sname);
+				
+				if (Files.notExists(spath))
+					spath = pubpath.resolveSibling(sname);
+				
+				FuncResult<CharSequence> mres = IOUtil.readEntireFile(spath);
+				
+				if (mres.isNotEmptyResult()) {
+					RecordStruct fentry = new RecordStruct()
+						.withField("Name", sname)
+						.withField("Content", mres.getResult().toString());
+					
+					files.addItem(fentry);
+				}
+			}
+		}; 
+		
+		String deflocale = xml.getAttribute("Locale", OperationContext.get().getDomain().getLocale());
+		
+		for (XElement fel : xml.selectAll("PagePart")) 
+			addfilefunc.accept(fel, deflocale);
+		
+		for (XElement afel : xml.selectAll("Alternate")) {
+			String locale = afel.getAttribute("Locale");
+			
+			for (XElement fel : afel.selectAll("PagePart")) 
+				addfilefunc.accept(fel, locale);
+		}
+		 
+		request.returnValue(resp);
+	}
+	
+	public void handlePublishFeedFiles(TaskRun request) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String channel = rec.getFieldAsString("Channel");
+		String path = rec.getFieldAsString("Path");
+		
+		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		
+		XElement feed = domain.getSettings().find("Feed");
+		
+		if (feed == null) { 
+			request.error("Unable to find feed settings: " + channel);
+			request.complete();
+			return;
+		}
+		
+		// there are two special channels - Pages and Blocks
+		for (XElement chan : feed.selectAll("Channel")) { 
+			String calias = chan.getAttribute("Alias");
+			
+			if (calias == null)
+				calias = chan.getAttribute("Name");
+			
+			if (calias.equals(channel)) {
+				path = chan.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
+				break;
+			}			
+		}
+		
+		//if ("Pages".equals(channel)) 
+		//	path = "/Pages" + path;		// TODO user InnerPath from settings - see also two places above
+
+		Path srcpath = domain.resolvePath("/feed-preview" + path + ".dcf.xml");
+		
+		// if no preview available then nothing we can do here
+		if (Files.notExists(srcpath)) {
+			request.complete();
+			return;
+		}
+		
+		// make sure we have someplace to put the published file
+		
+		Path destpath = domain.resolvePath("/feed" + path + ".dcf.xml");
+		
+		try {
+			Files.createDirectories(destpath.getParent());
+		}
+		catch (Exception x) {
+			request.error("Unable to create publish folder: " + x);
+			request.complete();
+			return;
+		}
+		
+		// load the feed file
+		
+		FuncResult<CharSequence> fres = IOUtil.readEntireFile(srcpath);
+		
+		if (fres.hasErrors()) {
+			request.error("Missing feed file " + path + ".");
+			request.complete();
+			return;
+		}
+		
+		FuncResult<XElement> res = XmlReader.parse(fres.getResult(), false);
+		
+		if (res.hasErrors()) {
+			request.error("Bad feed file " + path + ".");
+			request.complete();
+			return;
+		}
+		
+		XElement xml = res.getResult();
+		
+		// find and update all the external parts
+		
+		BiConsumer<XElement, String> addfilefunc = new BiConsumer<XElement, String>() {			
+			@Override
+			public void accept(XElement part, String locale) {
+				String ext = part.getAttribute("External", "false").toLowerCase();
+				
+				if (!"true".equals(ext))
+					return;
+				
+				if (part.hasAttribute("Locale"))
+					locale = part.getAttribute("Locale");	// use the override locale if present
+			
+				String sname = srcpath.getFileName().toString();
+				
+				int pos = sname.indexOf('.');
+				sname = sname.substring(0, pos) + "." + part.getAttribute("For") + "." + locale + "." + part.getAttribute("Format");
+				
+				Path ypath = srcpath.resolveSibling(sname);
+				
+				// don't bother if there is no preview file
+				if (Files.notExists(ypath))
+					return;
+				
+				FuncResult<CharSequence> mres = IOUtil.readEntireFile(ypath);
+				
+				if (!mres.hasErrors()) {
+					OperationResult oor = IOUtil.saveEntireFile(destpath.resolveSibling(sname), mres.getResult().toString());
+					
+					if (!oor.hasErrors())
+						try {
+							Files.delete(ypath);
+						}
+						catch (Exception x) {
+							System.out.println("Unable to delete preview file: " + ypath +  " : " + x);
+						}
+				}
+			}
+		}; 
+		
+		String deflocale = xml.getAttribute("Locale", OperationContext.get().getDomain().getLocale());
+		
+		for (XElement fel : xml.selectAll("PagePart")) 
+			addfilefunc.accept(fel, deflocale);
+		
+		for (XElement afel : xml.selectAll("Alternate")) {
+			String locale = afel.getAttribute("Locale");
+			
+			for (XElement fel : afel.selectAll("PagePart")) 
+				addfilefunc.accept(fel, locale);
+		}
+		
+		// finally save the feed file itself
+		
+		OperationResult oor = IOUtil.saveEntireFile(destpath, fres.getResult().toString());
+		
+		if (!oor.hasErrors())
+			try {
+				Files.delete(srcpath);
+			}
+			catch (Exception x) {
+				System.out.println("Unable to delete preview file: " + srcpath +  " : " + x);
+			}
+		 
+		request.complete();
+	}
+	
+	public void handleImportFeedFiles(TaskRun request) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String path = rec.getFieldAsString("Path");
+		
+		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		
+		Task task = new Task()
+			.withWork(new IWork() {
+				@Override
+				public void run(TaskRun trun) {
+					ImportWebsiteTool iutil = new ImportWebsiteTool();
+					
+					iutil.importFeedFile(domain.resolvePath(path), new OperationCallback() {
+						@Override
+						public void callback() {
+							trun.complete();
+						}
+					});
+				}
+			})
+			.withTitle("Importing feed " + path)
+			.withBucket("ServicePool")		// only one at a time
+			.withContext(new OperationContextBuilder()
+				.withRootTaskTemplate()
+				.withDomainId(domain.getId())
+				.toOperationContext()
+			);
+		
+		Hub.instance.getWorkPool().submit(task);
+		 
 		request.complete();
 	}
 	
@@ -446,7 +1060,9 @@ public class CmsService extends ExtensionBase implements IService {
 		            		
 			            		XElement sel = new XElement("url");
 			            		
-			            		sel.add(new XElement("loc", indexurl + file.subpath(pos + 1, file.getNameCount())));
+			            		String loc = file.subpath(pos + 1, file.getNameCount()).toString();
+			            		
+			            		sel.add(new XElement("loc", indexurl + loc.substring(0, loc.indexOf("."))));
 			            		sel.add(new XElement("lastmod", lmFmt.print(Files.getLastModifiedTime(file).toMillis())));
 			            		
 			            		smel.add(sel);

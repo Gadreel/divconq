@@ -333,6 +333,17 @@ dc.pui = {
 					
 					return $('#__unreal');
 				},
+				addFormLayout: function(name, xtralayout) {
+					var page = dc.pui.Loader.__pages[this.Name];
+					
+					dc.pui.Page.layout(page, entry, xtralayout, {
+						Element: $('#frm' + name),
+						Parent: null,
+						Definition: { Element: 'Form', Name: name }
+					});
+					
+					$('#frm' + name).enhanceWithin();				
+				},
 				freeze: function() {
 					var page = dc.pui.Loader.__pages[this.Name];
 					
@@ -587,6 +598,11 @@ dc.pui = {
 			$('*[data-dcui-mode="enhance"] a').each(function() { 
 				//console.log('a: ' + $(this).attr('href'));
 				
+				var en = $(this).attr('data-enhance');
+				
+				if (en && (en.toLowerCase() == 'false'))
+					return;
+				
 				var l = $(this).attr('href');
 				
 				if (l.startsWith('http:') || l.startsWith('https:') || l.endsWith('.pdf')) {
@@ -610,6 +626,12 @@ dc.pui = {
 				});			
 			});
 		},		
+		closePage: function(opts) {
+			if (opts)
+				dc.pui.Loader.loadPage(opts.Path, opts.Params);
+			else 
+				window.history.back();
+		},
 		currentPageEntry: function() {
 			return dc.pui.Loader.__current;
 		},

@@ -77,7 +77,11 @@ public class Fragment extends Element {
 		this.path = adapter.getFilePath();
 		this.loc = adapter.getLocationPath();
 		this.source = (XElement) adapter.getSource().deepCopy();
-				
+
+		// if this is a CMS page then build it if Auto
+		if ("auto".equals(this.source.getAttribute("Cms", "false").toLowerCase())) 
+			ctx.getFeedAdapter("Pages", ctx.getRequest().getPath().toString()).buildHtmlPage(ctx, this.source, ctx.isPreview());
+		
 		XElement screl = this.source.find("ServerScript");
 		
 		if (screl != null) {

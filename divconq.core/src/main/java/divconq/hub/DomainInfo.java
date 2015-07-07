@@ -36,6 +36,7 @@ import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationContextBuilder;
+import divconq.locale.LocaleUtil;
 import divconq.scheduler.ISchedule;
 import divconq.scheduler.SimpleSchedule;
 import divconq.scheduler.common.CommonSchedule;
@@ -61,6 +62,7 @@ public class DomainInfo {
 	protected Map<String, ServiceRouter> routers = new HashMap<String, ServiceRouter>();
 	protected DomainWatcherAdapter watcher = null;
 	protected List<ISchedule> schedulenodes = new ArrayList<>();
+	protected String locale = null;
 	
 	public String getId() {
 		return this.info.getFieldAsString("Id");
@@ -76,6 +78,13 @@ public class DomainInfo {
 	
 	public RecordStruct getInfo() {
 		return this.info;
+	}
+	
+	public String getLocale() {
+		if (this.locale != null)
+			return this.locale;
+		
+		return LocaleUtil.getDefaultLocale();
 	}
 	
 	public IService getService(String name) {
@@ -143,6 +152,15 @@ public class DomainInfo {
 		return fs.getFilePath().resolve("dcw/" + this.getAlias() + path);
 	}
 
+	public Path getPath() {
+		LocalFileStore fs = Hub.instance.getPublicFileStore();
+		
+		if (fs == null)
+			return null;
+		
+		return fs.getFilePath().resolve("dcw/" + this.getAlias());
+	}
+
 	/* TODO reload more settings too - consider:
 	 * 
 			./dcw/[domain alias]/config     holds web setting for domain
@@ -178,6 +196,9 @@ public class DomainInfo {
 				return;
 			
 			this.overrideSettings = xres.getResult();
+			
+			if (this.overrideSettings.hasAttribute("Locale")) 
+				this.locale = this.overrideSettings.getAttribute("Locale");
 		}
 		
 		// TODO check for and load dictionaries, variables, etc

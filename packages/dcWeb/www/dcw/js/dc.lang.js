@@ -732,6 +732,19 @@ var dc = {
 		}
 	},
 	lang: {
+		Xml: {
+			// consider  https://www.fyneworks.com/jquery/xml-to-json/
+			xmlToObj: function(xml) {
+				var res = { };
+				
+				$.each(this.attributes, function(i, attrib){
+					res[attrib.name] = attrib.value;					
+				});
+				
+				return res;
+			}
+		},
+		
 		// TODO put DebugLevel enum in and use it (below)
 		
 		Dict: {
@@ -876,3 +889,16 @@ var dc = {
 		}
 	}
 }
+
+$.fn.dcVal = function() {
+    var v = this.attr('Value');
+    
+    if (!v)
+    	v = this.attr('value');
+    
+    if (!v)
+    	v = this.text();
+    
+    return v;
+};
+

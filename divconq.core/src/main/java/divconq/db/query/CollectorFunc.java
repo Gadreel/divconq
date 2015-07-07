@@ -16,8 +16,6 @@
 ************************************************************************ */
 package divconq.db.query;
 
-import java.util.Collection;
-
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
@@ -28,31 +26,39 @@ import divconq.struct.Struct;
  * @author Andy
  *
  */
-public class CollectorScript implements ICollector {
+public class CollectorFunc implements ICollector {
 	protected RecordStruct column = new RecordStruct();
 	
 	/**
 	 * @param name of id looping script
 	 */
-	public CollectorScript(String name) {
-		this.column.setField("Name", name);
+	public CollectorFunc(String name) {
+		this.column.setField("Func", name);
 	}
 	
-	/**
-	 * @param name of id looping script
-	 * @param values to use as parameters for script 
-	 */
-	public CollectorScript(String name, Collection<String> values) {
-		this.column.setField("Name", name);
-		
+	public CollectorFunc withValues(Object... values) {
 		if (values != null) {
 			ListStruct list = new ListStruct();
 			
-			for (String v : values)
+			for (Object v : values)
 				list.addItem(v);
 			
 			this.column.setField("Values", list);
 		}
+		
+		return this;
+	}
+	
+	public CollectorFunc withValues(ListStruct values) {
+		this.column.setField("Values", values);
+		
+		return this;
+	}
+	
+	public CollectorFunc withExtra(RecordStruct v) {
+		this.column.setField("Extras", v);
+		
+		return this;
 	}
 	
 	@Override

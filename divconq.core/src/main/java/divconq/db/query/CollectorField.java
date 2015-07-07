@@ -57,6 +57,12 @@ public class CollectorField implements ICollector {
 		return this;
 	}
 	
+	public CollectorField withExtra(RecordStruct v) {
+		this.column.setField("Extras", v);
+		
+		return this;
+	}
+	
 	public CollectorField withFrom(Object v) {
 		this.column.setField("From", v);
 		

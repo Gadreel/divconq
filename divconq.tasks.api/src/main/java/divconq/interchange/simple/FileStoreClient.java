@@ -25,10 +25,15 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -73,6 +78,7 @@ import divconq.db.update.InsertRecordRequest;
 import divconq.db.update.UpdateRecordRequest;
 import divconq.db.util.ByteUtil;
 import divconq.filestore.CommonPath;
+import divconq.hub.DomainInfo;
 import divconq.hub.Foreground;
 import divconq.hub.Hub;
 import divconq.hub.ILocalCommandLine;
@@ -113,6 +119,7 @@ import divconq.util.HexUtil;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
 import divconq.web.cms.OrderUtil;
+import divconq.web.importer.ImportWebsiteTool;
 import divconq.work.IWork;
 import divconq.work.Task;
 import divconq.work.TaskRun;
@@ -3046,6 +3053,271 @@ public class FileStoreClient implements ILocalCommandLine {
 							}
 						})
 						.withTitle("Test normalizeValidateType processing")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+
+				case 417: {
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								// ========================================
+								// INDEX all pages, feeds
+								// ========================================
+
+								// keep track of all feed paths visited so far - using url path
+								Set<String> feedpaths = new HashSet<String>();
+								
+								DomainInfo di = OperationContext.get().getDomain();
+								
+								XElement feed = di.getSettings().find("Feed");
+								
+								if (feed != null) {
+									// there are two special channels - Pages and Blocks
+									for (XElement chan : feed.selectAll("Channel")) {
+										String alias = chan.getAttribute("Alias");
+										
+										if (alias == null)
+											alias = chan.getAttribute("Name");
+										
+										String falias = alias;
+										
+										// don't index blocks be themselves
+										if ("Blocks".equals(alias))
+											continue;
+										
+										try {
+											String perpath = chan.getAttribute("Path", "");		// or empty string
+											
+											String feedpathf1 = "/feed/" + alias;
+											Path feedsrc1 = di.resolvePath(feedpathf1).toAbsolutePath().normalize();
+											
+											//System.out.println("abs: " + feedsrc1);
+											
+											if (Files.exists(feedsrc1)) {
+												Files.walkFileTree(feedsrc1, new SimpleFileVisitor<Path>() {
+													@Override
+													public FileVisitResult visitFile(Path sfile, BasicFileAttributes attrs) throws IOException {
+														Path relpath = feedsrc1.relativize(sfile);
+														
+														//System.out.println("rel: " + relpath);
+														
+														String innerpath = relpath.toString();
+														
+														if (innerpath.endsWith(".dcf.xml")) {
+															innerpath = perpath + "/" + innerpath.substring(0, innerpath.length() - 8);
+															
+															System.out.println("Indexing " + falias + " > " + innerpath);
+															
+															feedpaths.add(innerpath);
+															
+															String prefeedpath = "/feed-preview/" + falias + "/" + relpath;
+															Path prefeedsrc = di.resolvePath(prefeedpath).normalize();
+															
+															if (Files.exists(prefeedsrc)) {
+																System.out.println("Indexing preview also " + falias + " > " + innerpath);
+															}
+														}
+															
+														return FileVisitResult.CONTINUE;
+													}
+												});
+											}
+											
+											String feedpathf2 = "/feed-preview/" + alias;
+											Path feedsrc2 = di.resolvePath(feedpathf2).toAbsolutePath().normalize();
+											
+											if (Files.exists(feedsrc2)) {
+												Files.walkFileTree(feedsrc2, new SimpleFileVisitor<Path>() {
+													@Override
+													public FileVisitResult visitFile(Path sfile, BasicFileAttributes attrs) throws IOException {
+														Path relpath = feedsrc2.relativize(sfile);
+														
+														String innerpath = relpath.toString();
+														
+														if (innerpath.endsWith(".dcf.xml")) {
+															innerpath = perpath + "/" + innerpath.substring(0, innerpath.length() - 8);
+														
+															if (!feedpaths.contains(innerpath)) {
+																System.out.println("Indexing preview only " + falias + " > " + innerpath);
+																
+																feedpaths.add(innerpath);
+															}
+														}
+															
+														return FileVisitResult.CONTINUE;
+													}
+												});
+											}
+										}
+										catch (IOException x) {
+											System.out.println("Error indexing: " + alias + " : " + x);
+										}
+									}
+								}
+								
+								String alias = "";
+								
+								try {
+									String perpath = "";
+									String falias = "";
+									
+									String wwwpathf1 = "/www/" + alias;
+									Path wwwsrc1 = di.resolvePath(wwwpathf1).toAbsolutePath().normalize();
+									
+									//System.out.println("abs: " + feedsrc1);
+									
+									if (Files.exists(wwwsrc1)) {
+										Files.walkFileTree(wwwsrc1, new SimpleFileVisitor<Path>() {
+											@Override
+											public FileVisitResult visitFile(Path sfile, BasicFileAttributes attrs) throws IOException {
+												Path relpath = wwwsrc1.relativize(sfile);
+												
+												//System.out.println("rel: " + relpath);
+												
+												String innerpath = relpath.toString();
+												
+												if (innerpath.endsWith(".dcui.xml")) {
+													innerpath = perpath + "/" + innerpath.substring(0, innerpath.length() - 9);
+													
+													if (!feedpaths.contains(innerpath)) {
+														System.out.println("Indexing " + falias + " > " + innerpath);
+														
+														feedpaths.add(innerpath);
+														
+														String prefeedpath = "/www-preview/" + falias + "/" + relpath;
+														Path prefeedsrc = di.resolvePath(prefeedpath).normalize();
+														
+														if (Files.exists(prefeedsrc)) {
+															System.out.println("Indexing preview also " + falias + " > " + innerpath);
+														}
+													}
+												}
+													
+												return FileVisitResult.CONTINUE;
+											}
+										});
+									}
+									
+									String wwwpathf2 = "/www-preview/" + alias;
+									Path wwwsrc2 = di.resolvePath(wwwpathf2).toAbsolutePath().normalize();
+									
+									if (Files.exists(wwwsrc2)) {
+										Files.walkFileTree(wwwsrc2, new SimpleFileVisitor<Path>() {
+											@Override
+											public FileVisitResult visitFile(Path sfile, BasicFileAttributes attrs) throws IOException {
+												Path relpath = wwwsrc2.relativize(sfile);
+												
+												String innerpath = relpath.toString();
+												
+												if (innerpath.endsWith(".dcui.xml")) {
+													innerpath = perpath + "/" + innerpath.substring(0, innerpath.length() - 9);
+												
+													if (!feedpaths.contains(innerpath)) {
+														System.out.println("Indexing preview only " + falias + " > " + innerpath);
+														
+														feedpaths.add(innerpath);
+													}
+												}
+													
+												return FileVisitResult.CONTINUE;
+											}
+										});
+									}
+								}
+								catch (IOException x) {
+									System.out.println("Error indexing www: " + alias + " : " + x);
+								}
+								
+								trun.complete();
+								return;
+								
+								/*
+								Message msg = new Message("dcmCms", "Site", "BuildMap", null);
+								
+								Hub.instance.getBus().sendMessage(msg, new DumpCallback("cb for BuildMap") {
+									@Override
+									public void callback() {
+										super.callback();
+										
+										trun.complete();
+									}
+								});
+								*/
+							}
+						})
+						.withTitle("Test BuildMap processing")
+						.withContext(octx);
+					
+					Hub.instance.getWorkPool().submit(task);
+					
+					break;
+				}
+
+				case 418: {
+					OperationContext octx = new OperationContextBuilder()
+							.withVerified(true)
+							.withAuthTags("User","Admin")
+							.withDomainId("00700_000000000000005")
+							.withFullName("Andy White")
+							.withEmail("andy@andywhitewebworks.com")
+							.withUserId("00700_000000000000001")
+							.withUsername("andy@andywhitewebworks.com")
+							.withAuthToken("FakeToMakeIsAuthorized")
+							.toOperationContext();
+					
+					Task task = new Task()
+						.withWork(new IWork() {
+							@Override
+							public void run(TaskRun trun) {
+								// ========================================
+								// INDEX all pages, feeds
+								// ========================================
+								
+								ImportWebsiteTool iutil = new ImportWebsiteTool();
+								
+								iutil.importSite(new OperationCallback() {
+									@Override
+									public void callback() {
+										trun.complete();
+									}
+								});
+								
+								/*
+								iutil.importFeedFile(Paths.get("./public/dcw/dga/feed/Pages/About.dcf.xml"), new OperationCallback() {
+									@Override
+									public void callback() {
+										trun.touch();
+										
+										iutil.clear();
+										
+										iutil.importFeedFile(Paths.get("./public/dcw/dga/feed-preview/Pages/Test-Example.aside-content.en.md"), new OperationCallback() {
+											@Override
+											public void callback() {
+												trun.complete();
+											}
+										});
+									}
+								});
+								*/
+							}
+						})
+						.withTitle("Test BuildMap processing")
 						.withContext(octx);
 					
 					Hub.instance.getWorkPool().submit(task);

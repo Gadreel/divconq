@@ -1264,6 +1264,15 @@ public class OperationContext {
 		}
     }
 	
+	public String getLocale() {
+		String locale = this.userctx.getLocale();
+		
+		if (locale != null)
+			return locale;
+		
+		return this.getDomain().getLocale();
+	}
+	
 	public String tr(String token, Object... params) {
 		return this.userctx.tr(token, params);
 	}

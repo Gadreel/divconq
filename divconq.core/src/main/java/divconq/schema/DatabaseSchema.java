@@ -29,15 +29,8 @@ public class DatabaseSchema {
 	protected SchemaManager man = null;
 	protected HashMap<String, DbProc> procs = new HashMap<String, DbProc>();
 	protected HashMap<String, DbComposer> composers = new HashMap<String, DbComposer>();
+	protected HashMap<String, DbCollector> collectors = new HashMap<String, DbCollector>();
 	protected HashMap<String, List<DbTrigger>> triggers = new HashMap<String, List<DbTrigger>>();
-	/*
-	protected HashMap<String, DbFilter> recfilters = new HashMap<String, DbFilter>();
-	protected HashMap<String, DbFilter> whrfilters = new HashMap<String, DbFilter>();
-	protected HashMap<String, DbFilter> reccomposers = new HashMap<String, DbFilter>();
-	protected HashMap<String, DbFilter> selcomposers = new HashMap<String, DbFilter>();
-	protected HashMap<String, DbFilter> whrcomposers = new HashMap<String, DbFilter>();
-	protected HashMap<String, DbFilter> collectors = new HashMap<String, DbFilter>();
-	*/
 	protected HashMap<String, DbTable> tables = new HashMap<String, DbTable>();
 	
 	public Collection<DbProc> getProcedures() {
@@ -48,31 +41,9 @@ public class DatabaseSchema {
 		return this.composers.values();
 	}
 	
-	/*
-	public Collection<DbFilter> getRecordFilters() {
-		return this.recfilters.values();
-	}
-	
-	public Collection<DbFilter> getWhereFilters() {
-		return this.whrfilters.values();
-	}
-
-	public Collection<DbFilter> getRecordComposers() {
-		return this.reccomposers.values();
-	}
-
-	public Collection<DbFilter> getSelectComposers() {
-		return this.selcomposers.values();
-	}
-
-	public Collection<DbFilter> getWhereComposers() {
-		return this.whrcomposers.values();
-	}
-
-	public Collection<DbFilter> getCollectors() {
+	public Collection<DbCollector> getCollectors() {
 		return this.collectors.values();
 	}
-	*/
 	
 	public Collection<DbTable> getTables() {
 		return this.tables.values();
@@ -184,6 +155,20 @@ public class DatabaseSchema {
 				
 				this.composers.put(sname, opt);
 			}			
+			
+			for (XElement procel : secel.selectAll("Collector")) {
+				String sname = procel.getAttribute("Name");
+				
+				if (StringUtil.isEmpty(sname))
+					continue;			
+				
+				DbCollector opt = new DbCollector();
+				opt.name = sname;
+				opt.execute = procel.getAttribute("Execute");
+				opt.securityTags = tags;
+				
+				this.collectors.put(sname, opt);
+			}			
 		}			
 		
 		for (XElement procel : db.selectAll("Trigger")) {
@@ -206,92 +191,6 @@ public class DatabaseSchema {
 			
 			ll.add(opt);
 		}			
-		
-		/*
-		for (XElement procel : db.selectAll("RecordFilter")) {
-			String sname = procel.getAttribute("Name");
-			
-			if (StringUtil.isEmpty(sname))
-				continue;			
-			
-			DbFilter opt = new DbFilter();
-			opt.name = sname;
-			opt.execute = procel.getAttribute("Execute");
-			opt.table = procel.getAttribute("Table");
-			
-			this.recfilters.put(sname, opt);
-		}			
-		
-		for (XElement procel : db.selectAll("WhereFilter")) {
-			String sname = procel.getAttribute("Name");
-			
-			if (StringUtil.isEmpty(sname))
-				continue;			
-			
-			DbFilter opt = new DbFilter();
-			opt.name = sname;
-			opt.execute = procel.getAttribute("Execute");
-			opt.table = procel.getAttribute("Table");
-			
-			this.whrfilters.put(sname, opt);
-		}			
-		
-		for (XElement procel : db.selectAll("RecordComposer")) {
-			String sname = procel.getAttribute("Name");
-			
-			if (StringUtil.isEmpty(sname))
-				continue;			
-			
-			DbFilter opt = new DbFilter();
-			opt.name = sname;
-			opt.execute = procel.getAttribute("Execute");
-			opt.table = procel.getAttribute("Table");
-			
-			this.reccomposers.put(sname, opt);
-		}			
-		
-		for (XElement procel : db.selectAll("SelectComposer")) {
-			String sname = procel.getAttribute("Name");
-			
-			if (StringUtil.isEmpty(sname))
-				continue;			
-			
-			DbFilter opt = new DbFilter();
-			opt.name = sname;
-			opt.execute = procel.getAttribute("Execute");
-			opt.table = procel.getAttribute("Table");
-			
-			this.selcomposers.put(sname, opt);
-		}			
-		
-		for (XElement procel : db.selectAll("WhereComposer")) {
-			String sname = procel.getAttribute("Name");
-			
-			if (StringUtil.isEmpty(sname))
-				continue;			
-			
-			DbFilter opt = new DbFilter();
-			opt.name = sname;
-			opt.execute = procel.getAttribute("Execute");
-			opt.table = procel.getAttribute("Table");
-			
-			this.whrcomposers.put(sname, opt);
-		}			
-		
-		for (XElement procel : db.selectAll("Collector")) {
-			String sname = procel.getAttribute("Name");
-			
-			if (StringUtil.isEmpty(sname))
-				continue;			
-			
-			DbFilter opt = new DbFilter();
-			opt.name = sname;
-			opt.execute = procel.getAttribute("Execute");
-			opt.table = procel.getAttribute("Table");
-			
-			this.collectors.put(sname, opt);
-		}		
-		*/	
 	}
 
 	public void compile() {
@@ -392,5 +291,12 @@ public class DatabaseSchema {
 			return null;
 		
 		return this.composers.get(name);
+	}
+	
+	public DbCollector getCollector(String name) {
+		if (StringUtil.isEmpty(name))
+			return null;
+		
+		return this.collectors.get(name);
 	}
 }

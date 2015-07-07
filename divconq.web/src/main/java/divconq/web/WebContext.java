@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.Cookie;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.stream.ChunkedInput;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
+import divconq.cms.feed.FeedAdapter;
 import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
@@ -426,6 +428,40 @@ public class WebContext {
 				
 		if (mres.isNotEmptyResult()) 
 			return mres.getResult().toString();
+		
+		return null;
+	}
+	
+	public FeedAdapter getFeedAdapter(String alias, String path) {
+		XElement feed = OperationContext.get().getDomain().getSettings().find("Feed");
+		
+		if (feed == null) 
+			return null;
+		
+		// there are two special channels - Pages and Blocks
+		for (XElement chan : feed.selectAll("Channel")) {
+			String calias = chan.getAttribute("Alias");
+			
+			if (calias == null)
+				calias = chan.getAttribute("Name");
+			
+			if (calias == null)
+				continue;
+			
+			if (calias.equals(alias)) {
+				path = chan.getAttribute("Path", chan.getAttribute("InnerPath", "")) + path + ".dcf.xml";
+				
+				Path fpath = this.innerctx.getDomain().findSectionFile(this.isPreview(), "feed", path);
+				
+				if ((fpath != null) && Files.exists(fpath)) {
+					FeedAdapter adapt = new FeedAdapter();
+					adapt.init(path, fpath);
+					return adapt; 
+				}
+				
+				return null;
+			}
+		}
 		
 		return null;
 	}

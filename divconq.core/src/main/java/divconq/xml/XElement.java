@@ -857,6 +857,7 @@ public class XElement extends XNode {
 		return null;
 	}
 
+	// TODO return false if only white space
 	public boolean hasText() {
 		if (!this.hasChildren())
 			return false;
@@ -868,6 +869,21 @@ public class XElement extends XNode {
 			return true;
 		
 		return false;
+	}
+	
+	// returns Value attribute if present, else returns text
+	public String getValue() {
+		if (this.hasAttribute("Value"))
+			return this.getAttribute("Value");
+		
+		return this.getText();
+	}
+	
+	public boolean hasValue() {
+		if (this.hasAttribute("Value"))
+			return StringUtil.isNotEmpty(this.getAttribute("Value"));
+		
+		return this.hasText();
 	}
 	
 	/**

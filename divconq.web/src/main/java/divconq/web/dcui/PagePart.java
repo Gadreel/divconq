@@ -59,7 +59,7 @@ public class PagePart extends Element implements ICodeTag {
 		
 		for (XElement pel : src.selectAll("PagePart")) {
 			if (this.id.equals(pel.getAttribute("For")) && (lname.equals(pel.getAttribute("Locale"))
-					|| "default".equals(pel.getAttribute("Locale")) || !pel.hasAttribute("Locale"))) {
+					|| "default".equals(pel.getAttribute("Locale")) || "true".equals(pel.getAttribute("ForceLocale")) || !pel.hasAttribute("Locale"))) {
 				ppel = pel;
 				break;
 			}

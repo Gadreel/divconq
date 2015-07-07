@@ -16,6 +16,7 @@
 ************************************************************************ */
 package divconq.web;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -31,6 +32,8 @@ import divconq.hub.IEventSubscriber;
 import divconq.io.FileStoreEvent;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationCallback;
+import divconq.lang.op.OperationContextBuilder;
 import divconq.mod.Bundle;
 import divconq.mod.ExtensionLoader;
 import divconq.mod.IExtension;
@@ -38,6 +41,10 @@ import divconq.net.IpAddress;
 import divconq.util.MimeUtil;
 import divconq.util.StringUtil;
 import divconq.web.http.SslContextFactory;
+import divconq.web.importer.ImportWebsiteTool;
+import divconq.work.IWork;
+import divconq.work.Task;
+import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class WebSiteManager {
@@ -198,6 +205,37 @@ public class WebSiteManager {
 				for (WebDomain wdomain : WebSiteManager.this.dsitemap.values()) {
 					if (domain.equals(wdomain.getAlias())) {
 						wdomain.siteNotify();
+						
+						// TODO after we merge DomainInfo and WebDomain features this will work better,
+						// right now feed only gets imported if the domain has been loaded via HTTP(S) request
+						if ("feed".equals(section) || "feed-preview".equals(section)) {
+							Task task = new Task()
+								.withWork(new IWork() {
+									@Override
+									public void run(TaskRun trun) {
+										ImportWebsiteTool iutil = new ImportWebsiteTool();
+										
+										
+										// TODO use domain path resolution
+										iutil.importFeedFile(Paths.get("./public" + p), new OperationCallback() {
+											@Override
+											public void callback() {
+												trun.complete();
+											}
+										});
+									}
+								})
+								.withTitle("Importing feed " + p)
+								.withBucket("ServicePool")		// only one at a time
+								.withContext(new OperationContextBuilder()
+									.withRootTaskTemplate()
+									.withDomainId(wdomain.getId())
+									.toOperationContext()
+								);
+							
+							Hub.instance.getWorkPool().submit(task);
+						}
+						
 						break;
 					}
 				}

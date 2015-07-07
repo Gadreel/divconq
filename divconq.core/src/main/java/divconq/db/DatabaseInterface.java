@@ -189,4 +189,11 @@ abstract public class DatabaseInterface {
 	abstract public boolean isAuditDisabled();
 
 	abstract public String allocateSubkey();
+	
+	public Long inverseTime(DateTime time) {
+		if (time == null)
+			return null;
+		
+		return -time.getMillis();
+	}
 }

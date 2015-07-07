@@ -16,27 +16,27 @@
 ************************************************************************ */
 package divconq.schema;
 
-import divconq.db.IComposer;
+import divconq.db.ICollector;
 import divconq.hub.Hub;
 import divconq.lang.op.OperationContext;
 import divconq.util.StringUtil;
 
-public class DbComposer {
+public class DbCollector {
 	public String name = null;
 	public String execute = null;
 	public String[] securityTags = null;
-	public IComposer sp = null;
+	public ICollector sp = null;
 	
-	public IComposer getComposer() {
+	public ICollector getCollector() {
 		if (this.sp != null)
 			return this.sp;
 		
 		// composer should be stateless, save effort by putting 1 instance inside DbComposer and reusing it
 		if (StringUtil.isNotEmpty(this.execute)) 
-			this.sp = (IComposer) Hub.instance.getInstance(this.execute);
+			this.sp = (ICollector) Hub.instance.getInstance(this.execute);
 		
 		if (this.sp == null)
-			OperationContext.get().error("Composer " + this.name + " failed to create.");
+			OperationContext.get().error("Collector " + this.name + " failed to create.");
 		
 		return this.sp;
 	}

@@ -364,7 +364,7 @@
 					<Field Name="Where" Type="dcDbWhereClause" />
 					<Field Name="Collector">
 						<Record>
-							<Field Name="Name" Type="dcTinyString" />
+							<Field Name="Func" Type="dcTinyString" />
 							<!-- or -->
 							<Field Name="Field" Type="dcTinyString" />
 							<Field Name="SubId" Type="dcTinyString" />
@@ -373,6 +373,7 @@
 							<Field Name="Values">
 								<List Type="Any" />
 							</Field>
+							<Field Name="Extras" Type="AnyRecord" />
 						</Record>
 					</Field>
 					<Field Name="Historical" Type="Boolean" />
@@ -394,7 +395,7 @@
 					<Field Name="Where" Type="dcDbWhereClause" />
 					<Field Name="Collector">
 						<Record>
-							<Field Name="Name" Type="dcTinyString" />
+							<Field Name="Func" Type="dcTinyString" />
 							<!-- or -->
 							<Field Name="Field" Type="dcTinyString" />
 							<Field Name="From" Type="Any" />
@@ -402,6 +403,7 @@
 							<Field Name="Values">
 								<List Type="Any" />
 							</Field>
+							<Field Name="Extras" Type="AnyRecord" />
 						</Record>
 					</Field>
 					<Field Name="Historical" Type="Boolean" />

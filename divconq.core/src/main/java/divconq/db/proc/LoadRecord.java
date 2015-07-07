@@ -106,21 +106,12 @@ public class LoadRecord implements IStoredProc {
 				return;
 			}
 			
-			String cpname = proc.execute;
-			
-			if (StringUtil.isEmpty(cpname)) {
+			IComposer sp = proc.getComposer();
+
+			if (sp == null)
 				out.value(null);
-				return;
-			}
-			
-			try {
-				Class<?> cpclass = Class.forName(cpname);				
-				IComposer sp = (IComposer) cpclass.newInstance();
+			else
 				sp.writeField(conn, task, log, out, db, table, id, when, field, historical, myCompact);
-			} 
-			catch (Exception x) {
-				log.error("Unable to run composer: " + x);
-			}
 			
 			return;
 		}

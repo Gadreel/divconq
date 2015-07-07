@@ -7,21 +7,12 @@
 				<div id="areaEditor" data-role="collapsible" data-inset="true" data-collapsed="false">
 					<h4>Editor Menu</h4>
 					
-					<WideButton Label="Pages" Icon="gear" Page="/dcm/cms/pages/List" /> 
+					<WideButton Label="Pages" Icon="gear" Page="/dcm/cms/feeds/PageList" /> 
+					<WideButton Label="Feeds" Icon="gear" Page="/dcm/cms/feeds/FeedList" /> 
 					<WideButton Label="Gallery" Icon="bars" Page="/dcm/cms/files/Gallery" /> 
 					<WideButton Label="Web Files" Icon="bars" Page="/dcm/cms/files/WebFiles" /> 
 					<WideButton Label="My Account" Icon="edit" Page="/dcm/cms/EditSelf" /> 
-				</div>			 
-			
-				<div id="areaDeveloper" data-role="collapsible" data-inset="true" data-collapsed="false">
-					<h4>Developer Menu</h4>
-				
-					<WideButton Label="Skeletons" Icon="gear" Page="/dcm/cms/skeletons/List" /> 
-					<WideButton Label="Domain Files" Icon="bars" Page="/dcm/cms/files/DomainFiles" /> 
-					<WideButton Label="Users" Icon="user" Page="/dcm/cms/Users" /> 
-					<WideButton Label="This Domain" Icon="edit" Page="/dcm/cms/EditDomain" /> 
-					
-					<!--  WideButton Label="Test Editor" Icon="edit" Page="/dcm/cms/pages/EditPart" / -->
+					<WideButton Label="Sign Out" Icon="sign-out" Click="DoSignOut" />
 				</div>			 
 			</article>
 		</div>

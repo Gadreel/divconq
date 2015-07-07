@@ -50,7 +50,7 @@ public class AdvText extends Element implements ICodeTag {
 
 	@Override
 	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
-    	this.format = xel.getAttribute("format", "md");
+    	this.format = xel.getAttribute("Format", "md");
     	this.content = xel.getText();
     	
 		nodes.add(this);
@@ -79,6 +79,14 @@ public class AdvText extends Element implements ICodeTag {
 			
 			nl = new Nodes();
 			nl.add(new LiteralText(html));
+			
+			/* TODO add lang attribute to this node and others
+			String locale = src.getAttribute("Locale", parentlocale);
+			String lang = locale;
+			
+			if (lang.indexOf("_") > -1) 
+				lang = lang.substring(0, lang.indexOf("_"));
+			*/
 			
 			//nl = new Nodes(new LiteralText(this.content.toString()));
 		}

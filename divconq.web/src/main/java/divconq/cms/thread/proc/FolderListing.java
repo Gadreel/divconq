@@ -1,7 +1,5 @@
-package divconq.cms.proc;
+package divconq.cms.thread.proc;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -16,7 +14,7 @@ import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.struct.builder.ICompositeBuilder;
 
-public class FolderCounting implements IStoredProc {
+public class FolderListing implements IStoredProc {
 	@Override
 	public void execute(DatabaseInterface conn, DatabaseTask task, OperationResult log) {
 		RecordStruct params = task.getParamsAsRecord();
@@ -25,14 +23,14 @@ public class FolderCounting implements IStoredProc {
 		// if (task.isReplicating()) 
 
 		TablesAdapter db = new TablesAdapter(conn, task); 
-
+		
 		/* TODO use dcmThreadA or dcmThreadB 	 */
 		
 		BigDateTime when = BigDateTime.nowDateTime();
 		boolean historical = false;
 		ICompositeBuilder out = task.getBuilder();
 		AtomicReference<String> currparty = new AtomicReference<>();
-		Map<String, FolderCount> currdata = new HashMap<>(); 
+		String folder = params.getFieldAsString("Folder");
 		
 		try {
 			Consumer<Object> partyConsumer = new Consumer<Object>() {				
@@ -42,28 +40,33 @@ public class FolderCounting implements IStoredProc {
 						String id = t.toString();						
 						String party = currparty.get();
 
-						// TODO filter labels 
+						// TODO filter labels too
 						
 						String foldr = (String) db.getStaticList("dcmThread", id, "dcmFolder", party);
 						
-						FolderCount fd = currdata.get(foldr);
+						if (!folder.equals(foldr))
+							return;
 						
-						if (fd == null) {
-							fd = new FolderCount();
-							fd.name = foldr;
-							currdata.put(foldr, fd);
-						}
+						out.startRecord();
+						out.field("Id", id);
+						out.field("Uuid", db.getStaticScalar("dcmThread", id, "dcmUuid"));
+						out.field("Title", db.getStaticScalar("dcmThread", id, "dcmTitle"));
+						out.field("TargetDate", db.getStaticScalar("dcmThread", id, "dcmTargetDate"));
+						out.field("EndDate", db.getStaticScalar("dcmThread", id, "dcmEndDate"));
+						out.field("Created", db.getStaticScalar("dcmThread", id, "dcmCreated"));
+						out.field("Modified", db.getStaticScalar("dcmThread", id, "dcmModified"));
+						out.field("Originator", db.getStaticScalar("dcmThread", id, "dcmOriginator"));
+						out.field("Read", db.getStaticList("dcmThread", id, "dcmRead", party));
 						
-						Boolean read = (Boolean) db.getStaticList("dcmThread", id, "dcmRead", party);
+						// TODO split and output labels
+						out.field("Labels");
+						out.startList();
+						out.endList();
 						
-						if ((read == null) || !read)
-							fd.newcnt++;
-						
-						fd.totalcnt++;
-						
+						out.endRecord();
 					}
 					catch (Exception x) {
-						log.error("Issue with folder counting: " + x);
+						log.error("Issue with folder listing: " + x);
 					}
 				}
 			};				
@@ -74,31 +77,16 @@ public class FolderCounting implements IStoredProc {
 			
 			for (Struct s : values.getItems()) {
 				currparty.set(s.toString());
-				currdata.clear();
-				
-				// collect data for this party
-				db.traverseIndex("dcmThread", "dcmParty", currparty.get(), when, historical, partyConsumer);
 				
 				//output data for this party
 				out.startRecord();
 				out.field("Party", currparty.get());
-				out.field("Folders");
+				out.field("Folder");
 				out.startList();
 				
-				for (FolderCount cnt : currdata.values()) {
-					out.startRecord();
-					out.field("Name", cnt.name);
-					out.field("New", cnt.newcnt);
-					out.field("Total", cnt.totalcnt);
-					out.field("Labels");
-					
-					// TODO split and output labels
-					out.startList();
-					out.endList();
-					
-					out.endRecord();
-				}
-				
+				// collect data for this party
+				db.traverseIndex("dcmThread", "dcmParty", currparty.get(), when, historical, partyConsumer);
+
 				out.endList();
 				
 				out.endRecord();						
@@ -107,16 +95,9 @@ public class FolderCounting implements IStoredProc {
 			out.endList();
 		}
 		catch (Exception x) {
-			log.error("Issue with folder counting: " + x);
+			log.error("Issue with folder listing: " + x);
 		}
 		
 		task.complete();
-	}
-	
-	public class FolderCount {
-		public String name = null;
-		public int newcnt = 0;
-		public int totalcnt = 0;
-		public String Labels = null;
 	}
 }

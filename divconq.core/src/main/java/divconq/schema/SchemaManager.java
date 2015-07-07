@@ -133,6 +133,18 @@ public class SchemaManager {
 		return this.chain.getDbComposer(name);
 	}
 	
+	public DbCollector getDbCollector(String name) {
+		DbCollector t = this.db.getCollector(name);
+		
+		if (t != null)
+			return t;
+		
+		if (this.chain == null)
+			return null;
+		
+		return this.chain.getDbCollector(name);
+	}
+	
 	// returns (copy) list of all triggers for all levels of the chain
 	public List<DbTrigger> getDbTriggers(String table, String operation) {
 		List<DbTrigger> t = this.db.getTriggers(table, operation);		
