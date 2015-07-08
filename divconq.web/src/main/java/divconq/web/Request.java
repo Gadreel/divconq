@@ -39,6 +39,7 @@ import io.netty.handler.codec.http.QueryStringDecoder;
 public class Request {
 	protected CommonPath path = null;
 	protected CommonPath orgpath = null;
+	protected String orgrequri = null;
 	protected HttpHeaders headers = null;
 	protected HttpMethod method = null;
 	protected Map<String, List<String>> parameters = null;
@@ -73,6 +74,10 @@ public class Request {
     
     public CommonPath getPath() {
 		return this.path;
+	}
+    
+    public String getOriginalPathUri() {
+		return this.orgrequri;
 	}
     
     // sometimes the path is rewritten by rules, this should reflect the current view of the path
@@ -143,6 +148,7 @@ public class Request {
         this.parameters = decoderQuery.parameters();        // TODO decode
         this.path = new CommonPath(QueryStringDecoder.decodeComponent(decoderQuery.path()));
         this.orgpath = this.path;
+        this.orgrequri = QueryStringDecoder.decodeComponent(decoderQuery.uri());
         
         this.contentType = new ContentTypeParser(this.headers.get(Names.CONTENT_TYPE));
 	}

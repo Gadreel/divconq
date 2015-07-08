@@ -79,8 +79,12 @@ public class Fragment extends Element {
 		this.source = (XElement) adapter.getSource().deepCopy();
 
 		// if this is a CMS page then build it if Auto
-		if ("auto".equals(this.source.getAttribute("Cms", "false").toLowerCase())) 
-			ctx.getFeedAdapter("Pages", ctx.getRequest().getPath().toString()).buildHtmlPage(ctx, this.source, ctx.isPreview());
+		if ("auto".equals(this.source.getAttribute("Cms", "false").toLowerCase())) {
+			// possible to override the file path and grab a random Page from `feed`
+			String cmspath = this.source.getAttribute("CmsPath", ctx.getRequest().getPath().toString());
+			
+			ctx.getFeedAdapter("Pages", cmspath).buildHtmlPage(ctx, this.source, ctx.isPreview());
+		}
 		
 		XElement screl = this.source.find("ServerScript");
 		

@@ -1767,6 +1767,18 @@ public class CmsService extends ExtensionBase implements IService {
 		fs.addFolder(path, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {
+				// TODO really this is not going to be a remote/special store - just treat it like a FS throughout
+				Path rpath = OperationContext.get().getDomain().resolvePath("/galleries" + fpath);
+				Path mspath = rpath.getParent().resolve("meta-sub.json");
+				
+				try {
+					if (Files.exists(mspath))
+						Files.copy(mspath, rpath.resolve("meta.json"));
+				}
+				catch (Exception x) {
+					request.error("Error copying meta-sub.json: " + x);
+				}
+				
 				request.complete();
 			}
 		});

@@ -690,6 +690,8 @@ public class WebDomain {
 		
 		String defPort = this.man.getDefaultTlsPort();
 		
+		String orguri = req.getOriginalPathUri();
+		
 		for (XElement route : web.selectAll("Route")) {
 			if (host.equals(route.getAttribute("Name"))) {
 				if (route.hasAttribute("RedirectPath"))
@@ -713,8 +715,11 @@ public class WebDomain {
 					
 					return path + req.getOriginalPath(); 
 				}
-				
-				// TODO support alternate home paths - HomePath
+			}
+			
+			if (orguri.equals(route.getAttribute("Path"))) {
+				if (route.hasAttribute("RedirectPath"))
+					return route.getAttribute("RedirectPath");
 			}
 		}
 		
