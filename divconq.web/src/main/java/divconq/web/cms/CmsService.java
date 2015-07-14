@@ -221,6 +221,11 @@ public class CmsService extends ExtensionBase implements IService {
 				return;
 			}
 			
+			if ("ListVariations".equals(op)) {
+				this.handleListGalleryVariations(request, this.fsd, sectionpath);
+				return;
+			}
+			
 			if ("FileDetail".equals(op)) {
 				this.handleFileDetail(request, this.fsd, sectionpath);
 				return;
@@ -252,7 +257,12 @@ public class CmsService extends ExtensionBase implements IService {
 			}
 			
 			if ("AddFolder".equals(op)) {
-				this.handleAddFolder(request, this.fsd, sectionpath);
+				this.handleAddGalleryFolder(request, this.fsd, sectionpath);
+				return;
+			}
+			
+			if ("AddImage".equals(op)) {
+				this.handleAddGalleryImage(request, this.fsd, sectionpath);
 				return;
 			}
 			
@@ -688,6 +698,8 @@ public class CmsService extends ExtensionBase implements IService {
 		// copy it because we might alter it
 		definition = (XElement) definition.deepCopy();
 		
+		String help = null;
+		
 		// load Page definitions...
 		if ("Pages".equals(channel) || "Block".equals(channel)) {
 			Path srcpath = Hub.instance.getPublicFileStore().resolvePath("dcw/" + domain.getAlias() + "/www-preview/" + path + ".dcui.xml");
@@ -714,6 +726,11 @@ public class CmsService extends ExtensionBase implements IService {
 
 			for (XElement ppd : res.getResult().selectAll("Help"))
 				definition.add(ppd);
+			
+			XElement hd = res.getResult().find("Help");
+			
+			if (hd != null)
+				help = hd.getValue();
 		}
 		
 		path = definition.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
@@ -795,7 +812,16 @@ public class CmsService extends ExtensionBase implements IService {
 			for (XElement fel : afel.selectAll("PagePart")) 
 				addfilefunc.accept(fel, locale);
 		}
-		 
+		
+		Path hpath = pubpath.resolveSibling("readme.en.md");		// TODO local aware
+		
+		if (Files.exists(hpath)) {
+			FuncResult<CharSequence> mres = IOUtil.readEntireFile(hpath);
+			
+			if (mres.isNotEmptyResult()) 
+				resp.withField("Help", StringUtil.isNotEmpty(help) ? help + "\n\n----\n\n" + mres.getResult() : mres.getResult());
+		}
+		
 		request.returnValue(resp);
 	}
 	
@@ -1147,6 +1173,23 @@ public class CmsService extends ExtensionBase implements IService {
 						continue;
 					}
 					
+					// TODO localize
+					if ("readme.en.md".equals(file.getName())) {
+						cdcb.increment();
+						
+						file.readAllText(new FuncCallback<String>() {							
+							@Override
+							public void callback() {
+								if (this.isNotEmptyResult())
+									info.setField("Help", this.getResult());
+								
+								cdcb.countDown();
+							}
+						});
+						
+						continue;
+					}
+					
 					if (file.getName().startsWith(".")) 
 						continue;
 					
@@ -1169,6 +1212,98 @@ public class CmsService extends ExtensionBase implements IService {
 					
 					files.addItem(fdata);
 				}
+				
+				cdcb.countDown();
+			}
+		});
+	}
+		
+	public void handleListGalleryVariations(TaskRun request, FileSystemDriver fs, CommonPath sectionpath) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String fpath = rec.getFieldAsString("Path");
+		
+		if (!fpath.endsWith(".v"))
+			fpath += ".v";
+		
+		CommonPath path = sectionpath.resolve(fpath);
+		
+		fs.getFolderListing(path, new FuncCallback<List<IFileStoreFile>>() {			
+			@Override
+			public void callback() {
+				if (request.hasErrors()) {
+					request.complete();
+					return;					
+				}
+				
+				RecordStruct info = new RecordStruct();
+				
+				ListStruct files = new ListStruct();
+				
+				info.setField("Variants", files);
+				
+				CountDownCallback cdcb = new CountDownCallback(3, new OperationCallback() {
+					@Override
+					public void callback() {
+						request.returnValue(info);
+					}
+				});
+				
+				for (IFileStoreFile file : this.getResult()) {
+					if (file.getName().startsWith(".")) 
+						continue;
+					
+					if (file.isFolder())
+						continue;
+					
+					RecordStruct fdata = new RecordStruct();
+					
+					fdata.setField("Name", file.getName());
+					fdata.setField("LastModified", file.getModificationTime());
+					fdata.setField("Size", file.getSize());
+					
+					files.addItem(fdata);
+				}
+				
+				fs.getFileDetail(path.getParent().resolve("meta.json"), new FuncCallback<IFileStoreFile>() {					
+					@Override
+					public void callback() {
+						if (this.getResult().exists()) {
+							this.getResult().readAllText(new FuncCallback<String>() {							
+								@Override
+								public void callback() {
+									if (this.isNotEmptyResult())
+										info.setField("Settings", Struct.objectToComposite(this.getResult()));
+									
+									cdcb.countDown();
+								}
+							});
+						}
+						else {
+							cdcb.countDown();
+						}
+					}
+				});
+				
+				// localize
+				fs.getFileDetail(path.getParent().resolve("readme.en.md"), new FuncCallback<IFileStoreFile>() {					
+					@Override
+					public void callback() {
+						if (this.getResult().exists()) {
+							this.getResult().readAllText(new FuncCallback<String>() {							
+								@Override
+								public void callback() {
+									if (this.isNotEmptyResult())
+										info.setField("Help", this.getResult());
+									
+									cdcb.countDown();
+								}
+							});
+						}
+						else {
+							cdcb.countDown();
+						}
+					}
+				});
 				
 				cdcb.countDown();
 			}
@@ -1767,9 +1902,24 @@ public class CmsService extends ExtensionBase implements IService {
 		fs.addFolder(path, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {
+				request.complete();
+			}
+		});
+	}
+	
+	public void handleAddGalleryFolder(TaskRun request, FileSystemDriver fs, CommonPath sectionpath) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String fpath = rec.getFieldAsString("FolderPath");
+		
+		CommonPath path = sectionpath.resolve(fpath);
+		
+		fs.addFolder(path, new FuncCallback<IFileStoreFile>() {
+			@Override
+			public void callback() {
 				// TODO really this is not going to be a remote/special store - just treat it like a FS throughout
 				Path rpath = OperationContext.get().getDomain().resolvePath("/galleries" + fpath);
 				Path mspath = rpath.getParent().resolve("meta-sub.json");
+				Path rspath = rpath.getParent().resolve("readme-sub.en.md");
 				
 				try {
 					if (Files.exists(mspath))
@@ -1779,6 +1929,33 @@ public class CmsService extends ExtensionBase implements IService {
 					request.error("Error copying meta-sub.json: " + x);
 				}
 				
+				try {
+					if (Files.exists(rspath))
+						Files.copy(rspath, rpath.resolve("readme.en.md"));	// localize
+				}
+				catch (Exception x) {
+					request.error("Error copying readme-sub.en.md: " + x);
+				}
+				
+				request.complete();
+			}
+		});
+	}
+	
+	public void handleAddGalleryImage(TaskRun request, FileSystemDriver fs, CommonPath sectionpath) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		String fpath1 = rec.getFieldAsString("ImagePath");
+		
+		if (!fpath1.endsWith(".v"))
+			fpath1 += ".v";
+		
+		String fpath = fpath1;
+		
+		CommonPath path = sectionpath.resolve(fpath);
+		
+		fs.addFolder(path, new FuncCallback<IFileStoreFile>() {
+			@Override
+			public void callback() {
 				request.complete();
 			}
 		});

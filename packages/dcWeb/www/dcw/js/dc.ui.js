@@ -342,7 +342,9 @@ dc.pui = {
 						Definition: { Element: 'Form', Name: name }
 					});
 					
-					$('#frm' + name).enhanceWithin();				
+					$('#frm' + name).enhanceWithin();			
+					
+					dc.pui.Page.updateFormCommon(page, this, name, entry.Forms[name], $('#frm' + name));
 				},
 				freeze: function() {
 					var page = dc.pui.Loader.__pages[this.Name];
@@ -1001,7 +1003,7 @@ dc.pui = {
 								};
 								
 								form.setInput = function(field, value) { 
-									return dc.pui.Page.getInput(child.Name, field, value);
+									return dc.pui.Page.setInput(child.Name, field, value);
 								};
 								
 								entry.Forms[form.Name] = form;
@@ -1238,6 +1240,10 @@ dc.pui = {
 						node.attr('id', id);
 						node.attr('name', fname);
 						
+						node.focusin({ Form: form.Name, Field: fname }, function(e) {
+							entry.Store.__LastFocus = e.data;
+						});
+						
 						// clone the rule or start blank
 						var rule = child.Rule ? $.extend(true, defrule, child.Rule) : defrule;
 						
@@ -1319,6 +1325,35 @@ dc.pui = {
 					continue;
 				}
 			}
+		},
+		
+		updateFormCommon: function(page, entry, formname, form, fnode) {
+			$.removeData(fnode.get(0), 'validator');		// remove the old rules
+			
+			fnode.validate({
+				rules: form.ValidationRules || { },
+				messages: form.ValidationMessages || { },
+				invalidHandler: function() {
+					dc.pui.Popup.alert('Missing or invalid inputs, please correct.');
+				},
+				submitHandler: function(frm) {
+					if (dc.pui.Page.busyCheck()) 		// proect again user submit such as Enter in a TextField
+						return false;
+					
+					dc.pui.Loader.__busy = true;
+					
+					dc.pui.Page.saveForm(page, entry, formname, function() {
+						if (page.Functions.Save) 
+							page.Functions.Save.call(entry, dc.pui.Loader.__content);
+						
+						// TODO
+						//$.mobile.loading('hide'); 
+						dc.pui.Loader.__busy = false;
+					});
+				
+					return false;
+				}
+			});
 		},
 		
 		loadFormCommon: function(page, entry, formname, form, fnode) {
@@ -2135,6 +2170,12 @@ dc.pui = {
 			},
 			IsChanged: function(form, field) {
 				var values = $('#frm' + form.Name + ' input[name=' + field.Field + ']:checked').map(function() { return this.value; }).get();
+
+				if (!values.length && !form.InternalValues[field.Field])
+					return false;
+				
+				if (values.length && !form.InternalValues[field.Field])
+					return true;
 
 				if (values.length != form.InternalValues[field.Field].length)
 					return true;

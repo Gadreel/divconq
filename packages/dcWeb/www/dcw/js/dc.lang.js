@@ -352,12 +352,15 @@ var dc = {
 				if (v instanceof Boolean)
 					return v.valueOf();
 				else if (dc.util.String.isString(v))
-					v = (v.toString() == 'True');
+					v = (v.toLowerCase().toString() == 'true');
 					
 				if (typeof v == 'boolean')
 					return v;
-					
-				return null;
+
+				if (v)
+					return true;
+										
+				return false;
 			}
 		},		
 		Dialog: {
@@ -410,6 +413,9 @@ var dc = {
 			},
 		
 			formatZLocalMedium: function(z) {
+				if (z.indexOf('T') == -1)
+					return z;
+					 
 				return moment.utc(z, 'YYYYMMDDTHHmmssSSSZ', true).local().format('MM-DD-YYYY h:mm:ss a');
 			},
 		
@@ -902,3 +908,17 @@ $.fn.dcVal = function() {
     return v;
 };
 
+$.fn.dcMD = function(txt) {
+	marked.setOptions({
+	  renderer: new marked.Renderer(),
+	  gfm: true,
+	  tables: true,
+	  breaks: true,
+	  pedantic: false,
+	  sanitize: false,
+	  smartLists: true,
+	  smartypants: false
+	});
+
+	this.html(marked(txt));
+}
