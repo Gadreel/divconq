@@ -135,6 +135,10 @@ public class SignIn extends LoadRecord {
 							new FieldStruct("Name", "UserId")
 					),
 					new RecordStruct(
+							new FieldStruct("Field", "dcUsername"),
+							new FieldStruct("Name", "Username")
+					),
+					new RecordStruct(
 							new FieldStruct("Field", "dcFirstName"),
 							new FieldStruct("Name", "FirstName")
 					),

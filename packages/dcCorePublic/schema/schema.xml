@@ -349,6 +349,7 @@
 		
 		<Record Id="dcDbWhereField">
 			<Field Name="Field" Type="dcTinyString" />
+			<Field Name="SubId" Type="dcTinyString" />
 			<Field Name="Format" Type="dcSmallString" />
 			<Field Name="Composer" Type="dcTinyString" />
 			<Field Name="Value" Type="Any" />

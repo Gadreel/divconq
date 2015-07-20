@@ -45,9 +45,9 @@ public class DatabaseSchema {
 		return this.collectors.values();
 	}
 	
-	public Collection<DbTable> getTables() {
-		return this.tables.values();
-	}
+	//public Collection<DbTable> getTables() {
+	//	return this.tables.values();
+	//}
 	
 	public DatabaseSchema(SchemaManager man) {
 		this.man = man;
@@ -264,6 +264,11 @@ public class DatabaseSchema {
 					ret.add(t);
 		
 		return ret;
+	}
+	
+	// returns a copy list, you (caller) can own the list 
+	public List<DbTable> getTables() {
+		return new ArrayList<>(this.tables.values());
 	}
 	
 	// returns a copy list, you (caller) can own the list 

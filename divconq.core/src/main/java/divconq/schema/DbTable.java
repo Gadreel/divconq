@@ -26,6 +26,10 @@ public class DbTable {
 	public String name = null;
 	public Map<String, DbField> fields = new HashMap<String, DbField>();
 
+	public String getName() {
+		return this.name;
+	}
+	
 	public void addField(XElement fel, DataType table) {
 		String name = fel.getAttribute("Name");
 		

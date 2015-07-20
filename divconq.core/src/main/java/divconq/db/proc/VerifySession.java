@@ -42,6 +42,10 @@ public class VerifySession extends LoadRecord {
 					// load info about the user
 					ListStruct select = new ListStruct(
 							new RecordStruct(
+									new FieldStruct("Field", "dcUsername"),
+									new FieldStruct("Name", "Username")
+							),
+							new RecordStruct(
 									new FieldStruct("Field", "dcFirstName"),
 									new FieldStruct("Name", "FirstName")
 							),
@@ -77,6 +81,7 @@ public class VerifySession extends LoadRecord {
 					/*
 					// load info about the user
 					out.startRecord();
+					<Field Name="Username" Type="dcUser:dcUsername" />
 					
 					out.field("AuthorizationTags");
 					

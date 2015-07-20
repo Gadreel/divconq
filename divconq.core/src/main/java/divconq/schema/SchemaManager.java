@@ -79,6 +79,23 @@ public class SchemaManager {
 		
 		return this.chain.hasTable(table);
 	}
+		
+	public List<DbTable> getDbTables() {
+		List<DbTable> t = this.db.getTables();
+		
+		if (t == null)
+			t = new ArrayList<DbTable>();
+		
+		if (this.chain == null)
+			return t;
+		
+		List<DbTable> t2 = this.chain.getDbTables();
+		
+		if (t2 != null)
+			t.addAll(t2);
+		
+		return t;
+	}
 	
 	public List<DbField> getDbFields(String table) {
 		List<DbField> t = this.db.getFields(table);

@@ -615,30 +615,83 @@ public class CmsService extends ExtensionBase implements IService {
 		//	path = "/Pages" + path;
 
 		Path srcpath = domain.resolvePath("/feed-preview" + path + ".dcf.xml");
+		Path psrcpath = domain.resolvePath("/feed" + path + ".dcf.xml");
 		
-		try {
-			Files.createDirectories(srcpath.getParent());
-			
-			for (Struct df : rec.getFieldAsList("DeleteFiles").getItems()) {
-				try {
-					Files.deleteIfExists(srcpath.resolveSibling(df.toString()));
-				}
-				catch (Exception x) {
-					System.out.println("Problem deleting: " + df);
-				}
+		if (Files.notExists(srcpath) && Files.notExists(psrcpath))
+			try {
+				XElement root = rec.getFieldAsXml("ContentXml");
+				
+				String locale = root.hasAttribute("Locale") ? root.getAttribute("Locale") : "en";
+				
+				Files.createDirectories(srcpath.getParent());
+				
+				String uuid = UUID.randomUUID().toString();
+				
+				// put a record in database so we'll show up in the listing
+				Hub.instance.getDatabase().submit(
+					new ReplicatedDataRequest("dcmFeedUpdate")
+						.withParams(new RecordStruct()
+							.withField("Uuid", uuid)
+							.withField("Channel", channel)
+							.withField("Path", path)
+							.withField("Editable", true)
+							.withField("Fields", new ListStruct()
+								.withItems(new RecordStruct()
+									.withField("Name", "Title")
+									.withField("Locale", locale)		
+									.withField("Value", rec.getFieldAsString("Title"))
+								)
+							)
+						), 
+					new ObjectResult() {
+						@Override
+						public void process(CompositeStruct result3b) {
+							root.withAttribute("Uuid", uuid);
+							root.withAttribute("Locale", locale);
+							
+							if (rec.hasField("UpdateFiles"))
+								for (Struct uf : rec.getFieldAsList("UpdateFiles").getItems()) {
+									RecordStruct urec = (RecordStruct) uf;
+					
+									IOUtil.saveEntireFile(srcpath.resolveSibling(urec.getFieldAsString("Name")), urec.getFieldAsString("Content"));
+								}
+							
+							// allow overwrites - else we will orphan new files that cannot be indexed
+							IOUtil.saveEntireFile(srcpath, root.toString(true));
+							
+							request.complete();
+						}
+					});
 			}
-			
-			for (Struct uf : rec.getFieldAsList("UpdateFiles").getItems()) {
-				RecordStruct urec = (RecordStruct) uf;
-
-				IOUtil.saveEntireFile(srcpath.resolveSibling(urec.getFieldAsString("Name")), urec.getFieldAsString("Content"));
+			catch (Exception x) {
+				request.error("Unable to add feed: " + x);
+				request.complete();
+			}		
+		else
+			try {
+				if (rec.hasField("DeleteFiles"))
+					for (Struct df : rec.getFieldAsList("DeleteFiles").getItems()) {
+						try {
+							Files.deleteIfExists(srcpath.resolveSibling(df.toString()));
+						}
+						catch (Exception x) {
+							System.out.println("Problem deleting: " + df);
+						}
+					}
+					
+				if (rec.hasField("UpdateFiles"))
+					for (Struct uf : rec.getFieldAsList("UpdateFiles").getItems()) {
+						RecordStruct urec = (RecordStruct) uf;
+		
+						IOUtil.saveEntireFile(srcpath.resolveSibling(urec.getFieldAsString("Name")), urec.getFieldAsString("Content"));
+					}
+				
+				if (rec.hasField("ContentXml"))
+					IOUtil.saveEntireFile(srcpath, rec.getFieldAsString("ContentXml"));
 			}
-			
-			IOUtil.saveEntireFile(srcpath, rec.getFieldAsString("ContentXml"));
-		}
-		catch (Exception x) {
-			request.error("Unable to update feed: " + x);
-		}
+			catch (Exception x) {
+				request.error("Unable to update feed: " + x);
+			}
 		
 		request.complete();
 	}
@@ -1922,16 +1975,20 @@ public class CmsService extends ExtensionBase implements IService {
 				Path rspath = rpath.getParent().resolve("readme-sub.en.md");
 				
 				try {
-					if (Files.exists(mspath))
+					if (Files.exists(mspath)) {
 						Files.copy(mspath, rpath.resolve("meta.json"));
+						Files.copy(mspath, rpath.resolve("meta-sub.json"));
+					}
 				}
 				catch (Exception x) {
 					request.error("Error copying meta-sub.json: " + x);
 				}
 				
 				try {
-					if (Files.exists(rspath))
+					if (Files.exists(rspath)) {
 						Files.copy(rspath, rpath.resolve("readme.en.md"));	// localize
+						Files.copy(rspath, rpath.resolve("readme-sub.en.md"));	// localize
+					}
 				}
 				catch (Exception x) {
 					request.error("Error copying readme-sub.en.md: " + x);

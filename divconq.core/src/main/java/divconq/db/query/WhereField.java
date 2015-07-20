@@ -39,13 +39,20 @@ public class WhereField implements IWhereField {
 	
 	/**
 	 * @param field field name
-	 * @param format formatting for return value
+	 * @param subid if field is a list and you wish to match just one value
 	 */
-	public WhereField(String field, String format) {
+	public WhereField(String field, String subid) {
 		this(field);
 		
+		if (StringUtil.isNotEmpty(subid))
+			this.column.setField("SubId", subid);
+	}
+	
+	public WhereField withFormat(String format) {
 		if (StringUtil.isNotEmpty(format))
 			this.column.setField("Format", format);
+		
+		return this;
 	}
 	
 	@Override

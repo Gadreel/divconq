@@ -161,6 +161,8 @@ public class SelectDirect extends LoadRecord {
 				log.error("Issue with select direct: " + x);
 			}
 			
+			task.complete();
+			return;
 		}
 		
 		/*

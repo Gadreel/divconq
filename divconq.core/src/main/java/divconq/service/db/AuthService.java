@@ -316,7 +316,7 @@ public class AuthService extends ExtensionBase implements IService {
 	
 								OperationContext.switchUser(ctx, ctx.getUserContext().toBuilder() 
 										.withVerified(true)
-										.withUsername(tc.getUserContext().getCredentials().getFieldAsString("Username"))
+										.withUsername(urec.getFieldAsString("Username"))
 										.withFullName(urec.getFieldAsString("FirstName") + " " + urec.getFieldAsString("LastName"))		// TODO make locale smart
 										.withEmail(urec.getFieldAsString("Email"))
 										.withAuthTags(atags)
@@ -367,7 +367,7 @@ public class AuthService extends ExtensionBase implements IService {
 									.withVerified(true)
 									.withAuthToken(sirec.getFieldAsString("AuthToken"))
 									.withUserId(sirec.getFieldAsString("UserId"))
-									.withUsername(tc.getUserContext().getCredentials().getFieldAsString("Username"))
+									.withUsername(sirec.getFieldAsString("Username"))
 									.withFullName(sirec.getFieldAsString("FirstName") + " " + sirec.getFieldAsString("LastName"))		// TODO make locale smart
 									.withEmail(sirec.getFieldAsString("Email"))
 									.withAuthTags(atags)

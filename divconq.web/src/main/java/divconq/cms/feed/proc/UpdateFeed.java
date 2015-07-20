@@ -132,15 +132,17 @@ public class UpdateFeed implements IStoredProc {
 							if (opubtime != null) 
 								conn.kill("dcmFeedIndex", did, ochan, conn.inverseTime(opubtime), recid);
 							
-							if (oprepubtime != null) 
-								conn.kill("dcmFeedPreviewIndex", did, ochan, conn.inverseTime(oprepubtime), recid);
+							// TODO
+							//if (oprepubtime != null) 
+							//	conn.kill("dcmFeedPreviewIndex", did, ochan, conn.inverseTime(oprepubtime), recid);
 						}
 						
 						if (npubtime != null) 
 							conn.set("dcmFeedIndex", did, nchan, conn.inverseTime(npubtime), recid, ntags);
 						
-						if (nprepubtime != null) 
-							conn.set("dcmFeedPreviewIndex", did, nchan, conn.inverseTime(nprepubtime), recid, ntags);
+						// TODO
+						//if (nprepubtime != null) 
+						//	conn.set("dcmFeedPreviewIndex", did, nchan, conn.inverseTime(nprepubtime), recid, ntags);
 					}
 				}
 				catch (Exception x) {
@@ -206,7 +208,7 @@ public class UpdateFeed implements IStoredProc {
 						req.withUpdateField("dcmFields", key, entry.getFieldAsString("Value"));
 						
 						if ("Published".equals(entry.getFieldAsString("Name"))) {
-							DateTime pd = TimeUtil.parseDateTime(entry.getFieldAsString("Value"));
+							DateTime pd = TimeUtil.parseDateTime(entry.getFieldAsString("Value")).withMillis(0).withSecondOfMinute(0);
 							updatepub.set(pd);							
 							req.withUpdateField("dcmPublished", pd);
 						}

@@ -15,6 +15,7 @@ import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.schema.DbField;
+import divconq.schema.DbTable;
 import divconq.schema.DbTrigger;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
@@ -1187,7 +1188,8 @@ public class TablesAdapter {
 		return ret;
 	}
 	
-	public List<byte[]> getRaw(String table, String id, String field, BigDateTime when, boolean historical) {
+	// subid null for all
+	public List<byte[]> getRaw(String table, String id, String field, String subid, BigDateTime when, boolean historical) {
 		List<byte[]> ret = new ArrayList<>();
 		
 		DbField schema = this.task.getSchema().getDbField(table, field);
@@ -1205,22 +1207,30 @@ public class TablesAdapter {
 			return ret;
 		}
 		
-		try {
-			byte[] subid = this.conn.nextPeerKey(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, null);
-			
-			while (subid != null) {
-				Object sid = ByteUtil.extractValue(subid);
-				
-				if (schema.isList() && !schema.isDynamic())
-					ret.add(this.getStaticListRaw(table, id, field, Struct.objectToString(sid)));
-				else
-					ret.add(this.getDynamicListRaw(table, id, field, Struct.objectToString(sid), when));
-				
-				subid = this.conn.nextPeerKey(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, sid);
-			}
+		if (subid != null) {
+			if (schema.isList() && !schema.isDynamic())
+				ret.add(this.getStaticListRaw(table, id, field, subid));
+			else
+				ret.add(this.getDynamicListRaw(table, id, field, subid, when));	// TODO check if this returns null sometimes, not what we want right?
 		}
-		catch (Exception x) {
-			OperationContext.get().error("getDynamicList error: " + x);
+		else {
+			try {
+				byte[] bsubid = this.conn.nextPeerKey(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, null);
+				
+				while (bsubid != null) {
+					Object sid = ByteUtil.extractValue(bsubid);
+					
+					if (schema.isList() && !schema.isDynamic())
+						ret.add(this.getStaticListRaw(table, id, field, Struct.objectToString(sid)));
+					else
+						ret.add(this.getDynamicListRaw(table, id, field, Struct.objectToString(sid), when));	// TODO check if this returns null sometimes, not what we want right?
+					
+					bsubid = this.conn.nextPeerKey(DB_GLOBAL_RECORD, this.task.getDomain(), table, id, field, sid);
+				}
+			}
+			catch (Exception x) {
+				OperationContext.get().error("getDynamicList error: " + x);
+			}
 		}
 		
 		return ret;
@@ -1347,6 +1357,7 @@ public class TablesAdapter {
 				continue;
 			
 			String pfname = pdef.getFieldAsString("Field");
+			String subid = pdef.getFieldAsString("SubId");
 			// TODO String pformat = pdef.getFieldAsString("Format");
 			// add support for Format, this converts from byte to object, then formats object, then back to byte for compares
 			
@@ -1357,7 +1368,7 @@ public class TablesAdapter {
 					values.set(i, vl);
 				}
 				else
-					values.set(i, this.getRaw(table, id, pfname, when, historical));
+					values.set(i, this.getRaw(table, id, pfname, subid, when, historical));
 				
 				continue;
 			}
@@ -2316,6 +2327,11 @@ srchTxt2(params,ret) n score,table,field,id,sid,pos,word,sources,find,fnd,sscore
 
 	public void rebuildIndexes(DomainInfo di, BigDateTime when) {
 		try {
+			for (DbTable tbl : di.getSchema().getDbTables()) {
+				this.rebuildTableIndex(di, tbl.getName(), when);
+			}
+			
+			/*
 			byte[] traw = this.conn.nextPeerKey(DB_GLOBAL_RECORD, di.getId(), null);
 			
 			while (traw != null) {
@@ -2325,6 +2341,7 @@ srchTxt2(params,ret) n score,table,field,id,sid,pos,word,sources,find,fnd,sscore
 				
 				traw = this.conn.nextPeerKey(DB_GLOBAL_RECORD, di.getId(), table);
 			}
+			*/
 		}
 		catch (Exception x) {
 			OperationContext.get().error("rebuildDomainIndexes error: " + x);
