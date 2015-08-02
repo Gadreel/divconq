@@ -538,6 +538,9 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	        		// better than delete - you never know when the delete will complete, but this will do it all - remove and then write
 	        		this.fchannel = FileChannel.open(this.file, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
 	        		FileSystemFile.this.setField("Size", 0);
+	        		
+					if (Logger.isDebug())
+						Logger.debug("File destination opened: " + this.channel.getId());
 	        	}
 	        } 
 	        catch (IOException x) {
@@ -569,6 +572,9 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	    	}
 	    	
 	    	if (msg.hasData()) {
+				if (Logger.isDebug())
+					Logger.debug("File destination got data: " + this.channel.getId());
+				
 	            ByteBuf bb = msg.getData(); 
 	    		
 	    		if (bb.nioBufferCount() > 0) {
@@ -576,7 +582,12 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	    			this.accesslock.lock();
 	    			
 					try {
-						this.writtensize += this.fchannel.write(bb.nioBuffers());
+						long amt = this.fchannel.write(bb.nioBuffers());
+						
+						this.writtensize += amt;
+						
+						if (Logger.isDebug())
+							Logger.debug("File destination wrote block: " + amt + " total: " + this.writtensize + " for: " + this.channel.getId());
 
 						if (this.expectedsize > 0)
 							this.channel.getContext().setAmountCompleted((int)(this.writtensize * 100 / this.expectedsize));
@@ -593,6 +604,9 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 	    	}
 	    	
 	    	if (msg.isFinal()) {
+				if (Logger.isDebug())
+					Logger.debug("File destination got a final: " + this.channel.getId());
+				
 	    		// let them know we ended as expected
 				this.channel.send(MessageUtil.streamFinal());
 				
@@ -605,6 +619,9 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 		}
 		
 		public void flushClose(String event) {
+			if (Logger.isDebug())
+				Logger.debug("File destination got a close " + event + " on " + this.channel.getId());
+			
 			this.accesslock.lock();
 			
 			try {
@@ -629,6 +646,9 @@ public class FileSystemFile extends RecordStruct implements IFileStoreFile {
 
 		@Override
 		public void cancel() {
+			if (Logger.isDebug())
+				Logger.debug("File destination got a cancel: " + this.channel.getId());
+			
 			this.flushClose("UploadError");
 		}
 	}	

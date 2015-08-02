@@ -28,6 +28,7 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.stream.ChunkedInput;
 import divconq.bus.Message;
 import divconq.hub.DomainInfo;
+import divconq.log.Logger;
 import divconq.session.Session;
 import divconq.util.MimeUtil;
 import divconq.xml.XElement;
@@ -136,6 +137,9 @@ public class HttpContext implements IInnerContext {
 	}
 	
 	public void sendNotFound() {
+    	if (Logger.isDebug())
+    		Logger.debug("Web server respond with Not Found");
+    	
 		if (this.response != null) {
 			this.response.setStatus(HttpResponseStatus.NOT_FOUND);
 			this.send();
@@ -143,6 +147,9 @@ public class HttpContext implements IInnerContext {
 	}
 	
 	public void sendForbidden() {
+    	if (Logger.isDebug())
+    		Logger.debug("Web server respond with Forbidden");
+    	
 		if (this.response != null) {
 			this.response.setStatus(HttpResponseStatus.FORBIDDEN);
 			this.response.setKeepAlive(false);
@@ -151,6 +158,9 @@ public class HttpContext implements IInnerContext {
 	}
 	
 	public void sendInternalError() {
+    	if (Logger.isDebug())
+    		Logger.debug("Web server respond with Internal Server Error");
+    	
 		if (this.response != null) {
 			this.response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
 			this.response.setKeepAlive(false);
@@ -159,6 +169,9 @@ public class HttpContext implements IInnerContext {
 	}
 	
 	public void sendRequestBad() {
+    	if (Logger.isDebug())
+    		Logger.debug("Web server respond with Request Bad");
+    	
 		if (this.response != null) {
 			this.response.setStatus(HttpResponseStatus.BAD_REQUEST);
 			this.response.setKeepAlive(false);

@@ -17,6 +17,7 @@
 package divconq.util;
 
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 import divconq.lang.Memory;
 import divconq.lang.op.OperationContext;
@@ -24,6 +25,7 @@ import divconq.struct.builder.JsonMemoryBuilder;
 
 public class StringUtil {
 	private static final int PAD_LIMIT = 8192;
+	private static final Pattern ASCII_PATTERN = Pattern.compile("[^\\p{ASCII}]+");
 	
 	/**
 	 * check that characters are compatible with IntegerStruct value range
@@ -818,6 +820,12 @@ public class StringUtil {
 			return false;
 		}
 	
+		static public String stripAllNonAscci(String input) {
+			if (input == null)
+				return null;
+			
+			return ASCII_PATTERN.matcher(input).replaceAll(" ");
+		}
 		
 		/**
 		 * translate the token and parameters using the current or default locale

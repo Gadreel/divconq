@@ -456,12 +456,12 @@ public class Main implements ILocalCommandLine {
 					String[] packlist = new String[] {	
 							"divconq.core", "divconq.interchange", "divconq.web",
 							"divconq.tasks", "divconq.tasks.api", "ncc.uploader.api", 
-							"ncc.uploader.core", "ncc.workflow", "sd.core" };
+							"ncc.uploader.core", "ncc.workflow", "sd.core", "dcraft.dca" };
 					
 					String[] packnames = new String[] {	
 							"dcCore", "dcInterchange", "dcWeb", 
 							"dcTasks", "dcTasksApi", "nccUploaderApi", 
-							"nccUploader", "nccWorkflow", "sd/sdBackend" };
+							"nccUploader", "nccWorkflow", "sd/sdBackend", "dca/dcaCms" };
 					
 					for (int i = 0; i < packlist.length; i++) {
 						String lib = packlist[i];

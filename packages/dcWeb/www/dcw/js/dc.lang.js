@@ -528,6 +528,30 @@ var dc = {
 					return (hrs - 12) + ':' + mins + ' pm';
 					
 				return hrs + ':' + mins + ' am';
+			},
+			formatZone: function(z) {
+				if (z == 'America/Anchorage')
+					return 'Alaska';
+				if (z == 'America/Phoenix')
+					return 'Arizona';
+				if (z == 'America/Chicago')
+					return 'Central';
+				if (z == 'America/New_York')
+					return 'Eastern';
+				if (z == 'Pacific/Honolulu')
+					return 'Hawaii';
+				if (z == 'America/Indiana/Indianapolis')
+					return 'Indiana-East';
+				if (z == 'America/Indiana/Knox')
+					return 'Indiana-Starke';
+				if (z == 'America/Detroit')
+					return 'Michigan';
+				if (z == 'America/Denver')
+					return 'Mountain';
+				if (z == 'America/Los_Angeles')
+					return 'Pacific';
+					
+				return z;
 			}
 		},
 		Http: {
@@ -626,6 +650,22 @@ var dc = {
 
 				return (window.crypto && window.crypto.getRandomValues) ? _cryptoGuid() : _guid();
 			}
+		},
+		SocialMedia: {
+			withFacebook: function(cb) {
+				if (!window.FB) {
+					console.log('loading facebook api');
+					
+					$.getScript('https://connect.facebook.net/en_US/all.js', function(){
+						FB.init({ appId: dc.handler.settings.fbAppId, version: 'v2.2' });     
+			
+						cb();			
+					});
+				}
+				else {
+					cb();			
+				}
+			}  
 		},
 		Messages: {
 			findExitEntry : function(list) {

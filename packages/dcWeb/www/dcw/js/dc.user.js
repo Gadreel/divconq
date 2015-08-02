@@ -243,16 +243,9 @@ dc.user = {
 			}
 		};
 	
-		if (!window.FB) {
-			$.getScript('https://connect.facebook.net/en_US/all.js', function(){
-				FB.init({ appId: dc.handler.settings.fbAppId, version: 'v2.2' });     
-	
-				FB.getLoginStatus(lstatus);			
-			});
-		}
-		else {
+		dc.util.SocialMedia.withFacebook(function() {
 			FB.getLoginStatus(lstatus);			
-		}
+		});
 	},
 
 	signinFacebookToken: function(accessToken, callback) {
@@ -318,17 +311,10 @@ dc.user = {
 				);	
 			}
 		};
-	
-		if (!window.FB) {
-			$.getScript('https://connect.facebook.net/en_US/all.js', function(){
-				FB.init({ appId: dc.handler.settings.fbAppId, version: 'v2.2' });     
-	
-				FB.getLoginStatus(lstatus);			
-			});
-		}
-		else {
+		
+		dc.util.SocialMedia.withFacebook(function() {
 			FB.getLoginStatus(lstatus);			
-		}
+		});
 	},
 	
 	updateUser : function(remember, callback, reload) {		

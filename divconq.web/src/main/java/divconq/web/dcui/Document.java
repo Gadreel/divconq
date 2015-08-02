@@ -22,7 +22,9 @@ public class Document extends Html {
 		
 		Attributes attrs = HtmlUtil.initAttrs(xel);
 
-		Nodes contenttemplate = ctx.getDomain().parseXml(ctx, xel.find("Skeleton"));
+		//Nodes contenttemplate = ctx.getDomain().parseXml(ctx, xel.find("Skeleton"));
+		
+		Nodes bnodes = new Nodes();
 		
 		if (xel.hasAttribute("Title")) 
 			ctx.putInternalParam("PageTitle", xel.getRawAttribute("Title"));
@@ -33,9 +35,22 @@ public class Document extends Html {
 		// html
 		Html5AppHead hd = new Html5AppHead(xel);
 
-		Body bd = new Body(contenttemplate);
+		//Body bd = new Body(contenttemplate);
 		
-        this.myArguments = new Object[] { attrs, hd, bd };
+		XElement skel = xel.find("Skeleton");
+		
+		// copy page class
+		if (xel.hasAttribute("PageClass")) {
+			if (skel.hasAttribute("class"))
+				skel.setAttribute("class", xel.getRawAttribute("PageClass") + " " + skel.getAttribute("class"));
+			else
+				skel.setAttribute("class", xel.getRawAttribute("PageClass"));
+		}
+		
+		Body bd = new Body();
+		bd.parseElement(ctx, bnodes, skel);
+		
+        this.myArguments = new Object[] { attrs, hd, bnodes };
 		
 		nodes.add(this);
 	}

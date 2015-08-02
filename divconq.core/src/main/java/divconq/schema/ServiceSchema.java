@@ -19,6 +19,7 @@ package divconq.schema;
 import java.util.HashMap;
 
 import divconq.bus.Message;
+import divconq.util.ArrayUtil;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
@@ -87,6 +88,22 @@ public class ServiceSchema {
 						if (resp != null)
 							opt.response = this.man.loadDataType(schema, resp);
 					}			
+					
+					for (XElement opel : ftel.selectAll("OpMod")) {
+						String oname = opel.getAttribute("Name");
+						
+						if (StringUtil.isEmpty(oname))
+							continue;
+						
+						String[] curr = fet.opmods.get(oname);
+						
+						if (curr != null)
+							curr = ArrayUtil.addAll(curr, tags);
+						else
+							curr = tags;
+						
+						fet.opmods.put(oname, curr);
+					}			
 				}			
 			}			
 		}			
@@ -139,6 +156,33 @@ public class ServiceSchema {
 		
 		return f.ops.get(op);
 	}
+	
+	public String[] getOpSecurity(Message msg) {
+		return this.getOpSecurity(msg.getFieldAsString("Service"), msg.getFieldAsString("Feature"), msg.getFieldAsString("Op"));
+	}
+	
+	public String[] getOpSecurity(String service, String feature, String op) {
+		if (StringUtil.isEmpty(service))
+			return null;
+		
+		Service s = this.services.get(service);
+		
+		if (s == null)
+			return null;
+		
+		if (StringUtil.isEmpty(feature))
+			feature  = "default";
+		
+		Feature f = s.features.get(feature);
+		
+		if (f == null)
+			return null;
+		
+		if (StringUtil.isEmpty(op))
+			op = "default";
+		
+		return f.opmods.get(op);
+	}
 
 	public class Service {
 		protected String name = null;
@@ -148,6 +192,7 @@ public class ServiceSchema {
 	public class Feature {
 		protected String name = null;
 		protected HashMap<String, Op> ops = new HashMap<String, Op>();
+		protected HashMap<String, String[]> opmods = new HashMap<String, String[]>();
 	}
 
 	public class Op {

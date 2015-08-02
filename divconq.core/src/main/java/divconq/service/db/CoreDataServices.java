@@ -33,6 +33,7 @@ import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationContextBuilder;
 import divconq.lang.op.UserContext;
 import divconq.mod.ExtensionBase;
+import divconq.schema.DbProc;
 import divconq.struct.CompositeStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
@@ -502,7 +503,7 @@ public class CoreDataServices extends ExtensionBase implements IService {
 		}
 		
 		// =========================================================
-		//  groups
+		//  globals
 		// =========================================================
 		
 		if ("Globals".equals(feature)) {
@@ -526,11 +527,21 @@ public class CoreDataServices extends ExtensionBase implements IService {
 		}	
 		
 		// =========================================================
-		//  groups
+		//  database directly
 		// =========================================================
 		if ("Database".equals(feature)) {
 			if ("ExecuteProc".equals(op)) {
-				DataRequest req = new DataRequest(rec.getFieldAsString("Proc"))
+				String proc = rec.getFieldAsString("Proc");
+				
+				DbProc pdef = request.getContext().getSchema().getDbProc(proc);
+				
+				if (!request.getContext().getUserContext().isTagged(pdef.securityTags)) {
+					request.errorTr(434);
+					request.complete();
+					return;
+				}
+				
+				DataRequest req = new DataRequest(proc)
 					.withParams(rec.getFieldAsComposite("Params"));
 				
 				db.submit(req, new ObjectFinalResult(request));

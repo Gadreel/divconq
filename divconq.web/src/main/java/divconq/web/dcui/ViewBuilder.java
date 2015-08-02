@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import divconq.lang.op.OperationCallback;
+import divconq.util.StringUtil;
 import divconq.web.IOutputAdapter;
 import divconq.web.WebContext;
 import divconq.xml.XElement;
@@ -39,20 +40,36 @@ public class ViewBuilder implements IViewBuilder {
 			
 		this.frag = new Fragment();
 		
-		if (this.dynamic)
+		if (this.dynamic) {
 			this.frag.initializePart(ctx, adapt, new OperationCallback() {			
 				@Override
 				public void callback() {
+					String pclass = ViewBuilder.this.frag.source.getAttribute("PageClass");
+					XElement skel = ViewBuilder.this.frag.source.find("Skeleton");
+					String sclass = skel.getAttribute("class");
+					
+					String fclass = "";
+					
+					if (StringUtil.isNotEmpty(pclass))
+						fclass += pclass + " ";
+					
+					if (StringUtil.isNotEmpty(sclass))
+						fclass += sclass + " ";
+					
+					ViewBuilder.this.frag.addArgs(new Attributes("class", fclass));
+					
 					ViewBuilder.this.doBuild(ctx);
 				}
 			});
-		else
+		}
+		else {
 			this.frag.initializeRoot(ctx, adapt, new OperationCallback() {			
 				@Override
 				public void callback() {
 					ViewBuilder.this.doBuild(ctx);
 				}
 			});
+		}
 	}
 
 	public void doBuild(WebContext ctx) {		
@@ -93,6 +110,14 @@ public class ViewBuilder implements IViewBuilder {
 				
 				ps.print("\tTitle: '");
 				Node.writeDynamicJsString(ps, title);
+				ps.println("',");
+			}
+			
+			if (this.frag.hasAttribute("class")) {
+				String pclass = this.frag.getAttribute("class"); 
+				
+				ps.print("\tPageClass: '");
+				Node.writeDynamicJsString(ps, pclass);
 				ps.println("',");
 			}
 			

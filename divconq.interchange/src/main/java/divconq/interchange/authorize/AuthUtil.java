@@ -10,7 +10,9 @@ import divconq.lang.op.FuncCallback;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
+import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.struct.Struct;
 import divconq.util.StringUtil;
 import divconq.xml.XAttribute;
 import divconq.xml.XElement;
@@ -85,19 +87,69 @@ public class AuthUtil {
 	    						new XElement("expirationDate", paymentinfo.getFieldAsString("Expiration")),
 	    						new XElement("cardCode", paymentinfo.getFieldAsString("Code"))
 						)
-				),
-				new XElement("tax", 
-						new XElement("amount", tax.toPlainString()),
-						new XElement("name", billinginfo.getFieldAsString("State"))
-						),
-				new XElement("shipping", 
-						new XElement("amount", ship.toPlainString()),
-						new XElement("name", billinginfo.getFieldAsString("State"))
 				)
 		);
 	    
-	    // TODO add lineItems someday to make a redundant copy of order
-	    
+		ListStruct items = order.getFieldAsList("Items");
+		
+		if ((items != null) && (items.getSize() > 0)) {
+			XElement ilist = new XElement("lineItems");
+			
+			for (Struct i : items.getItems()) {
+				RecordStruct itm = (RecordStruct) i;
+				
+				String price = itm.isFieldEmpty("SalePrice") 
+						? itm.getFieldAsString("Price") : itm.getFieldAsString("SalePrice");
+						
+				if (StringUtil.isEmpty(price))
+					price = "0";
+				
+				String title = itm.getFieldAsString("Title");
+				
+				if (StringUtil.isEmpty(title))
+					title = "[unkown]";
+				
+				if (title.length() > 31)
+					title = title.substring(0, 31);
+				
+				String desc = itm.getFieldAsString("Description");
+				
+				if (StringUtil.isEmpty(desc))
+					desc = "[not availale]";
+				
+				if (desc.length() > 255)
+					desc = desc.substring(0, 255);
+				
+				XElement iline = new XElement("lineItem");
+				
+				if (itm.hasField("Sku"))
+					iline.add(new XElement("itemId").withText(StringUtil.stripAllNonAscci(itm.getFieldAsString("Sku"))));
+				
+				iline.add(new XElement("name").withText(StringUtil.stripAllNonAscci(title)));
+				//iline.add(new XElement("description").withText(desc));
+				iline.add(new XElement("quantity").withText(itm.getFieldAsString("Quantity")));
+				iline.add(new XElement("unitPrice").withText(price));
+				
+				ilist.add(iline);
+			}
+			
+		    txreq.add(ilist);
+		}
+
+		txreq.add(
+			new XElement("tax", 
+					new XElement("amount", tax.toPlainString()),
+					new XElement("name", billinginfo.getFieldAsString("State"))
+			)
+		);
+		
+		txreq.add(
+			new XElement("shipping", 
+					new XElement("amount", ship.toPlainString()),
+					new XElement("name", billinginfo.getFieldAsString("State"))
+			)
+		);
+			
 	    if (!custinfo.isFieldEmpty("CustomerId"))
 		    txreq.add(
 		    		new XElement("customer", 
@@ -144,6 +196,7 @@ public class AuthUtil {
 	    if (StringUtil.isNotEmpty(origin) && origin.startsWith("http:")) 
 	    	txreq.add(new XElement("customerIP", origin.substring(5)));
 	    
+	    /* TODO possible enhancements
     	XElement settings = new XElement("transactionSettings");
 
     	if (test)
@@ -160,8 +213,9 @@ public class AuthUtil {
 	    			new XElement("settingValue", "false")
 	    		)
 	    	);
-    	
+	    
       	txreq.add(settings);
+    	*/
       
 	    root.add(txreq);
 
@@ -179,10 +233,12 @@ public class AuthUtil {
 			con.setRequestProperty("User-Agent", "DivConq/1.0 (Language=Java/8)");
 			con.setRequestProperty("Content-Type", "text/xml");
 	 
+			String body = root.toString();
+
 			// Send post request
 			con.setDoOutput(true);
 			DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-			wr.writeBytes(root.toString());
+			wr.writeBytes(body);
 			wr.flush();
 			wr.close();
 	 

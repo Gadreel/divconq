@@ -167,12 +167,18 @@ public class DataStreamChannel extends OperationResult {
 	 * 
 	 */
 	public void abort() {
+		if (Logger.isDebug())
+			Logger.debug("Data stream aborted: " + this.id);
+		
 		this.send(MessageUtil.streamError(1, "Aborting data stream: " + this));
 		
 		this.close();
 	}
 	
 	public void close() {
+		if (Logger.isDebug())
+			Logger.debug("Data stream closed: " + this.id);
+		
 		this.completionlock.lock();
 		
 		try {			
@@ -216,21 +222,32 @@ public class DataStreamChannel extends OperationResult {
 	
 	public boolean isInactive() {	
 		// has activity been quiet for longer than timeout?  
-		if ((this.timeout > 0) && (this.getLastActivity() < (System.currentTimeMillis() - this.timeout)))
-				return true;
+		if ((this.timeout > 0) && (this.getLastActivity() < (System.currentTimeMillis() - this.timeout))) {
+			if (Logger.isDebug())
+				Logger.debug("Data stream reports being inactive: " + this.id);
+			
+			return true;
+		}
 		
 		return false;
 	}
 	
 	public boolean isOverdue() {	
 		// has activity been working too long?
-		if ((this.deadline > 0) && (this.started < (System.currentTimeMillis() - this.deadline)))
-				return true;
+		if ((this.deadline > 0) && (this.started < (System.currentTimeMillis() - this.deadline))) {
+			if (Logger.isDebug())
+				Logger.debug("Data stream reports being overdue: " + this.id);
+			
+			return true;
+		}
 		
 		return false;
 	}
 	
 	public void complete() {
+		if (Logger.isDebug())
+			Logger.debug("Data stream has completed: " + this.id);
+		
 		// make sure we complete in the correct context (only worker should call this method)
 		OperationContext.set(this.opcontext);
 		
@@ -283,7 +300,8 @@ public class DataStreamChannel extends OperationResult {
 		
 		OperationContext.set(this.opcontext);
 		
-		Logger.trace("Stream Message: " + msg.toPrettyString());
+		if (Logger.isDebug())
+			Logger.debug("Data Stream Message arrived: " + msg.toPrettyString());
 		
 		if (msg.hasErrors()) {
 			this.close();
@@ -311,6 +329,9 @@ public class DataStreamChannel extends OperationResult {
 	
 	public OperationResult send(StreamMessage msg) {		
 		OperationContext.set(this.opcontext);
+		
+		if (Logger.isDebug())
+			Logger.debug("Data Stream Message sending: " + msg.toPrettyString());
 		
 		msg.setField("FromHub", OperationContext.getHubId());
 		msg.setField("FromSession", this.sessid);

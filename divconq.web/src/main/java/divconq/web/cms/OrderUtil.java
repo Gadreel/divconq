@@ -42,13 +42,24 @@ public class OrderUtil {
 				
 				DateTime now = new DateTime();
 				
+				RecordStruct orderclean = (RecordStruct) order.deepCopy();
+				
+				// remove sensitive information before saving
+				RecordStruct cleanpay = orderclean.getFieldAsRecord("PaymentInfo");
+				
+				if (cleanpay != null) {
+					cleanpay.removeField("CardNumber");
+					cleanpay.removeField("Expiration");
+					cleanpay.removeField("Code");
+				}
+				
 				// insert the order
 				DbRecordRequest req = new InsertRecordRequest()
 					.withTable("dcmOrder")		
 					.withSetField("dcmOrderDate", now)
 					.withSetField("dcmStatus", "AwaitingPayment")
 					.withSetField("dcmLastStatusDate", now)
-					.withSetField("dcmOrderInfo", order)
+					.withSetField("dcmOrderInfo", orderclean)
 					.withSetField("dcmGrandTotal", order.getFieldAsRecord("CalcInfo").getFieldAsDecimal("GrandTotal"));
 				
 				UserContext uctx = OperationContext.get().getUserContext();
@@ -79,7 +90,24 @@ public class OrderUtil {
 						
 						XElement dsettings = OperationContext.get().getDomain().getSettings();
 						
-						XElement auth = dsettings.selectFirst(testing ? "Store/AuthorizeDev" : "Store/AuthorizeLive");
+						XElement sset = dsettings.find("Store");
+						
+						if (sset == null) {
+							callback.error("Missing store settings.");
+							callback.complete();
+							return;
+						}
+						
+						if (sset.hasAttribute("Mode"))
+							testing = "Dev".equals(sset.getAttribute("Mode"));
+						
+						XElement auth = sset.selectFirst(testing ? "AuthorizeDev" : "AuthorizeLive");
+						
+						if (auth == null) {
+							callback.error("Missing store Authorize settings.");
+							callback.complete();
+							return;
+						}
 						
 						String lid = auth.getAttribute("LoginId");
 						String key = auth.getAttribute("TransactionKey");

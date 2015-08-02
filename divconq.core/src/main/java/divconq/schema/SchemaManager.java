@@ -32,6 +32,7 @@ import divconq.schema.ServiceSchema.Op;
 import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
+import divconq.util.ArrayUtil;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
@@ -180,30 +181,90 @@ public class SchemaManager {
 		return t;
 	}
 
-	public Op getServiceOp(String service, String feature, String op) {
+	public OpInfo getServiceOp(String service, String feature, String op) {
 		Op t = this.service.getOp(service, feature, op);
+		String[] securityTags = this.service.getOpSecurity(service, feature, op);
 		
-		if (t != null)
-			return t;
+		if (t != null) {
+			OpInfo oi = new OpInfo();
+			oi.op = t;
+			oi.securityTags = securityTags;
+			return oi;
+		}
 		
 		if (this.chain == null)
 			return null;
 		
-		return this.chain.getServiceOp(service, feature, op);
+		OpInfo oi = this.chain.getServiceOp(service, feature, op);
+		
+		if ((oi != null) && (securityTags != null)) 
+			oi.securityTags = securityTags;
+		
+		return oi;
 	}
 
-	public Op getServiceOp(Message msg) {
+	public OpInfo getServiceOp(Message msg) {
 		Op t = this.service.getOp(msg);
+		String[] securityTags = this.service.getOpSecurity(msg);
 		
-		if (t != null)
-			return t;
+		if (t != null) {
+			OpInfo oi = new OpInfo();
+			oi.op = t;
+			oi.securityTags = securityTags;
+			return oi;
+		}
 		
 		if (this.chain == null)
 			return null;
 		
-		return this.chain.getServiceOp(msg);
+		OpInfo oi = this.chain.getServiceOp(msg);
+		
+		if ((oi != null) && (securityTags != null)) 
+			oi.securityTags = securityTags;
+		
+		return oi;
 	}
 
+	public class OpInfo {
+		protected Op op = null;
+		protected String[] securityTags = null;
+		
+		public Op getOp() {
+			return this.op;
+		}
+		
+		public String[] getSecurityTags() {
+			if ((this.securityTags != null) && (this.op != null))
+				return ArrayUtil.addAll(this.securityTags, this.op.securityTags);
+			
+			if (this.securityTags != null)
+				return this.securityTags;
+			
+			if (this.op != null)
+				return this.op.securityTags;
+			
+			return null;
+		}
+		
+		public boolean isTagged(String... tags) {
+			if (this.securityTags != null) { 
+				for (int i = 0; i < this.securityTags.length; i++) {
+					String has = this.securityTags[i];
+	
+					for (String wants : tags) {
+						if (has.equals(wants))
+							return true;
+					}
+				}
+			}
+			
+			if (this.op != null)
+				return this.op.isTagged(tags);
+			
+			return false;
+		}
+	}
+	
 	public DataType getServiceRequest(Message msg) {
 		DataType t = this.service.getRequestType(msg);
 		
@@ -272,19 +333,19 @@ public class SchemaManager {
 			mr.errorTr(431);		
 		}
 		else {
-			Op op = this.getServiceOp(msg);
+			OpInfo op = this.getServiceOp(msg);
 			
 			if (op == null)
 				mr.errorTr(432);		
-			else if (op.request == null)
+			else if (op.op.request == null)
 				mr.errorTr(433);	
-			else if (!msg.isVerifyRequest() && !tc.isAuthorized(op.securityTags)) {
+			else if (!msg.isVerifyRequest() && !tc.isAuthorized(op.getSecurityTags())) {
 				mr.errorTr(434);
 				
 				System.out.println("cannot call: " + msg);
 			}
 			else
-				op.request.normalizeValidate(msg);
+				op.op.request.normalizeValidate(msg);
 		}
 		
 		return mr;

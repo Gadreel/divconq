@@ -283,7 +283,7 @@ dc.pui = {
 				window.location = '/';		// start fresh if signed in
 		},
 		
-		loadPage: function(page, params) {
+		loadPage: function(page, params, replaceState) {
 			if (!page)
 				return;
 			
@@ -308,6 +308,7 @@ dc.pui = {
 			var entry = {
 				Name: page, 
 				Params: params ? params : { },
+				ReplaceState: replaceState,
 				Store: { },
 				Forms: { },
 				call: function(method) {
@@ -441,7 +442,13 @@ dc.pui = {
 				return;
 			}
 			
-			history.pushState(
+			if (entry.ReplaceState)
+				history.replaceState(
+					{ Id: dc.pui.Loader.__loadPageId, Params: entry.Params }, 
+					page.Title, 
+					entry.Name);
+			else
+				history.pushState(
 					{ Id: dc.pui.Loader.__loadPageId, Params: entry.Params }, 
 					page.Title, 
 					entry.Name);
@@ -530,6 +537,16 @@ dc.pui = {
 			//	$('#pageLblTitle h1').text(page.Title);
 			
 			$(dc.pui.Loader.__content).empty().promise().then(function() {
+				var prevClass = $('body').attr('data-prev-page-class'); 
+				
+				if (prevClass)
+					$('body').removeClass(prevClass);
+					
+				if (page.PageClass) {
+					$('body').addClass(page.PageClass);
+					$('body').attr('data-prev-page-class', page.PageClass);
+				}
+				
 				// layout using 'pageContent' as the top of the chain of parents
 				dc.pui.Page.layout(page, entry, page.Layout, {
 					Element: $(dc.pui.Loader.__content),

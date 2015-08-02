@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import divconq.util.ArrayUtil;
 import divconq.web.WebContext;
 import divconq.xml.XNode;
 
@@ -59,10 +60,21 @@ abstract public class Element extends Node {
 	public String getAttribute(String name) {
 		return this.attributes.get(name);
 	}
+
+	public boolean hasAttribute(String name) {
+		return this.attributes.containsKey(name);
+	}
 	
 	public void addAttribute(String name, String value) {
 		this.attributes.put(name, value);
 	}
+    
+    public void addArgs(Object... args) {
+    	if ((myArguments == null) || (myArguments.length == 0)) 
+    		this.myArguments = args;
+    	else 
+    		this.myArguments = (Object[]) ArrayUtil.addAll(this.myArguments, args);
+    }
 
     public Element(Object... args) {
     	super();

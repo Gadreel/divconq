@@ -179,7 +179,7 @@ public class DomainInfo {
 		
 		Path cpath = this.resolvePath("/config");
 
-		if (Files.notExists(cpath))
+		if ((cpath == null) || Files.notExists(cpath))
 			return;
 		
 		Path cspath = cpath.resolve("settings.xml");

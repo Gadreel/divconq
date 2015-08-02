@@ -20,8 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import divconq.filestore.CommonPath;
+import divconq.log.Logger;
 import divconq.util.StringUtil;
 import divconq.www.http.ContentType;
 import divconq.www.http.parse.ContentTypeParser;
@@ -151,6 +153,14 @@ public class Request {
         this.orgrequri = QueryStringDecoder.decodeComponent(decoderQuery.uri());
         
         this.contentType = new ContentTypeParser(this.headers.get(Names.CONTENT_TYPE));
+        
+    	if (Logger.isDebug()) {
+    		Logger.debug("Request Method " + this.method);
+    		
+    		for (Entry<String, String> ent : this.headers.entries()) {
+        		Logger.debug("Request header: " + ent.getKey() + ": " + ent.getValue());
+    		}
+    	}
 	}
     
 	public void loadVoid(CommonPath path) {

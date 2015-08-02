@@ -97,8 +97,15 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-    	Logger.info("Web Server session disconnected! " + this.context.getSession().getId());
+    	Session s = this.context.getSession();
+    	
+    	if (s != null)
+    		Logger.info("Web Server connection inactive: " + s.getId());
         
+    	if (Logger.isDebug())
+    		Logger.debug("Connection inactive was " + ctx.channel().localAddress() 
+    				+ " from " + ctx.channel().remoteAddress()); // + " session " + this.context.getSession().getId());
+    	
         this.context.closed();
     }
 
@@ -299,6 +306,12 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        Logger.warn("Web server connection exception was " + cause);
+    	
+    	if (Logger.isDebug())
+    		Logger.debug("Web server connection exception was " + ctx.channel().localAddress() 
+    				+ " from " + ctx.channel().remoteAddress()); // + " session " + this.context.getSession().getId());
+    	
     	// TODO logging
     	//System.out.println("EC?");
         //?cause.printStackTrace();        
@@ -322,6 +335,10 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
     		return;
     	}    	
     	
+    	if (Logger.isDebug())
+    		Logger.debug("Web server request " + httpobj.getClass().getName() + "  " + ctx.channel().localAddress() 
+    				+ " from " + ctx.channel().remoteAddress()); // + " session " + this.context.getSession().getId());
+    	
     	if (!(httpobj instanceof HttpRequest)) {
         	this.context.sendRequestBad();
             return;
@@ -341,7 +358,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
         Response resp = this.context.getResponse();
         
 		// to avoid lots of unused sessions
-		if (req.pathEquals("/favicon.ico") || req.pathEquals("/robots.txt")) {
+		if (req.pathEquals("/favicon.ico")) {
 			this.context.sendNotFound();
 			return;
 		}
@@ -356,6 +373,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		DomainInfo dinfo = this.context.getSiteman().resolveDomainInfo(req.getHeader("Host"));
 		
 		if (dinfo == null) {
+	    	if (Logger.isDebug())
+	    		Logger.debug("Domain not found for: " + req.getHeader("Host"));
+	    	
         	this.context.sendForbidden();
             return;
 		}
@@ -366,6 +386,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		String reroute = wdomain.route(req, (SslHandler)ctx.channel().pipeline().get("ssl"));
 		
 		if (StringUtil.isNotEmpty(reroute)) {
+	    	if (Logger.isDebug())
+	    		Logger.debug("Routing the request to: " + reroute);
+	    	
 			this.context.getResponse().setStatus(HttpResponseStatus.FOUND);
 			this.context.getResponse().setHeader("Location", reroute);
 			this.context.send();
@@ -396,6 +419,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 				
 				@Override
 				public void stop() {
+			    	if (Logger.isDebug())
+			    		Logger.debug("Web server session adapter got a STOP request.");
+			    	
 					ServerHandler.this.context.close();
 				}
 				
@@ -444,6 +470,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		        	this.context.sendForbidden();
 		            return;
 		        }
+		        
+		    	if (Logger.isDebug())
+		    		Logger.debug("Setup a bus (ws) handshake " + sess.getId());
 		
 		        // Handshake
 		        WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
@@ -490,6 +519,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 				
 				final String cid = req.getPath().getName(1);
 				final String op = req.getPath().getName(2);
+		        
+		    	if (Logger.isDebug())
+		    		Logger.debug("Initiating an upload on " + cid + " for " + sess.getId());
 				
 				final DataStreamChannel dsc = sess.getChannel(cid);
 				
@@ -531,7 +563,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 						public void release() {
 							// trust that http connection is closing or what ever needs to happen, we just need to deal with datastream
 							
-							Logger.debug("Releasing data stream");
+							Logger.debug("Releasing data stream: " + cid);
 							
 							// if not done with request then something went wrong, kill data channel
 							if (!this.completed)
@@ -550,6 +582,8 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 					            int size = buffer.readableBytes();
 					
 					            //System.out.println("Chunk size: " + size);
+					            if (Logger.isDebug())
+					            	Logger.debug("Offered chunk on: " + cid + " size: " + size + " final: " + finalchunk);
 					            
 					            dsc.touch();	// TODO try to set progress on dsc
 					            
@@ -585,6 +619,10 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 					    			else
 					    				dsc.getDriver().nextChunk();   
 								}
+							}
+							else {
+					            if (Logger.isDebug())
+					            	Logger.debug("Offered chunk on closed channel: " + cid);
 							}
 							
 							// means this block is completed, not necessarily entire file uploaded
@@ -642,6 +680,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 				
 				String cid = req.getPath().getName(1);
 				
+	            if (Logger.isDebug())
+		    		Logger.debug("Initiating an download on " + cid + " for " + sess.getId());
+				
 				final DataStreamChannel dsc = sess.getChannel(cid);
 				
 	    		if (dsc == null) {
@@ -655,6 +696,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 	    			
 	    			@Override
 	    			public void cancel() {
+	    				Logger.debug("Transfer canceled on channel: " + cid);
 						dsc.complete();
 	    				ServerHandler.this.context.close();
 	    			}
@@ -674,6 +716,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 	    				}
 	    				
     					if (msg.hasData()) {
+    						if (Logger.isDebug())
+    							Logger.error("Transfer data: " + msg.getData().readableBytes());
+    	    				
 	    					//this.amt += msg.getData().readableBytes();
 	    					HttpContent b = new DefaultHttpContent(Unpooled.copiedBuffer(msg.getData()));		// TODO not copied
 	    					ServerHandler.this.context.sendDownload(b);
@@ -684,6 +729,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
     					// TODO update progress
     					
     					if (msg.isFinal()) {
+    						if (Logger.isDebug())
+    							Logger.error("Transfer completed: " + msg.getData().readableBytes());
+    	    				
 	    					ServerHandler.this.context.sendDownload(new DefaultLastHttpContent());
 		    				ServerHandler.this.context.close();
 	    					dsc.complete();
@@ -691,6 +739,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 	    			}
 	    			
 	    			public void error(int code, String msg) {
+						if (Logger.isDebug())
+							Logger.error("Transfer error - " + code + ": " + msg);
+	    				
 	    				dsc.send(MessageUtil.streamError(code, msg));
 	    				ServerHandler.this.context.close();
 	    			}
@@ -711,6 +762,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 
 	    		// tell the client that chunked content is coming
 	    		this.context.sendDownloadHeaders(dsc.getPath() != null ? dsc.getPath().getFileName() : null, dsc.getMime());
+	    		
+				if (Logger.isDebug())
+					Logger.error("Singal Transfer Start - " + cid);
 	    		
 	    		// get the data flowing
 	    		dsc.send(new StreamMessage("Start"));
@@ -758,6 +812,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 			if (ex != null) {
 				//OperationResult res = new OperationResult();  
 				
+				if (Logger.isDebug())
+					Logger.error("Request pasted to web extension: " + sess.getId());
+				
 				OperationResult res = ex.handle(sess, this.context);
 				//resp.addBody("Hello");
 				//this.context.send();
@@ -773,6 +830,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 			}
 		}
 		catch (Exception x) {
+			if (Logger.isDebug())
+				Logger.error("Request triggered exception: " + sess.getId() + " - " + x);
+			
 			this.context.sendInternalError();
             return;
 		}

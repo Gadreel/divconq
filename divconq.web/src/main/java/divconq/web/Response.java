@@ -47,6 +47,7 @@ import divconq.hub.Hub;
 import divconq.io.InputWrapper;
 import divconq.io.OutputWrapper;
 import divconq.lang.Memory;
+import divconq.log.Logger;
 import divconq.net.NetUtil;
 import divconq.util.FileUtil;
 import divconq.util.MimeUtil;
@@ -136,6 +137,14 @@ public class Response {
         
         Hub.instance.getSecurityPolicy().hardenHttpResponse(response);
         
+    	if (Logger.isDebug()) {
+    		Logger.debug("Web server responding to " + ch.remoteAddress());
+    		
+    		for (Entry<String, String> ent : response.headers().entries()) {
+        		Logger.debug("Response header: " + ent.getKey() + ": " + ent.getValue());
+    		}
+    	}
+    	
         // Write the response.
         ChannelFuture future = ch.writeAndFlush(response);
 

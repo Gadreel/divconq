@@ -223,17 +223,17 @@ public class FeedAdapter {
 			String bop = pdef.getAttribute("BuildOp", "Append");
 			
 			if ("Append".equals(bop))
-				bparent.add(-1, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview));
+				bparent.add(-1, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview, frag));
 			else if ("Prepend".equals(bop))
-				bparent.add(0, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview));
+				bparent.add(0, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview, frag));
 		}
 	}
 	
-	public XElement buildHtml(String id, String clss, boolean isPreview) {
-		return this.buildHtml(id, clss, OperationContext.get().getLocale(), isPreview);
+	public XElement buildHtml(String id, String clss, boolean isPreview, XElement altsrc) {
+		return this.buildHtml(id, clss, OperationContext.get().getLocale(), isPreview, altsrc);
 	}
 	
-	public XElement buildHtml(String id, String clss, String locale, boolean isPreview) {
+	public XElement buildHtml(String id, String clss, String locale, boolean isPreview, XElement altsrc) {
 		if ((this.xml == null) || StringUtil.isEmpty(id) || StringUtil.isEmpty(locale))
 			return null;
 		
@@ -249,6 +249,13 @@ public class FeedAdapter {
 		for (XElement fel : this.xml.selectAll("PagePart")) {
 			if (id.equals(fel.getAttribute("For"))) 
 				return this.buildHtmlPart(fel, id, clss, xml.getAttribute("Locale", OperationContext.get().getLocale()), isPreview);
+		}
+		
+		if (altsrc != null) {
+			for (XElement fel : altsrc.selectAll("PagePart")) {
+				if (id.equals(fel.getAttribute("For"))) 
+					return this.buildHtmlPart(fel, id, clss, xml.getAttribute("Locale", OperationContext.get().getLocale()), isPreview);
+			}
 		}
 		
 		return null;
@@ -267,6 +274,12 @@ public class FeedAdapter {
 			XElement pel = new XElement("img");
 			pel.setAttribute("lang", lang);
 			pel.setAttribute("src", "/galleries" + this.getPartValue(locale, src, isPreview));
+			
+			if (id != null)
+				pel.setAttribute("id", id);
+			
+			if (clss != null)
+				pel.setAttribute("class", clss);
 			
 			// copy all attributes 
 			for (Entry<String, String> attr : src.getAttributes().entrySet()) 

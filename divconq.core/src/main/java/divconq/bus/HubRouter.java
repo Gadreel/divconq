@@ -38,7 +38,7 @@ import divconq.lang.op.OperationObserver;
 import divconq.lang.op.OperationResult;
 import divconq.lang.op.UserContext;
 import divconq.log.Logger;
-import divconq.schema.ServiceSchema.Op;
+import divconq.schema.SchemaManager.OpInfo;
 import divconq.session.DataStreamChannel;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
@@ -443,7 +443,7 @@ public class HubRouter {
 
 			// if not guest then we are even more picky
 			if (!isguest) {
-				Op op = OperationContext.get().getSchema().getServiceOp(service, feature, msg.getFieldAsString("Op"));
+				OpInfo op = OperationContext.get().getSchema().getServiceOp(service, feature, msg.getFieldAsString("Op"));
 				
 				// operations tagged as Gateway can be called by gateway no matter what...even when gateway is hacked
 				// normal user tag check applies, Gateway only means it gets past here, not pass message validation

@@ -82,13 +82,15 @@ public class UpdateFeed implements IStoredProc {
 				
 				String ochan = null;
 				DateTime opubtime = null;
-				DateTime oprepubtime = null;
+				// TODO
+				//DateTime oprepubtime = null;
 				String otags = "|";
 				
 				if (oldvalues.get() != null) {
 					ochan = oldvalues.get().getFieldAsString("Channel");
 					opubtime = oldvalues.get().getFieldAsDateTime("Published");
-					oprepubtime = oldvalues.get().getFieldAsDateTime("PreviewPublished");
+					// TODO
+					//oprepubtime = oldvalues.get().getFieldAsDateTime("PreviewPublished");
 					
 					ListStruct otlist = oldvalues.get().getFieldAsList("ContentTags");
 					
@@ -98,7 +100,8 @@ public class UpdateFeed implements IStoredProc {
 				
 				String nchan = chann;
 				DateTime npubtime = updatepub.get();
-				DateTime nprepubtime = updateprepub.get();
+				// TODO
+				//DateTime nprepubtime = updateprepub.get();
 				String ntags = "|";
 				
 				if (StringUtil.isEmpty(nchan))
@@ -113,8 +116,9 @@ public class UpdateFeed implements IStoredProc {
 				if (npubtime == null)
 					npubtime = opubtime;
 				
-				if (nprepubtime == null)
-					nprepubtime = oprepubtime;
+				// TODO
+				//if (nprepubtime == null)
+				//	nprepubtime = oprepubtime;
 				
 				if (ctags != null) {
 					ntags = "|" + StringUtil.join(ctags.toStringList(), "|") + "|";
@@ -123,8 +127,10 @@ public class UpdateFeed implements IStoredProc {
 					ntags = otags; 
 				}
 				
-				boolean diff1 = (ochan != nchan) || (opubtime != npubtime) || (oprepubtime != nprepubtime);
-				boolean diff2 = !otags.equals(ntags); 
+				//boolean diff1 = !ochan.equals(nchan) || !opubtime.equals(npubtime) || !oprepubtime.equals(nprepubtime);
+				// TODO fix this so we update only if pubtime changes
+				boolean diff1 = !nchan.equals(ochan) || ((opubtime == null) || (npubtime == null) || !opubtime.equals(npubtime));
+				boolean diff2 = !ntags.equals(otags); 
 				
 				try {
 					if (diff1 || diff2) {
@@ -208,7 +214,7 @@ public class UpdateFeed implements IStoredProc {
 						req.withUpdateField("dcmFields", key, entry.getFieldAsString("Value"));
 						
 						if ("Published".equals(entry.getFieldAsString("Name"))) {
-							DateTime pd = TimeUtil.parseDateTime(entry.getFieldAsString("Value")).withMillis(0).withSecondOfMinute(0);
+							DateTime pd = TimeUtil.parseDateTime(entry.getFieldAsString("Value")).withMillisOfSecond(0).withSecondOfMinute(0);
 							updatepub.set(pd);							
 							req.withUpdateField("dcmPublished", pd);
 						}
@@ -231,7 +237,7 @@ public class UpdateFeed implements IStoredProc {
 						req.withUpdateField("dcmPreviewFields", key, entry.getFieldAsString("Value"));
 						
 						if ("Published".equals(entry.getFieldAsString("Name"))) { 
-							DateTime pd = TimeUtil.parseDateTime(entry.getFieldAsString("Value"));
+							DateTime pd = TimeUtil.parseDateTime(entry.getFieldAsString("Value")).withMillisOfSecond(0).withSecondOfMinute(0);
 							updateprepub.set(pd);							
 							req.withUpdateField("dcmPreviewPublished", pd);
 						}
