@@ -29,6 +29,7 @@ import divconq.db.update.UpdateRecordRequest;
 import divconq.hub.Hub;
 import divconq.hub.HubEvents;
 import divconq.io.LocalFileStore;
+import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationContextBuilder;
 import divconq.lang.op.UserContext;
@@ -37,10 +38,13 @@ import divconq.schema.DbProc;
 import divconq.struct.CompositeStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.struct.Struct;
 import divconq.util.IOUtil;
+import divconq.util.StringUtil;
 import divconq.work.TaskRun;
 import divconq.xml.XAttribute;
 import divconq.xml.XElement;
+import divconq.xml.XmlReader;
 
 public class CoreDataServices extends ExtensionBase implements IService {
 	@Override
@@ -351,6 +355,129 @@ public class CoreDataServices extends ExtensionBase implements IService {
 						Hub.instance.fireEvent(HubEvents.DomainAdded, ((RecordStruct)result).getFieldAsString("Id"));
 						
 						request.returnValue(result);
+					}
+				});
+				
+				return;
+			}
+						
+			if ("ImportDomain".equals(op)) {
+				String alias = rec.getFieldAsString("Alias");
+				
+				LocalFileStore fs = Hub.instance.getPublicFileStore();
+				
+				if (fs == null)  {
+					request.error("Public file store not enabled.");
+					request.complete();
+					return;
+				}
+				
+				Path dspath = fs.getFilePath().resolve("dcw/" + alias + "/");
+				
+				Path cpath = dspath.resolve("config/settings.xml");
+				
+				if (Files.notExists(cpath)) {
+					request.error("Settings file not present.");
+					request.complete();
+					return;
+				}
+				
+				FuncResult<XElement> sres = XmlReader.loadFile(cpath, false);
+				
+				if (sres.hasErrors()) {
+					request.complete();
+					return;
+				}
+				
+				XElement domainsettings = sres.getResult();
+				
+				String title = domainsettings.getAttribute("Title");
+				String desc = "";
+				XElement del = domainsettings.find("Description");
+				
+				if (del != null)
+					desc = del.getValue();
+				
+				String fdesc = desc;
+				
+				String obs = "";
+				XElement oel = domainsettings.find("ObscureClass");
+				
+				if (oel != null)
+					obs = oel.getValue();
+				
+				if (StringUtil.isEmpty(obs))
+					obs = "divconq.util.BasicSettingsObfuscator";
+				
+				String fobs = obs;
+				
+				ListStruct dnames = new ListStruct();
+				
+				for (XElement del2 : domainsettings.selectAll("Domain"))
+					dnames.addItem(del2.getAttribute("Name"));
+				
+				DataRequest req = new DataRequest("dcLoadDomains");		// must be in root .withRootDomain();	// use root for this request
+				
+				db.submit(req, new ObjectResult() {
+					@Override
+					public void process(CompositeStruct result) {
+						// if this fails the hub cannot start
+						if (this.hasErrors()) {
+							request.complete();
+							return;
+						}
+						
+						ListStruct domains = (ListStruct) result;
+						
+						for (Struct d : domains.getItems()) {
+							RecordStruct drec = (RecordStruct) d;
+							
+							String did = drec.getFieldAsString("Id");
+							String dalais = drec.getFieldAsString("Alias");
+							
+							if (!dalais.equals(alias))
+								continue;
+							
+							ReplicatedDataRequest req = new UpdateRecordRequest()
+								.withTable("dcDomain")
+								.withId(did)
+								.withUpdateField("dcTitle", title)
+								.withUpdateField("dcAlias", alias)
+								.withUpdateField("dcDescription", fdesc)
+								.withUpdateField("dcObscureClass", fobs)
+								.withSetList("dcName", dnames);
+							
+							// updates execute on the domain directly
+							req.withDomain(did);
+							
+							db.submit(req, new ObjectResult() {
+								@Override
+								public void process(CompositeStruct result) {
+									Hub.instance.fireEvent(HubEvents.DomainUpdated, did);
+									
+									request.returnValue(new RecordStruct().withField("Id", did));
+								}
+							});
+							
+							return;
+						}
+						
+						ReplicatedDataRequest req = new InsertRecordRequest()
+							.withTable("dcDomain")
+							.withUpdateField("dcTitle", title)
+							.withUpdateField("dcAlias", alias)
+							.withUpdateField("dcDescription", fdesc)
+							.withUpdateField("dcObscureClass", fobs)
+							.withSetList("dcName", dnames);
+						
+						db.submit(req, new ObjectResult() {
+							@Override
+							public void process(CompositeStruct result) {
+								Hub.instance.fireEvent(HubEvents.DomainAdded, ((RecordStruct)result).getFieldAsString("Id"));
+								
+								request.returnValue(result);
+							}
+						});
 					}
 				});
 				

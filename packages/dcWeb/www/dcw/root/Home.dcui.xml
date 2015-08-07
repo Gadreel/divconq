@@ -7,6 +7,7 @@
 				<h1>App Menu</h1>
 			
 				<WideButton Label="Add Domain" Icon="plus" Page="/dcw/root/EditDomain" /> 
+				<WideButton Label="Import Domain" Icon="plus" Page="/dcw/root/ImportDomain" /> 
 				<WideButton Label="Sign Out" Icon="sign-out" Click="DoSignOut" />
 				
 				<div id="areaDomains" data-role="collapsible" data-inset="true" data-collapsed="false">

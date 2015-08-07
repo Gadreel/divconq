@@ -1537,7 +1537,7 @@
 					</Op>
 					<Op Name="AddDomain">
 						<Description>
-							Add a domain record.
+							Add a domain record.  must be run in root
 						</Description>
 						<Request Inherits="RequestMessage">
 							<Field Name="Body" Required="True">
@@ -1549,6 +1549,25 @@
 									<Field Name="Names">
 										<List Type="dcDomain:dcName" />
 									</Field>
+								</Record>
+							</Field>
+						</Request>
+						<Response Inherits="ResponseMessage">
+							<Field Name="Body">
+								<Record>
+									<Field Name="Id" Type="dcDomain:Id" />
+								</Record>
+							</Field>
+						</Response>
+					</Op>
+					<Op Name="ImportDomain">
+						<Description>
+							Import a domain record. must be run in root
+						</Description>
+						<Request Inherits="RequestMessage">
+							<Field Name="Body" Required="True">
+								<Record>
+									<Field Name="Alias" Type="dcDomain:dcAlias" Required="True" />
 								</Record>
 							</Field>
 						</Request>

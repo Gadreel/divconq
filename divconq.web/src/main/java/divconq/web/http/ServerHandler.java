@@ -521,7 +521,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 				final String op = req.getPath().getName(2);
 		        
 		    	if (Logger.isDebug())
-		    		Logger.debug("Initiating an upload on " + cid + " for " + sess.getId());
+		    		Logger.debug("Initiating an upload block on " + cid + " for " + sess.getId());
 				
 				final DataStreamChannel dsc = sess.getChannel(cid);
 				
@@ -563,11 +563,12 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 						public void release() {
 							// trust that http connection is closing or what ever needs to happen, we just need to deal with datastream
 							
-							Logger.debug("Releasing data stream: " + cid);
+							Logger.debug("Releasing data stream: " + cid + " completed: " + completed);
 							
+							// TODO this is not true, client may switch connections to continue upload, only a session timeout or datastream timeout count as true problems
 							// if not done with request then something went wrong, kill data channel
-							if (!this.completed)
-								dsc.abort();
+							//if (!this.completed)
+							//	dsc.abort();
 						}
 						
 						@Override

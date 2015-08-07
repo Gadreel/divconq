@@ -12,6 +12,7 @@ import divconq.util.IOUtil;
 import divconq.util.StringUtil;
 import divconq.web.WebContext;
 import divconq.xml.XElement;
+import divconq.xml.XNode;
 import divconq.xml.XmlReader;
 import divconq.xml.XmlWriter;
 
@@ -284,6 +285,25 @@ public class FeedAdapter {
 			// copy all attributes 
 			for (Entry<String, String> attr : src.getAttributes().entrySet()) 
 				pel.setAttribute(attr.getKey(), attr.getValue());
+			
+			return pel;
+		}
+		else if ("html".equals(fmt)) {
+			XElement pel = new XElement("div");
+			pel.setAttribute("lang", lang);
+			
+			if (id != null)
+				pel.setAttribute("id", id);
+			
+			if (clss != null)
+				pel.setAttribute("class", clss);
+			
+			// copy all attributes 
+			for (Entry<String, String> attr : src.getAttributes().entrySet()) 
+				pel.setAttribute(attr.getKey(), attr.getValue());
+			
+			for (XNode n : src.getChildren())
+				pel.add(n);
 			
 			return pel;
 		}

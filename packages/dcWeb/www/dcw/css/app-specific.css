@@ -139,6 +139,10 @@ html head+body .ui-btn.ui-btn-a, html head+body .ui-btn.ui-btn-a:visited {
 	color: white;
 }
 
+html head+body .ui-btn.ui-btn-a:hover, html head+body .ui-btn.ui-btn-a:focus {
+	text-shadow: none;
+}
+
 #puConfirmHtml {
 	padding: 24px;
 	font-size: 16px;

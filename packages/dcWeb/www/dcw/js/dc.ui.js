@@ -2549,6 +2549,9 @@ $(document).on('mobileready', function () {
 			dc.schema.Manager.load(dcCustomSchema);
 		*/
 		
+		if (dc.handler.init)
+			dc.handler.init();
+		
 		var info = dc.user.getUserInfo();
 
 		if (info.Credentials) {

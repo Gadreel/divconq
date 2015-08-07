@@ -1,0 +1,37 @@
+<Pui Title="Import Domain">
+	<Skeleton>
+		<IncludePart Path="/dcw/app/Header" />
+
+		<div class="dcappWrapper">
+			<article id="dcappMain">
+				<h1>Import Domain</h1>
+				
+				<Form Name="EditDomain">
+					<FieldContainer Label="Alias:">
+						<TextInput Name="Alias" Required="true" Pattern="[\w-]+" />
+					</FieldContainer>
+					
+					<div class="formbuttons">
+						<SubmitButton Label="Save" Icon="check" /> 
+					</div> 
+				</Form>
+			</article>
+		</div>
+
+		<IncludePart Path="/dcw/app/Footer" />
+	</Skeleton>
+	<Function Name="Load"><![CDATA[
+			this.form().query('Alias').focus();				
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			e.Message = { 
+				Service: 'dcCoreDataServices',
+				Feature: 'Domains',
+				Op: 'ImportDomain',
+				Body: e.Data
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			window.history.back();
+	]]></Function>
+</Pui>
