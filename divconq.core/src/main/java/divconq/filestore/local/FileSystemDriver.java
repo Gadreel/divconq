@@ -120,6 +120,10 @@ public class FileSystemDriver extends RecordStruct implements IFileStoreDriver, 
 	
 	@Override
 	public void connect(RecordStruct params, OperationCallback callback) {
+		if ((params != null) && !params.isFieldEmpty("RootFolder")) {
+			this.setRootFolder(params.getFieldAsString("RootFolder"));
+		}
+		
 		// create root folder if we have one specified and it is not present
 		if (!this.isFieldEmpty("RootFolder")) {
 			Path wd = Paths.get(this.getFieldAsString("RootFolder"));

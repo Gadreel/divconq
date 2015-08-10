@@ -183,7 +183,7 @@ public class DomainsManager {
 					if ("dcw".equals(mod)) {
 						for (DomainInfo wdomain : DomainsManager.this.dsitemap.values()) {
 							if (domain.equals(wdomain.getAlias())) {
-								if (("config".equals(section) || "services".equals(section) || "glib".equals(section))) {
+								if (("config".equals(section) || "services".equals(section) || "glib".equals(section) || "buckets".equals(section))) {
 									wdomain.reloadSettings();
 									Hub.instance.fireEvent(HubEvents.DomainConfigChanged, wdomain);
 								}

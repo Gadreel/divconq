@@ -24,7 +24,7 @@ public class DomainWatcherAdapter {
 
 	public void init(DomainInfo domaininfo) {
 		if (this.script != null) {
-			this.tryExecuteMethod("Kill", new Object[] { });
+			this.tryExecuteMethod("Kill", new Object[] { domaininfo });
 			this.script = null;
 		}
 		

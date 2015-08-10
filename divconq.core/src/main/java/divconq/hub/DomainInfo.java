@@ -31,6 +31,8 @@ import org.joda.time.DateTime;
 
 import divconq.bus.IService;
 import divconq.bus.ServiceRouter;
+import divconq.filestore.bucket.Bucket;
+import divconq.filestore.bucket.BucketUtil;
 import divconq.io.FileStoreEvent;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncResult;
@@ -60,6 +62,7 @@ public class DomainInfo {
 	protected SchemaManager schema = null;
 	protected Map<String, IService> registered = new HashMap<String, IService>();
 	protected Map<String, ServiceRouter> routers = new HashMap<String, ServiceRouter>();
+	protected Map<String, Bucket> buckets = new HashMap<String, Bucket>();
 	protected DomainWatcherAdapter watcher = null;
 	protected List<ISchedule> schedulenodes = new ArrayList<>();
 	protected String locale = null;
@@ -93,6 +96,19 @@ public class DomainInfo {
 	
 	public ServiceRouter getServiceRouter(String name) {
 		return this.routers.get(name);
+	}
+	
+	public Bucket getBucket(String name) {
+		Bucket b = this.buckets.get(name);
+		
+		if (b == null) {
+			b = BucketUtil.buildBucket(name, this);
+			
+			if (b != null)
+				this.buckets.put(name, b);
+		}
+		
+		return b;
 	}
 	
 	public GroovyObject getScript(String service, String feature) {
@@ -149,7 +165,13 @@ public class DomainInfo {
 		if (fs == null)
 			return null;
 		
-		return fs.getFilePath().resolve("dcw/" + this.getAlias() + path);
+		if (StringUtil.isEmpty(path))
+			return fs.getFilePath().resolve("dcw/" + this.getAlias());
+		
+		if (path.charAt(0) == '/')
+			return fs.getFilePath().resolve("dcw/" + this.getAlias() + path);
+		
+		return fs.getFilePath().resolve("dcw/" + this.getAlias() + "/" + path);
 	}
 
 	public Path getPath() {
@@ -243,6 +265,11 @@ public class DomainInfo {
 			this.watcher = new DomainWatcherAdapter(dpath);
 		
 		this.watcher.init(this);
+		
+		for (Bucket b : this.buckets.values())
+			b.tryExecuteMethod("Kill", this);
+		
+		this.buckets.clear();
 		
 		this.prepDomainSchedule();
 	}

@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import divconq.cms.feed.FeedAdapter;
 import divconq.filestore.CommonPath;
 import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationContext;
@@ -83,7 +84,10 @@ public class Fragment extends Element {
 			// possible to override the file path and grab a random Page from `feed`
 			String cmspath = this.source.getAttribute("CmsPath", ctx.getRequest().getPath().toString());
 			
-			ctx.getFeedAdapter("Pages", cmspath).buildHtmlPage(ctx, this.source, ctx.isPreview());
+			FeedAdapter fa = ctx.getFeedAdapter("Pages", cmspath);
+			
+			if (fa != null)
+				fa.buildHtmlPage(ctx, this.source, ctx.isPreview());
 		}
 		
 		XElement screl = this.source.find("ServerScript");

@@ -291,10 +291,10 @@ public class CmsService extends ExtensionBase implements IService {
 		//  custom file store
 		// =========================================================
 		
-		//if ("CustomFileStore".equals(feature)) {
-		//	CustomFileStore.handle(request, op, msg);
-		//	return;
-		//}
+		if ("CustomFileStore".equals(feature)) {
+			CustomFileStore.handle(request, op, msg);
+			return;
+		}
 		
 		// =========================================================
 		//  store categories

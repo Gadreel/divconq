@@ -213,7 +213,7 @@ public class ImportWebsiteTool {
 		
 		Path relpath = dmpath.relativize(sfile);
 		
-		if (relpath.getNameCount() < 2)
+		if (relpath.getNameCount() < 3)
 			return;
 		
 		//String wwwpathf1 = preview ? "/" + area +  "-preview/" + alias : "/" + area +  "/" + alias;
