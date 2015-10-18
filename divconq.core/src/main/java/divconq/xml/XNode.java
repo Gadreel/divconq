@@ -96,6 +96,23 @@ public abstract class XNode {
 	    return sb.toString();
    }
 
+	public static String quote(char ch) {
+      switch (ch) {
+		case '&':
+			return "&amp;";
+		case '<':
+			return "&lt;";
+		case '>':
+			return "&gt;";
+		case '"':
+			return "&quot;";
+		case '\'':
+			return "&apos;";
+		default:
+			return ch + "";
+      }
+   }
+
 	  /**
 	   * Returns formatted or unformatted XML source.
 	   * 

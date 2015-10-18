@@ -23,6 +23,7 @@ import divconq.filestore.CommonPath;
 import divconq.lang.op.OperationCallback;
 import divconq.web.IOutputAdapter;
 import divconq.web.WebContext;
+import divconq.web.ui.adapter.DcuiOutputAdapter;
 import divconq.xml.XElement;
 
 public class IncludePart extends FragmentProxy implements ICodeTag {
@@ -63,9 +64,9 @@ public class IncludePart extends FragmentProxy implements ICodeTag {
 		
 		CommonPath pp = new CommonPath(this.src);		
 		
-		IOutputAdapter sf = ctx.getDomain().findFile(ctx.isPreview(), pp, ctx.getExtension());
+		IOutputAdapter sf = ctx.getSite().findFile(pp, ctx.isPreview());
 		
-		if (sf instanceof ViewOutputAdapter) {
+		if (sf instanceof DcuiOutputAdapter) {
 			if (this.xml != null) {
 				Map<String,String> params = new HashMap<String,String>();
 		    	

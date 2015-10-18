@@ -136,6 +136,10 @@ public class BasicSettingsObfuscator implements ISettingsObfuscator {
 		try {
 			Cipher c = Cipher.getInstance("AES");
 			c.init(Cipher.DECRYPT_MODE, this.aeskey);
+
+			//System.out.println("a1: " + c.getAlgorithm());
+			//System.out.println("a2: " + c.getBlockSize());
+			
 			return Utf8Decoder.decode(c.doFinal(v)).toString();			
 		}
 		catch(InvalidKeyException x) {

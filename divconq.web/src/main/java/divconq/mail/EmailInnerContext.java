@@ -10,6 +10,7 @@ import divconq.web.IWebMacro;
 import divconq.web.Request;
 import divconq.web.Response;
 import divconq.web.WebDomain;
+import divconq.web.WebSite;
 
 public class EmailInnerContext implements IInnerContext {
 	protected Request request = null;
@@ -17,7 +18,7 @@ public class EmailInnerContext implements IInnerContext {
 	protected Response textresponse = null;
 	protected String subject = null;
 	
-	protected WebDomain domain = null;
+	protected WebSite site = null;
 	
 	protected Response currresponse = null;
 	protected FuncCallback<EmailInnerContext> callback = null;
@@ -30,8 +31,8 @@ public class EmailInnerContext implements IInnerContext {
 		return this.subject;
 	}
 	
-	public EmailInnerContext(CommonPath path, WebDomain domain, FuncCallback<EmailInnerContext> callback) {
-		this.domain = domain;
+	public EmailInnerContext(CommonPath path, WebSite site, FuncCallback<EmailInnerContext> callback) {
+		this.site = site;
 		
         this.request = new Request();
         this.request.loadVoid(path);
@@ -67,9 +68,14 @@ public class EmailInnerContext implements IInnerContext {
 
 	@Override
 	public WebDomain getDomain() {
-		return this.domain;
+		return this.site.getDomain();
 	}
 
+	@Override
+	public WebSite getSite() {
+		return this.site;
+	}
+	
 	@Override
 	public IWebMacro getMacro(String name) {
 		return null;

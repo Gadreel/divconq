@@ -1380,11 +1380,19 @@ public class TablesAdapter {
 				continue;
 			}
 			
-			Object val = pdef.getFieldAsAny("Value");
+			Object val = pdef.getField("Value");
 			
 			if (val != null) {
 				ArrayList<byte[]> vl = new ArrayList<>();
-				vl.add(ByteUtil.buildValue(val));
+				
+				if (val instanceof ListStruct) {
+					for (int i2 = 0; i2 < ((ListStruct)val).getSize(); i2++) 
+						vl.add(ByteUtil.buildValue(((ListStruct)val).getItem(i2)));
+				}
+				else {
+					vl.add(ByteUtil.buildValue(val));
+				}
+				
 				values.set(i, vl);
 			}
 		}
@@ -1954,6 +1962,43 @@ public class TablesAdapter {
 		return null;
 	}	
 	
+	// traverse the values
+	public void traverseIndexValRange(String table, String fname, Object fromval, Object toval, BigDateTime when, boolean historical, Consumer<Object> out) {
+		String did = this.task.getDomain();
+		
+		DbField ffdef = this.task.getSchema().getDbField(table, fname);
+		
+		if (ffdef == null)
+			return;
+		
+		if (fromval instanceof String)
+			fromval = fromval.toString().trim().toLowerCase(Locale.ROOT);
+		
+		if (toval instanceof String)
+			toval = toval.toString().trim().toLowerCase(Locale.ROOT);
+		
+		try {
+			byte[] valb = conn.getOrNextPeerKey(ffdef.getIndexName(), did, table, fname, fromval);
+			byte[] valfin = (toval != null) ? ByteUtil.buildKey(toval) : null;
+			
+			while (valb != null) {
+				// check if past "To"
+				if ((valfin != null) && (ByteUtil.compareKeys(valb, valfin) >= 0))
+					break;
+				
+				Object val = ByteUtil.extractValue(valb);
+
+				out.accept(val);
+				
+				valb = conn.nextPeerKey(ffdef.getIndexName(), did, table, fname, val);
+			}
+		}
+		catch (Exception x) {
+			OperationContext.get().error("traverseIndex error: " + x);
+		}
+	}	
+	
+	// traverse the record ids
 	public void traverseIndexRange(String table, String fname, Object fromval, Object toval, BigDateTime when, boolean historical, Consumer<Object> out) {
 		String did = this.task.getDomain();
 		

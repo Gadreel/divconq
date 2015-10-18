@@ -16,7 +16,6 @@
 ************************************************************************ */
 package divconq.mail;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +23,7 @@ import java.util.Map;
 import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.filestore.CommonPath;
+import divconq.io.CacheFile;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationContext;
 import divconq.mod.ExtensionBase;
@@ -35,7 +35,8 @@ import divconq.web.IOutputAdapter;
 import divconq.web.WebContext;
 import divconq.web.WebDomain;
 import divconq.web.WebModule;
-import divconq.web.dcui.ViewOutputAdapter;
+import divconq.web.WebSite;
+import divconq.web.ui.adapter.DcuiOutputAdapter;
 import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
@@ -72,7 +73,10 @@ public class MailTemplateService extends ExtensionBase implements IService {
 					WebModule mod = (WebModule) this.getLoader().getModule();
 					WebDomain dom = mod.getWebSiteManager().getDomain(OperationContext.get().getDomain().getId());
 					
-					IInnerContext ic = new EmailInnerContext(path, dom, new FuncCallback<EmailInnerContext>() {
+					// TODO figure out which site to use
+					WebSite site = dom.getRootSite();
+					
+					IInnerContext ic = new EmailInnerContext(path, site, new FuncCallback<EmailInnerContext>() {
 						@Override
 						public void callback() {
 							EmailInnerContext eic = this.getResult();
@@ -87,7 +91,7 @@ public class MailTemplateService extends ExtensionBase implements IService {
 						}
 					});
 					
-					WebContext ctx = new WebContext(ic, mod.getWebSiteManager().getDefaultExtension());
+					WebContext ctx = new WebContext(ic);
 					
 					RecordStruct dparams = rec.getFieldAsRecord("Params");
 					
@@ -101,16 +105,20 @@ public class MailTemplateService extends ExtensionBase implements IService {
 						}
 					}
 					
-					IOutputAdapter output = new ViewOutputAdapter();
-					output.init(dom, Paths.get("./public/dcw/" + dom.getAlias()  + "/email" + path), path, ctx.isPreview());
-
-					if (OperationContext.get().hasErrors() || (output == null)) {
-						request.errorTr(150001);
-						request.complete();
-						return;
-					}
+					CacheFile cfile = site.findSectionFile("email", path.toString(), ctx.isPreview());
 					
-					output.execute(ctx);
+					if (cfile != null) {
+						IOutputAdapter output = new DcuiOutputAdapter();
+						output.init(site, cfile, path, ctx.isPreview());
+						
+						if (OperationContext.get().hasErrors()) {
+							request.errorTr(150001);
+							request.complete();
+							return;
+						}
+						
+						output.execute(ctx);
+					}
 					
 					request.complete();
 				} 

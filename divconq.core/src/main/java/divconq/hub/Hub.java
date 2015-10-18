@@ -114,7 +114,6 @@ public class Hub {
 	protected WorkQueue workqueue = new WorkQueue(); 
 	protected Scheduler scheduler = new Scheduler();
 	protected SqlManager sqldbman = new SqlManager();
-	protected LocalFileStore packagefilestore = null;
 	protected LocalFileStore publicfilestore = null;
 	protected LocalFileStore privatefilestore = null;
 	protected Sessions sessions = new Sessions();
@@ -373,10 +372,6 @@ public class Hub {
 	
 	public CtpServices getCtp() {
 		return this.ctp;
-	}
-	
-	public LocalFileStore getPackageFileStore() {
-		return this.packagefilestore;
 	}
 	
 	public LocalFileStore getPublicFileStore() {
@@ -695,9 +690,10 @@ public class Hub {
 			return or;
 		}
 		
-		this.packagefilestore = new LocalFileStore();
 		or.debug(0, "Initializing package file store");		
-		this.packagefilestore.start(or, new XElement("PackageFileStore"));		
+		
+		this.resources.getPackages().init(or, config.find("PackageFileStore"));
+		
 		
 		XElement fstore = config.find("PublicFileStore");
 		
@@ -973,10 +969,8 @@ public class Hub {
 		or.debug(0, "Stopping count manager");
 		this.countman.stop(or);
 		
-		if (this.packagefilestore != null) {
-			or.debug(0, "Stopping package file store");		
-			this.packagefilestore.stop(or);		
-		}
+		or.debug(0, "Stopping package file store");		
+		this.resources.getPackages().stop(or);
 		
 		if (this.publicfilestore != null) {
 			or.debug(0, "Stopping public file store");		

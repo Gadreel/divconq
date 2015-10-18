@@ -252,26 +252,28 @@ public class SecurityPolicy {
 		
 		if (engine.getEnabledCipherSuites().length == 0)
 			Logger.warn("No Cipher are enabled!!");
-		
+
 		/*
-        System.out.println("Enabled");
-        
-        for (String p : engine.getEnabledProtocols())
-        	System.out.println("Proto: " + p);
-        
-        for (String p : engine.getEnabledCipherSuites())
-        	System.out.println("Suite: " + p);
-        
-        System.out.println();        
-        System.out.println("Supported");
-        System.out.println();        
-        
-        for (String p : engine.getSupportedProtocols())
-        	System.out.println("Proto: " + p);
-        
-        for (String p : engine.getSupportedCipherSuites())
-        	System.out.println("Suite: " + p);
-        */
+		if (Logger.isTrace()) {
+	        System.out.println("Enabled");
+	        
+	        for (String p : engine.getEnabledProtocols())
+	        	System.out.println("Proto: " + p);
+	        
+	        for (String p : engine.getEnabledCipherSuites())
+	        	System.out.println("Suite: " + p);
+	        
+	        System.out.println();        
+	        System.out.println("Supported");
+	        System.out.println();        
+	        
+	        for (String p : engine.getSupportedProtocols())
+	        	System.out.println("Proto: " + p);
+	        
+	        for (String p : engine.getSupportedCipherSuites())
+	        	System.out.println("Suite: " + p);
+		}
+		*/
 	}
 	
 }

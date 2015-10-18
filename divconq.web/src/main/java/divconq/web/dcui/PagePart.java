@@ -22,9 +22,8 @@ import groovy.lang.GroovyObject;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import org.markdown4j.Markdown4jProcessor;
-
 import w3.html.Img;
+import divconq.cms.md.Markdown4jProcessor;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleInfo;

@@ -27,7 +27,6 @@ import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.stream.ChunkedInput;
 import divconq.bus.Message;
-import divconq.hub.DomainInfo;
 import divconq.log.Logger;
 import divconq.session.Session;
 import divconq.util.MimeUtil;
@@ -44,6 +43,7 @@ public class HttpContext implements IInnerContext {
     protected Response response = null;
     protected Session session = null;
     protected WebSiteManager siteman = null;
+    protected WebSite site = null;
     
     protected boolean isWebsocket = false;
     
@@ -61,6 +61,23 @@ public class HttpContext implements IInnerContext {
     
     public Session getSession() {
 		return this.session;
+	}
+	
+	@Override
+	public WebDomain getDomain() {
+		if (this.site != null)
+			return this.site.getDomain();
+		
+		return null;
+	}
+
+	public void setSite(WebSite v) {
+		this.site = v;
+	}
+	
+	@Override
+	public WebSite getSite() {
+		return this.site;
 	}
     
     public WebSiteManager getSiteman() {
@@ -253,7 +270,7 @@ public class HttpContext implements IInnerContext {
 					this.chan.writeAndFlush(new TextWebSocketFrame(m.toString()));  //.sync();   we do not need to sync - HTTP is one request, one response.  we would not pile messages on this channel
 				else {
 					// include the version hash for the current deployed files
-					m.setField("DeployVersion", this.siteman.getVersion());
+					//m.setField("DeployVersion", this.siteman.getVersion());
 					
 					// we are always using UTF 8, charset is required with any "text/*" mime type that is not ANSI text 
 					this.response.setHeader(Names.CONTENT_TYPE, MimeUtil.getMimeType("json") + "; charset=utf-8");
@@ -298,16 +315,6 @@ public class HttpContext implements IInnerContext {
 		
 		if (d != null) 
 			d.release();
-	}
-	
-	@Override
-	public WebDomain getDomain() {
-		DomainInfo domaininfo = this.siteman.resolveDomainInfo(this.request);
-		
-		if (domaininfo != null)
-			return this.siteman.getDomain(domaininfo.getId());
-		
-		return null;
 	}
 	
 	@Override

@@ -16,6 +16,8 @@
 ************************************************************************ */
 package divconq.api.internal;
 
+import io.netty.handler.ssl.OpenSsl;
+
 import java.io.FileInputStream;
 import java.security.KeyStore;
 
@@ -25,6 +27,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 
 import divconq.hub.Hub;
+import divconq.log.Logger;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 
@@ -82,6 +85,8 @@ public final class ApiSslContextFactory {
         		// TODO
         		throw new Error("Failed to initialize the SSLContext", x);
         	}
+        
+        Logger.info("OpenSSL in use (bus): " + OpenSsl.isAvailable());
     }
 
 	public SSLEngine getClientEngine() {

@@ -22,8 +22,7 @@ import groovy.lang.GroovyObject;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import org.markdown4j.Markdown4jProcessor;
-
+import divconq.cms.md.Markdown4jProcessor;
 import divconq.lang.op.OperationContext;
 import divconq.web.WebContext;
 import divconq.xml.XElement;

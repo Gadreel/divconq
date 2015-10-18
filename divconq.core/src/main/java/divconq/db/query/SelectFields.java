@@ -234,7 +234,7 @@ public class SelectFields {
 	 */
 	public SelectFields withReverseForeignField(String name, String table, String keyfield, String foreignfield, String format) {
 		SelectReverseForeignField sub = new SelectReverseForeignField()
-		.withField("Id")		// doesn't really mean anything
+			.withField("Id")		// doesn't really mean anything
 			.withName(name)
 			.withTable(table)
 			.withKeyField(keyfield)
@@ -245,6 +245,32 @@ public class SelectFields {
 		
 		return this;
 	}
+	
+	public SelectFields withReverseSubquery(String name, String table, String keyfield, ISelectField... items) {
+		SelectReverseSubquery sub = new SelectReverseSubquery()
+			.withField("Id")		// doesn't really mean anything
+			.withName(name)
+			.withTable(table)
+			.withKeyField(keyfield)
+			.withSelect(items);
+		
+		this.fields.addItem(sub.getParams());
+		
+		return this;
+	}	
+	
+	public SelectFields withReverseSubquery(String name, String table, String keyfield, SelectFields flds) {
+		SelectReverseSubquery sub = new SelectReverseSubquery()
+			.withField("Id")		// doesn't really mean anything
+			.withName(name)
+			.withTable(table)
+			.withKeyField(keyfield)
+			.withSelect(flds);
+		
+		this.fields.addItem(sub.getParams());
+		
+		return this;
+	}	
 	
 	/**
 	 * @param composer function to compose response

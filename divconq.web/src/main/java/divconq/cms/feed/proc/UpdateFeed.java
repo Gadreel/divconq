@@ -20,6 +20,7 @@ import divconq.lang.op.OperationResult;
 import divconq.struct.CompositeStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.struct.builder.ICompositeBuilder;
 import divconq.util.StringUtil;
 import divconq.util.TimeUtil;
 
@@ -28,7 +29,6 @@ public class UpdateFeed implements IStoredProc {
 	public void execute(DatabaseInterface conn, DatabaseTask task, OperationResult log) {
 		RecordStruct params = task.getParamsAsRecord();
 		
-		String uuid = params.getFieldAsString("Uuid");
 		String chann = params.getFieldAsString("Channel");
 		String path = params.getFieldAsString("Path");
 		Boolean edflag = params.getFieldAsBoolean("Editable");
@@ -45,7 +45,7 @@ public class UpdateFeed implements IStoredProc {
 		TablesAdapter db = new TablesAdapter(conn, task); 
 		
 		BigDateTime when = BigDateTime.nowDateTime();
-		Object oid = db.firstInIndex("dcmFeed", "dcmUuid", uuid, when, false);
+		Object oid = db.firstInIndex("dcmFeed", "dcmPath", path, when, false);
 		
 		AtomicReference<RecordStruct> oldvalues = new AtomicReference<>();
 		AtomicReference<DateTime> updatepub = new AtomicReference<>();
@@ -154,6 +154,17 @@ public class UpdateFeed implements IStoredProc {
 				catch (Exception x) {
 					log.error("Error updating feed index: " + x);
 				}
+
+				try {
+					ICompositeBuilder out = task.getBuilder();
+					
+					out.startRecord();
+					out.field("Id", recid);
+					out.endRecord();
+				}
+				catch (Exception x) {
+					log.error("Error writing record id: " + x);
+				}
 				
 				task.complete();
 			}
@@ -188,7 +199,7 @@ public class UpdateFeed implements IStoredProc {
 					req.withId(oid.toString());
 				}
 				else {
-					req.withUpdateField("dcmUuid", uuid);
+					//req.withUpdateField("dcmUuid", uuid);
 					req.withUpdateField("dcmImported", new DateTime());
 				}
 				

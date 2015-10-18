@@ -873,7 +873,7 @@ dc.pui = {
 								return false;
 							});
 						
-						if (dc.util.String.isString(child.Page)) 
+						else if (dc.util.String.isString(child.Page)) 
 							node.click(child.Page, function(e) {
 								if (!dc.pui.Page.busyCheck())
 									dc.pui.Loader.loadPage(e.data);
@@ -881,6 +881,9 @@ dc.pui = {
 								e.preventDefault();
 								return false;
 							});
+						
+						//else 
+						//	debugger;
 					}
 					else if (child.Element == 'Button') {
 						node = $('<a href="#" data-role="button" data-theme="a" data-mini="true" data-inline="true"></a>');
@@ -900,7 +903,7 @@ dc.pui = {
 								return false;
 							});
 						
-						if (dc.util.String.isString(child.Page)) 
+						else if (dc.util.String.isString(child.Page)) 
 							node.click(child.Page, function(e) {
 								if (!dc.pui.Page.busyCheck())
 									dc.pui.Loader.loadPage(e.data);
@@ -908,6 +911,9 @@ dc.pui = {
 								e.preventDefault();
 								return false;
 							});
+						
+						//else 
+						//	debugger;
 					}
 					else if (child.Element == 'WideButton') {
 						node = $('<a href="#" data-role="button" data-theme="a" data-iconpos="right" data-mini="true"></a>');
@@ -2422,7 +2428,7 @@ dc.pui = {
 			});
 			*/
 		},
-		alert: function(msg) {
+		alert: function(msg, callback) {
 			// TODO
 			//$.mobile.loading('hide');
 			
@@ -2437,11 +2443,44 @@ dc.pui = {
 						<div id="puInfoHtml"></div> \
 				</div>');
 				
+				$("#puInfo").on("popupafterclose", function () {
+					if (dc.pui.Popup.__cb)
+						dc.pui.Popup.__cb();
+
+					dc.pui.Popup.__cb = null;
+					
+					//console.log('aaaa');
+				});
+				
 				$('#puInfo').enhanceWithin().popup();
 			}
+			
+			dc.pui.Popup.__cb = callback;
 
 			$('#puInfoHtml').html(msg);
 			$('#puInfo').popup('open', { positionTo: 'window', transition: 'pop' });
+		},
+		image: function(src, style) {
+			// TODO
+			//$.mobile.loading('hide');
+			
+			console.log('alert called: ' + src);
+			
+			var pi = $('#puImage');
+			
+			// build alert if none present
+			if (!pi.length) {
+				$('body').append('<div data-role="popup" id="puImage" data-theme="a" class="ui-content" data-overlay-theme="b"> \
+						<a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a> \
+						<img id="puImageImg" /> \
+				</div>');
+				
+				$('#puImage').enhanceWithin().popup();
+			}
+
+			$('#puImageImg').attr('src', src);
+			$('#puImageImg').attr('style', style);
+			$('#puImage').popup('open', { positionTo: 'window', transition: 'pop' });
 		},
 		confirm: function(msg,callback) {
 			// TODO

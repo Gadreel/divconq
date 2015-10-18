@@ -38,6 +38,18 @@ public class XText extends XNode {
 	public XText(String string) {
 		this.setValue(string);
 	}
+
+	public void append(char c) {
+		this.content += XNode.quote(c);
+	}
+
+	public void append(String s) {
+		this.content += XNode.quote(s);
+	}
+
+	public void appendEntity(String s) {
+		this.content += s;
+	}
 	
 	/**
 	 * @param cdata flag to indicate that this text was stored within a CDATA section
@@ -206,5 +218,21 @@ public class XText extends XNode {
 		}
 		else
 			sb.write(XNode.quote(this.content));
+	}
+
+	public static XText raw(String v) {
+		XText t = new XText();
+		t.setRawValue(v);
+		return t;
+	}
+
+	public static XText cdata(String v) {
+		XText t = new XText(true, v);
+		return t;
+	}
+
+	public static XText escape(String v) {
+		XText t = new XText(false, v);
+		return t;
 	}
 }

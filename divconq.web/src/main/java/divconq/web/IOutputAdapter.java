@@ -1,15 +1,9 @@
 package divconq.web;
 
-import java.nio.file.Path;
-
 import divconq.filestore.CommonPath;
-import divconq.xml.XElement;
+import divconq.io.CacheFile;
 
 public interface IOutputAdapter {
-	void init(WebDomain domain, Path file, CommonPath loc, boolean isPreview);
-	Path getFilePath();
-	CommonPath getLocationPath();
-	XElement getSource();
-	
+	void init(WebSite site, CacheFile file, CommonPath loc, boolean isPreview);
 	void execute(WebContext ctx) throws Exception;
 }

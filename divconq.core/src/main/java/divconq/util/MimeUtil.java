@@ -32,6 +32,7 @@ public class MimeUtil {
 		MimeUtil.load(
 				new XElement("MimeList", 
 						new XElement("MimeDef", new XAttribute("Ext", "html"), new XAttribute("Type", "text/html"), new XAttribute("Compress", "True")),
+						new XElement("MimeDef", new XAttribute("Ext", "shtml"), new XAttribute("Type", "text/html"), new XAttribute("Compress", "True")),
 						new XElement("MimeDef", new XAttribute("Ext", "xml"), new XAttribute("Type", "text/xml"), new XAttribute("Compress", "True")),
 						new XElement("MimeDef", new XAttribute("Ext", "txt"), new XAttribute("Type", "text/plain"), new XAttribute("Compress", "True")),
 						new XElement("MimeDef", new XAttribute("Ext", "jpg"), new XAttribute("Type", "image/jpeg")),
@@ -44,7 +45,8 @@ public class MimeUtil {
 						new XElement("MimeDef", new XAttribute("Ext", "woff"), new XAttribute("Type", "application/x-font-woff")),
 						new XElement("MimeDef", new XAttribute("Ext", "woff2"), new XAttribute("Type", "application/font-woff2")),
 						new XElement("MimeDef", new XAttribute("Ext", "cur"), new XAttribute("Type", "image/vnd.microsoft.icon")),
-						new XElement("MimeDef", new XAttribute("Ext", "ico"), new XAttribute("Type", "image/vnd.microsoft.icon"))
+						new XElement("MimeDef", new XAttribute("Ext", "ico"), new XAttribute("Type", "image/vnd.microsoft.icon")),
+						new XElement("MimeDef", new XAttribute("Ext", "svg"), new XAttribute("Type", "image/svg+xml")) 
 				)
 		);
 	}

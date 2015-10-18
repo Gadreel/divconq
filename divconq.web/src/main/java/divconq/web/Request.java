@@ -29,8 +29,8 @@ import divconq.www.http.ContentType;
 import divconq.www.http.parse.ContentTypeParser;
 import divconq.www.http.parse.DateParser;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.Cookie;
-import io.netty.handler.codec.http.CookieDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders.Names;
@@ -140,10 +140,10 @@ public class Request {
         String value = req.headers().get(Names.COOKIE);
 
         if (StringUtil.isNotEmpty(value)) {
-        	Set<Cookie> cset = CookieDecoder.decode(value);
+        	Set<Cookie> cset = ServerCookieDecoder.STRICT.decode(value);
         	
         	for (Cookie cookie : cset) 
-        		this.cookies.put(cookie.getName(), cookie);
+        		this.cookies.put(cookie.name(), cookie);
         }
         
         QueryStringDecoder decoderQuery = new QueryStringDecoder(req.getUri());        

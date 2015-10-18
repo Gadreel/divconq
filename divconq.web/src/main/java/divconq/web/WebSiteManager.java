@@ -18,12 +18,12 @@ package divconq.web;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import divconq.cms.importer.ImportWebsiteTool;
 import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
@@ -34,30 +34,27 @@ import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationContextBuilder;
-import divconq.mod.Bundle;
 import divconq.mod.ExtensionLoader;
-import divconq.mod.IExtension;
+import divconq.mod.IModule;
 import divconq.net.IpAddress;
 import divconq.util.MimeUtil;
 import divconq.util.StringUtil;
 import divconq.web.http.SslContextFactory;
-import divconq.web.importer.ImportWebsiteTool;
 import divconq.work.IWork;
 import divconq.work.Task;
 import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class WebSiteManager {
-	protected WebModule module = null;
-	protected Map<String,IWebExtension> extensions = new HashMap<String,IWebExtension>();
-	protected String defaultExtension = null;
+	protected IModule module = null;
+	protected IWebExtension webExtension = null;
 	
 	protected ConcurrentHashMap<String, WebDomain> dsitemap = new ConcurrentHashMap<String, WebDomain>();
 	
-	protected String version = null;
+	//protected String version = null;
 	protected String defaultTlsPort = "443";
 	
-	protected SslContextFactory ssl = new SslContextFactory(); 
+	protected List<SslContextFactory> tls = new ArrayList<>(); 
 	
 	// TODO when module is unloaded, clean up all references to classes
 
@@ -66,27 +63,29 @@ public class WebSiteManager {
 	
 	protected List<XElement> devices = new ArrayList<XElement>();
 	
-	public Collection<IWebExtension> getSites() {
-		return this.extensions.values();
-	}
-	
 	public String getDefaultTlsPort() {
 		return this.defaultTlsPort;
 	}
 	
-	public WebModule getModule() {
-		return this.module;
-	}
-	
+	/*
 	public String getVersion() {
 		return this.version;
 	}
+	*/
 	
-	public void start(WebModule module, XElement config) {
+	public IModule getModule() {
+		return this.module;
+	}
+	
+	public void start(IModule module, XElement config) {
 		this.module = module;
 
 		if (config != null) {
-			this.ssl.init(config);
+	    	for (XElement scel : config.selectAll("SslContext")) {
+	    		SslContextFactory tls = new SslContextFactory();
+	    		tls.init(config, scel);
+	    		this.tls.add(tls);
+	    	}
 			
 			this.defaultTlsPort = config.getAttribute("DefaultTlsPort", this.defaultTlsPort);
 			
@@ -107,7 +106,7 @@ public class WebSiteManager {
 					String bname = macros.getAttribute("Class");
 					
 					if (StringUtil.isNotEmpty(bname)) {
-						Class<?> cls = this.module.getLoader().getClass(bname);
+						Class<?> cls = Hub.instance.getClass(bname);   
 						
 						if (cls != null) {
 							Class<? extends IWebMacro> tcls = cls.asSubclass(IWebMacro.class);
@@ -132,14 +131,23 @@ public class WebSiteManager {
 				}
 			}
 		}
+		
+		for (ExtensionLoader el : module.getLoader().getExtensions()) {
+			if (el.getExtension() instanceof IWebExtension) {
+				this.webExtension = (IWebExtension) el.getExtension();
+				break;
+			}
+		}
 	
 		// prepare extensions (web apps)
 	
-		XElement lcf = module.getLoader().getConfig();
+		//XElement lcf = module.getLoader().getConfig();
+		
 		/* TODO try to recreate this concept
 		Adler32 ad = new Adler32();
 		*/
 		
+		/*
 		if (lcf != null)
 	    	for(XElement node : lcf.selectAll("Extension")) {
 	    		String name = node.getAttribute("Name");
@@ -157,7 +165,7 @@ public class WebSiteManager {
 	    		// only compute if this is a web extension
 	    		/* TODO try to recreate this concept
 	    		bundle.adler(ad);
-	    		*/
+	    		* /
 	    		
 	    		IWebExtension sm = (IWebExtension)ex;
 
@@ -166,6 +174,7 @@ public class WebSiteManager {
 	    		if (this.defaultExtension == null)
 	    			this.defaultExtension = name;
 	    	}
+				 */
 		
 		/* TODO try to recreate this concept
 		this.version = Long.toHexString(ad.getValue());
@@ -199,12 +208,12 @@ public class WebSiteManager {
 				String domain = p.getName(1);
 				String section = p.getName(2);
 				
-				if (!"dcw".equals(mod) || (!"www".equals(section) && !"www-preview".equals(section) && !"cms".equals(section) && !"cms-preview".equals(section) && !"feed".equals(section) && !"feed-preview".equals(section)))
+				if (!"dcw".equals(mod) || (!"www".equals(section) && !"www-preview".equals(section) && !"feed".equals(section) && !"feed-preview".equals(section)))
 					return;
 				
 				for (WebDomain wdomain : WebSiteManager.this.dsitemap.values()) {
 					if (domain.equals(wdomain.getAlias())) {
-						wdomain.siteNotify();
+						wdomain.dynNotify();
 						
 						// TODO after we merge DomainInfo and WebDomain features this will work better,
 						// right now feed only gets imported if the domain has been loaded via HTTP(S) request
@@ -263,14 +272,14 @@ public class WebSiteManager {
 			@Override
 			public void callback() {
 				for (WebDomain domain : WebSiteManager.this.dsitemap.values())
-					domain.siteNotify();
+					domain.dynNotify();
 				
 				this.resetCalledFlag();
 			}
 		};
 		
 		// register for file store events
-		LocalFileStore packfs = Hub.instance.getPackageFileStore();
+		LocalFileStore packfs = Hub.instance.getResources().getPackages().getPackageFileStore();
 		
 		if (packfs != null) 
 			packfs.register(localpackagecallback);
@@ -356,20 +365,25 @@ public class WebSiteManager {
 	public SslContextFactory findSslContextFactory(String hostname) {
 		DomainInfo di = Hub.instance.getDomains().resolveDomainInfo(hostname);
 		
-		if (di == null)
-			return this.ssl;
+		if (di != null) {
+			WebDomain wd = this.getDomain(di.getId());
+			
+			if (wd != null) {
+				SslContextFactory scf = wd.getSecureContextFactory(hostname);
+				
+				if (scf != null)
+					return scf;
+			}
+		}
 		
-		WebDomain wd = this.getDomain(di.getId());
+		for (SslContextFactory cf : this.tls)
+			if (cf.keynameMatch(hostname))
+				return cf;
 		
-		if (wd == null)
-			return this.ssl;
+		if (this.tls.size() > 0)
+			return this.tls.get(0);
 		
-		SslContextFactory scf = wd.getSecureContextFactory(hostname);
-		
-		if (scf != null)
-			return scf;
-		
-		return this.ssl;
+		return null;
 	}
 
 	public IWebMacro getMacro(String name) {
@@ -378,18 +392,20 @@ public class WebSiteManager {
 		
 		return this.macros.get(name);
 	}
+	
+	public IWebExtension getWebExtension() {
+		return this.webExtension;
+	}
 
+	/*
 	public IWebExtension getExtension(String name) {
 		return this.extensions.get(name);
-	}
-	
-	public IWebExtension getDefaultExtension() {
-		return this.extensions.get(this.defaultExtension);
 	}
 
 	public String getDefaultName() {
 		return this.defaultExtension;
 	}
+	*/
 	
 	public List<String> getDevice(Request req) {
 		List<String> res = new ArrayList<String>();

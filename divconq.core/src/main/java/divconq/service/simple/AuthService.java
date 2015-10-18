@@ -342,11 +342,24 @@ public class AuthService extends ExtensionBase implements IService {
 				for (int i = 1; i < atags.length; i++) 
 					atags[i] = tags.get(i - 1).getText();
 				
+				String fullname = "";
+				
+				if (usr.hasAttribute("First"))
+					fullname = usr.getAttribute("First");
+				
+				if (usr.hasAttribute("Last") && StringUtil.isNotEmpty(fullname))
+					fullname += " " + usr.getAttribute("Last");
+				else if (usr.hasAttribute("Last"))
+					fullname = usr.getAttribute("Last");
+				
+				if (StringUtil.isEmpty(fullname))
+					fullname = "[unknown]";
+				
 				this.cachedUserContext.put(uid, new OperationContextBuilder()
 						.withDomainId(did)
 						.withUserId(uid)
 						.withUsername(usr.getAttribute("Username"))
-						.withFullName(usr.getAttribute("First") + " " + usr.getAttribute("Last"))
+						.withFullName(fullname)
 						.withEmail(usr.getAttribute("Email"))
 						.withVerified(true)
 						.withAuthTags(atags)

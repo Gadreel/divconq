@@ -29,19 +29,19 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import divconq.cms.feed.FeedAdapter;
-import divconq.filestore.CommonPath;
 import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationContext;
 import divconq.web.IOutputAdapter;
 import divconq.web.WebContext;
+import divconq.web.ui.adapter.DcuiOutputAdapter;
 import divconq.xml.XElement;
 
 public class Fragment extends Element {
 	protected AtomicInteger hasfuture = null;
 	protected List<OperationCallback> callbacks = null;
 	protected XElement source = null;
-	protected Path path = null;
-	protected CommonPath loc = null;
+	//protected Path path = null;
+	//protected CommonPath loc = null;
 	protected GroovyObject script = null;
 	
 	public XElement getSource() {
@@ -75,9 +75,9 @@ public class Fragment extends Element {
 	}
 	
 	public void coreInitialize(WebContext ctx, IOutputAdapter adapter, OperationCallback cb) {
-		this.path = adapter.getFilePath();
-		this.loc = adapter.getLocationPath();
-		this.source = (XElement) adapter.getSource().deepCopy();
+		//this.path = adapter.getFile().getFilePath();	// TODO cleanup, we want to avoid dependency on Path in this case
+		//this.loc = adapter.getPath();
+		this.source = (XElement) ((DcuiOutputAdapter)adapter).getSource().deepCopy();
 
 		// if this is a CMS page then build it if Auto
 		if ("auto".equals(this.source.getAttribute("Cms", "false").toLowerCase())) {

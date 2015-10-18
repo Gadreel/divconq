@@ -1,8 +1,10 @@
 package divconq.db.proc;
 
+import divconq.db.Constants;
 import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
 import divconq.db.DatabaseTask;
+import divconq.hub.Hub;
 import divconq.lang.BigDateTime;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
@@ -46,22 +48,45 @@ public class SignIn extends LoadRecord {
 					if (StringUtil.isNotEmpty(password)) {
 						Object fndpass = db.getDynamicScalar("dcUser", uid, "dcPassword", when);
 						
+						// TODO consolidate recover code
+						
 						if (fndpass != null) {
+							String password2 = OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(password.trim());
+							
 							// TODO check if it is hex, if so it is probably hashed so then run incoming password through
 							// hash to do compare
 							//params.setField("Password", OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(this.password.trim()));
 							
-							String password2 = OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(password.trim());
-							
 							// otherwise do plain text compare
 							if (!password2.equals(fndpass)) {
-								// TODO if recover is not expired
-								//. i recoverExpire]]$$get1^dcDb("dcUser",uid,"dcRecoverAt") q
-								
-								fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
-								
-								if (!password.equals(fndpass)) 
-									uid = null;
+								if (!did.equals(Constants.DB_GLOBAL_ROOT_DOMAIN)) {
+									task.pushDomain(Constants.DB_GLOBAL_ROOT_DOMAIN);
+									
+									password2 = Hub.instance.getDomainInfo(Constants.DB_GLOBAL_ROOT_DOMAIN).getObfuscator().hashStringToHex(password.trim());
+									
+									Object gp = db.getStaticList("dcDomain", Constants.DB_GLOBAL_ROOT_DOMAIN, "dcGlobalPassword", password2, null);
+									
+									task.popDomain();
+									
+									if (gp == null) {
+										// TODO if recover is not expired
+										//. i recoverExpire]]$$get1^dcDb("dcUser",uid,"dcRecoverAt") q
+										
+										fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
+										
+										if (!password.equals(fndpass)) 
+											uid = null;
+									}
+								}
+								else {
+									// TODO if recover is not expired
+									//. i recoverExpire]]$$get1^dcDb("dcUser",uid,"dcRecoverAt") q
+									
+									fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
+									
+									if (!password.equals(fndpass)) 
+										uid = null;
+								}
 							}
 						}
 						else {

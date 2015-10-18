@@ -18,7 +18,6 @@ package divconq.hub;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.Collection;
 
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
@@ -26,12 +25,12 @@ import divconq.locale.Localization;
 import divconq.schema.SchemaManager;
 
 public class ProjectCompiler {
-	public SchemaManager getSchema(Collection<String> packages) {
+	public SchemaManager getSchema(HubPackages packages) {
 		SchemaManager sm = new SchemaManager();
 		
 		// load in package order so that later packages override the original
-		for (String pkg : packages) {
-			File sdir = new File("./packages/" + pkg + "/schema");
+		for (HubPackage pkg : packages.getPackages()) {
+			File sdir = new File("./packages/" + pkg.getName() + "/schema");
 			
 			OperationContext.get().trace(0, "Checking for schemas in: " + sdir.getAbsolutePath());
 			
@@ -83,12 +82,12 @@ public class ProjectCompiler {
 	}
 	*/
 	
-	public Localization getDictionary(OperationResult or, Collection<String> packages) {
+	public Localization getDictionary(OperationResult or, HubPackages packages) {
 		Localization loc = new Localization();
 		
 		// load in package order so that later packages override the original
-		for (String pkg : packages) {
-			File sdir = new File("./packages/" + pkg + "/dictionary");
+		for (HubPackage pkg : packages.getPackages()) {
+			File sdir = new File("./packages/" + pkg.getName() + "/dictionary");
 			
 			or.trace(0, "Checking for dictionary in: " + sdir.getAbsolutePath());
 			

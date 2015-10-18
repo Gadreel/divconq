@@ -8,6 +8,7 @@ public interface IInnerContext {
     Request getRequest();
     Response getResponse();
     WebDomain getDomain();
+    WebSite getSite();
     IWebMacro getMacro(String name);
 
 	void send();

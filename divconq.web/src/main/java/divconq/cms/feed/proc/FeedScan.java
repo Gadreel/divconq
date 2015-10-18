@@ -19,11 +19,17 @@ public class FeedScan implements ICollector {
 		// TODO verify fields
 		
 		String chan = extras.getFieldAsString("Channel");
-		DateTime lastdate = extras.getFieldAsDateTime("LastDate");
+		DateTime fromdate = extras.getFieldAsDateTime("FromDate");
 		Object lasttime = null;
 		
-		if (lastdate != null)
-			lasttime = conn.inverseTime(lastdate);
+		if (fromdate != null)
+			lasttime = conn.inverseTime(fromdate);
+		
+		DateTime todate = extras.getFieldAsDateTime("ToDate");
+		Long totime = null;
+		
+		if (todate != null)
+			totime = conn.inverseTime(todate);
 		
 		Object lastid = extras.getFieldAsString("LastId");
 		long max = extras.getFieldAsInteger("Max", 100);
@@ -43,12 +49,13 @@ public class FeedScan implements ICollector {
 			if (lasttime == null) 
 				lasttime = ByteUtil.extractValue(conn.nextPeerKey("dcmFeedIndex", did, chan, null));
 			
-			while ((cnt < max) && (lasttime != null)) {
+			while ((cnt < max) && (lasttime != null) && ((totime == null) || (totime.compareTo(((Number) lasttime).longValue()) > 0))) {
 				lastid = ByteUtil.extractValue(conn.nextPeerKey("dcmFeedIndex", did, chan, lasttime, lastid));		// might return null
 
 				// try the next publish time
 				if (lastid == null) {
 					lasttime = ByteUtil.extractValue(conn.nextPeerKey("dcmFeedIndex", did, chan, lasttime));
+					
 					continue;
 				}
 				

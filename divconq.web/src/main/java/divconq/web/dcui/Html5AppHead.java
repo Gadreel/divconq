@@ -96,8 +96,6 @@ public class Html5AppHead extends Head implements ICodeTag {
 					new Title(title)
 			);
 		
-		//WebDomain domain = this.getContext().getDomain();
-		
 		XElement domainwebconfig = null;
 		
 		String did = OperationContext.get().getUserContext().getDomainId();

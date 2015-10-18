@@ -22,7 +22,6 @@ import java.nio.channels.WritableByteChannel;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import divconq.api.HyperSession;
@@ -39,9 +38,9 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.ClientCookieEncoder;
-import io.netty.handler.codec.http.Cookie;
-import io.netty.handler.codec.http.CookieDecoder;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContent;
@@ -145,7 +144,7 @@ public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
 		req.headers().set(Names.HOST, parent.getInfo().getHost());
 		req.headers().set(Names.USER_AGENT, "DivConq HyperAPI Client 1.0");
 		req.headers().set(Names.CONNECTION, HttpHeaders.Values.CLOSE);
-        req.headers().set(Names.COOKIE, ClientCookieEncoder.encode(this.cookies.values()));
+        req.headers().set(Names.COOKIE, ClientCookieEncoder.STRICT.encode(this.cookies.values()));
         
         // send request
         this.src.writeAndFlush(req);
@@ -205,10 +204,8 @@ public class DownloadHandler extends SimpleChannelInboundHandler<HttpObject> {
         List<String> cookies = resp.headers().getAll(Names.SET_COOKIE);
         
         for (String cookie : cookies) {
-        	Set<Cookie> cset = CookieDecoder.decode(cookie);
-        	
-        	for (Cookie c : cset) 
-        		this.cookies.put(c.getName(), c);
+        	Cookie c = ClientCookieDecoder.STRICT.decode(cookie);
+       		this.cookies.put(c.name(), c);
         }
 
 		// TODO if error response then cancel otherwise 

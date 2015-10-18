@@ -224,7 +224,7 @@ public class ListStruct extends CompositeStruct implements IItemCollection, Iter
 		OperationResult or = new OperationResult();
 		
 		for (Object o : coll)
-			this.addItem(o);		// extra slow, enhance TOTO
+			this.addItem(o);		// extra slow, enhance TODO
 		
 		return or;
 	}
@@ -233,7 +233,7 @@ public class ListStruct extends CompositeStruct implements IItemCollection, Iter
 		OperationResult or = new OperationResult();
 		
 		for (Struct o : coll.getItems())
-			this.addItem(o);		// extra slow, enhance TOTO
+			this.addItem(o);		// extra slow, enhance TODO
 		
 		return or;
 	}

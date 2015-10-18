@@ -19,7 +19,6 @@ package divconq.api.internal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 import divconq.api.ClientInfo;
@@ -41,9 +40,9 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.ClientCookieEncoder;
-import io.netty.handler.codec.http.Cookie;
-import io.netty.handler.codec.http.CookieDecoder;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -94,7 +93,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<Object> {
 					req.headers().set(Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
 					req.headers().set(Names.CONTENT_ENCODING, "UTF-8");
 					req.headers().set(Names.CONTENT_TYPE, "application/json; charset=utf-8");
-		            req.headers().set(Names.COOKIE, ClientCookieEncoder.encode(this.cookies.values()));
+		            req.headers().set(Names.COOKIE, ClientCookieEncoder.STRICT.encode(this.cookies.values()));
 				    
 		            // TODO make more efficient - UTF8 encode directly to buffer
 		            ByteBuf buf = Unpooled.copiedBuffer(msg.toString(), CharsetUtil.UTF_8);
@@ -189,10 +188,8 @@ public class ClientHandler extends SimpleChannelInboundHandler<Object> {
         List<String> cookies = resp.headers().getAll(Names.SET_COOKIE);
         
         for (String cookie : cookies) {
-        	Set<Cookie> cset = CookieDecoder.decode(cookie);
-        	
-        	for (Cookie c : cset) 
-        		this.cookies.put(c.getName(), c);
+        	Cookie c = ClientCookieDecoder.STRICT.decode(cookie);
+       		this.cookies.put(c.name(), c);
         }
         
         this.decoder = new HttpBodyRequestDecoder(4096 * 1024, new IBodyCallback() {			

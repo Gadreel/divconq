@@ -22,7 +22,7 @@
 		<Library File="jnotify-0.94.jar"/>
 		<Library File="jna-4.1.0.jar" />
 		<Library File="jna-platform-4.1.0.jar" />
-		<Library File="netty-all-4.0.26.Final.jar" />
+		<Library File="netty-all-4.0.32.Final.jar" />
 		<Library File="jsch-0.1.51.jar" />
 		<Library File="mariadb-java-client-1.1.6.jar" />
 		<Library File="h2-1.4.182.jar" />
@@ -66,6 +66,8 @@
 	</DependsOn>
 
 	<NoLongerDependsOn>
+		<Library File="netty-all-4.0.26.Final.jar" />
+		
 		<Library File="groovy-2.4.0-indy.jar"/>
 		<Library File="groovy-nio-2.4.0-indy.jar"/>
 		<Library File="groovy-json-2.4.0-indy.jar"/>

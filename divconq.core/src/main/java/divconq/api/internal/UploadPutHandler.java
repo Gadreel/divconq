@@ -40,8 +40,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.ClientCookieEncoder;
-import io.netty.handler.codec.http.Cookie;
+import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -138,7 +138,7 @@ public class UploadPutHandler extends SimpleChannelInboundHandler<HttpObject> {
 		req.headers().set(Names.HOST, parent.getInfo().getHost());
 		req.headers().set(Names.USER_AGENT, "DivConq HyperAPI Client 1.0");
 		req.headers().set(Names.CONNECTION, HttpHeaders.Values.CLOSE);
-        req.headers().set(Names.COOKIE, ClientCookieEncoder.encode(this.cookies.values()));
+        req.headers().set(Names.COOKIE, ClientCookieEncoder.STRICT.encode(this.cookies.values()));
         req.headers().set(HttpHeaders.Names.CONTENT_LENGTH, size - offset);
 
         // send request headers - must flush here in case CL = 0

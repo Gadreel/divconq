@@ -33,23 +33,52 @@ public class CountIndexes implements IStoredProc {
 		
 		try {
 			out.startList();
-			
-			for (Struct vs : values.getItems()) {
-				Object val = Struct.objectToCore(vs);
+
+			if ((values == null) || (values.getSize() == 0)) {
+				BigDateTime fwhen = when;
 				
-				AtomicLong cnt = new AtomicLong();
-		
-				db.traverseIndex(table, fname, val, when, historical, new Consumer<Object>() {				
+				db.traverseIndexValRange(table, fname, null, null, fwhen, historical, new Consumer<Object>() {				
 					@Override
-					public void accept(Object subid) {
-						cnt.incrementAndGet();
+					public void accept(Object val) {
+						AtomicLong cnt = new AtomicLong();
+						
+						db.traverseIndex(table, fname, val, fwhen, historical, new Consumer<Object>() {				
+							@Override
+							public void accept(Object subid) {
+								cnt.incrementAndGet();
+							}
+						});
+						
+						try {
+							out.startRecord();
+							out.field("Name", val);
+							out.field("Count", new Long(cnt.get()));
+							out.endRecord();
+						}
+						catch (Exception x) {
+							log.error("Issue with counting index record: " + x);
+						}
 					}
 				});
-				
-				out.startRecord();
-				out.field("Name", val);
-				out.field("Count", new Long(cnt.get()));
-				out.endRecord();
+			}
+			else {
+				for (Struct vs : values.getItems()) {
+					Object val = Struct.objectToCore(vs);
+					
+					AtomicLong cnt = new AtomicLong();
+			
+					db.traverseIndex(table, fname, val, when, historical, new Consumer<Object>() {				
+						@Override
+						public void accept(Object subid) {
+							cnt.incrementAndGet();
+						}
+					});
+					
+					out.startRecord();
+					out.field("Name", val);
+					out.field("Count", new Long(cnt.get()));
+					out.endRecord();
+				}
 			}
 			
 			out.endList();

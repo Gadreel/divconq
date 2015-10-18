@@ -112,8 +112,8 @@ public class ButtonLink extends MixedElement implements ICodeTag {
     @Override
     public void build(WebContext ctx, Object... args) {
     	Attributes attrs = this.wide 
-			? new Attributes("href", this.to, "class", "ui-button ui-button-wide ui-theme-a " + StringUtil.toEmpty(this.css)) 
-			: new Attributes("href", this.to, "class", "ui-button ui-theme-a " + StringUtil.toEmpty(this.css));
+			? new Attributes("href", this.to, "class", "ui-button ui-theme-a ui-link ui-btn ui-btn-a ui-shadow ui-corner-all ui-button-wide " + StringUtil.toEmpty(this.css)) 
+			: new Attributes("href", this.to, "class", "ui-button ui-theme-a ui-link ui-btn ui-btn-a ui-btn-inline ui-shadow ui-corner-all ui-mini " + StringUtil.toEmpty(this.css));
 		
 		if (this.id != null)
 			attrs.add("id", this.id);

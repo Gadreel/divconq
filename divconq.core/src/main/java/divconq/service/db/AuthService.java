@@ -180,12 +180,26 @@ public class AuthService extends ExtensionBase implements IService {
 								ListStruct atags = sirec.getFieldAsList("AuthorizationTags");
 								atags.addItem("User");
 								
+								// TODO make locale smart
+								String fullname = "";
+								
+								if (!sirec.isFieldEmpty("FirstName"))
+									fullname = sirec.getFieldAsString("FirstName");
+								
+								if (!sirec.isFieldEmpty("LastName") && StringUtil.isNotEmpty(fullname))
+									fullname += " " + sirec.getFieldAsString("LastName");
+								else if (!sirec.isFieldEmpty("LastName"))
+									fullname = sirec.getFieldAsString("LastName");
+								
+								if (StringUtil.isEmpty(fullname))
+									fullname = "[unknown]";
+								
 								OperationContext.switchUser(ctx, ctx.getUserContext().toBuilder() 
 										.withVerified(true)
 										.withAuthToken(sirec.getFieldAsString("AuthToken"))
 										.withUserId(sirec.getFieldAsString("UserId"))
 										.withUsername(sirec.getFieldAsString("Username"))
-										.withFullName(sirec.getFieldAsString("FirstName") + " " + sirec.getFieldAsString("LastName"))		// TODO make locale smart
+										.withFullName(fullname)		
 										.withEmail(sirec.getFieldAsString("Email"))
 										.withAuthTags(atags)
 										.toUserContext()
@@ -313,11 +327,25 @@ public class AuthService extends ExtensionBase implements IService {
 								//System.out.println("verify existing");
 								ListStruct atags = urec.getFieldAsList("AuthorizationTags");
 								atags.addItem("User");								
-	
+								
+								// TODO make locale smart
+								String fullname = "";
+								
+								if (!urec.isFieldEmpty("FirstName"))
+									fullname = urec.getFieldAsString("FirstName");
+								
+								if (!urec.isFieldEmpty("LastName") && StringUtil.isNotEmpty(fullname))
+									fullname += " " + urec.getFieldAsString("LastName");
+								else if (!urec.isFieldEmpty("LastName"))
+									fullname = urec.getFieldAsString("LastName");
+								
+								if (StringUtil.isEmpty(fullname))
+									fullname = "[unknown]";
+
 								OperationContext.switchUser(ctx, ctx.getUserContext().toBuilder() 
 										.withVerified(true)
 										.withUsername(urec.getFieldAsString("Username"))
-										.withFullName(urec.getFieldAsString("FirstName") + " " + urec.getFieldAsString("LastName"))		// TODO make locale smart
+										.withFullName(fullname)	
 										.withEmail(urec.getFieldAsString("Email"))
 										.withAuthTags(atags)
 										.toUserContext()
@@ -363,12 +391,26 @@ public class AuthService extends ExtensionBase implements IService {
 							ListStruct atags = sirec.getFieldAsList("AuthorizationTags");
 							atags.addItem("User");
 							
+							// TODO make locale smart
+							String fullname = "";
+							
+							if (!sirec.isFieldEmpty("FirstName"))
+								fullname = sirec.getFieldAsString("FirstName");
+							
+							if (!sirec.isFieldEmpty("LastName") && StringUtil.isNotEmpty(fullname))
+								fullname += " " + sirec.getFieldAsString("LastName");
+							else if (!sirec.isFieldEmpty("LastName"))
+								fullname = sirec.getFieldAsString("LastName");
+							
+							if (StringUtil.isEmpty(fullname))
+								fullname = "[unknown]";
+							
 							OperationContext.switchUser(ctx, ctx.getUserContext().toBuilder() 
 									.withVerified(true)
 									.withAuthToken(sirec.getFieldAsString("AuthToken"))
 									.withUserId(sirec.getFieldAsString("UserId"))
 									.withUsername(sirec.getFieldAsString("Username"))
-									.withFullName(sirec.getFieldAsString("FirstName") + " " + sirec.getFieldAsString("LastName"))		// TODO make locale smart
+									.withFullName(fullname)		
 									.withEmail(sirec.getFieldAsString("Email"))
 									.withAuthTags(atags)
 									.toUserContext()

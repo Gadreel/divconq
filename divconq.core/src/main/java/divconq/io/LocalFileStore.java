@@ -19,10 +19,13 @@ package divconq.io;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import divconq.filestore.CommonPath;
 import divconq.lang.op.FuncCallback;
+import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.xml.XElement;
 import net.contentobjects.jnotify.JNotify;
@@ -30,8 +33,12 @@ import net.contentobjects.jnotify.JNotifyListener;
 
 public class LocalFileStore {
 	protected Integer watchID = null;
+	
+	// absolute, normalized paths in Path and String forms
 	protected Path path = null;
 	protected String spath = null;
+	
+	protected Map<String, CacheFile> cache = new HashMap<>();
 	
 	protected CopyOnWriteArrayList<FuncCallback<FileStoreEvent>> listeners = new CopyOnWriteArrayList<>();
 
@@ -44,16 +51,128 @@ public class LocalFileStore {
 	}
 
 	public Path resolvePath(String path) {
-		return this.path.resolve(path);
+		return this.path.resolve(path.startsWith("/") ? path.substring(1) : path).normalize().toAbsolutePath();
 	}
 
 	public Path resolvePath(Path path) {
-		return this.path.resolve(path);
+		if (path.isAbsolute()) {
+			if (path.startsWith(this.path))
+				return path;
+			
+			return null;
+		}
+		
+		return this.path.resolve(path).normalize().toAbsolutePath();
 	}
 
 	public Path resolvePath(CommonPath path) {
-		return this.path.resolve(path.toString().substring(1));
+		return this.path.resolve(path.toString().substring(1)).normalize().toAbsolutePath();
 	}
+	
+	public String relativize(Path path) {
+		path = path.normalize().toAbsolutePath();
+		
+		if (path == null)
+			return null;
+		
+		String rpath = path.toString().replace('\\', '/');
+		
+		if (!rpath.startsWith(this.spath))
+			return null;
+		
+		return rpath.substring(this.spath.length());
+	}
+	
+	// use CacheFile once and then let go, call this every time you need it or you may be holding on to stale content
+	public CacheFile cacheResolvePath(String file) {
+		Path lf = this.resolvePath(file);
+		
+		if (lf != null) {
+			String ln = this.relativize(lf);
+			
+			CacheFile ra = this.cache.get(ln);
+			
+			if (ra != null) 
+				return ra;
+			
+			ra = CacheFile.fromFile(ln, lf);
+			
+			if (ra != null) {
+				this.cache.put(ln, ra);
+				return ra;
+			}
+		}
+		
+		return null;
+	}
+	
+	// use CacheFile once and then let go, call this every time you need it or you may be holding on to stale content
+	public CacheFile cacheResolvePath(Path file) {
+		Path lf = this.resolvePath(file);
+		
+		if (lf != null) {
+			String ln = this.relativize(lf);
+			
+			CacheFile ra = this.cache.get(ln);
+			
+			if (ra != null) 
+				return ra;
+			
+			ra = CacheFile.fromFile(ln, lf);
+			
+			if (ra != null) {
+				this.cache.put(ln, ra);
+				return ra;
+			}
+		}
+		
+		return null;
+	}
+	
+	// use CacheFile once and then let go, call this every time you need it or you may be holding on to stale content
+	public CacheFile cacheResolvePath(CommonPath file) {
+		Path lf = this.resolvePath(file);
+		
+		if (lf != null) {
+			String ln = this.relativize(lf);
+			
+			CacheFile ra = this.cache.get(ln);
+			
+			if (ra != null) 
+				return ra;
+			
+			ra = CacheFile.fromFile(ln, lf);
+			
+			if (ra != null) {
+				this.cache.put(ln, ra);
+				return ra;
+			}
+		}
+		
+		return null;
+	}
+	
+	public boolean cacheHas(String file) {
+		Path lf = this.resolvePath(file);
+		
+		if (lf != null) {
+			String ln = this.relativize(lf);
+			
+			CacheFile ra = this.cache.get(ln);
+			
+			if (ra != null) 
+				return true;
+			
+			ra = CacheFile.fromFile(ln, lf);
+			
+			if (ra != null) {
+				this.cache.put(ln, ra);
+				return true;
+			}
+		}
+		
+		return false;
+	}	
 	
 	public void register(FuncCallback<FileStoreEvent> callback) {
 		this.listeners.add(callback);
@@ -64,12 +183,26 @@ public class LocalFileStore {
 	}
 	
 	public void fireEvent(String fname, boolean deleted) {
+		OperationContext.useHubContext();
+		
 		fname = "/" + fname.replace('\\', '/');
+		
+		//System.out.println("lfs event: " + fname);
+		
+		this.cache.remove(fname);
+		//CacheFile h = this.cache.remove(fname);
+		
+		//if (h != null)
+			//System.out.println("removed from cache: " + fname);
 		
 		CommonPath p = new CommonPath(fname);
 		
-		if (p.getNameCount() < 2)
+		if (p.getNameCount() == 0)
 			return;
+		
+		// TODO create task and put it on the internal (service) work bucket
+		
+		//System.out.println("lfs fire event on: " + fname);
 		
 		FileStoreEvent evnt = new FileStoreEvent();
 		
@@ -91,7 +224,7 @@ public class LocalFileStore {
 						? "./packages"
 						: "./public";
 		
-		this.path = Paths.get(fpath);
+		this.path = Paths.get(fpath).normalize().toAbsolutePath();
 			
 		if (Files.exists(this.path) && !Files.isDirectory(this.path)) {
 			or.error("File Store cannot be mounted: " + fpath);

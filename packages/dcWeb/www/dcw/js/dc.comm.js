@@ -109,7 +109,8 @@ dc.comm = {
 	
 	sendTestMessage : function(msg) {
 		dc.comm.sendMessage(msg, function(res) {
-			console.log('Result: ' + JSON.stringify(res));
+			console.log('Result: '); // + JSON.stringify(res));
+			console.dir(res);
 		});
 	},
 	

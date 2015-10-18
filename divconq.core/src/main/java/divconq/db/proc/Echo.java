@@ -19,7 +19,7 @@ public class Echo implements IStoredProc {
 			resp.endRecord();
 		}
 		catch (Exception x) {
-			log.error("Exho: Unable to create response: " + x);
+			log.error("Echo: Unable to create response: " + x);
 		}
 		
 		task.complete();

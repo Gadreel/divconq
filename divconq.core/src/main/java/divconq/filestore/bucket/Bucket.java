@@ -19,6 +19,7 @@ import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationContext;
+import divconq.lang.op.UserContext;
 import divconq.session.DataStreamChannel;
 import divconq.session.Session;
 import divconq.struct.FieldStruct;
@@ -33,6 +34,8 @@ public class Bucket {
 	protected Session channels = null;
 	protected String bestEvidence = null;
 	protected String minEvidence = null;
+	protected String[] readauthlist = null;
+	protected String[] writeauthlist = null;
 	
 	protected GroovyObject script = null;
 	
@@ -93,6 +96,16 @@ public class Bucket {
 			}
 		}
 		
+		String ratags = bel.getAttribute("ReadAuthTags");
+		
+		if (StringUtil.isNotEmpty(ratags)) 
+			 this.readauthlist = ratags.split(",");
+		
+		String watags = bel.getAttribute("WriteAuthTags");
+		
+		if (StringUtil.isNotEmpty(watags)) 
+			 this.writeauthlist = watags.split(",");
+		
 		// TODO enhance, someday this doesn't have to be a local FS
 		this.fsd = new FileSystemDriver();
 		
@@ -121,6 +134,24 @@ public class Bucket {
 					cb.complete();
 			}
 		});		
+	}
+	
+	public boolean checkReadAccess() {
+		UserContext uctx = OperationContext.get().getUserContext();
+		
+		if (this.readauthlist == null)
+			return uctx.isAuthenticated() || uctx.looksLikeRoot();
+		
+		return uctx.isTagged(this.readauthlist);
+	}
+	
+	public boolean checkWriteAccess() {
+		UserContext uctx = OperationContext.get().getUserContext();
+		
+		if (this.writeauthlist == null)
+			return uctx.isAuthenticated() || uctx.looksLikeRoot();
+		
+		return uctx.isTagged(this.writeauthlist);
 	}
 	
 	public IFileStoreDriver getFileStore() {
@@ -240,6 +271,13 @@ public class Bucket {
 	 */
 
 	public void handleFileDetail(RecordStruct request, FuncCallback<RecordStruct> fcb) {
+		// check bucket security
+		if (!this.checkReadAccess()) {
+			fcb.errorTr(434);
+			fcb.complete();
+			return;
+		}
+		
 		this.mapRequest(request, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {
@@ -293,6 +331,13 @@ public class Bucket {
 	}
 	
 	public void handleDeleteFile(RecordStruct request, FuncCallback<RecordStruct> fcb) {
+		// check bucket security
+		if (!this.checkWriteAccess()) {
+			fcb.errorTr(434);
+			fcb.complete();
+			return;
+		}
+		
 		this.mapRequest(request, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {
@@ -332,6 +377,13 @@ public class Bucket {
 	}
 	
 	public void handleAddFolder(RecordStruct request, FuncCallback<RecordStruct> fcb) {
+		// check bucket security
+		if (!this.checkWriteAccess()) {
+			fcb.errorTr(434);
+			fcb.complete();
+			return;
+		}
+		
 		this.mapRequest(request, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {
@@ -370,6 +422,13 @@ public class Bucket {
 	}
 	
 	public void handleListFiles(RecordStruct request, FuncCallback<ListStruct> fcb) {
+		// check bucket security
+		if (!this.checkReadAccess()) {
+			fcb.errorTr(434);
+			fcb.complete();
+			return;
+		}
+		
 		this.mapRequest(request, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {
@@ -428,6 +487,13 @@ public class Bucket {
 	}
 	
 	public void handleCustom(RecordStruct request, FuncCallback<RecordStruct> fcb) {
+		// check bucket security
+		if (!this.checkWriteAccess()) {
+			fcb.errorTr(434);
+			fcb.complete();
+			return;
+		}
+		
 		RecordStruct extra = new RecordStruct();
 		fcb.setResult(extra);
 		
@@ -439,6 +505,13 @@ public class Bucket {
 	}
 	
 	public void handleStartUpload(RecordStruct request, FuncCallback<RecordStruct> fcb) {
+		// check bucket security
+		if (!this.checkWriteAccess()) {
+			fcb.errorTr(434);
+			fcb.complete();
+			return;
+		}
+		
 		this.mapRequest(request, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {
@@ -516,6 +589,13 @@ public class Bucket {
 	}
 	
 	public void handleFinishUpload(RecordStruct request, FuncCallback<RecordStruct> fcb) {
+		// check bucket security
+		if (!this.checkWriteAccess()) {
+			fcb.errorTr(434);
+			fcb.complete();
+			return;
+		}
+		
 		this.mapRequest(request, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {
@@ -626,6 +706,13 @@ public class Bucket {
 	}
 	
 	public void handleStartDownload(RecordStruct request, FuncCallback<RecordStruct> fcb) {
+		// check bucket security
+		if (!this.checkReadAccess()) {
+			fcb.errorTr(434);
+			fcb.complete();
+			return;
+		}
+		
 		this.mapRequest(request, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {
@@ -702,6 +789,13 @@ public class Bucket {
 	}
 	
 	public void handleFinishDownload(RecordStruct request, FuncCallback<RecordStruct> fcb) {
+		// check bucket security
+		if (!this.checkReadAccess()) {
+			fcb.errorTr(434);
+			fcb.complete();
+			return;
+		}
+		
 		this.mapRequest(request, new FuncCallback<IFileStoreFile>() {
 			@Override
 			public void callback() {

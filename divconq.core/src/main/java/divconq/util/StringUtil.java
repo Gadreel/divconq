@@ -773,6 +773,10 @@ public class StringUtil {
 			return randomChars(chars, "ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789").toString();
 		}
 		
+		public static String buildSimpleCode(int chars) {
+			return randomChars(chars, "ABCDEFGHIJKLMNPQRSTUVWXYZ").toString();
+		}
+		
 		public static CharSequence randomChars(int count, String charPool) {
 			if (isEmpty(charPool) || (count < 1))
 				return "";

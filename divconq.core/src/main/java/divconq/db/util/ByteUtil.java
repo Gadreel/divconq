@@ -662,7 +662,7 @@ public class ByteUtil {
     }    
     
     public static Number dbNumberToNumber(Memory mem) {
-    	// TODO return Long if possible
+    	// TODO return Long if possible - no probably need to return Big Decimal always so user can count on a casting
     	
     	// if there is not enough bytes left then error, skip to end
     	if (mem.readableBytes() < 17) {

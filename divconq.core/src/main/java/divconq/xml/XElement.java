@@ -364,6 +364,53 @@ public class XElement extends XNode {
 	public void add(int index, String string) {
 		this.add(index, new XText(string));
 	}
+	
+	public void append(char c) {
+		if ((this.children != null) && (this.children.size() > 0)) {
+			XNode node = this.children.get(this.children.size() - 1);
+			
+			if (node instanceof XText) {
+				XText t = (XText) node;
+				
+				if (!t.getCData()) {
+					t.append(c);
+					return;
+				}
+			}
+		}
+		
+		this.add(c + "");
+	}
+	
+	public void append(String s) {
+		XNode node = this.children.get(this.children.size() - 1);
+		
+		if (node instanceof XText) {
+			XText t = (XText) node;
+			
+			if (!t.getCData()) {
+				t.append(s);
+				return;
+			}
+		}
+		
+		this.add(s);
+	}
+	
+	public void appendRaw(String s) {
+		XNode node = this.children.get(this.children.size() - 1);
+		
+		if (node instanceof XText) {
+			XText t = (XText) node;
+			
+			if (t.getCData()) {
+				t.appendEntity(s);
+				return;
+			}
+		}
+		
+		this.withCData(s);
+	}
 
 	/**
 	 * gets a child from the specified place in this element
@@ -786,6 +833,13 @@ public class XElement extends XNode {
 			this.children = new ArrayList<XNode>();
 		
 		return this.children;
+	}
+
+	public int getChildCount() {
+		if (this.children == null)
+			return 0;
+		
+		return this.children.size();
 	}
 
 	/**

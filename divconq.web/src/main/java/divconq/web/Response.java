@@ -20,20 +20,20 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.Cookie;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.HttpHeaders.Values;
-import io.netty.handler.codec.http.DefaultCookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.ServerCookieEncoder;
+import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -76,7 +76,7 @@ public class Response {
     }
     
     public void setCookie(Cookie v) {
-    	this.cookies.put(v.getName(), v);
+    	this.cookies.put(v.name(), v);
     }
     
     public void setHeader(CharSequence name, String value) {
@@ -130,7 +130,7 @@ public class Response {
 
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 
-	        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.encode(c));
+	        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
         
         for (Entry<CharSequence, String> h : this.headers.entrySet())
         	response.headers().set(h.getKey(), h.getValue());
@@ -186,7 +186,7 @@ public class Response {
 
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 
-	        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.encode(c));
+	        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
         
         for (Entry<CharSequence, String> h : this.headers.entrySet())
         	response.headers().set(h.getKey(), h.getValue());
@@ -238,7 +238,7 @@ public class Response {
 
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 
-	        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.encode(c));
+	        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
         
         for (Entry<CharSequence, String> h : this.headers.entrySet())
         	response.headers().set(h.getKey(), h.getValue());
@@ -276,11 +276,11 @@ public class Response {
 		Cookie dl = new DefaultCookie("fileDownload", "true");
 		dl.setPath("/");
         
-        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.encode(dl));
+        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.STRICT.encode(dl));
 
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 
-	        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.encode(c));
+	        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
         
         for (Entry<CharSequence, String> h : this.headers.entrySet())
         	response.headers().set(h.getKey(), h.getValue());

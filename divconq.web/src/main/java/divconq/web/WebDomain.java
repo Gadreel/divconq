@@ -18,8 +18,9 @@ package divconq.web;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.TrustManager;
@@ -83,6 +84,7 @@ import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
 import divconq.hub.DomainNameMapping;
 import divconq.hub.Hub;
+import divconq.hub.HubPackage;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleInfo;
@@ -91,11 +93,10 @@ import divconq.locale.Localization;
 import divconq.net.ssl.SslHandler;
 import divconq.struct.Struct;
 import divconq.util.StringUtil;
-import divconq.web.asset.AssetOutputAdapter;
 import divconq.web.dcui.AdvElement;
 import divconq.web.dcui.AdvForm;
 import divconq.web.dcui.AdvText;
-import divconq.web.dcui.AssetImage;
+import divconq.web.dcui.CaptionedImage;
 import divconq.web.dcui.ButtonLink;
 import divconq.web.dcui.Document;
 import divconq.web.dcui.FormButton;
@@ -110,7 +111,6 @@ import divconq.web.dcui.Nodes;
 import divconq.web.dcui.PagePart;
 import divconq.web.dcui.TextPart;
 import divconq.web.dcui.TitledSection;
-import divconq.web.dcui.ViewOutputAdapter;
 import divconq.web.http.SslContextFactory;
 import divconq.web.http.WebTrustManager;
 import divconq.xml.XElement;
@@ -123,22 +123,29 @@ public class WebDomain {
 	protected String locale = null;		// domain level locale
 	protected CommonPath homepath = null;
 	protected WebSiteManager man = null;
+	protected List<HubPackage> packagelist = null;
 	
 	protected XElement webconfig = null;
 	
 	protected TrustManager[] trustManagers = new TrustManager[1];
 	protected DomainNameMapping<SslContextFactory> certs = null;
 	
-	protected Map<String, IOutputAdapter> paths = new HashMap<>();
-	protected Map<String, IOutputAdapter> previewpaths = new HashMap<>();
-	
 	protected Localization dictionary = null;
 	
 	protected Map<String, Class<? extends ICodeTag>> codetags = new HashMap<String, Class<? extends ICodeTag>>();
 	
-	protected String[] specialExtensions = new String[] { ".dcui.xml", ".gas", ".pui.xml", ".html" };	
+	protected String[] specialExtensions = new String[] { ".dcui.xml", ".html", ".gas" };	
 	
 	protected boolean appFramework = false;
+	protected HtmlMode htmlmode = HtmlMode.Static;
+	
+	protected WebSite rootsite = null;
+	protected Map<String, WebSite> sites = new HashMap<>();
+	protected Map<String, WebSite> domainsites = new HashMap<>();
+
+	public XElement getWebConfig() {
+		return this.webconfig;
+	}
 	
 	public String getId() {
 		return this.id;
@@ -156,10 +163,28 @@ public class WebDomain {
 		return this.appFramework;
 	}
 	
+	public HtmlMode getHtmlMode() {
+		return this.htmlmode;
+	}
+	
+	public WebSite getRootSite() {
+		return this.rootsite;
+	}
+	
+	public List<HubPackage> getPackagelist() {
+		return this.packagelist;
+	}
+	
+	public String[] getSpecialExtensions() {
+		return this.specialExtensions;
+	}
+	
 	public void init(DomainInfo domain, WebSiteManager man) {
 		this.id = domain.getId();
 		this.alias = domain.getAlias();
 		this.man = man;
+		
+		this.rootsite = new WebSite("root", this);
 		
 		this.initialTags();
 
@@ -170,6 +195,54 @@ public class WebDomain {
 		this.homepath = new CommonPath("/index.html");
 		this.locale = LocaleUtil.getDefaultLocale();
 		this.appFramework = false;
+		this.sites.clear();
+		this.domainsites.clear();
+		
+		XElement settings = this.man.getModule().getLoader().getSettings();
+		
+		if (settings != null) {
+			// UI = app or customer uses builder
+			// UI = basic is just 'index.html' approach
+			this.appFramework = (settings.hasAttribute("UI") && 
+					("custom".equals(settings.getAttribute("UI").toLowerCase())));
+
+			if (settings.hasAttribute("HomePath")) 
+				this.homepath = new CommonPath(settings.getAttribute("HomePath"));
+			else if (this.appFramework) 
+				this.homepath = new CommonPath("/Home");		
+		
+			if (settings.hasAttribute("Locale")) 
+				this.locale = settings.getAttribute("Locale");
+			
+			if (settings.hasAttribute("HtmlMode")) 
+				try {
+					this.htmlmode = HtmlMode.valueOf(settings.getAttribute("HtmlMode"));
+				}
+				catch(Exception x) {
+					OperationContext.get().error("Unknown HTML Mode: " + settings.getAttribute("HtmlMode"));
+				}
+			
+			for (XElement pel :  settings.selectAll("Site")) {
+				String sname = pel.getAttribute("Name");
+				
+				if (StringUtil.isEmpty(sname))
+					continue;
+				
+				if ("root".equals(sname)) {
+					this.rootsite.init(pel);
+				}
+				else {
+					WebSite site = new WebSite(sname, this);
+					site.init(pel);
+					this.sites.put(sname, site);
+					
+					for (XElement del : pel.selectAll("Domain")) {
+						String dname = del.getAttribute("Name");					
+						this.domainsites.put(dname, site);
+					}
+				}
+			}
+		}
 		
 		DomainInfo domain = Hub.instance.getDomainInfo(this.id);
 		
@@ -178,8 +251,23 @@ public class WebDomain {
 		
 		XElement config = domain.getSettings();
 		
-		if (config == null)
+		if (config == null) {
+			// TODO improve so this works with domain settings - with or without Web
+			
+			// collect a list of the packages names enabled for this domain
+			HashSet<String> packagenames = new HashSet<>();
+			
+			XElement webextconfig = this.man.getWebExtension().getLoader().getConfig();
+			
+			// add to the package name list all the packages turned on for entire web service
+			if (webextconfig != null) 
+				for (XElement pel :  webextconfig.selectAll("Package"))
+					packagenames.add(pel.hasAttribute("Id") ? pel.getAttribute("Id") :pel.getAttribute("Name"));
+			
+			this.packagelist = Hub.instance.getResources().getPackages().buildLookupList(packagenames);
+			
 			return;
+		}
 		
 		this.webconfig = config.selectFirst("Web");
 		
@@ -198,6 +286,55 @@ public class WebDomain {
 	
 		if (this.webconfig.hasAttribute("Locale")) 
 			this.locale = this.webconfig.getAttribute("Locale");
+		
+		if (this.webconfig.hasAttribute("HtmlMode")) 
+			try {
+				this.htmlmode = HtmlMode.valueOf(this.webconfig.getAttribute("HtmlMode"));
+			}
+			catch(Exception x) {
+				OperationContext.get().error("Unknown HTML Mode: " + this.webconfig.getAttribute("HtmlMode"));
+			}
+		
+		for (XElement pel :  this.webconfig.selectAll("Site")) {
+			String sname = pel.getAttribute("Name");
+			
+			if (StringUtil.isEmpty(sname))
+				continue;
+			
+			if ("root".equals(sname)) {
+				this.rootsite.init(pel);
+			}
+			else {
+				WebSite site = new WebSite(sname, this);
+				site.init(pel);
+				this.sites.put(sname, site);
+				
+				for (XElement del : pel.selectAll("Domain")) {
+					String dname = del.getAttribute("Name");					
+					this.domainsites.put(dname, site);
+				}
+			}
+		}
+		
+		// ------
+		
+		// collect a list of the packages names enabled for this domain
+		HashSet<String> packagenames = new HashSet<>();
+		
+		// if not in the domain, then go look in the packages 
+		for (XElement pel :  this.webconfig.selectAll("Package")) 
+			packagenames.add(pel.getAttribute("Name"));
+	
+		XElement webextconfig = this.man.getWebExtension().getLoader().getConfig();
+		
+		// add to the package name list all the packages turned on for entire web service
+		if (webextconfig != null) 
+			for (XElement pel :  webextconfig.selectAll("Package"))
+				packagenames.add(pel.hasAttribute("Id") ? pel.getAttribute("Id") :pel.getAttribute("Name"));
+		
+		this.packagelist = Hub.instance.getResources().getPackages().buildLookupList(packagenames);
+		
+		// ------
 		
 		WebTrustManager trustman = new WebTrustManager();
 		trustman.init(this.webconfig);
@@ -223,6 +360,14 @@ public class WebDomain {
 		}
 	}
 
+	public WebSite site(Request req) {
+		String domain = req.getHeader("Host");
+		
+		WebSite site = this.domainsites.get(domain);
+		
+		return (site != null) ? site : this.rootsite;
+	}
+
 	// matchname might be a wildcard match
 	public SslContextFactory getSecureContextFactory(String matchname) {
 		if (this.certs != null)
@@ -239,14 +384,17 @@ public class WebDomain {
 	public void settingsNotify() {
 		this.reloadSettings();
 		
-		this.siteNotify();
+		this.dynNotify();
 	}
 	
 	// something changed in the www folder
 	// force compiled content to reload from file system 
-	public void siteNotify() {
-		this.paths.clear();				
-		this.previewpaths.clear();
+	public void dynNotify() {
+		this.rootsite.dynNotify();
+		
+		if (this.sites != null)
+			for (WebSite site : this.sites.values())
+				site.dynNotify();
 	}
 
 	public String getLocale() {
@@ -295,7 +443,7 @@ public class WebDomain {
 			return;
 		}
 		
-		IOutputAdapter output = this.findFile(ctx);
+		IOutputAdapter output = ctx.getSite().findFile(ctx);
 
 		if (OperationContext.get().hasErrors() || (output == null)) {
 			OperationContext.get().errorTr(150001);			
@@ -312,355 +460,6 @@ public class WebDomain {
 			x.printStackTrace();
 		}
 		
-	}
-
-	/**
-	 * File paths come in as /dcf/index.html but really they are in -  
-	 * 
-	 * Domain Path Map:
-	 * 		"/dcf/index.html"
-	 * 
-	 * Domain Private Phantom Files:							(draft/preview mode files)
-	 * 		./private/dcw/[domain id]/www-preview/dcf/index.html
-	 * 
-	 * Domain Private Override Files:
-	 * 		./private/dcw/[domain id]/www/dcf/index.html
-	 * 
-	 * Domain Phantom Files:                           			(draft/preview mode files)
-	 * 		./public/dcw/[domain id]/www-preview/dcf/index.html
-	 * 
-	 * Domain Override Files:
-	 * 		./public/dcw/[domain id]/www/dcf/index.html
-	 * 
-	 * Package Files:
-	 * 		./packages/[package id]/www/dcf/index.html
-	 * 
-	 * Example:
-	 * - ./private/dcw/filetransferconsulting/www-preview/dcf/index.html
-	 * - ./private/dcw/filetransferconsulting/www/dcf/index.html
-	 * - ./public/dcw/filetransferconsulting/www-preview/dcf/index.html
-	 * - ./public/dcw/filetransferconsulting/www/dcf/index.html
-	 * - ./packages/zCustomPublic/www/dcf/index.html
-	 * - ./packages/dc/dcFilePublic/www/dcf/index.html
-	 * - ./packages/dcWeb/www/dcf/index.html
-	 * 
-	 * 
-	 * @param ctx
-	 * @return an adapter that can execute to generate web response
-	 */	
-	public IOutputAdapter findFile(WebContext ctx) {		
-		return this.findFile(ctx.isPreview(), ctx.getRequest().getPath(), ctx.getExtension());
-	}
-	
-	public IOutputAdapter findFile(boolean isPreview, CommonPath path, IWebExtension ext) {
-		// =====================================================
-		//  if request has an extension do specific file lookup
-		// =====================================================
-		
-		// if we have an extension then we don't have to do the search below
-		// never go up a level past a file (or folder) with an extension
-		if (path.hasFileExtension()) {
-			// check path map first
-			IOutputAdapter ioa = isPreview ? this.previewpaths.get(path.toString()) :  this.paths.get(path.toString());
-			
-			if (ioa != null)
-				return ioa;
-			
-			Path wpath = this.findFilePath(isPreview, path, ext);
-			
-			if (wpath != null) 
-				return this.pathToAdapter(isPreview, path, wpath);
-			
-			// TODO not found file!!
-			OperationContext.get().errorTr(150007);		
-			return null;
-		}
-		
-		// =====================================================
-		//  if request does not have an extension look for files
-		//  that might match this path or one of its parents
-		//  using the special extensions
-		// =====================================================
-		
-		// we get here if we have no extension - thus we need to look for path match with specials
-		int pdepth = path.getNameCount();
-		
-		// check path maps first - hopefully the request has been mapped at one of the levels
-		while (pdepth > 0) {
-			CommonPath ppath = path.subpath(0, pdepth);
-
-			if (isPreview) {
-				IOutputAdapter ioa = this.paths.get(ppath.toString());
-				
-				if (ioa != null)
-					return ioa;
-			}
-			
-			IOutputAdapter ioa = this.paths.get(ppath.toString());
-			
-			if (ioa != null)
-				return ioa;
-			
-			pdepth--;
-		}
-		
-		Path wpath = this.findFilePath(isPreview, path, ext);
-		
-		if (wpath != null) 
-			return this.pathToAdapter(isPreview, path, wpath);
-		
-		OperationContext.get().errorTr(150007);		
-		return null;
-	}
-	
-	public Path findFilePath(boolean isPreview, CommonPath path, IWebExtension ext) {
-		LocalFileStore pubfs = Hub.instance.getPublicFileStore();
-		LocalFileStore pacfs = Hub.instance.getPackageFileStore();
-		LocalFileStore prifs = Hub.instance.getPrivateFileStore();
-		
-		// =====================================================
-		//  if request has an extension do specific file lookup
-		// =====================================================
-		
-		// if we have an extension then we don't have to do the search below
-		// never go up a level past a file (or folder) with an extension
-		if (path.hasFileExtension()) {
-			if (prifs != null) {
-				// look in the domain's www-preview file system
-				if (isPreview) {
-					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www-preview", path);
-					
-					if (wpath != null) 
-						return wpath;
-				}
-				
-				// look in the domain's static file system
-				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www", path);
-				
-				if ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))
-						wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/", path);
-				
-				if (wpath != null) 
-					return wpath;
-			}
-			
-			if (pubfs != null) {
-				// look in the domain's www-preview file system
-				if (isPreview) {
-					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www-preview", path);
-					
-					if (wpath != null) 
-						return wpath;
-				}
-				
-				// look in the domain's static file system
-				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www", path);
-				
-				if ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))
-						wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/", path);
-				
-				if (wpath != null) 
-					return wpath;
-			}
-			
-			if ((pacfs != null) && (this.webconfig != null)) {
-				// if not in the domain, then go look in the packages 
-				for (XElement pel :  this.webconfig.selectAll("Package")) {
-					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Name") + "/www", path);
-					
-					if (wpath != null) 
-						return wpath;
-				}
-			}
-			
-			if ((pacfs != null) && (ext != null) && (ext.getLoader().getConfig() != null)) {
-				// if not in the domain, then go look in the packages (older config used Id not Name)
-				for (XElement pel :  ext.getLoader().getConfig().selectAll("Package")) {
-					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Id") + "/www", path);
-					
-					if (wpath != null) 
-						return wpath;
-				}
-			}
-			
-			// TODO not found file!!
-			OperationContext.get().errorTr(150007);		
-			return null;
-		}
-		
-		// =====================================================
-		//  if request does not have an extension look for files
-		//  that might match this path or one of its parents
-		//  using the special extensions
-		// =====================================================
-		
-		// we get here if we have no extension - thus we need to look for path match with specials
-		int pdepth = path.getNameCount();
-		
-		// check file system
-		while (pdepth > 0) {
-			CommonPath ppath = path.subpath(0, pdepth);
-			
-			if (prifs != null) {
-				if (isPreview) {
-					// look in the domain's www-preview file system
-					Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www-preview", ppath);
-					
-					if (wpath != null) 
-						return wpath;
-				}
-				
-				// look in the domain's static file system
-				Path wpath = this.getWebFile(prifs, "/dcw/" + this.alias + "/www", ppath);
-				
-				if (wpath != null) 
-					return wpath;
-			}
-			
-			if (pubfs != null) {
-				if (isPreview) {
-					// look in the domain's www-preview file system
-					Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www-preview", ppath);
-					
-					if (wpath != null) 
-						return wpath;
-				}
-				
-				// look in the domain's static file system
-				Path wpath = this.getWebFile(pubfs, "/dcw/" + this.alias + "/www", ppath);
-				
-				if (wpath != null) 
-					return wpath;
-			}
-			
-			if ((pacfs != null) && (this.webconfig != null)) {
-				// if not in the domain, then go look in the packages 
-				for (XElement pel :  this.webconfig.selectAll("Package")) {
-					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Name") + "/www", ppath);
-					
-					if (wpath != null) 
-						return wpath;
-				}
-			}
-			
-			if ((pacfs != null) && (ext != null) && (ext.getLoader().getConfig() != null)) {
-				// if not in the domain, then go look in the packages (older config used Id not Name)
-				for (XElement pel :  ext.getLoader().getConfig().selectAll("Package")) {
-					Path wpath = this.getWebFile(pacfs, "/" + pel.getAttribute("Id") + "/www", path);
-					
-					if (wpath != null) 
-						return wpath;
-				}
-			}
-			
-			pdepth--;
-		}
-		
-		OperationContext.get().errorTr(150007);		
-		return null;
-	}
-	
-	public Path getWebFile(LocalFileStore lfs, String prefix, CommonPath path) {		// TODO support ZIP packages
-		if (path.isRoot())
-			return null;
-		
-		Path fl = Paths.get(lfs.getPath() + prefix + path);		// must be absolute path
-		
-		try {
-			if (path.hasFileExtension()) {
-				if (Files.exists(fl) && !Files.isDirectory(fl) || !Files.isHidden(fl) && Files.isReadable(fl)) 
-					return fl;
-				
-				return null;
-			}
-			
-			Path fld = fl.getParent();
-				
-			if (Files.notExists(fld)) 
-				return null;
-			
-			for (String ext : this.specialExtensions) {
-				String sppath = path.getFileName() + ext;
-				
-				fl = fld.resolve(sppath);
-				
-				if (Files.exists(fl)) {
-					try {
-						if (!Files.isDirectory(fl) && !Files.isHidden(fl) && Files.isReadable(fl))
-							return fl;
-					}
-					catch (Exception x) {
-					}
-					
-					return null;
-				}
-			}
-		}
-		catch (Exception x) {
-		}
-			
-		return null;
-	}
-
-	public IOutputAdapter pathToAdapter(boolean isPreview, CommonPath path, Path filepath) {
-		String wpathname = filepath.getFileName().toString();
-
-		IOutputAdapter ioa = null;
-		
-		if (wpathname.endsWith(".dcui.xml"))
-			ioa = new ViewOutputAdapter();
-		else if (wpathname.endsWith(".dcuis.xml"))
-			ioa = new ViewOutputAdapter();
-		else
-			ioa = new AssetOutputAdapter();
-		
-		ioa.init(this, filepath, path, isPreview);
-		
-		if (isPreview)
-			this.previewpaths.put(path.toString(), ioa);
-		else
-			this.paths.put(path.toString(), ioa);
-		
-		return ioa;
-	}
-
-	public Path findSectionFile(WebContext ctx, String section, String path) {		
-		return this.findSectionFile(ctx.isPreview(), section, path);
-	}
-	
-	public Path findSectionFile(boolean isPreview, String section, String path) {
-		LocalFileStore pubfs = Hub.instance.getPublicFileStore();
-		LocalFileStore prifs = Hub.instance.getPrivateFileStore();
-		
-		if (prifs != null) {
-			if (isPreview) {
-				Path wpath = Paths.get(prifs.getPath() + "/dcw/" + this.alias + "/" + section + "-preview" + path);		
-				
-				if ((wpath != null) && Files.exists(wpath)) 
-					return wpath;
-			}
-			
-			Path wpath = Paths.get(prifs.getPath() + "/dcw/" + this.alias + "/" + section + path);		
-			
-			if ((wpath != null) && Files.exists(wpath)) 
-				return wpath;
-		}
-		
-		if (pubfs != null) {
-			if (isPreview) {
-				Path wpath = Paths.get(pubfs.getPath() + "/dcw/" + this.alias + "/" + section + "-preview" + path);		
-				
-				if ((wpath != null) && Files.exists(wpath)) 
-					return wpath;
-			}
-			
-			Path wpath = Paths.get(pubfs.getPath() + "/dcw/" + this.alias + "/" + section + path);		
-			
-			if ((wpath != null) && Files.exists(wpath)) 
-				return wpath;
-		}
-		
-		return null;
 	}
 	
 	public String route(Request req, SslHandler ssl) {
@@ -854,7 +653,8 @@ public class WebDomain {
 		this.codetags.put("dcui", Document.class);		
 		this.codetags.put("dcem", divconq.mail.Document.class);		
 		
-		this.codetags.put("AssetImage", AssetImage.class);
+		this.codetags.put("Image", CaptionedImage.class);
+		this.codetags.put("CaptionedImage", CaptionedImage.class);
 		this.codetags.put("AdvText", AdvText.class);
 		this.codetags.put("Button", ButtonLink.class);
 		this.codetags.put("WideButton", ButtonLink.class);

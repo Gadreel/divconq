@@ -18,12 +18,10 @@ package divconq.web;
 
 import groovy.lang.GroovyObject;
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.Cookie;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.stream.ChunkedInput;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,10 +30,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import divconq.cms.feed.FeedAdapter;
-import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
-import divconq.lang.op.FuncResult;
+import divconq.io.CacheFile;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.UserContext;
 import divconq.locale.LocaleInfo;
@@ -43,16 +40,13 @@ import divconq.locale.LocaleUtil;
 import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
-import divconq.util.IOUtil;
 import divconq.util.StringUtil;
 import divconq.web.dcui.GalleryImageConsumer;
 import divconq.web.dcui.Node;
 import divconq.xml.XElement;
-import divconq.xml.XmlReader;
 
 public class WebContext {
 	protected IInnerContext innerctx = null;
-	protected IWebExtension extension = null; // originating extension
 	protected LocaleInfo selectedlocale = null;
 	protected String theme = null;
 	protected boolean preview = false;
@@ -199,7 +193,7 @@ public class WebContext {
 			Cookie ck = this.getRequest().getCookie("dcmLocale");
 			
 			if (ck != null)
-				locale = ck.getValue(); 
+				locale = ck.value(); 
 			
 			// TODO if different
 			//tc.getUserContext().setLocale(locale);	
@@ -212,28 +206,23 @@ public class WebContext {
 		
 		return this.selectedlocale;
 	}
-
-	public IWebExtension getExtension() {
-		return this.extension;
-	}
 	
 	public WebDomain getDomain() {
 		return this.innerctx.getDomain();
 	}
 	
-	public WebContext(IInnerContext httpctx, IWebExtension ext) {
+	public WebContext(IInnerContext httpctx) {
 		this.innerctx = httpctx;
-		this.extension = ext;		
 		
 		Cookie ck = this.innerctx.getRequest().getCookie("dcmTheme");
 
 		if (ck != null)
-			this.theme = ck.getValue();
+			this.theme = ck.value();
 
 		ck = this.innerctx.getRequest().getCookie("dcmPreview");
 
 		if (ck != null)
-			this.preview = "true".equals(ck.getValue().toLowerCase());
+			this.preview = "true".equals(ck.value().toLowerCase());
 		
 		// TODO get default theme from WebExtension 
 		
@@ -385,6 +374,7 @@ public class WebContext {
 		return this.preview;
 	}
 	
+	/*
 	public Path findPath(String path) {
 		return this.innerctx.getDomain().findFilePath(this.isPreview(), new CommonPath(path), null);
 	}
@@ -392,44 +382,36 @@ public class WebContext {
 	public Path findSectionPath(String section, String path) {
 		return this.innerctx.getDomain().findSectionFile(this.isPreview(), section, path);
 	}
+	*/
 	
 	// string path is relative to dcw/[alias]/[path]
 	public XElement getXmlResource(String section, String path) {
-		Path fpath = this.innerctx.getDomain().findSectionFile(this.isPreview(), section, path);
+		CacheFile fpath = this.getSite().findSectionFile(section, path, this.isPreview());
 		
 		if (fpath == null)
 			return null;
 		
-		FuncResult<XElement> mres = XmlReader.loadFile(fpath, false);
-		
-		return mres.getResult();
+		return fpath.asXml();
 	}
 	
 	// string path is relative to dcw/[alias]/[path]
 	public CompositeStruct getJsonResource(String section, String path) {
-		Path fpath = this.innerctx.getDomain().findSectionFile(this.isPreview(), section, path);
+		CacheFile fpath = this.getSite().findSectionFile(section, path, this.isPreview());
 		
 		if (fpath == null)
 			return null;
-
-		FuncResult<CharSequence> mres = IOUtil.readEntireFile(fpath);
-				
-		if (mres.isNotEmptyResult()) 
-			return Struct.objectToComposite(mres.getResult());
 		
-		return null;
+		return fpath.asJson();
 	}
 	
 	// string path is relative to dcw/[alias]/[path]
 	public String getTextResource(String section, String path) {
-		Path fpath = this.innerctx.getDomain().findSectionFile(this.isPreview(), section, path);
-
-		FuncResult<CharSequence> mres = IOUtil.readEntireFile(fpath);
-				
-		if (mres.isNotEmptyResult()) 
-			return mres.getResult().toString();
+		CacheFile fpath = this.getSite().findSectionFile(section, path, this.isPreview());
 		
-		return null;
+		if (fpath == null)
+			return null;
+		
+		return fpath.asString();
 	}
 	
 	public FeedAdapter getFeedAdapter(String alias, String path) {
@@ -451,11 +433,11 @@ public class WebContext {
 			if (calias.equals(alias)) {
 				path = chan.getAttribute("Path", chan.getAttribute("InnerPath", "")) + path + ".dcf.xml";
 				
-				Path fpath = this.innerctx.getDomain().findSectionFile(this.isPreview(), "feed", path);
+				CacheFile fpath = this.getSite().findSectionFile("feed", path, this.isPreview());
 				
-				if ((fpath != null) && Files.exists(fpath)) {
+				if (fpath != null) {
 					FeedAdapter adapt = new FeedAdapter();
-					adapt.init(path, fpath);
+					adapt.init(path, fpath.getFilePath());		// TODO not ideal, support FileCache object directly as FilePath is not our suggested usage
 					return adapt; 
 				}
 				
@@ -485,5 +467,9 @@ public class WebContext {
 				}
 			}
 		}
+	}
+
+	public WebSite getSite() {
+		return this.innerctx.getSite();
 	}
 }

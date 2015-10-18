@@ -16,8 +16,8 @@
 ************************************************************************ */
 package divconq.api;
 
-import io.netty.handler.codec.http.Cookie;
-import io.netty.handler.codec.http.DefaultCookie;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 import divconq.api.ClientInfo.ConnectorKind;
 import divconq.bus.Message;
 import divconq.lang.op.OperationResult;

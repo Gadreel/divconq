@@ -493,6 +493,9 @@ abstract public class Struct {
 		
 		if (o instanceof FieldStruct)
 			return Struct.objectToDateTime(((FieldStruct)o).getValue());
+
+		if (o instanceof DateStruct)
+			return Struct.objectToDateTime(((DateStruct)o).getValue());
 		
 		if (o instanceof NullStruct)
 			return null;
@@ -509,6 +512,9 @@ abstract public class Struct {
 		
 		if (o instanceof DateTime)
 			return (DateTime)o;
+		
+		if (o instanceof LocalDate)
+			return ((LocalDate)o).toDateTimeAtStartOfDay(DateTimeZone.UTC);
 		
 		if (o instanceof java.sql.Timestamp)
 			return TimeUtil.convertSqlDate((java.sql.Timestamp)o);

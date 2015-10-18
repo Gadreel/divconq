@@ -17,22 +17,17 @@
 package divconq.hub;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
-import divconq.filestore.CommonPath;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
 import divconq.locale.Localization;
 import divconq.log.DebugLevel;
 import divconq.schema.SchemaManager;
+import divconq.struct.Struct;
 import divconq.util.StringUtil;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
@@ -93,14 +88,14 @@ public class HubResources {
 	protected String team = "one";
 	protected String squad = "one";
 	protected HubMode mode = HubMode.Private;		// Gateway, Public (server), Private (server or utility)
+	protected boolean forTesting = false;
 	protected DebugLevel startuplevel = DebugLevel.Info;
 	
 	// post init
 	protected boolean initialized = false;
 	protected boolean initsuccess = false;
 	
-	protected List<String> packages = new ArrayList<String>(); 
-	protected List<String> reversepackages = new ArrayList<String>(); 
+	protected HubPackages packages = new HubPackages();
 	
 	protected XElement config = null;
 	
@@ -153,6 +148,10 @@ public class HubResources {
 	 */
 	public boolean isGateway() {
 		return (this.mode == HubMode.Gateway);
+	}
+	
+	public boolean isForTesting() {
+		return this.forTesting;
 	}
 	
 	/**
@@ -222,7 +221,7 @@ public class HubResources {
 	 *    
 	 * @return list of package names
 	 */
-	public Collection<String> getPackages() {
+	public HubPackages getPackages() {
 		return this.packages;
 	}
 	
@@ -332,12 +331,7 @@ public class HubResources {
 		
 		XElement cel = xres.getResult();
 		
-		for (XElement pack : cel.selectAll("Packages/Package")) {
-			String n = pack.getAttribute("Name");
-			
-			this.packages.add(n);
-			this.reversepackages.add(0, n);
-		}
+		this.packages.load(cel);
 
 		or.trace(0, "Packages loaded: " + this.packages);
 		
@@ -380,6 +374,9 @@ public class HubResources {
 		
 		if (this.config.hasAttribute("Mode")) 
 			this.mode = HubMode.valueOf(this.config.getAttribute("Mode"));
+		
+		if (this.config.hasAttribute("ForTesting")) 
+			this.forTesting = Struct.objectToBooleanOrFalse(this.config.getAttribute("ForTesting"));
 		
 		or.trace(0, "Loaded config.xml file at: " + f.getAbsolutePath());
 		
@@ -448,10 +445,10 @@ public class HubResources {
 	 * @param pkg name of the package the resource resides in
 	 * @param path of the file
 	 * @return File reference if found, if not error messages in FuncResult
-	 */
+	 * /
 	public File getPackageResource(String pkg, CommonPath path) {		// TODO support ZIP packagse
-		for (String rcomponent : this.reversepackages) {
-			File f = new File("./packages/" + rcomponent + "/resource/" + pkg + path.toString());		// must be absolute path
+		for (HubPackage rcomponent : this.reversepackages) {
+			File f = new File("./packages/" + rcomponent.getName() + "/resource/" + pkg + path.toString());		// must be absolute path
 			
 			if (f.exists()) 
 				return f;
@@ -459,7 +456,9 @@ public class HubResources {
 		
 		return null;
 	}
+	*/
 	
+	/*
 	// optimize common path with file path map...
 	public Path getPackageWebFile(String pkg, CommonPath path) {		// TODO support ZIP packages
 		if (path.hasFileExtension()) {
@@ -494,18 +493,19 @@ public class HubResources {
 		
 		return null;
 	}
+	*/
 	
 	/**
 	 * Get a reference to a library file (typically a JAR) for this Project.
 	 *  
 	 * @param filename name of the JAR, path relative to the lib/ folder
 	 * @return File reference if found, if not error messages in FuncResult
-	 */
+	 * /
 	public FuncResult<File> getLibrary(String filename) {
 		FuncResult<File> res = new FuncResult<File>(); 
 		
-		for (String rcomponent : this.reversepackages) {
-			File f = new File("./packages/" + rcomponent + "/lib/" + filename);
+		for (HubPackage rcomponent : this.reversepackages) {
+			File f = new File("./packages/" + rcomponent.getName() + "/lib/" + filename);
 			
 			if (f.exists()) {
 				res.setResult(f);
@@ -517,6 +517,7 @@ public class HubResources {
 		
 		return res;
 	}
+	*/
 	
 	/**
 	 * Get a reference to a resource file specific for this Project.

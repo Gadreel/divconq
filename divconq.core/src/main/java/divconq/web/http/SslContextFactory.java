@@ -16,6 +16,8 @@
 ************************************************************************ */
 package divconq.web.http;
 
+import io.netty.handler.ssl.OpenSsl;
+
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -23,12 +25,21 @@ import java.security.KeyStore;
 import java.security.KeyStore.Entry;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
+
+import org.bouncycastle.asn1.x500.RDN;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x500.style.IETFUtils;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 
 import divconq.hub.Hub;
 import divconq.log.Logger;
@@ -39,8 +50,25 @@ import divconq.xml.XElement;
 public class SslContextFactory {
     protected SSLContext serverContext = null;
     protected String sslclientauth = null;
+    protected List<String> keynames = new ArrayList<>();
 
-    public void init(XElement config) {
+    public boolean keynameMatch(String name) {
+    	for (String kname : this.keynames)
+    		if (kname.equals(name))
+    			return true;
+    	
+    	int p = name.indexOf('.');
+    	
+    	name = name.substring(p + 1);
+    	
+    	for (String kname : this.keynames)
+    		if (kname.endsWith(name))
+    			return true;
+    	
+    	return false;
+    }
+    
+    public void init(XElement config, XElement sslconfig) {
     	if (config == null)
     		return;
         
@@ -50,8 +78,6 @@ public class SslContextFactory {
         TrustManager[] trustManagers = new TrustManager[] { tm };
     	
         this.sslclientauth = config.getAttribute("SslClientAuth", "None");		// Want, Need, None
-        
-    	XElement sslconfig = config.selectFirst("SslContext");
     	
         this.init(sslconfig, null, trustManagers);
     }
@@ -84,7 +110,7 @@ public class SslContextFactory {
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(new FileInputStream(jksfile), jkspass.toCharArray());
             
-            if (Logger.isDebug()) {
+            //if (Logger.isDebug()) {
 	            Enumeration<String> aliases = ks.aliases();
 	            
 	            Logger.debug("Certs and keys in web server key store:");
@@ -120,9 +146,15 @@ public class SslContextFactory {
 		              
 			          String subject = cert.getSubjectDN().toString();
 			          String thumbprint = KeyUtil.getCertThumbprint(cert);  
-		              
+			          
+			          X500Name x500name = new JcaX509CertificateHolder(cert).getSubject();
+			          RDN cn = x500name.getRDNs(BCStyle.CN)[0];
+			          String scn = IETFUtils.valueToString(cn.getFirst().getValue());
+			          
 		              //Logger.info("Key: " + subject + " : " + thumbprint);
 		              Logger.debug("Key: " + alias + " Subject: " + subject + " Thumbprint: " + thumbprint);
+		              
+		              this.keynames.add(scn);
 		              
 		            	  /*
 			              if ((key instanceof PrivateKey) && "PKCS#8".equals(key.getFormat())) {
@@ -135,7 +167,7 @@ public class SslContextFactory {
 		            	   */
 	              }
 	            }
-            }
+            //}
             
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
             kmf.init(ks, jkspass.toCharArray());
@@ -144,7 +176,26 @@ public class SslContextFactory {
             SSLContext serverContext = SSLContext.getInstance(protocol);
             serverContext.init(kmf.getKeyManagers(), trustManagers, null);
             
+            if (Logger.isTrace()) {
+            	Logger.trace("TLS Provider: " + serverContext.getProvider().getName());
+            	Logger.trace("TLS Protocol: " + serverContext.getProtocol());
+            	
+            	SSLServerSocketFactory sfactory = serverContext.getServerSocketFactory();
+            	
+            	Logger.trace("Default Suites");
+		        
+		        for (String p : sfactory.getDefaultCipherSuites())
+		        	Logger.trace("Suite: " + p);
+		        
+		        Logger.trace("Supported Suites");
+		        
+		        for (String p : sfactory.getSupportedCipherSuites())
+		        	Logger.trace("Suite: " + p);
+            }
+            
             this.serverContext = serverContext;
+            
+            Logger.info("OpenSSL in use (web): " + OpenSsl.isAvailable());
         } 
         catch (Exception x) {
         	// TODO

@@ -3,7 +3,6 @@ package divconq.cms.feed;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map.Entry;
-import java.util.UUID;
 
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
@@ -14,7 +13,6 @@ import divconq.web.WebContext;
 import divconq.xml.XElement;
 import divconq.xml.XNode;
 import divconq.xml.XmlReader;
-import divconq.xml.XmlWriter;
 
 public class FeedAdapter {
 	protected String key = null;
@@ -42,28 +40,6 @@ public class FeedAdapter {
 	public void validate() {
 		if (this.xml == null)
 			return;
-		
-		String uuid = this.xml.getAttribute("Uuid");
-		boolean needwrite = false;
-		
-		if (StringUtil.isEmpty(uuid)) {
-			uuid = this.xml.getAttribute("UniqueId");
-			needwrite = true;
-		}
-		
-		if (StringUtil.isEmpty(uuid)) {
-			uuid = UUID.randomUUID().toString();
-			needwrite = true;
-		}
-	
-		if (needwrite) {
-			OperationContext.get().info("Adding Uuid: " + this.key + " | " + path);
-			
-			xml.setAttribute("Uuid", uuid);
-			xml.removeAttribute("UniqueId");
-			
-			XmlWriter.writeToFile(xml, path);
-		}
 		
 		String locale = this.getAttribute("Locale");
 		
@@ -223,10 +199,40 @@ public class FeedAdapter {
 			
 			String bop = pdef.getAttribute("BuildOp", "Append");
 			
-			if ("Append".equals(bop))
+			if ("Append".equals(bop)) {
 				bparent.add(-1, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview, frag));
-			else if ("Prepend".equals(bop))
+			}
+			else if ("Prepend".equals(bop)) {
 				bparent.add(0, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview, frag));
+			}
+			else if ("Before".equals(bop)) {
+				XElement bbparent = frag.findParentOfId(bid);
+				
+				int ccnt = bbparent.getChildCount();
+				int cpos = 0;
+				
+				for (int i = 0; i < ccnt; i++) 
+					if (bbparent.getChild(i) == bparent) {
+						cpos = i;
+						break;
+					}
+						
+				bbparent.add(cpos, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview, frag));
+			}
+			else if ("After".equals(bop)) {
+				XElement bbparent = frag.findParentOfId(bid);
+				
+				int ccnt = bbparent.getChildCount();
+				int cpos = 0;
+				
+				for (int i = 0; i < ccnt; i++) 
+					if (bbparent.getChild(i) == bparent) {
+						cpos = i;
+						break;
+					}
+						
+				bbparent.add(cpos + 1, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview, frag));
+			}
 		}
 	}
 	

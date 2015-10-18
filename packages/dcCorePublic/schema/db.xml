@@ -28,6 +28,9 @@
 			
 			<!-- used by root domain only, index of all domains -->
 			<Field Name="dcDomainIndex" Type="Id" List="True" />
+			
+			<!-- used by root domain only, password for domains -->
+			<Field Name="dcGlobalPassword" Type="dcSmallString" List="True" />
 		</Table>
 		
 		<Trigger Table="dcDomain" Operation="BeforeInsert" Execute="divconq.db.trigger.BeforeDomainInsert" />
@@ -111,6 +114,28 @@
 			<Composer Name="dcListCounter" Execute="divconq.db.comp.ListCounter" />
 			<Composer Name="dcIndexValueCounter" Execute="divconq.db.comp.IndexValueCounter" />
 			
+			<Procedure Name="dcEncrypt" Execute="divconq.db.proc.Encrypt">
+				<Description>
+					Encrypt a value and echo back.
+				</Description>
+				<Request>
+					<Field Name="Value" Type="String" Required="True" />
+				</Request>
+				<Response>
+					<Field Name="Value" Type="String" />
+				</Response>
+			</Procedure>			
+			<Procedure Name="dcHash" Execute="divconq.db.proc.Hash">
+				<Description>
+					Hash a value and echo back.
+				</Description>
+				<Request>
+					<Field Name="Value" Type="String" Required="True" />
+				</Request>
+				<Response>
+					<Field Name="Value" Type="String" />
+				</Response>
+			</Procedure>			
 			<Procedure Name="dcIndexCounter" Execute="divconq.db.proc.CountIndexes">
 				<Description>
 					Load a single record including fields and subqueries.

@@ -16,13 +16,7 @@
 ************************************************************************ */
 package divconq.web;
 
-import divconq.lang.op.OperationResult;
-import divconq.mod.Bundle;
 import divconq.mod.IExtension;
-import divconq.session.Session;
 
 public interface IWebExtension extends IExtension {
-	String getAppName();
-	OperationResult handle(Session sess, HttpContext hctx);
-	Bundle getBundle();
 }

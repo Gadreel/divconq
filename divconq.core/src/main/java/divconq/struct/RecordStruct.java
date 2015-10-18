@@ -69,15 +69,17 @@ import divconq.xml.XElement;
  */
 public class RecordStruct extends CompositeStruct implements IItemCollection, GroovyObject /*, JSObject */ {
 	// this defines valid field name pattern (same as json)
+	// start with number should be ok
 	static protected final Pattern FIELD_NAME_PATTERN =
-			Pattern.compile("(^[a-zA-Z][a-zA-Z0-9\\$_\\-]*$)|(^[\\$_][a-zA-Z][a-zA-Z0-9\\$_\\-]*$)");
+			Pattern.compile("(^[a-zA-Z0-9\\$_\\-]*$)|(^[\\$_][a-zA-Z0-9\\$_\\-]*$)");
+			//Pattern.compile("(^[a-zA-Z][a-zA-Z0-9\\$_\\-]*$)|(^[\\$_][a-zA-Z][a-zA-Z0-9\\$_\\-]*$)");
 
 	// TODO check field names inside of "set field" etc.
 	static public boolean validateFieldName(String v) {
 		if (StringUtil.isEmpty(v))
 			return false;
 
-		return RecordStruct.FIELD_NAME_PATTERN.matcher(v).matches();
+		return !StringUtil.containsRestrictedChars(v);  //RecordStruct.FIELD_NAME_PATTERN.matcher(v).matches();
 	}	
 	
 	protected Map<String,FieldStruct> fields = new HashMap<String,FieldStruct>();

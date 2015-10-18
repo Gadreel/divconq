@@ -193,11 +193,11 @@ public class ViewBuilder implements IViewBuilder {
 				else
 					ps.println(",");
 				
-				ps.print("\t\t" + func.getAttribute("Name") + ": function(" + func.getAttribute("Params", "") + ") {");
+				ps.print("\t\t" + func.getAttribute("Name") + ": function(" + func.getAttribute("Params", "") + ") { \n");
 				
 				ps.print(func.getText());
 				
-				ps.print("\t\t}");
+				ps.print("\n\t\t}");
 			}
 			
 			ps.println();
@@ -223,11 +223,11 @@ public class ViewBuilder implements IViewBuilder {
 				
 				ps.print("\t\t function(" + func.getAttribute("Params", "") + ") {");
 				
-				ps.print("\t\t\t // func " + func.getAttribute("Name"));
+				ps.print("\t\t\t // func " + func.getAttribute("Name") + "\n");
 				
 				ps.print(func.getText());
 				
-				ps.print("\t\t}");
+				ps.print("\n\t\t}");
 			}
 			
 			ps.println();

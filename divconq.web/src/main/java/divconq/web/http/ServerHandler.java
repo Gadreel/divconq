@@ -42,11 +42,12 @@ import divconq.util.StringUtil;
 import divconq.web.HttpBodyRequestDecoder;
 import divconq.web.HttpContext;
 import divconq.web.IContentDecoder;
-import divconq.web.IWebExtension;
 import divconq.web.Request;
 import divconq.web.Response;
 import divconq.web.RpcHandler;
+import divconq.web.WebContext;
 import divconq.web.WebDomain;
+import divconq.web.WebSite;
 import divconq.web.WebSiteManager;
 import divconq.xml.XElement;
 import io.netty.buffer.ByteBuf;
@@ -54,8 +55,8 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.Cookie;
-import io.netty.handler.codec.http.DefaultCookie;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
@@ -338,6 +339,13 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
     	if (Logger.isDebug())
     		Logger.debug("Web server request " + httpobj.getClass().getName() + "  " + ctx.channel().localAddress() 
     				+ " from " + ctx.channel().remoteAddress()); // + " session " + this.context.getSession().getId());
+
+    	// at the least don't allow web requests until running
+    	// TODO later we may need to have a "Going Down" flag and filter new requests but allow existing 
+    	if (!Hub.instance.isRunning()) {
+    		this.context.sendInternalError();
+    		return;
+    	}
     	
     	if (!(httpobj instanceof HttpRequest)) {
         	this.context.sendRequestBad();
@@ -394,12 +402,16 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 			this.context.send();
             return;
 		}
-				
+		
+		WebSite wsite = wdomain.site(req);
+		
+		this.context.setSite(wsite);
+		
 		Cookie sesscookie = req.getCookie("SessionId");
 		Session sess = null;
 		
 		if (sesscookie != null) {
-			String v = sesscookie.getValue();
+			String v = sesscookie.value();
 			String sessionid = v.substring(0, v.lastIndexOf('_'));
 			String accesscode = v.substring(v.lastIndexOf('_') + 1);
 			
@@ -464,6 +476,10 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		*/
 		
 		try {			
+	        // --------------------------------------------
+	        // bus request (deprecated in favor of http/2 sometime soon)
+	        // --------------------------------------------
+			
 	        if (req.pathEquals(ServerHandler.BUS_PATH)) {
 		        // Allow only GET methods.
 		        if (req.getMethod() != HttpMethod.GET) {
@@ -495,6 +511,10 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 	        	this.context.sendForbidden();
 		        return;
 	        }
+			
+	        // --------------------------------------------
+	        // upload file request
+	        // --------------------------------------------
 	        
 			// "upload" is it's own built-in extension.  
 	        if ((req.getPath().getNameCount() == 3) && req.getPath().getName(0).equals(ServerHandler.UPLOAD_PATH)) {
@@ -583,6 +603,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 					            int size = buffer.readableBytes();
 					
 					            //System.out.println("Chunk size: " + size);
+					            
 					            if (Logger.isDebug())
 					            	Logger.debug("Offered chunk on: " + cid + " size: " + size + " final: " + finalchunk);
 					            
@@ -597,7 +618,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 						    		b.setField("Sequence", this.seq);
 						    		
 						    		//System.out.println("Buffer ref cnt a: " + buffer.refCnt());
-						    		
+
 						    		OperationResult or = dsc.send(b);
 						    		
 						    		//System.out.println("Buffer ref cnt b: " + buffer.refCnt());
@@ -666,6 +687,10 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
                 //this.context.sendRequestBad();
 				return;
 			}
+			
+	        // --------------------------------------------
+	        // download file request
+	        // --------------------------------------------
 			
 			// "download" is it's own built-in extension.  
 	        if ((req.getPath().getNameCount() == 2) && req.getPath().getName(0).equals(ServerHandler.DOWNLOAD_PATH)) {
@@ -772,6 +797,10 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 	    		
 				return;
 			}
+			
+	        // --------------------------------------------
+	        // status request
+	        // --------------------------------------------
 	        
 			if ((req.getPath().getNameCount() == 1) && req.getPath().getName(0).equals(ServerHandler.STATUS_PATH)) {
 				if (Hub.instance.getState() == HubState.Running)
@@ -781,6 +810,10 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
                 
                 return;
 	        }
+			
+	        // --------------------------------------------
+	        // rpc request
+	        // --------------------------------------------
 	        
 			// "rpc" is it's own built-in extension.  all requests to rpc are routed through
 			// DivConq bus, if the request is valid
@@ -797,37 +830,24 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 	        	return;
 	        }        
 			
-			// otherwise we need to figure out which extension is being called
-			// "local" is also used to mean default extension
-			String ext = req.pathEquals("/") ? "local" : req.getPath().getName(0);
+	        // --------------------------------------------
+	        // regular path/file request
+	        // --------------------------------------------
+	        
+			if (Logger.isDebug())
+				Logger.info("Request pasted to web domain: " + sess.getId());
 			
-			IWebExtension ex = "local".equals(ext) 
-					? this.context.getSiteman().getDefaultExtension()
-					: this.context.getSiteman().getExtension(ext);
+			OperationResult res = new OperationResult();
 			
-			// still cannot figure it out, use default
-			if (ex == null)
-				ex = this.context.getSiteman().getDefaultExtension();
-					
-			// then have extension handle it
-			if (ex != null) {
-				//OperationResult res = new OperationResult();  
-				
-				if (Logger.isDebug())
-					Logger.error("Request pasted to web extension: " + sess.getId());
-				
-				OperationResult res = ex.handle(sess, this.context);
-				//resp.addBody("Hello");
-				//this.context.send();
-				
-				// no errors starting page processing, return 
-				if (!res.hasErrors())
-					return;
-				
+			WebContext wctx = new WebContext(this.context);
+			
+			wdomain.execute(wctx);
+			
+			// no errors starting page processing, return 
+			if (res.hasErrors()) {
 				resp.setHeader("X-dcResultCode", res.getCode() + "");
 				resp.setHeader("X-dcResultMesage", res.getMessage());
-				this.context.sendNotFound();					
-				return;
+				this.context.sendNotFound();
 			}
 		}
 		catch (Exception x) {
@@ -835,9 +855,6 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 				Logger.error("Request triggered exception: " + sess.getId() + " - " + x);
 			
 			this.context.sendInternalError();
-            return;
 		}
-
-        this.context.sendNotFound();
     }
 }

@@ -185,10 +185,10 @@ public class SimpleFactory {
 									tofmt += pfmt;
 							}							
 						}
-						
-						if (Constants.DB_GLOBAL_ROOT_USER.equals(ffrom)) {
-							XElement emel = MailTaskFactory.getSettings();
-							
+
+						XElement emel = MailTaskFactory.getSettings();
+
+						if (Constants.DB_GLOBAL_ROOT_USER.equals(ffrom) || emel.getAttribute("UseDefault", "False").equals("True")) {
 							if (emel.hasAttribute("DefaultFrom"))
 								fromfmt = emel.getAttribute("DefaultFrom");
 						}
