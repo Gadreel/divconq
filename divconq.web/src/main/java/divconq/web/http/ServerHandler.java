@@ -405,6 +405,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		
 		WebSite wsite = wdomain.site(req);
 		
+		if (Logger.isTrace())
+			Logger.trace("Site: " + (wsite != null ? wsite.getAlias() : "[missing]"));
+		
 		this.context.setSite(wsite);
 		
 		Cookie sesscookie = req.getCookie("SessionId");
@@ -743,7 +746,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 	    				
     					if (msg.hasData()) {
     						if (Logger.isDebug())
-    							Logger.error("Transfer data: " + msg.getData().readableBytes());
+    							Logger.debug("Transfer data: " + msg.getData().readableBytes());
     	    				
 	    					//this.amt += msg.getData().readableBytes();
 	    					HttpContent b = new DefaultHttpContent(Unpooled.copiedBuffer(msg.getData()));		// TODO not copied
@@ -756,7 +759,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
     					
     					if (msg.isFinal()) {
     						if (Logger.isDebug())
-    							Logger.error("Transfer completed: " + msg.getData().readableBytes());
+    							Logger.debug("Transfer completed: " + msg.getData().readableBytes());
     	    				
 	    					ServerHandler.this.context.sendDownload(new DefaultLastHttpContent());
 		    				ServerHandler.this.context.close();
@@ -765,8 +768,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 	    			}
 	    			
 	    			public void error(int code, String msg) {
-						if (Logger.isDebug())
-							Logger.error("Transfer error - " + code + ": " + msg);
+						Logger.error("Transfer error - " + code + ": " + msg);
 	    				
 	    				dsc.send(MessageUtil.streamError(code, msg));
 	    				ServerHandler.this.context.close();
@@ -790,7 +792,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 	    		this.context.sendDownloadHeaders(dsc.getPath() != null ? dsc.getPath().getFileName() : null, dsc.getMime());
 	    		
 				if (Logger.isDebug())
-					Logger.error("Singal Transfer Start - " + cid);
+					Logger.debug("Singal Transfer Start - " + cid);
 	    		
 	    		// get the data flowing
 	    		dsc.send(new StreamMessage("Start"));
@@ -835,7 +837,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 	        // --------------------------------------------
 	        
 			if (Logger.isDebug())
-				Logger.info("Request pasted to web domain: " + sess.getId());
+				Logger.debug("Request posted to web domain: " + sess.getId());
 			
 			OperationResult res = new OperationResult();
 			
@@ -851,8 +853,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 			}
 		}
 		catch (Exception x) {
-			if (Logger.isDebug())
-				Logger.error("Request triggered exception: " + sess.getId() + " - " + x);
+			Logger.error("Request triggered exception: " + sess.getId() + " - " + x);
 			
 			this.context.sendInternalError();
 		}

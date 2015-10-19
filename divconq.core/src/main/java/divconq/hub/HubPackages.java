@@ -10,6 +10,7 @@ import divconq.filestore.CommonPath;
 import divconq.io.CacheFile;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.OperationResult;
+import divconq.log.Logger;
 import divconq.xml.XElement;
 
 public class HubPackages {
@@ -68,12 +69,21 @@ public class HubPackages {
 	}
 
 	public Path lookupPath(List<HubPackage> packages, String path) {
+		if (Logger.isDebug())
+			Logger.debug("lookup path: " + path + " in " + (packages != null ? packages.size() : "[missing packages]"));
+		
 		for (HubPackage rcomponent : packages) {
+			if (Logger.isDebug())
+				Logger.debug("checking: " + path + " in " + rcomponent.getName());
+			
 			Path rpath = this.packagefilestore.resolvePath("/" + rcomponent.getName() + path);
 			
 			if (Files.exists(rpath)) 
 				return rpath;
 		}
+		
+		if (Logger.isDebug())
+			Logger.debug("lookup path: " + path + " not found");
 		
 		return null;
 	}
@@ -119,10 +129,19 @@ public class HubPackages {
 	
 	// use CacheFile once and then let go, call this every time you need it or you may be holding on to stale content
 	public CacheFile cacheLookupPath(List<HubPackage> packages, String path) {
+		if (Logger.isDebug())
+			Logger.debug("cache lookup path: " + path + " in " + (packages != null ? packages.size() : "[missing packages]"));
+		
 		Path rpath = this.lookupPath(packages, path);
+		
+		if (Logger.isDebug())
+			Logger.debug("cache lookup path: " + path + " got " + rpath + " - " + this.packagefilestore);
 		
 		if (rpath != null)
 			return this.packagefilestore.cacheResolvePath(rpath);
+		
+		if (Logger.isDebug())
+			Logger.debug("cache lookup path: " + path + " no match ");
 		
 		return null;
 	}

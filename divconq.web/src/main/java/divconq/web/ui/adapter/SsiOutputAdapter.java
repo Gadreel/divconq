@@ -37,6 +37,8 @@ public class SsiOutputAdapter implements IOutputAdapter {
 		// because of Macro support we need to rebuild this page every time it is requested
 		String content = this.file.asString();
 		
+		content = ctx.expandMacros(content);
+		
 		boolean checkmatches = true;
 
 		while (checkmatches) {

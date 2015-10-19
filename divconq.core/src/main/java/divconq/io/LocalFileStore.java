@@ -27,6 +27,7 @@ import divconq.filestore.CommonPath;
 import divconq.lang.op.FuncCallback;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
+import divconq.log.Logger;
 import divconq.xml.XElement;
 import net.contentobjects.jnotify.JNotify;
 import net.contentobjects.jnotify.JNotifyListener;
@@ -108,17 +109,34 @@ public class LocalFileStore {
 	
 	// use CacheFile once and then let go, call this every time you need it or you may be holding on to stale content
 	public CacheFile cacheResolvePath(Path file) {
+		if (Logger.isDebug())
+			Logger.debug("cache resolve path: " + file);
+		
 		Path lf = this.resolvePath(file);
+		
+		if (Logger.isDebug())
+			Logger.debug("cache resolve path, resolve: " + lf);
 		
 		if (lf != null) {
 			String ln = this.relativize(lf);
 			
+			if (Logger.isDebug())
+				Logger.debug("cache resolve path, relativize: " + ln);
+			
 			CacheFile ra = this.cache.get(ln);
+			
+			if (Logger.isDebug())
+				Logger.debug("cache resolve path, cache: " + ra);
 			
 			if (ra != null) 
 				return ra;
 			
 			ra = CacheFile.fromFile(ln, lf);
+			
+			if (Logger.isDebug())
+				Logger.debug("cache resolve path, file: " + ra);
+			
+			System.out.println("rcache " + this.cache);
 			
 			if (ra != null) {
 				this.cache.put(ln, ra);
@@ -234,7 +252,7 @@ public class LocalFileStore {
 		try {
 			Files.createDirectories(this.path);
 			
-			this.spath = this.path.toString();
+			this.spath = this.path.toString().replace('\\', '/');
 			
 			this.watchID = JNotify.addWatch(
 					this.spath, 

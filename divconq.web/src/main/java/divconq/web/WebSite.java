@@ -8,9 +8,9 @@ import divconq.hub.Hub;
 import divconq.io.CacheFile;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.OperationContext;
+import divconq.log.Logger;
 import divconq.util.MimeUtil;
 import divconq.web.ui.adapter.GasOutputAdapter;
-import divconq.web.ui.adapter.MacroOutputAdapter;
 import divconq.web.ui.adapter.SsiOutputAdapter;
 import divconq.web.ui.adapter.StaticOutputAdapter;
 import divconq.web.ui.adapter.DcuiOutputAdapter;
@@ -101,6 +101,9 @@ public class WebSite {
 		//  if request has an extension do specific file lookup
 		// =====================================================
 		
+		if (Logger.isDebug())
+			Logger.debug("find file before ext check: " + path + " - " + isPreview);
+		
 		// if we have an extension then we don't have to do the search below
 		// never go up a level past a file (or folder) with an extension
 		if (path.hasFileExtension()) {
@@ -119,6 +122,9 @@ public class WebSite {
 		//  that might match this path or one of its parents
 		//  using the special extensions
 		// =====================================================
+		
+		if (Logger.isDebug())
+			Logger.debug("find file before dyn check: " + path + " - " + isPreview);
 		
 		// we get here if we have no extension - thus we need to look for path match with specials
 		int pdepth = path.getNameCount();
@@ -142,14 +148,21 @@ public class WebSite {
 			pdepth--;
 		}
 		
+		if (Logger.isDebug())
+			Logger.debug("find file not cached: " + path + " - " + isPreview);
+		
 		// if not in dyncache then look on file system
 		CacheFile wpath = this.findFilePath(path, isPreview);
 		
-		if (wpath != null) 
-			return this.pathToAdapter(isPreview, path, wpath);
+		if (wpath == null) {
+			OperationContext.get().errorTr(150007);		
+			return null;
+		}			
 		
-		OperationContext.get().errorTr(150007);		
-		return null;
+		if (Logger.isDebug())
+			Logger.debug("find file path: " + wpath + " - " + path + " - " + isPreview);
+		
+		return this.pathToAdapter(isPreview, path, wpath);
 	}
 
 	public IOutputAdapter pathToAdapter(boolean isPreview, CommonPath path, CacheFile cfile) {
@@ -169,9 +182,6 @@ public class WebSite {
 		else if (filename.endsWith(".shtml") || ((hmode == HtmlMode.Ssi) && filename.endsWith(".html"))) {
 			ioa = new SsiOutputAdapter();
 		}		
-		else if ((hmode == HtmlMode.Macro) && (filename.endsWith(".html") || filename.endsWith(".shtml") || filename.endsWith(".js") || filename.endsWith(".css"))) {
-			ioa = new MacroOutputAdapter();		
-		}
 		else if (filename.endsWith(".gas")) {
 			ioa = new GasOutputAdapter();		
 		}
@@ -198,6 +208,9 @@ public class WebSite {
 			path = path.subpath(1);
 		}
 		
+		if (Logger.isDebug())
+			Logger.debug("find file path: " + path + " in " + sect);
+		
 		// =====================================================
 		//  if request has an extension do specific file lookup
 		// =====================================================
@@ -212,6 +225,9 @@ public class WebSite {
 		//  that might match this path or one of its parents
 		//  using the special extensions
 		// =====================================================
+		
+		if (Logger.isDebug())
+			Logger.debug("find file path dyn: " + path + " in " + sect);
 		
 		// we get here if we have no extension - thus we need to look for path match with specials
 		int pdepth = path.getNameCount();
@@ -241,12 +257,18 @@ public class WebSite {
 	*/
 	
 	public CacheFile findSectionFile(String section, String path, boolean isPreview) {
+		if (Logger.isDebug())
+			Logger.debug("find section file: " + path + " in " + section);
+		
 		LocalFileStore pubfs = Hub.instance.getPublicFileStore();
 		LocalFileStore prifs = Hub.instance.getPrivateFileStore();
 		
 		// for a sub-site, check first in the site folder
 		
 		if (this != this.domain.getRootSite()) {
+			if (Logger.isDebug())
+				Logger.debug("find section file, check site: " + path + " in " + section);
+			
 			if (prifs != null) {
 				if (isPreview) {
 					CacheFile cfile = prifs.cacheResolvePath("/dcw/" + this.domain.getAlias() + "/sites/" + this.alias + "/" + section + "-preview" + path);
@@ -282,6 +304,9 @@ public class WebSite {
 		
 		// now check the root site folders
 		
+		if (Logger.isDebug())
+			Logger.debug("find section file, check root: " + path + " in " + section);
+		
 		if (prifs != null) {
 			if (isPreview) {
 				CacheFile cfile = prifs.cacheResolvePath("/dcw/" + this.domain.getAlias() + "/" + section + "-preview" + path);
@@ -309,6 +334,16 @@ public class WebSite {
 			if (cfile != null) 
 				return cfile;
 		}
+		
+		if (Logger.isDebug())
+			Logger.debug("find section check packages: " + path + " in " + section);
+		
+		/*
+		System.out.println("x: " + Hub.instance.getResources());
+		System.out.println("y: " + Hub.instance.getResources().getPackages());
+		System.out.println("z: " + this.domain);
+		System.out.println("w: " + this.domain.getPackagelist());
+		*/
 		
 		return Hub.instance.getResources().getPackages().cacheLookupPath(this.domain.getPackagelist(), "/" + section + path);
 	}

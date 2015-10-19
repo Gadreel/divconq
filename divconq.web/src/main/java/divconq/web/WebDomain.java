@@ -90,6 +90,7 @@ import divconq.lang.op.OperationContext;
 import divconq.locale.LocaleInfo;
 import divconq.locale.LocaleUtil;
 import divconq.locale.Localization;
+import divconq.log.Logger;
 import divconq.net.ssl.SslHandler;
 import divconq.struct.Struct;
 import divconq.util.StringUtil;
@@ -200,6 +201,9 @@ public class WebDomain {
 		
 		XElement settings = this.man.getModule().getLoader().getSettings();
 		
+		if (Logger.isDebug())
+			Logger.debug("Reloading web domain settings: " + this.alias + " - " + settings);
+		
 		if (settings != null) {
 			// UI = app or customer uses builder
 			// UI = basic is just 'index.html' approach
@@ -251,6 +255,9 @@ public class WebDomain {
 		
 		XElement config = domain.getSettings();
 		
+		if (Logger.isDebug())
+			Logger.debug("Checking web domain settings: " + this.alias + " - " + config);
+		
 		if (config == null) {
 			// TODO improve so this works with domain settings - with or without Web
 			
@@ -266,10 +273,16 @@ public class WebDomain {
 			
 			this.packagelist = Hub.instance.getResources().getPackages().buildLookupList(packagenames);
 			
+			if (Logger.isDebug())
+				Logger.debug("Package list: " + this.alias + " - " + this.packagelist.size());
+			
 			return;
 		}
 		
 		this.webconfig = config.selectFirst("Web");
+		
+		if (Logger.isDebug())
+			Logger.debug("Checking web domain web settings: " + this.alias + " - " + this.webconfig);
 		
 		if (this.webconfig == null) 
 			return;
@@ -433,33 +446,45 @@ public class WebDomain {
 	}
 	
 	public void execute(WebContext ctx) {
+		if (Logger.isDebug())
+			Logger.debug("Translating path: " + ctx.getRequest().getPath());
+		
 		this.translatePath(ctx);
 		
 		CommonPath path = ctx.getRequest().getPath();
 	
+		if (Logger.isDebug())
+			Logger.debug("Process path: " + path);
+		
 		// translate above should take us home for root 
 		if (path.isRoot()) { 
 			OperationContext.get().errorTr(150001);
 			return;
 		}
 		
-		IOutputAdapter output = ctx.getSite().findFile(ctx);
+		WebSite site = ctx.getSite();
+		
+		if (Logger.isDebug())
+			Logger.debug("Site: " + (site != null ? site.getAlias() : "[missing]"));
+		
+		IOutputAdapter output = site.findFile(ctx);
 
 		if (OperationContext.get().hasErrors() || (output == null)) {
 			OperationContext.get().errorTr(150001);			
 			return;
 		}
 		
+		if (Logger.isDebug())
+			Logger.debug("Executing adapter: " + output.getClass().getName());
+		
 		try {
-			//ctx.setAdapter(output);
-			
 			output.execute(ctx);
 		} 
 		catch (Exception x) {
-			System.out.println("Unable to process web file: " + x);
+			Logger.error("Unable to process web file: " + x);
+			
 			x.printStackTrace();
 		}
-		
 	}
 	
 	public String route(Request req, SslHandler ssl) {

@@ -17,19 +17,20 @@
 		<Library File="groovy-json-2.4.1-indy.jar"/>
 		<Library File="groovy-xml-2.4.1-indy.jar"/>
 		<Library File="groovy-sql-2.4.1-indy.jar"/>
+		<Library File="h2-1.4.182.jar" />
 		<Library File="java-ipv6-0.15.jar"/>
 		<Library File="joda-time-2.5.jar" />
 		<Library File="jnotify-0.94.jar"/>
 		<Library File="jna-4.1.0.jar" />
 		<Library File="jna-platform-4.1.0.jar" />
-		<Library File="netty-all-4.0.32.Final.jar" />
 		<Library File="jsch-0.1.51.jar" />
 		<Library File="mariadb-java-client-1.1.6.jar" />
-		<Library File="h2-1.4.182.jar" />
+		<Library File="netty-all-4.0.32.Final.jar" />
+		<Library File="scribe-1.3.7.jar"/>
 		<Library File="sqljdbc4.jar" />
-		<Library File="rsyntaxtextarea-2.5.3.jar"/>
 		<Library File="slf4j-api-1.7.7.jar"/>
 		<Library File="rocksdbjni-3.9.1.jar"/>
+		<Library File="rsyntaxtextarea-2.5.3.jar"/>
 		
 		<Folder Path="bin"/>
 		<Folder Path="util"/>
