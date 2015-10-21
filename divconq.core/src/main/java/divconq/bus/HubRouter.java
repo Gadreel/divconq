@@ -420,6 +420,9 @@ public class HubRouter {
 	        	return;
 	        }
 	        
+	        // let everyone know this is from a gateway - via op context
+	        context.setField("Gateway", true);
+	        
 			String uid = context.getFieldAsString("UserId");
 			
 			// session must be present if not Guest 
@@ -502,6 +505,13 @@ public class HubRouter {
 			
 			//System.out.println("Gateway request passed checks z: " + msg);
     	}
+    	else if (this.gateway) {
+	        RecordStruct context = msg.getFieldAsRecord("Context");
+			
+	        if (context != null) 
+	        	context.setField("Gateway", true);
+    	}
+    	
     	/*
     	// TODO temp - show me messages coming into server from gateway 
     	else if (!looksLikeReply) {
@@ -649,7 +659,7 @@ public class HubRouter {
 			Hub.instance.getCountManager().allocateSetNumberCounter("dcBus_" + this.getHubId() + "_SteramSessions", sessionsize);
 			
 			if ((sessionsize == 1) && this.isDirect()) 	    	    	
-    	    	// let hub know we are connected, in another thread
+    	    	// let hub know we are connected, TODO in another thread
     	    	Hub.instance.getWorkPool().submit(trun -> {
     	    		Hub.instance.fireEvent(HubEvents.BusConnected, null);
     	    		trun.complete();

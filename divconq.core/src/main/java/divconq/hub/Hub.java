@@ -152,6 +152,9 @@ public class Hub {
 	public void dependencyChanged() {
 		OperationContext.useHubContext();
 		
+		if (Logger.isDebug()) 
+			Logger.debug("Dependency channged");
+		
 		this.depedencyLock.lock();
 		
 		try {
@@ -160,6 +163,10 @@ public class Hub {
 			this.dependencyCntRun = 0;
 			
 			for (HubDependency d : this.dependencies.values()) {
+				if (Logger.isDebug()) 
+					Logger.debug("Dependency " + d.source + " - boot: " + d.passBoot
+							+ " connect: " + d.passConnected + " run: " + d.passRun);
+				
 				if (!d.passBoot)
 					this.dependencyCntBoot++;
 				
@@ -186,6 +193,9 @@ public class Hub {
 			}
 			
 			if (this.state == HubState.Booting) {
+				if (Logger.isDebug()) 
+					Logger.debug("Switch hub to Booted");
+				
 				this.booted();		// set status 
 				return;
 			}
@@ -204,6 +214,9 @@ public class Hub {
 			}
 			
 			if (this.state == HubState.Booted) {
+				if (Logger.isDebug()) 
+					Logger.debug("Switch hub to Connected");
+				
 				this.connected();		// go into Connected status
 				return;
 			}
@@ -222,6 +235,9 @@ public class Hub {
 			}
 			
 			if (this.state == HubState.Connected) {
+				if (Logger.isDebug()) 
+					Logger.debug("Switch hub to Running");
+				
 				this.running();		// go into Running or Idle status
 				return;
 			}
@@ -325,6 +341,10 @@ public class Hub {
 	}
 	
 	public void addDependency(HubDependency v) {
+		if (Logger.isDebug()) 
+			Logger.debug("Adding Dependency " + v.source + " - boot: " + v.passBoot
+					+ " connect: " + v.passConnected + " run: " + v.passRun);
+		
 		this.depedencyLock.lock();
 		
 		try {
@@ -339,6 +359,9 @@ public class Hub {
 	}
 	
 	public void removeDependency(String v) {
+		if (Logger.isDebug()) 
+			Logger.debug("Removing Dependency " + v);
+		
 		this.depedencyLock.lock();
 		
 		try {
@@ -1086,7 +1109,8 @@ public class Hub {
 	}
 	
 	public void fireEvent(Integer event, Object e) {
-		//System.out.println("Hub Event fired: " + event);		// TODO remove
+		if (Logger.isDebug())
+			Logger.debug("Hub Event fired: " + event + " with " + e);		
 		
 		Set<IEventSubscriber> list = this.subscribers.get(event);
 		

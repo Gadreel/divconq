@@ -136,7 +136,7 @@ public class LocalFileStore {
 			if (Logger.isDebug())
 				Logger.debug("cache resolve path, file: " + ra);
 			
-			System.out.println("rcache " + this.cache);
+			//System.out.println("rcache " + this.cache);
 			
 			if (ra != null) {
 				this.cache.put(ln, ra);

@@ -26,6 +26,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -118,8 +120,14 @@ public class WebModule extends ModuleBase {
 		    	        //pipeline.addLast("deflater", new HttpContentCompressor());
 		    	        
 		    	        pipeline.addLast("handler", new ServerHandler(httpconfig, WebModule.this.siteman));
+		    	        
+		    	        if (Logger.isDebug())
+		    	        	Logger.debug("New web connection from " + ch.remoteAddress().getAddress().toString());
 					}        	 
 		        });
+    	        
+    	        if (Logger.isDebug())
+    	        	b.handler(new LoggingHandler("www", Logger.isTrace() ? LogLevel.TRACE : LogLevel.DEBUG));
 	
 		        try {
 		        	// must wait here, both to keep the activelisteners listeners up to date
