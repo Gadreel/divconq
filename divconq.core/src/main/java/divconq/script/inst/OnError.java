@@ -18,8 +18,7 @@ package divconq.script.inst;
 
 import java.util.List;
 
-import divconq.lang.op.OperationContext;
-import divconq.locale.LocaleUtil;
+import divconq.locale.Tr;
 import divconq.script.ErrorMode;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
@@ -39,12 +38,8 @@ public class OnError extends Instruction {
 			
 			for (int i = 0; i < params.size(); i++) 
 				oparams[i] = stack.refFromElement(params.get(i), "Value").toString();
-
-			OperationContext tc = OperationContext.get();
 			
-			output = (tc != null) 
-					? tc.tr("_code_" + code, oparams)
-					: LocaleUtil.tr(LocaleUtil.getDefaultLocale(), "_code_" + code, oparams);
+			output = Tr.tr("_code_" + code, oparams);
 		}		
 		
 		String mode = stack.stringFromSource("Mode");

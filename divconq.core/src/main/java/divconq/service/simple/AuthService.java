@@ -23,15 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.joda.time.DateTimeZone;
-
 import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.hub.Hub;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationContextBuilder;
 import divconq.lang.op.UserContext;
-import divconq.locale.LocaleUtil;
 import divconq.mod.ExtensionBase;
 import divconq.session.Session;
 import divconq.struct.FieldStruct;
@@ -363,8 +360,6 @@ public class AuthService extends ExtensionBase implements IService {
 						.withEmail(usr.getAttribute("Email"))
 						.withVerified(true)
 						.withAuthTags(atags)
-						.withLocale(LocaleUtil.getDefaultLocale())
-						.withChronology("/" + DateTimeZone.getDefault().getID())	// ISOChronology w/ default zone
 				);		
 			}
 		}

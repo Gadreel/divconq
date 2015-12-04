@@ -198,4 +198,15 @@ public class ArrayUtil {
             i++;
         }
     }
- }
+    
+    public static void increment(byte[] array) {
+        for (int i = (array.length - 1); i >= 0; i--) {
+            array[i]++;
+            
+            if (array[i] != 0) 
+                return;
+        }
+        
+        throw new IndexOutOfBoundsException("Unable to increment array. Length: " + array.length);
+    }
+}

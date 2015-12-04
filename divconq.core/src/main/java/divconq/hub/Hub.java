@@ -30,6 +30,7 @@ import java.lang.management.MemoryMXBean;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.joda.time.DateTime;
 
 import divconq.api.ApiSession;
@@ -52,9 +54,8 @@ import divconq.db.DataRequest;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
-import divconq.locale.LocaleUtil;
-import divconq.locale.Localization;
-import divconq.log.DebugLevel;
+import divconq.locale.LocaleDefinition;
+import divconq.log.HubLog;
 import divconq.log.Logger;
 import divconq.mod.IModule;
 import divconq.mod.ModuleLoader;
@@ -446,19 +447,6 @@ public class Hub {
 	}
 	
 	/**
-	 * All translation/globalization data is stored in the dictionary.  There are dictionary files
-	 * (written in Xml and stored in the Packages repository) that define the localization tokens.
-	 *  
-	 * @return master collection of all languages and tokens
-	 */
-	public Localization getDictionary() {
-		if (this.resources != null)
-			return this.resources.getDictionary();
-		
-		return null;
-	}
-	
-	/**
 	 * The WorkPool is a general purpose thread pool that should be used to execute tasks.
 	 * DivConq does not recommend using your own threads as you'll lose the TaskContext and
 	 * many features will cease to work correctly.  However, do not use WorkPool to run tasks that
@@ -582,23 +570,21 @@ public class Hub {
 		}
 		
 		XElement config = this.resources.getConfig();
+		
+		List<LocaleDefinition> fallbacklocales = new ArrayList<LocaleDefinition>();
+		
+		String hlocale = this.resources.getDefaultLocale();
+		
+		fallbacklocales.add(this.resources.getLocaleDefinition(hlocale));
 
 		// put Logger into default locale and level
-		Logger.setLocale(LocaleUtil.getDefaultLocale());
+		//Logger.setLocale(this.resources.getDefaultLocale());
 		
 		// change to overrides if find config
 		XElement logger = config.find("Logger");
-
-		if (logger != null) {
-			if (logger.hasAttribute("Level")) 
-				Logger.setGlobalLevel(DebugLevel.parse(logger.getAttribute("Level")));
-			
-			if (logger.hasAttribute("Locale")) 
-				Logger.setLocale(logger.getAttribute("Locale"));
-		}		
 		
 		// prepare the logger - use files, use custom log writer
-		Logger.init(logger);
+		HubLog.init(logger);
 		
 		// initialize hub context locale and level (depends on logger above)
 		OperationContext.startHubContext(config);
@@ -607,6 +593,12 @@ public class Hub {
 		
 		// TODO use translation codes for all start up messages after dictionaries are loaded
 		or.info(0, "Using hub id: " + OperationContext.getHubId());
+		
+		or.info(0, "Java version: " + System.getProperty("java.version"));
+		or.info(0, "Java vendor: " + System.getProperty("java.vendor"));
+		or.info(0, "Java vm: " + System.getProperty("java.vm.name"));		
+		
+		Security.addProvider(new BouncyCastleProvider());		
 		
 		or.debug(0, "Starting Clock");
 		
@@ -1070,7 +1062,7 @@ public class Hub {
 		}
 		
 		or.debug(0, "Stopping logger");		
-		Logger.stop(or);
+		HubLog.stop(or);
 		
 		or.info(0, "Hub stopped");
 		

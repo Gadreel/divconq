@@ -75,12 +75,50 @@ public class DataType {
 		return this.id;
 	}
 	
+	public DataKind getKind() {
+		return this.kind;
+	}
+
+	public DataType getPrimaryItemType() {
+		if (this.items != null) 
+			return this.items.getPrimaryType();
+		
+		return null;
+	}
+	
+	public CoreType getCoreType() {
+		return this.core;
+	}
+	
 	public boolean isAnyRecord() {
 		return this.anyRec;
 	}
 	
+	public Collection<Field> getFields() {
+		if (this.fields == null)
+			return new ArrayList<Field>();
+		
+		return this.fields.values();
+	}
+	
+	public Field getField(String name) {
+		if (this.fields == null)
+			return null;
+		
+		return this.fields.get(name);
+	}
+	
+	public TypeOptionsList getItems() {
+		return this.items;
+	}
+	
 	public DataType(Schema schema) {
 		this.schema = schema;
+	}
+
+	// default to 13 levels
+	public RecordStruct toJsonDef() {
+		return this.toJsonDef(13);
 	}
 
 	public RecordStruct toJsonDef(int lvl) {
@@ -125,24 +163,6 @@ public class DataType {
 		}
 		
 		return def;
-	}
-	
-	public Collection<Field> getFields() {
-		if (this.fields == null)
-			return new ArrayList<Field>();
-		
-		return this.fields.values();
-	}
-	
-	public Field getField(String name) {
-		if (this.fields == null)
-			return null;
-		
-		return this.fields.get(name);
-	}
-	
-	public TypeOptionsList getItems() {
-		return this.items;
 	}
 	
 	public void load(XElement dtel) {
@@ -520,16 +540,5 @@ public class DataType {
 		}
 		
 		return mr; 
-	}
-
-	public DataType getPrimaryItemType() {
-		if (this.items != null) 
-			return this.items.getPrimaryType();
-		
-		return null;
-	}
-	
-	public CoreType getCoreType() {
-		return this.core;
 	}
 }

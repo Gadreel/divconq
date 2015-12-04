@@ -19,6 +19,7 @@ package divconq.web.dcui;
 import java.io.PrintStream;
 
 import w3.html.Input;
+import divconq.lang.op.OperationContext;
 import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
 import divconq.web.dcui.Nodes;
@@ -51,7 +52,7 @@ public class FormButton extends Input {
     @Override
 	public void build(WebContext ctx, Object... args) {
 		Attributes attrs = new Attributes("value", this.label, "type", this.submit ? "submit" : "button",
-				 "data-icon", this.icon, "dir", ctx.isRightToLeft() ? "rtl" : "ltr");
+				 "data-icon", this.icon, "dir", OperationContext.get().getWorkingLocaleDefinition().isRightToLeft() ? "rtl" : "ltr");
 
        	super.build(ctx, "input", args, attrs);
 	}

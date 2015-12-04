@@ -30,6 +30,7 @@ import divconq.lang.op.OperationResult;
 import divconq.schema.DataType.DataKind;
 import divconq.schema.ServiceSchema.Op;
 import divconq.struct.CompositeStruct;
+import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.util.ArrayUtil;
@@ -603,5 +604,18 @@ public class SchemaManager {
 
 	public void loadService(Schema schema, XElement xml) {
 		this.service.load(schema, xml);
+	}
+
+	public ListStruct toJsonDef(String... names) {
+		ListStruct list = new ListStruct();
+		
+		for (String name : names) {
+			DataType dt = this.getType(name);
+			
+			if (dt != null)
+				list.addItem(dt.toJsonDef());
+		}
+		
+		return list;
 	}
 }

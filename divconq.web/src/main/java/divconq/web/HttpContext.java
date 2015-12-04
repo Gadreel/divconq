@@ -26,9 +26,16 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.stream.ChunkedInput;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
 import divconq.bus.Message;
 import divconq.log.Logger;
+import divconq.net.ssl.SslHandler;
 import divconq.session.Session;
+import divconq.struct.RecordStruct;
+import divconq.util.KeyUtil;
 import divconq.util.MimeUtil;
 import divconq.xml.XElement;
 
@@ -41,6 +48,7 @@ public class HttpContext implements IInnerContext {
 	protected IContentDecoder decoder = null;    	
     protected Request request = null;
     protected Response response = null;
+    protected RecordStruct altparams = null;
     protected Session session = null;
     protected WebSiteManager siteman = null;
     protected WebSite site = null;
@@ -61,6 +69,16 @@ public class HttpContext implements IInnerContext {
     
     public Session getSession() {
 		return this.session;
+	}
+	
+	@Override
+	public void setAltParams(RecordStruct v) {
+		this.altparams = v;
+	}
+	
+	@Override
+	public RecordStruct getAltParams() {
+		return this.altparams;
 	}
 	
 	@Override
@@ -320,5 +338,29 @@ public class HttpContext implements IInnerContext {
 	@Override
 	public IWebMacro getMacro(String name) {
 		return this.siteman.getMacro(name);
+	}
+	
+	// get the thumbprint of client cert, if available
+	public String getClientCert() {
+		SslHandler sslhandler = (SslHandler) this.chan.pipeline().get("ssl");
+		
+		if (sslhandler != null) {
+			try {
+				X509Certificate[] list = sslhandler.engine().getSession().getPeerCertificateChain();
+				
+				if (list.length > 0) {
+					String thumbprint = KeyUtil.getCertThumbprint(list[0]); 
+					
+					//System.out.println("got thumbprint: " + thumbprint);
+					
+					return thumbprint;
+				}
+			}
+			catch (SSLPeerUnverifiedException x) {
+				// ignore, at this point we don't enforce peer certs
+			}
+		}
+		
+		return null;
 	}
 }

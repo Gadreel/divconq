@@ -49,7 +49,11 @@ public class TaskCountDownCallback extends CountDownCallback {
 	}
 	
 	public TaskCountDownCallback() {
-		super(0, null);
+		super(0, (OperationCallback)null);
+	}
+	
+	public TaskCountDownCallback(OperationCallback callback) {
+		super(0, callback);
 	}
 	
 	public TaskCountDownCallback(int tasks, OperationCallback callback) {

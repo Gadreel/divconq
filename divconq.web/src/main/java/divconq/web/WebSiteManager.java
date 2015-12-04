@@ -16,14 +16,12 @@
 ************************************************************************ */
 package divconq.web;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import divconq.cms.importer.ImportWebsiteTool;
 import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
@@ -32,17 +30,12 @@ import divconq.hub.IEventSubscriber;
 import divconq.io.FileStoreEvent;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncCallback;
-import divconq.lang.op.OperationCallback;
-import divconq.lang.op.OperationContextBuilder;
 import divconq.mod.ExtensionLoader;
 import divconq.mod.IModule;
 import divconq.net.IpAddress;
 import divconq.util.MimeUtil;
 import divconq.util.StringUtil;
 import divconq.web.http.SslContextFactory;
-import divconq.work.IWork;
-import divconq.work.Task;
-import divconq.work.TaskRun;
 import divconq.xml.XElement;
 
 public class WebSiteManager {
@@ -217,6 +210,7 @@ public class WebSiteManager {
 						
 						// TODO after we merge DomainInfo and WebDomain features this will work better,
 						// right now feed only gets imported if the domain has been loaded via HTTP(S) request
+						/*
 						if ("feed".equals(section) || "feed-preview".equals(section)) {
 							Task task = new Task()
 								.withWork(new IWork() {
@@ -244,6 +238,7 @@ public class WebSiteManager {
 							
 							Hub.instance.getWorkPool().submit(task);
 						}
+						*/
 						
 						break;
 					}

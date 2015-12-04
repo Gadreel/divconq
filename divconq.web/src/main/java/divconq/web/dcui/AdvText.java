@@ -22,9 +22,9 @@ import groovy.lang.GroovyObject;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import divconq.cms.md.Markdown4jProcessor;
 import divconq.lang.op.OperationContext;
 import divconq.web.WebContext;
+import divconq.web.md.Markdown;
 import divconq.xml.XElement;
 
 public class AdvText extends Element implements ICodeTag {
@@ -46,6 +46,19 @@ public class AdvText extends Element implements ICodeTag {
     public String getContent() {
 		return this.content;
 	}
+    
+    public AdvText() {
+    }
+    
+    public AdvText(String content) {
+    	this.format = "md";
+    	this.content = content;
+    }
+    
+    public AdvText(String format, String content) {
+    	this.format = format;
+    	this.content = content;
+    }
 
 	@Override
 	public void parseElement(WebContext ctx, Nodes nodes, XElement xel) {
@@ -63,31 +76,15 @@ public class AdvText extends Element implements ICodeTag {
 			nl = new Nodes(new LiteralText(this.content.toString()));
 		}
 		else if ("md".equals(this.format)) {
-			String html = null;
-			
-			//System.out.println("md: " + ppcontent);
-			
+			// TODO allocate from webdomain
+			Markdown mdp = new Markdown();
+
 			try {
-				html = new Markdown4jProcessor().process(this.content.toString());
+				nl = mdp.process(ctx, this.content.toString());
 			} 
 			catch (IOException x) {
-				System.out.println("error: " + x);
+				System.out.println("inline md error: " + x);
 			}
-			
-			//System.out.println("html: " + html);
-			
-			nl = new Nodes();
-			nl.add(new LiteralText(html));
-			
-			/* TODO add lang attribute to this node and others
-			String locale = src.getAttribute("Locale", parentlocale);
-			String lang = locale;
-			
-			if (lang.indexOf("_") > -1) 
-				lang = lang.substring(0, lang.indexOf("_"));
-			*/
-			
-			//nl = new Nodes(new LiteralText(this.content.toString()));
 		}
 		else if ("groovy".equals(this.format)) {
 			//System.out.println("script: " + ppel.getText());

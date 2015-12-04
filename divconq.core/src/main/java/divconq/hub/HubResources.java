@@ -24,7 +24,9 @@ import java.nio.file.Paths;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
-import divconq.locale.Localization;
+import divconq.locale.Dictionary;
+import divconq.locale.ILocaleResource;
+import divconq.locale.LocaleDefinition;
 import divconq.log.DebugLevel;
 import divconq.schema.SchemaManager;
 import divconq.struct.Struct;
@@ -68,7 +70,7 @@ import divconq.xml.XmlReader;
  * @author Andy
  *
  */
-public class HubResources {
+public class HubResources implements ILocaleResource {
 	static public boolean isValidHubId(String id) {
 		if (StringUtil.isEmpty(id) || (id.length() != 5))
 			return false;
@@ -102,7 +104,9 @@ public class HubResources {
 	// TODO
 	//protected XElement fabric = null;
 	
-	protected Localization localization = null;
+	protected Dictionary dictionary = null;
+	protected String locale = "en";
+	protected LocaleDefinition localedef = null;
   	protected SchemaManager schemaman = null;
 	
   	/**
@@ -239,8 +243,9 @@ public class HubResources {
 	 * 
 	 * @return Locales for this Project
 	 */
-	public Localization getDictionary() {
-		return this.localization;
+	@Override
+	public Dictionary getDictionary() {
+		return this.dictionary;
 	}
 
 	/**
@@ -253,6 +258,11 @@ public class HubResources {
 		return this.config;
 	}
 
+	/* TODO support chronology defaults
+			//.withChronology("/" + DateTimeZone.getDefault().getID());		// ISOChronology w/ default zone
+	 * 
+	 */
+	
 	/* TODO
 	public XElement getFabric() {
 		return this.fabric;
@@ -378,6 +388,9 @@ public class HubResources {
 		if (this.config.hasAttribute("ForTesting")) 
 			this.forTesting = Struct.objectToBooleanOrFalse(this.config.getAttribute("ForTesting"));
 		
+		if (this.config.hasAttribute("Locale"))
+			this.locale = this.config.getAttribute("Locale", "en");
+		
 		or.trace(0, "Loaded config.xml file at: " + f.getAbsolutePath());
 		
 		or.trace(0, "Using project compiler to load schema and dictionary");
@@ -393,13 +406,16 @@ public class HubResources {
 		
 		or.trace(0, "Schema loaded");
 		
-		this.localization = comp.getDictionary(or, this.packages);
+		this.dictionary = comp.getDictionary(or, this.packages);
 		
 		if (or.hasErrors()) {
 			or.exit(104, "Unable to load dictionary file(s)");
 			return or;
 		}
 		
+		// ready to add definitions
+		this.localedef = this.getLocaleDefinition(this.getDefaultLocale());
+
 		or.trace(0, "Dictionary loaded");
 
 		// TODO get fabric from ./project...
@@ -412,6 +428,37 @@ public class HubResources {
 		this.initsuccess = true;
 		
 		return or;
+	}
+	
+	@Override
+	public String getDefaultLocale() {
+		return this.locale;
+	}
+
+	@Override
+	public LocaleDefinition getDefaultLocaleDefinition() {
+		return this.getLocaleDefinition(this.getDefaultLocale());
+	}
+
+	@Override
+	public LocaleDefinition getLocaleDefinition(String name) {
+		// TODO lookup definitions
+		
+		return new LocaleDefinition(name);
+	}
+	
+	// 0 is best, higher the number the worse, -1 for not supported
+	@Override
+	public int rateLocale(String locale) {
+		if ((this.localedef != null) && this.localedef.match(locale))
+			return 0;
+		
+		return -1;
+	}
+	
+	@Override
+	public ILocaleResource getParentLocaleResource() {
+		return null;
 	}
 	
 	/**
@@ -429,7 +476,7 @@ public class HubResources {
 		
 		ProjectCompiler comp = new ProjectCompiler();
 		
-		this.localization = comp.getDictionary(or, this.packages);
+		this.dictionary = comp.getDictionary(or, this.packages);
 		
 		if (or.hasErrors()) 
 			or.exit(104, "Unable to load dictionary file(s)");
@@ -438,86 +485,6 @@ public class HubResources {
 		
 		return or;
 	}
-	
-	/**
-	 * Get a reference to a package's resource file for this Project.
-	 *  
-	 * @param pkg name of the package the resource resides in
-	 * @param path of the file
-	 * @return File reference if found, if not error messages in FuncResult
-	 * /
-	public File getPackageResource(String pkg, CommonPath path) {		// TODO support ZIP packagse
-		for (HubPackage rcomponent : this.reversepackages) {
-			File f = new File("./packages/" + rcomponent.getName() + "/resource/" + pkg + path.toString());		// must be absolute path
-			
-			if (f.exists()) 
-				return f;
-		}
-		
-		return null;
-	}
-	*/
-	
-	/*
-	// optimize common path with file path map...
-	public Path getPackageWebFile(String pkg, CommonPath path) {		// TODO support ZIP packages
-		if (path.hasFileExtension()) {
-			Path fl = Paths.get("./packages/" + pkg + "/www" + path);		// must be absolute path
-			
-			if (Files.exists(fl)) 
-				return fl;
-			
-			return null;
-		}
-		
-		CommonPath parent = path.getParent();
-		
-		Path fld = (parent == null) ? Paths.get("./packages/" + pkg + "/www") :  Paths.get("./packages/" + pkg + "/www" + path.getParent());		// must be absolute path
-			
-		if (Files.notExists(fld)) 
-			return null;
-		
-		// get the first file that looks like this name but with an extension - we want the extension even if it doesn't have to show 
-		String name = path.getFileName() + ".";
-		
-		try (DirectoryStream<Path> stream = Files.newDirectoryStream(fld)) {
-			for (Path p : stream) {
-				String fname = p.getFileName().toString();
-				
-				if (fname.startsWith(name))
-					return p;
-			}
-		} 
-		catch (IOException x) {
-		}
-		
-		return null;
-	}
-	*/
-	
-	/**
-	 * Get a reference to a library file (typically a JAR) for this Project.
-	 *  
-	 * @param filename name of the JAR, path relative to the lib/ folder
-	 * @return File reference if found, if not error messages in FuncResult
-	 * /
-	public FuncResult<File> getLibrary(String filename) {
-		FuncResult<File> res = new FuncResult<File>(); 
-		
-		for (HubPackage rcomponent : this.reversepackages) {
-			File f = new File("./packages/" + rcomponent.getName() + "/lib/" + filename);
-			
-			if (f.exists()) {
-				res.setResult(f);
-				return res;
-			}
-		}
-		
-		res.errorTr(200, "./lib/" + filename);
-		
-		return res;
-	}
-	*/
 	
 	/**
 	 * Get a reference to a resource file specific for this Project.

@@ -112,6 +112,12 @@ dc.schema.Manager.load([
         "Id" : "dcTinyString",
         "Kind" : 1
       },
+      { "CoreType" : { "DataRestrictions" : [ { "Max" : 4000 } ],
+            "RootType" : 1
+          },
+        "Id" : "dcString",
+        "Kind" : 1
+      },
       { "CoreType" : { "RootType" : 4 },
         "Id" : "Binary",
         "Kind" : 1
@@ -144,6 +150,7 @@ dc.schema.Manager.load([
         "Id" : "Any",
         "Kind" : 1
       },
+      /*
       { "Fields" : [ { "Name" : "Domain",
               "Options" : [ { "CoreType" : { "DataRestrictions" : [ { "Pattern" : "^\\d{5}_\\d{15}$" } ],
                         "RootType" : 1
@@ -156,6 +163,7 @@ dc.schema.Manager.load([
         "Id" : "dcmLoadSiteRequest",
         "Kind" : 3
       },
+      */
       { "AnyRec" : true,
         "Fields" : [  ],
         "Id" : "AnyRecord",

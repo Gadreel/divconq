@@ -8,20 +8,21 @@ import java.util.regex.Pattern;
 
 import divconq.lang.op.FuncResult;
 import divconq.util.StringUtil;
-import divconq.web.WebContext;
+import divconq.web.md.Plugin;
+import divconq.web.md.ProcessContext;
 import divconq.xml.XElement;
 import divconq.xml.XText;
 import divconq.xml.XmlReader;
 
-class Emitter {
-    protected Configuration config = null;
+public class Emitter {
+    protected ProcessContext ctx = null;
     protected HashMap<String, LinkRef> linkRefs = new HashMap<String, LinkRef>();
     protected Map<String, Plugin> plugins = new HashMap<String, Plugin>();
     
-    public Emitter(Configuration config) {
-        this.config = config;
+    public Emitter(ProcessContext ctx) {
+        this.ctx = ctx;
         
-        for(Plugin plugin : config.plugins) 
+        for(Plugin plugin : ctx.getConfig().getPlugins()) 
           	register(plugin);
     }
     
@@ -33,7 +34,7 @@ class Emitter {
         this.linkRefs.put(key.toLowerCase(), linkRef);
     }
 
-    public void emit(WebContext ctx, XElement parent, Block root) {
+    public void emit(XElement parent, Block root) {
         root.removeSurroundingEmptyLines();
 
         XElement target = null;
@@ -46,6 +47,7 @@ class Emitter {
         case XML:
         case PLUGIN:
         	target = parent;
+        	
             break;
         case HEADLINE: {
         	target = new XElement("h" + root.hlDepth);
@@ -120,19 +122,19 @@ class Emitter {
             switch(root.type)
             {
             case CODE:
-                this.emitCodeLines(ctx, target, root.lines, root.meta, true);
+                this.emitCodeLines(target, root.lines, root.meta, true);
                 break;
             case FENCED_CODE:
-                this.emitCodeLines(ctx, target, root.lines, root.meta, false);
+                this.emitCodeLines(target, root.lines, root.meta, false);
                 break;
             case PLUGIN:
-                this.emitPluginLines(ctx, target, root.lines, root.meta);
+                this.emitPluginLines(target, root.lines, root.meta);
                 break;
             case XML:
-                this.emitRawLines(ctx, target, root.lines);
+                this.emitRawLines(target, root.lines);
                 break;
             default:
-                this.emitMarkedLines(ctx, target, root.lines);
+                this.emitMarkedLines(target, root.lines);
                 break;
             }
         }
@@ -140,7 +142,7 @@ class Emitter {
             Block block = root.blocks;
             
             while (block != null) {
-                this.emit(ctx, target, block);
+                this.emit(target, block);
                 block = block.next;
             }
         }
@@ -172,7 +174,7 @@ class Emitter {
     /*
      * Checks if there is a valid markdown link definition.
      */
-    protected int emitLink(WebContext ctx, XElement parent, String in, int start, MarkToken token) {
+    protected int emitLink(XElement parent, String in, int start, MarkToken token) {
         boolean isAbbrev = false;
         int pos = start + (token == MarkToken.LINK ? 1 : (token == MarkToken.X_IMAGE) ? 3 : 2);
         
@@ -295,7 +297,7 @@ class Emitter {
             	XElement anchr = new XElement("abbr")
 	        		.withAttribute("title", comment);
             	
-                this.recursiveEmitLine(ctx, anchr, name, 0, MarkToken.NONE);  
+                this.recursiveEmitLine(anchr, name, 0, MarkToken.NONE);  
             }
             else {
             	XElement anchr = new XElement("a")
@@ -307,7 +309,7 @@ class Emitter {
                 if(comment != null)
                 	anchr.withAttribute("title", comment);
 
-                this.recursiveEmitLine(ctx, anchr, name, 0, MarkToken.NONE);  
+                this.recursiveEmitLine(anchr, name, 0, MarkToken.NONE);  
             }
         }
         else if (token == MarkToken.IMAGE) {
@@ -349,7 +351,7 @@ class Emitter {
      *            Starting position.
      * @return The new position or -1 if nothing valid has been found.
      */
-    protected int emitHtml(WebContext ctx, XElement parent, String in, int start) {
+    protected int emitHtml(XElement parent, String in, int start) {
         StringBuilder temp = new StringBuilder();
         int pos;
 
@@ -358,7 +360,7 @@ class Emitter {
         
         pos = Utils.readUntil(temp, in, start + 1, ':', ' ', '>', '\n');
         
-        if (pos != -1 && in.charAt(pos) == ':' && in.charAt(pos - 1) == '/' && in.charAt(pos - 2) == '/') {
+        if (pos != -1 && in.charAt(pos) == ':' && in.length() > (pos + 2) && in.charAt(pos + 1) == '/' && in.charAt(pos + 2) == '/') {
             pos = Utils.readUntil(temp, in, pos, '>');
             
             if (pos != -1) {
@@ -432,7 +434,7 @@ class Emitter {
      *            Starting position
      * @return The new position or -1 if this entity in invalid.
      */
-    protected int emitEntity(WebContext ctx, XElement parent, String in, int start, MarkToken token) {
+    protected int emitEntity(XElement parent, String in, int start, MarkToken token) {
     	/*
         int pos = start;
         
@@ -485,7 +487,7 @@ class Emitter {
             }
         }
         else {
-            for (int i = start + 1; i < pos; i++) {
+            for (int i = start + 1; i < in.length(); i++) {
                 char c = in.charAt(i);
                 
                 if (c == ';') {
@@ -498,12 +500,12 @@ class Emitter {
             }
         }
         
-        parent.appendRaw(in.substring(0, pos));
+        parent.appendRaw(in.substring(start, pos + 1));
 
         return pos;
     }
     
-    protected int emitCode(WebContext ctx, XElement parent, String in, int start, MarkToken token) {
+    protected int emitCode(XElement parent, String in, int start, MarkToken token) {
     	boolean dub = (token == MarkToken.CODE_DOUBLE);
     	
 	    int a = start + (dub ? 2 : 1);
@@ -519,7 +521,7 @@ class Emitter {
         return pos;
 	}
 
-    protected int emitEm(WebContext ctx, XElement parent, String in, int start, MarkToken token) {
+    protected int emitEm(XElement parent, String in, int start, MarkToken token) {
 		int b = this.findToken(in, start + 1, token);
 
 		if (b > 0) {
@@ -527,7 +529,7 @@ class Emitter {
 			
 			parent.add(em);
 			
-			this.recursiveEmitLine(ctx, em, in.substring(start + 1, b), 0, token);
+			this.recursiveEmitLine(em, in.substring(start + 1, b), 0, token);
 
 			return b;
 		}
@@ -535,7 +537,7 @@ class Emitter {
 		return -1;
     }
 
-    protected int emitSuper(WebContext ctx, XElement parent, String in, int start, MarkToken token) {
+    protected int emitSuper(XElement parent, String in, int start, MarkToken token) {
 		int b = this.findToken(in, start + 1, token);
 
 		if (b > 0) {
@@ -543,8 +545,8 @@ class Emitter {
 			
 			parent.add(em);
 			
-			this.recursiveEmitLine(ctx, em, in.substring(start + 1, b - 1), 0, token);
-			//this.recursiveEmitLine(ctx, em, in.substring(1, in.length() - 2), 0, token);
+			this.recursiveEmitLine(em, in.substring(start + 1, b - 1), 0, token);
+			//this.recursiveEmitLine(em, in.substring(1, in.length() - 2), 0, token);
 
 			return b;
 		}
@@ -552,7 +554,7 @@ class Emitter {
 		return -1;
     }
 
-    protected int emitStrong(WebContext ctx, XElement parent, String in, int start, MarkToken token) {
+    protected int emitStrong(XElement parent, String in, int start, MarkToken token) {
 		int b = this.findToken(in, start + 2, token);
 
 		if (b > 0) {
@@ -560,8 +562,8 @@ class Emitter {
 			
 			parent.add(em);
 
-			this.recursiveEmitLine(ctx, em, in.substring(start + 2, b), 0, token);
-			//this.recursiveEmitLine(ctx, em, in.substring(start + 2, b - 4), 0, token);
+			this.recursiveEmitLine(em, in.substring(start + 2, b), 0, token);
+			//this.recursiveEmitLine(em, in.substring(start + 2, b - 4), 0, token);
 
 			return b + 1;
 		}
@@ -569,16 +571,16 @@ class Emitter {
 		return -1;
     }
 
-    protected int emitStrike(WebContext ctx, XElement parent, String in, int start, MarkToken token) {
+    protected int emitStrike(XElement parent, String in, int start, MarkToken token) {
 		int b = this.findToken(in, start + 2, token);
 
 		if (b > 0) {
-			XElement em = new XElement("strike");
+			XElement em = new XElement("s");
 			
 			parent.add(em);
 
-			this.recursiveEmitLine(ctx, em, in.substring(start + 2, b), 0, token);
-			//this.recursiveEmitLine(ctx, em, in.substring(2, in.length() - 4), 0, token);
+			this.recursiveEmitLine(em, in.substring(start + 2, b), 0, token);
+			//this.recursiveEmitLine(em, in.substring(2, in.length() - 4), 0, token);
 
 			return b + 1;
 		}
@@ -590,7 +592,7 @@ class Emitter {
      * Recursively scans through the given line, taking care of any markdown
      * stuff.
      */
-    protected void recursiveEmitLine(WebContext ctx, XElement parent, String in, int start, MarkToken token) {
+    protected void recursiveEmitLine(XElement parent, String in, int start, MarkToken token) {
         int pos = start;
         int b = 0;
         
@@ -606,7 +608,7 @@ class Emitter {
             case IMAGE:
             case X_IMAGE:
             case LINK:
-                b = this.emitLink(ctx, parent, in, pos, mt);
+                b = this.emitLink(parent, in, pos, mt);
                 
                 if(b > 0) 
                     pos = b;
@@ -617,8 +619,8 @@ class Emitter {
             case X_LINK_OPEN:
             	b = 0;
             	
-                //b = this.recursiveEmitLine(ctx, parent, in, pos + 2, MarkToken.X_LINK_CLOSE);
-                //b = this.emitXLink(ctx, parent, in, pos, mt);
+                //b = this.recursiveEmitLine(parent, in, pos + 2, MarkToken.X_LINK_CLOSE);
+                //b = this.emitXLink(parent, in, pos, mt);
             	/* TODO 
                 temp.setLength(0);
                 b = this.recursiveEmitLine(temp, in, pos + 2, MarkToken.X_LINK_CLOSE);
@@ -641,7 +643,7 @@ class Emitter {
                 break;
             case EM_STAR:
             case EM_UNDERSCORE:
-                b = this.emitEm(ctx, parent, in, pos, mt);
+                b = this.emitEm(parent, in, pos, mt);
                 
                 if(b > 0) 
                     pos = b;
@@ -651,7 +653,7 @@ class Emitter {
                 break;
             case STRONG_STAR:
             case STRONG_UNDERSCORE:
-                b = this.emitStrong(ctx, parent, in, pos, mt);
+                b = this.emitStrong(parent, in, pos, mt);
                 
                 if(b > 0) 
                     pos = b;
@@ -660,7 +662,7 @@ class Emitter {
                 
                 break;
             case STRIKE:
-                b = this.emitStrike(ctx, parent, in, pos, mt);
+                b = this.emitStrike(parent, in, pos, mt);
                 
                 if(b > 0) 
                     pos = b;
@@ -669,7 +671,7 @@ class Emitter {
 
                 break;
             case SUPER:
-                b = this.emitSuper(ctx, parent, in, pos, mt);
+                b = this.emitSuper(parent, in, pos, mt);
                 
                 if(b > 0) 
                     pos = b;
@@ -679,7 +681,7 @@ class Emitter {
                 break;
             case CODE_SINGLE:
             case CODE_DOUBLE:
-                b = this.emitCode(ctx, parent, in, pos, mt);
+                b = this.emitCode(parent, in, pos, mt);
                 
                 if(b > 0) 
                     pos = b;
@@ -688,7 +690,7 @@ class Emitter {
             	
                 break;
             case HTML:
-                b = this.emitHtml(ctx, parent, in, pos);
+                b = this.emitHtml(parent, in, pos);
                 
                 if(b > 0) 
                     pos = b;
@@ -697,7 +699,7 @@ class Emitter {
 
                 break;
             case ENTITY:
-                b = this.emitEntity(ctx, parent, in, pos, mt);
+                b = this.emitEntity(parent, in, pos, mt);
                 
                 if (b > 0) 
                     pos = b;
@@ -891,7 +893,7 @@ class Emitter {
         return MarkToken.NONE;
     }
 
-    protected void emitMarkedLines(WebContext ctx, XElement parent, Line lines) {
+    protected void emitMarkedLines(XElement parent, Line lines) {
         StringBuilder in = new StringBuilder();
         Line line = lines;
         
@@ -905,13 +907,13 @@ class Emitter {
             line = line.next;
         }
 
-        this.recursiveEmitLine(ctx, parent, in.toString(), 0, MarkToken.NONE);
+        this.recursiveEmitLine(parent, in.toString(), 0, MarkToken.NONE);
     }
 
-    protected void emitRawLines(WebContext ctx, XElement parent, Line lines) {
+    protected void emitRawLines(XElement parent, Line lines) {
         Line line = lines;
         
-        if (this.config.safeMode) {
+        if (this.ctx.getConfig().getSafeMode()) {
             StringBuilder sb = new StringBuilder();
             
             while (line != null) {
@@ -923,7 +925,7 @@ class Emitter {
                 line = line.next;
             }
             
-            parent.add(new XText(false, sb.toString()));
+            parent.add(new XText(false, sb.toString()));		// TODO check that safe really is escaped
         }
         else {
     		StringBuilder sb = new StringBuilder();
@@ -937,13 +939,14 @@ class Emitter {
                 line = line.next;
             }
             
-            // TODO need to parse html
+            FuncResult<XElement> res = XmlReader.parse(sb, false);
             
-            parent.add(new XText(true, sb.toString()));
+            if (res.isNotEmptyResult())
+            	parent.add(res.getResult());
         }
     }
 
-    protected void emitCodeLines(WebContext ctx, XElement parent, Line lines, String meta, boolean removeIndent) {
+    protected void emitCodeLines(XElement parent, Line lines, String meta, boolean removeIndent) {
         Line line = lines;
 
 		if (StringUtil.isNotEmpty(meta))
@@ -966,7 +969,7 @@ class Emitter {
     /*
      * interprets a plugin block into the StringBuilder.
      */
-    protected void emitPluginLines(WebContext ctx, XElement parent, Line lines, String meta) {
+    protected void emitPluginLines(XElement parent, Line lines, String meta) {
 		String idPlugin = meta;		
 		String sparams = null;
 		Map<String, String> params = null;
@@ -999,7 +1002,7 @@ class Emitter {
 		Plugin plugin = plugins.get(idPlugin);
 		
 		if(plugin != null) 
-			plugin.emit(ctx, parent, list, params);
+			plugin.emit(this.ctx, parent, list, params);
     }
     
 	protected Map<String, String> parsePluginParams(String s) {

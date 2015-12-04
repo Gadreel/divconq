@@ -173,11 +173,8 @@ abstract public class Node {
 
     public abstract void stream(WebContext ctx, PrintStream strm, String indent, boolean firstchild, boolean fromblock);
     
-    public void print(WebContext ctx, PrintStream strm, String indent, boolean newline, String copy, Object... args) {
-        if (args.length > 0) 
-            strm.print(ctx.format(indent + copy, args));
-        else 
-            strm.print(indent + copy);
+    public void print(WebContext ctx, PrintStream strm, String indent, boolean newline, String copy) {
+    	strm.print(indent + copy);
 
         if (newline) 
         	strm.println();

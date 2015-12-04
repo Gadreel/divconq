@@ -177,13 +177,17 @@ public class Response {
 
         if (this.keepAlive) {
             // Add 'Content-Length' header only for a keep-alive connection.
-            response.headers().set(Names.CONTENT_LENGTH, contentLength);
+        	if (contentLength > 0)
+        		response.headers().set(Names.CONTENT_LENGTH, contentLength);
         	
             // Add keep alive header as per:
             // - http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
             response.headers().set(Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
         }
 
+        if (contentLength == 0)
+            response.headers().set(Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+        
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 
 	        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
@@ -192,6 +196,14 @@ public class Response {
         	response.headers().set(h.getKey(), h.getValue());
         
         Hub.instance.getSecurityPolicy().hardenHttpResponse(response);
+        
+    	if (Logger.isDebug()) {
+    		Logger.debug("Web server responding to " + ch.remoteAddress());
+    		
+    		for (Entry<String, String> ent : response.headers().entries()) {
+        		Logger.debug("Response header: " + ent.getKey() + ": " + ent.getValue());
+    		}
+    	}
         
         // Write the response.
         ch.write(response);

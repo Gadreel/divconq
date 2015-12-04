@@ -4,27 +4,33 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map.Entry;
 
+import divconq.io.CacheFile;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
+import divconq.locale.ITranslationAdapter;
+import divconq.locale.LocaleDefinition;
+import divconq.log.Logger;
 import divconq.util.IOUtil;
 import divconq.util.StringUtil;
 import divconq.web.WebContext;
+import divconq.web.md.Processor;
 import divconq.xml.XElement;
 import divconq.xml.XNode;
 import divconq.xml.XmlReader;
 
 public class FeedAdapter {
-	protected String key = null;
+	protected String channel = null;
 	protected Path path = null;
 	protected XElement xml = null;
 	
-	public void init(String key, Path path) {
+	// best not to use CacheFile always, not if from feed save/feed delete
+	public void init(String channel, Path path) {
 		if (path == null)
 			return;
 		
 		this.path = path;
-		this.key = key;
+		this.channel = channel;
 		
 		if (Files.notExists(path))
 			return;
@@ -32,9 +38,19 @@ public class FeedAdapter {
 		FuncResult<XElement> res = XmlReader.loadFile(path, false);
 		
 		if (res.hasErrors())
-			OperationContext.get().error("Bad feed file - " + this.key + " | " + path);
+			OperationContext.get().error("Bad feed file - " + this.channel + " | " + path);
 		
 		this.xml = res.getResult();
+	}
+	
+	public void init(String channel, CacheFile file) {
+		if (file == null)
+			return;
+		
+		this.path = file.getFilePath();
+		this.channel = channel;
+		
+		this.xml = file.asXml();
 	}
 	
 	public void validate() {
@@ -44,22 +60,22 @@ public class FeedAdapter {
 		String locale = this.getAttribute("Locale");
 		
 		if (StringUtil.isEmpty(locale))
-			OperationContext.get().error("Missing Locale - " + this.key + " | " + path);
+			OperationContext.get().error("Missing Locale - " + this.channel + " | " + path);
 		
 		String title = this.getDefaultField("Title");
 		
 		if (StringUtil.isEmpty(title))
-			OperationContext.get().error("Missing Title - " + this.key + " | " + path);
+			OperationContext.get().error("Missing Title - " + this.channel + " | " + path);
 		
 		String desc = this.getDefaultField("Description");
 		
 		if (StringUtil.isEmpty(desc))
-			OperationContext.get().warn("Missing Description - " + this.key + " | " + path);
+			OperationContext.get().warn("Missing Description - " + this.channel + " | " + path);
 		
 		String key = this.getDefaultField("Keywords");
 		
 		if (StringUtil.isEmpty(key))
-			OperationContext.get().warn("Missing Keywords - " + this.key + " | " + path);
+			OperationContext.get().warn("Missing Keywords - " + this.channel + " | " + path);
 		
 		//String img = this.getField("Image");
 		
@@ -79,25 +95,103 @@ public class FeedAdapter {
 			return null;
 		
 		// provide the value for the `default` locale of the feed 
-		String deflocale = this.xml.getAttribute("Locale", OperationContext.get().getLocale());
+		String deflocale = this.xml.getAttribute("Locale");
 		
 		for (XElement fel : this.xml.selectAll("Field")) {
-			if ((deflocale.equals(fel.getAttribute("Locale")) || !fel.hasAttribute("Locale")) && name.equals(fel.getAttribute("Name")))
-				return fel.getValue();
+			if (name.equals(fel.getAttribute("Name"))) {
+				if (!fel.hasAttribute("Locale"))
+					return fel.getValue();
+					
+				if ((deflocale != null) && deflocale.equals(fel.getAttribute("Locale")))
+					return fel.getValue();
+			}
 		}
 		
 		return null;
 	}
 	
-	public String getField(String name) {
-		return this.getField(name, OperationContext.get().getLocale());
+	public MatchResult bestMatch(String tag, String attr,  String name) {
+		return this.bestMatch(OperationContext.get(), tag, attr, name);
+	}
+	
+	public MatchResult bestMatch(ITranslationAdapter ctx, String tag, String attr, String match) {
+		if ((this.xml == null) || StringUtil.isEmpty(tag) || StringUtil.isEmpty(attr) || StringUtil.isEmpty(match))
+			return null;
+
+		int highest = Integer.MAX_VALUE;
+		MatchResult best = new MatchResult();
+		
+		for (XElement afel : this.xml.selectAll("Alternate")) {
+			String alocale = afel.getAttribute("Locale");
+			
+			int arate = ctx.rateLocale(alocale);
+			
+			if ((arate >= highest) || (arate == -1))
+				continue;
+			
+			for (XElement fel : afel.selectAll(tag)) {
+				if (match.equals(fel.getAttribute(attr))) {
+					best.el = fel;
+					best.localename = alocale;
+					highest = arate;
+					break;
+				}
+			}
+		}
+		
+		for (XElement fel : this.xml.selectAll(tag)) {
+			if (fel.hasAttribute("Locale") && match.equals(fel.getAttribute(attr))) {
+				String flocale = fel.getAttribute("Locale");
+				
+				int arate = ctx.rateLocale(flocale);
+				
+				if ((arate >= highest) || (arate == -1))
+					continue;
+				
+				best.el = fel;
+				best.localename = flocale;
+				highest = arate;
+			}
+		}
+
+		String deflocale = this.xml.getAttribute("Locale");
+		
+		if (StringUtil.isNotEmpty(deflocale)) {
+			int arate = ctx.rateLocale(deflocale);
+			
+			if ((arate != -1) && (arate < highest)) {
+				for (XElement fel : this.xml.selectAll(tag)) {
+					if (!fel.hasAttribute("Locale") && match.equals(fel.getAttribute(attr))) {
+						best.el = fel;
+						best.localename = deflocale;
+						highest = arate;
+						break;
+					}
+				}
+			}
+		}
+		
+		if (highest == Integer.MAX_VALUE)
+			return null;
+		
+		best.locale = ctx.getLocaleDefinition(best.localename);
+		
+		return best;
+	}
+	
+	public class MatchResult {
+		public XElement el = null;
+		public LocaleDefinition locale = null;
+		public String localename = null;
 	}
 	
 	public String getFirstField(String... names) {
-		String locale = OperationContext.get().getLocale();
-		
+		return this.getFirstField(OperationContext.get(), names);
+	}
+	
+	public String getFirstField(ITranslationAdapter ctx, String... names) {
 		for (String n : names) {
-			String v = this.getField(n, locale);
+			String v = this.getField(n);
 			
 			if (v != null)
 				return v;
@@ -106,78 +200,56 @@ public class FeedAdapter {
 		return null;
 	}
 	
-	public String getField(String name, String locale) {
-		if ((this.xml == null) || StringUtil.isEmpty(name) || StringUtil.isEmpty(locale))
+	public String getField(String name) {
+		return this.getField(OperationContext.get(), name);
+	}
+	
+	public String getField(ITranslationAdapter ctx, String name) {
+		if ((this.xml == null) || StringUtil.isEmpty(name))
 			return null;
 		
-		XElement ael = this.getAlternate(locale);
+		MatchResult mr = this.bestMatch(ctx, "Field", "Name", name);
 		
-		if (ael != null) {
-			for (XElement fel : ael.selectAll("Field")) {
-				if (name.equals(fel.getAttribute("Name")))
-					return fel.getValue();
-			}
-		}
-		
-		for (XElement fel : this.xml.selectAll("Field")) {
-			if (locale.equals(fel.getAttribute("Locale")) && name.equals(fel.getAttribute("Name")))
-				return fel.getValue();
-		}
-		
-		// if we cannot match the locale requested we can provide the default
-		String deflocale = this.xml.getAttribute("Locale", OperationContext.get().getLocale());
-		
-		for (XElement fel : this.xml.selectAll("Field")) {
-			if ((deflocale.equals(fel.getAttribute("Locale")) || !fel.hasAttribute("Locale")) && name.equals(fel.getAttribute("Name")))
-				return fel.getValue();
-		}
+		if (mr != null)
+			return mr.el.getValue();
 		
 		return null;
 	}
 	
-	public String getPart(String name, boolean isPreview) {
-		return this.getPart(name, OperationContext.get().getLocale(), isPreview);
+	public String getPart(WebContext wctx, String name) {
+		return this.getPart(wctx, OperationContext.get(), name);
 	}
 	
-	public String getPart(String name, String locale, boolean isPreview) {
-		if ((this.xml == null) || StringUtil.isEmpty(name) || StringUtil.isEmpty(locale))
+	public String getPart(WebContext wctx, ITranslationAdapter ctx, String name) {
+		if ((this.xml == null) || StringUtil.isEmpty(name))
 			return null;
 		
-		XElement ael = this.getAlternate(locale);
+		MatchResult mr = this.bestMatch(ctx, "PagePart", "For", name);
 		
-		if (ael != null) {
-			for (XElement fel : ael.selectAll("PagePart")) {
-				if (name.equals(fel.getAttribute("For")))
-					return this.getPartValue(locale, fel, isPreview);
-			}
-		}
-		
-		for (XElement fel : this.xml.selectAll("PagePart")) {
-			if (name.equals(fel.getAttribute("For")))
-				return this.getPartValue(locale, fel, isPreview);
-		}
-		
-		return null;
+		if (mr == null)
+			return null;
+
+		return this.getPartValue(wctx, ctx, mr);
 	}
 	
-	public void buildHtmlPage(WebContext ctx, XElement frag, boolean isPreview) {
-		this.buildHtmlPage(ctx, frag, OperationContext.get().getLocale(), isPreview);
+	public void buildHtmlPage(WebContext wctx, XElement frag) {
+		this.buildHtmlPage(wctx, OperationContext.get(), frag);
 	}
 	
-	public void buildHtmlPage(WebContext ctx, XElement frag, String locale, boolean isPreview) {
+	public void buildHtmlPage(WebContext wctx, ITranslationAdapter ctx, XElement frag) {
 		OperationResult or = new OperationResult();
 		
-		String title = this.getField("Title");
+		String title = this.getField(ctx, "Title");
 				
 		if (title != null) 
 			frag.setAttribute("Title", title);
 
-		String desc = this.getField("Description");
+		String desc = this.getField(ctx, "Description");
 
 		if (desc != null) 
 			frag.add(new XElement("Description").withText(desc));
 
-		String keywords = this.getField("Keywords");
+		String keywords = this.getField(ctx, "Keywords");
 		
 		if (keywords != null) 
 			frag.add(new XElement("Keywords").withText(keywords));
@@ -190,24 +262,28 @@ public class FeedAdapter {
 				continue;
 			}
 			
-			XElement bparent = frag.findId(bid); 
+			XElement bbparent = frag.findParentOfId(bid);
+			XElement bparent = bbparent.findId(bid); 
 			
 			if (bparent == null) {
 				or.error("Missing parent to build page element: " + pdef);
 				continue;
 			}
 			
+			XElement content = this.buildHtml(wctx, ctx, pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), frag);
+			
+			if (content == null)
+				continue;
+			
 			String bop = pdef.getAttribute("BuildOp", "Append");
 			
 			if ("Append".equals(bop)) {
-				bparent.add(-1, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview, frag));
+				bparent.add(-1, content);
 			}
 			else if ("Prepend".equals(bop)) {
-				bparent.add(0, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview, frag));
+				bparent.add(0, content);
 			}
 			else if ("Before".equals(bop)) {
-				XElement bbparent = frag.findParentOfId(bid);
-				
 				int ccnt = bbparent.getChildCount();
 				int cpos = 0;
 				
@@ -217,11 +293,9 @@ public class FeedAdapter {
 						break;
 					}
 						
-				bbparent.add(cpos, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview, frag));
+				bbparent.add(cpos, content);
 			}
 			else if ("After".equals(bop)) {
-				XElement bbparent = frag.findParentOfId(bid);
-				
 				int ccnt = bbparent.getChildCount();
 				int cpos = 0;
 				
@@ -231,113 +305,178 @@ public class FeedAdapter {
 						break;
 					}
 						
-				bbparent.add(cpos + 1, this.buildHtml(pdef.getAttribute("For"), pdef.getAttribute("BuildClass"), locale, isPreview, frag));
+				bbparent.add(cpos + 1, content);
 			}
 		}
 	}
 	
-	public XElement buildHtml(String id, String clss, boolean isPreview, XElement altsrc) {
-		return this.buildHtml(id, clss, OperationContext.get().getLocale(), isPreview, altsrc);
+	public XElement buildHtml(WebContext wctx, String id, String clss, XElement altsrc) {
+		return this.buildHtml(wctx, OperationContext.get(), id, clss, altsrc);
 	}
 	
-	public XElement buildHtml(String id, String clss, String locale, boolean isPreview, XElement altsrc) {
-		if ((this.xml == null) || StringUtil.isEmpty(id) || StringUtil.isEmpty(locale))
+	public XElement buildHtml(WebContext wctx, ITranslationAdapter ctx, String id, String clss, XElement altsrc) {
+		if ((this.xml == null) || StringUtil.isEmpty(id))
 			return null;
 		
-		XElement ael = this.getAlternate(locale);
+		MatchResult mr = this.bestMatch(ctx, "PagePart", "For", id);
 		
-		if (ael != null) {
-			for (XElement fel : ael.selectAll("PagePart")) {
-				if (id.equals(fel.getAttribute("For"))) 
-					return this.buildHtmlPart(fel, id, clss, ael.getAttribute("Locale"), isPreview);
-			}
+		if (mr == null) {
+			if (altsrc != null) {
+				for (XElement fel : altsrc.selectAll("PagePart")) {
+					if (id.equals(fel.getAttribute("For"))) {
+						mr = new MatchResult();
+						mr.el = fel;
+						mr.localename = this.xml.getAttribute("Locale", "en");
+						mr.locale = ctx.getLocaleDefinition(mr.localename);
+					}
+				}
+			}			
 		}
 		
-		for (XElement fel : this.xml.selectAll("PagePart")) {
-			if (id.equals(fel.getAttribute("For"))) 
-				return this.buildHtmlPart(fel, id, clss, xml.getAttribute("Locale", OperationContext.get().getLocale()), isPreview);
-		}
-		
-		if (altsrc != null) {
-			for (XElement fel : altsrc.selectAll("PagePart")) {
-				if (id.equals(fel.getAttribute("For"))) 
-					return this.buildHtmlPart(fel, id, clss, xml.getAttribute("Locale", OperationContext.get().getLocale()), isPreview);
-			}
-		}
-		
-		return null;
+		if (mr == null)
+			return null;
+
+		return this.buildHtmlPart(wctx, ctx, mr, id, clss);
 	}
 	
-	public XElement buildHtmlPart(XElement src, String id, String clss, String parentlocale, boolean isPreview) {
-		String locale = src.getAttribute("Locale", parentlocale);
-		String lang = locale;
+	public XElement buildHtmlPart(WebContext wctx, ITranslationAdapter ctx, MatchResult mr, String id, String clss) {
+		String lang = mr.locale.getLanguage();
 		
-		if (lang.indexOf("_") > -1) 
-			lang = lang.substring(0, lang.indexOf("_"));
+		String fmt = mr.el.getAttribute("Format", "md");
 		
-		String fmt = src.getAttribute("Format", "md");
+		XElement pel = new XElement("div");
+		pel.setAttribute("lang", lang);
+		
+		if (id != null)
+			pel.setAttribute("id", id);
+		
+		if (clss != null)
+			pel.setAttribute("class", clss);
+		
+		// copy all attributes 
+		for (Entry<String, String> attr : mr.el.getAttributes().entrySet()) 
+			pel.setAttribute(attr.getKey(), attr.getValue());
+		
 		
 		if ("image".equals(fmt)) {
-			XElement pel = new XElement("img");
-			pel.setAttribute("lang", lang);
-			pel.setAttribute("src", "/galleries" + this.getPartValue(locale, src, isPreview));
-			
-			if (id != null)
-				pel.setAttribute("id", id);
-			
-			if (clss != null)
-				pel.setAttribute("class", clss);
-			
-			// copy all attributes 
-			for (Entry<String, String> attr : src.getAttributes().entrySet()) 
-				pel.setAttribute(attr.getKey(), attr.getValue());
-			
-			return pel;
+			pel.setName("img");
+			pel.setAttribute("src", "/galleries" + this.getPartValue(wctx, ctx, mr));
 		}
 		else if ("html".equals(fmt)) {
-			XElement pel = new XElement("div");
-			pel.setAttribute("lang", lang);
+			pel.setAttribute("data-dcui-mode", "enhance");
 			
-			if (id != null)
-				pel.setAttribute("id", id);
+			XElement html = this.getPartXml(wctx, ctx, mr);
 			
-			if (clss != null)
-				pel.setAttribute("class", clss);
-			
-			// copy all attributes 
-			for (Entry<String, String> attr : src.getAttributes().entrySet()) 
-				pel.setAttribute(attr.getKey(), attr.getValue());
-			
-			for (XNode n : src.getChildren())
+			// copy all children
+			for (XNode n : html.getChildren())
 				pel.add(n);
-			
-			return pel;
 		}
 		else {
-			XElement div = new XElement("div");
-			div.setAttribute("lang", lang);
-			div.setAttribute("data-dcui-mode", "enhance");
-			
-			if (id != null)
-				div.setAttribute("id", id);
-			
-			if (clss != null)
-				div.setAttribute("class", clss);
-			
-			XElement pel = new XElement("AdvText");
-			pel.setAttribute("Format", src.getAttribute("Format", "md"));
-			pel.withCData(this.getPartValue(locale, src, isPreview));
-			
-			// copy attributes to both, the correct attributes will be used with the correct element automatically (typically)
-			for (Entry<String, String> attr : src.getAttributes().entrySet()) {
-				div.setAttribute(attr.getKey(), attr.getValue());
-				pel.setAttribute(attr.getKey(), attr.getValue());
-			}
-			
-			div.add(pel);
-			
-			return div;
+			pel.setAttribute("data-dcui-mode", "enhance");
+
+	        try {
+				// TODO support safe mode?
+				XElement html = Processor.parse(wctx.getMarkdownContext(), this.getPartValue(wctx, ctx, mr));
+				
+				// copy all children
+				for (XNode n : html.getChildren())
+					pel.add(n);
+	        }
+	        catch (Exception x) {
+	        	Logger.error("Error adding copy box" + x);
+	        }
 		}
+		
+		return pel;
+	}
+	
+	public String getPartValue(WebContext wctx, ITranslationAdapter ctx, MatchResult mr) {
+		if ((ctx == null) || (mr == null))
+			return null;
+		
+		String ex = mr.el.getAttribute("External", "False");
+		
+		String locale = mr.locale.getName();
+		
+		if (StringUtil.isNotEmpty(ex) && "true".equals(ex.toLowerCase())) {
+			int pos = this.channel.indexOf('.');
+			String spath = (pos != -1) ? this.channel.substring(0, pos) : this.channel;
+			
+			spath = spath + "." + mr.el.getAttribute("For") + "." + locale + "." + mr.el.getAttribute("Format");
+			
+			// TODO connect to file caching system - but make sure the import from FeedIndexer will still work correctly
+			//Path fpath = OperationContext.get().getDomain().findSectionFile(this.isPreview(), "feed", spath);
+			
+			Path fpath = null;
+			
+			if (wctx.isPreview()) {
+				fpath = OperationContext.get().getDomain().resolvePath("/feed-preview" + spath);
+				
+				if (Files.notExists(fpath))
+					fpath = OperationContext.get().getDomain().resolvePath("/feed" + spath);
+			}
+			else {
+				fpath = OperationContext.get().getDomain().resolvePath("/feed" + spath);
+			}
+
+			if (Files.exists(fpath)) {
+				FuncResult<CharSequence> mres = IOUtil.readEntireFile(fpath);
+				
+				if (mres.isNotEmptyResult()) 
+					return mres.getResult().toString();
+			}
+		}
+		
+		return mr.el.getValue();
+	}
+	
+	// element returned is ignored - children and attributes are copied into a div
+	public XElement getPartXml(WebContext wctx, ITranslationAdapter ctx, MatchResult mr) {
+		if ((ctx == null) || (mr == null))
+			return null;
+		
+		String ex = mr.el.getAttribute("External", "False");
+		
+		String locale = mr.locale.getName();
+		
+		if (StringUtil.isNotEmpty(ex) && "true".equals(ex.toLowerCase())) {
+			int pos = this.channel.indexOf('.');
+			String spath = (pos != -1) ? this.channel.substring(0, pos) : this.channel;
+			
+			spath = spath + "." + mr.el.getAttribute("For") + "." + locale + "." + mr.el.getAttribute("Format");
+
+			// TODO connect to file caching system - but make sure the import from FeedIndexer will still work correctly
+			//Path fpath = OperationContext.get().getDomain().findSectionFile(this.isPreview(), "feed", spath);
+			
+			Path fpath = null;
+			
+			if (wctx.isPreview()) {
+				fpath = OperationContext.get().getDomain().resolvePath("/feed-preview" + spath);
+				
+				if (Files.notExists(fpath))
+					fpath = OperationContext.get().getDomain().resolvePath("/feed" + spath);
+			}
+			else {
+				fpath = OperationContext.get().getDomain().resolvePath("/feed" + spath);
+			}
+
+			if (Files.exists(fpath)) {
+				FuncResult<CharSequence> mres = IOUtil.readEntireFile(fpath);
+				
+				if (mres.isNotEmptyResult()) {
+					FuncResult<XElement> xres = XmlReader.parse("<div>" + mres.getResult() + "</div>", false);
+					
+					if (xres.isNotEmptyResult()) 
+						return xres.getResult();
+				}
+			}
+		}
+		
+		return mr.el;
+	}
+
+	public XElement getXml() {
+		return this.xml;
 	}
 	
 	public String getPartValue(String locale, XElement part, boolean isPreview) {
@@ -350,10 +489,13 @@ public class FeedAdapter {
 			locale = part.getAttribute("Locale");	// use the override locale if present
 		
 		if (StringUtil.isNotEmpty(ex) && "true".equals(ex.toLowerCase())) {
-			int pos = this.key.indexOf('.');
-			String spath = (pos != -1) ? this.key.substring(0, pos) : this.key;
+			int pos = this.channel.indexOf('.');
+			String spath = (pos != -1) ? this.channel.substring(0, pos) : this.channel;
 			
 			spath = spath + "." + part.getAttribute("For") + "." + locale + "." + part.getAttribute("Format");
+
+			// TODO connect to file caching system - but make sure the import from FeedIndexer will still work correctly
+			//Path fpath = OperationContext.get().getDomain().findSectionFile(this.isPreview(), "feed", spath);
 			
 			Path fpath = null;
 			
@@ -366,10 +508,6 @@ public class FeedAdapter {
 			else {
 				fpath = OperationContext.get().getDomain().resolvePath("/feed" + spath);
 			}
-			
-			//Path fpath = OperationContext.get().getDomain().findSectionFile(this.isPreview(), "feed", spath);
-			
-			//FuncResult<CharSequence> mres = IOUtil.readEntireFile(this.path.resolveSibling(sname));
 
 			if (Files.exists(fpath)) {
 				FuncResult<CharSequence> mres = IOUtil.readEntireFile(fpath);
@@ -380,24 +518,5 @@ public class FeedAdapter {
 		}
 		
 		return part.getValue();
-	}
-	
-	public XElement getAlternate(String locale) {
-		if ((this.xml == null) || StringUtil.isEmpty(locale))
-			return null;
-		
-		for (XElement afel : this.xml.selectAll("Alternate")) {
-			if (locale.equals(afel.getAttribute("Locale")))
-				return afel;
-		}
-		
-		if (locale.contains("_")) 
-			return this.getAlternate(locale.split("_")[0]);
-		
-		return null;
-	}
-
-	public XElement getXml() {
-		return this.xml;
 	}
 }

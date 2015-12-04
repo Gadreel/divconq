@@ -18,7 +18,6 @@ package divconq.lang.op;
 
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
-import divconq.locale.LocaleUtil;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 
@@ -66,7 +65,7 @@ public class UserContext {
 	}
 	
 	static public UserContext allocateFromTask(RecordStruct m) {
-		return new UserContext(m.deepCopyExclude("OpId", "SessionId", "Origin", "DebugLevel", "Elevated", "Gateway", "Pool"));
+		return new UserContext(m.deepCopyExclude("OpId", "SessionId", "Origin", "DebugLevel", "Elevated", "Gateway", "OpLocale"));
 	}
 	
 	static public OperationContextBuilder checkCredentials(UserContext ctx, RecordStruct v) {
@@ -264,14 +263,6 @@ public class UserContext {
 		}
 		
 		return false;
-	}
-	
-	public String tr(String token, Object... params) {
-		return LocaleUtil.tr(this.getLocale(), token, params);		
-	}
-		
-	public String trp(String pluraltoken, String singulartoken, Object... params) {
-		return LocaleUtil.trp(this.getLocale(), pluraltoken, singulartoken, params);		
 	}
 	
 	@Override

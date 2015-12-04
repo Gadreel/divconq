@@ -20,7 +20,7 @@ package divconq.web.md.process;
  * 
  * @author René Jeschke <rene_jeschke@yahoo.de>
  */
-enum MarkToken
+public enum MarkToken
 {
     /** No token. */
     NONE,

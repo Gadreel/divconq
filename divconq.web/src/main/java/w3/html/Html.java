@@ -16,6 +16,7 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.lang.op.OperationContext;
 import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
 import divconq.web.dcui.Element;
@@ -48,8 +49,8 @@ public class Html extends Element implements ICodeTag {
 	public void build(WebContext ctx, Object... args) {
 	    super.build(ctx, "html", 
 	    		true, 
-	    		new Attributes("lang", ctx.getLanguage()), 
-	    		new Attributes("dir", ctx.isRightToLeft() ? "rtl" : "ltr"), 
+	    		new Attributes("lang", OperationContext.get().getWorkingLocaleDefinition().getLanguage()), 
+	    		new Attributes("dir", OperationContext.get().getWorkingLocaleDefinition().isRightToLeft() ? "rtl" : "ltr"), 
 	    		args);
 	}
 	

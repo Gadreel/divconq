@@ -16,6 +16,7 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.lang.op.OperationContext;
 import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
 import divconq.web.dcui.HtmlUtil;
@@ -61,7 +62,7 @@ public class Td extends MixedElement implements ICodeTag {
 	
     @Override
     public void build(WebContext ctx, Object... args) {
-        String align = (this.LTRAdaptable && ctx.isRightToLeft()) 
+        String align = (this.LTRAdaptable && OperationContext.get().getWorkingLocaleDefinition().isRightToLeft()) 
         	? "right" : "left";
 
         super.build(ctx, "td", true, new Attributes("valign", "top", "align", align), args);

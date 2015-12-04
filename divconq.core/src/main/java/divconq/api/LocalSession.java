@@ -86,6 +86,11 @@ public class LocalSession extends ApiSession {
 			else
 				LocalSession.this.receiveMessage(msg);
 		}
+		
+		@Override
+		public String getClientKey() {
+			return null;
+		}
 
 		@Override
 		public ListStruct popMessages() {				
@@ -112,7 +117,7 @@ public class LocalSession extends ApiSession {
 	@Override
 	public void sendForgetMessage(Message msg) {
 		this.session.touch();
-		this.session.setContext("hub:");
+		this.session.useContext(this.session.allocateContextBuilder().withOrigin("hub:"));
 		this.session.sendMessage(msg);
 	}
 	
@@ -124,7 +129,7 @@ public class LocalSession extends ApiSession {
 		
 		this.replies.registerForReply(msg, callback);
 
-		this.session.setContext("hub:");
+		this.session.useContext(this.session.allocateContextBuilder().withOrigin("hub:"));
 		this.session.sendMessage(msg);
 	}
 

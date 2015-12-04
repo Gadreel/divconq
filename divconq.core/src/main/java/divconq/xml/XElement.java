@@ -162,6 +162,10 @@ public class XElement extends XNode {
 	public String getName() {
 		return this.tagName;
 	}
+	
+	public void setName(String v) {
+		this.tagName = v;
+	}
 
 	/**
 	 * sets an attribute of this element
@@ -383,14 +387,16 @@ public class XElement extends XNode {
 	}
 	
 	public void append(String s) {
-		XNode node = this.children.get(this.children.size() - 1);
-		
-		if (node instanceof XText) {
-			XText t = (XText) node;
+		if ((this.children != null) && (this.children.size() > 0)) {
+			XNode node = this.children.get(this.children.size() - 1);
 			
-			if (!t.getCData()) {
-				t.append(s);
-				return;
+			if (node instanceof XText) {
+				XText t = (XText) node;
+				
+				if (!t.getCData()) {
+					t.append(s);
+					return;
+				}
 			}
 		}
 		
@@ -398,14 +404,16 @@ public class XElement extends XNode {
 	}
 	
 	public void appendRaw(String s) {
-		XNode node = this.children.get(this.children.size() - 1);
-		
-		if (node instanceof XText) {
-			XText t = (XText) node;
+		if ((this.children != null) && (this.children.size() > 0)) {
+			XNode node = this.children.get(this.children.size() - 1);
 			
-			if (t.getCData()) {
-				t.appendEntity(s);
-				return;
+			if (node instanceof XText) {
+				XText t = (XText) node;
+				
+				if (t.getCData()) {
+					t.appendEntity(s);
+					return;
+				}
 			}
 		}
 		
@@ -479,15 +487,13 @@ public class XElement extends XNode {
 	 * @return whether the child was found and removed or not
 	 */
 	public XNode remove(int index) {
-		XNode result = null;
-		
 		if (this.children == null)
-			this.children = new ArrayList<XNode>();
+			return null;
 		
 		if (index >= 0 && index < this.children.size())
-			result = this.children.remove(index);
+			return this.children.remove(index);
 		
-		return result;
+		return null;
 	}
 
 	/**
@@ -501,7 +507,10 @@ public class XElement extends XNode {
 		if (element == null)
 			return true;
 		
-		return this.children.remove(element);
+		if (this.children != null)
+			return this.children.remove(element);
+		
+		return false;
 	}
 
 	@Override
@@ -1038,9 +1047,11 @@ public class XElement extends XNode {
 		// write out the closing tag or other elements
 		boolean formatThis = formatted;
 		
-		for (XNode element : this.children) {
-			formatThis = (element instanceof XText) ? false : formatted;
-			element.toString(sb, formatThis, 1);
+		if (this.hasChildren()) {
+			for (XNode element : this.children) {
+				formatThis = (element instanceof XText) ? false : formatted;
+				element.toString(sb, formatThis, 1);
+			}
 		}
 		
 	    return sb.toString();

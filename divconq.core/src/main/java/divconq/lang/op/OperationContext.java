@@ -29,8 +29,11 @@ import org.joda.time.DateTimeZone;
 import divconq.bus.Message;
 import divconq.hub.DomainInfo;
 import divconq.hub.Hub;
+import divconq.locale.ILocaleResource;
+import divconq.locale.ITranslationAdapter;
+import divconq.locale.LocaleDefinition;
 import divconq.log.DebugLevel;
-import divconq.log.Logger;
+import divconq.log.HubLog;
 import divconq.schema.SchemaManager;
 import divconq.session.Session;
 import divconq.struct.FieldStruct;
@@ -82,7 +85,7 @@ import divconq.xml.XElement;
  * @author Andy
  *
  */
-public class OperationContext {
+public class OperationContext implements ITranslationAdapter {
 	static protected String runid = null;
 	static protected String hubid = "00001";
 	static protected OperationContext hubcontext = null;
@@ -153,8 +156,8 @@ public class OperationContext {
 		// this is the only time TC or UC should be mutated, only internally
 		//  and only the special root instances
 		
-		OperationContext.hubcontext.level = Logger.getGlobalLevel(); 
-		OperationContext.hubcontext.userctx.context.setField("Locale", Logger.getLocale());
+		OperationContext.hubcontext.level = HubLog.getGlobalLevel(); 
+		//OperationContext.hubcontext.userctx.context.setField("Locale", Logger.getLocale());
 	}
 
 	// make sure messages size never gets too large, since server could run for months
@@ -395,7 +398,7 @@ public class OperationContext {
 	
 	protected RecordStruct opcontext = null;
 	protected UserContext userctx = null;
-	protected DebugLevel level = Logger.getGlobalLevel();
+	protected DebugLevel level = HubLog.getGlobalLevel();
 	
 	protected boolean limitLog = true;
 	protected int logOffset = 0;
@@ -413,6 +416,8 @@ public class OperationContext {
 	protected OperationContext parent = null;
 	protected List<WeakReference<OperationContext>> children = new ArrayList<>();
 
+	protected ILocaleResource localeresource = null;
+	
 	// progress tracking
     protected int progTotalSteps = 0;
     protected int progCurrStep = 0;
@@ -427,6 +432,9 @@ public class OperationContext {
     // volatile helps keep threads on same page - issue found in code testing and this MAY have helped 
     volatile protected long lastactivity = System.currentTimeMillis();
 	
+    // cachable
+    protected LocaleDefinition localedef = null;
+    
     public void touch() {
     	this.lastactivity = System.currentTimeMillis();
     }
@@ -574,6 +582,24 @@ public class OperationContext {
 		return this.opcontext.getFieldAsBooleanOrFalse("Gateway");
 	}
 	
+	public void setLocaleResource(ILocaleResource v) {
+		this.localeresource = v;
+	}
+	
+	public ILocaleResource getLocaleResource() {
+		ILocaleResource tr = this.localeresource;
+		
+		if (tr != null) 
+			return tr;
+		
+		tr = this.getDomain();
+		
+		if (tr != null) 
+			return tr;
+		
+		return Hub.instance.getResources();
+	}
+	
 	// only use during hub booting
 	protected OperationContext() {
 		this.opcontext = new RecordStruct();
@@ -657,6 +683,8 @@ public class OperationContext {
 			cb.complete();
 			return;
 		}
+		
+		System.out.println("doing a verify Op Context");
 		
 		Message msg = new Message("dcAuth", "Authentication", "Verify");
     	
@@ -979,7 +1007,7 @@ public class OperationContext {
 				tags[tags.length - 1] = code + "";
 			}
 
-			Logger.logWr(this.getOpId(), lvl, msg, tags);
+			HubLog.logWr(this.getOpId(), lvl, msg, tags);
 		}
 	}
 	
@@ -1002,7 +1030,7 @@ public class OperationContext {
 	
 		// pass the code to logger 
 		if (this.getLevel().getCode() >= lvl.getCode()) 
-			Logger.logWr(this.getOpId(), lvl, code, params);
+			HubLog.logWr(this.getOpId(), lvl, code, params);
 	}
     
     /**
@@ -1022,7 +1050,7 @@ public class OperationContext {
 		
 		// pass the code to logger 
 		if (this.getLevel().getCode() >= DebugLevel.Info.getCode())
-			Logger.boundaryWr(this.getOpId(), tags);
+			HubLog.boundaryWr(this.getOpId(), tags);
     }
 	
 	// logging is hard on heap and GC - so only do it if necessary
@@ -1264,20 +1292,71 @@ public class OperationContext {
 		}
     }
 	
-	public String getLocale() {
-		String locale = this.userctx.getLocale();
+	public String getWorkingLocale() {
+		if (!this.opcontext.isFieldEmpty("OpLocale"))
+			return this.opcontext.getFieldAsString("OpLocale");
 		
-		if (locale != null)
-			return locale;
+		// do not look at user's context, that is a preference only
+		// op context comes from practical and direct manipulation of the environment we are running in
+		// how this context started controls the locale
 		
-		return this.getDomain().getLocale();
+		return this.getLocaleResource().getDefaultLocale();
+    }
+	
+	// locale definitions must be in domain or hub, not anywhere else
+	// in a sense this is more accurate than above because it will give the available locale, even if the local setting is set otherwise
+	public LocaleDefinition getWorkingLocaleDefinition() {
+		if (this.localedef == null) {
+			String locale = this.getWorkingLocale();
+			ILocaleResource tr = this.getLocaleResource();
+			
+			this.localedef = tr.getLocaleDefinition(locale);
+		}
+		
+		return this.localedef;
+	}
+	
+	// 0 is best, higher the number the worse, -1 for not supported
+	@Override
+	public int rateLocale(String locale) {
+		LocaleDefinition def = this.getWorkingLocaleDefinition();
+		
+		if (def.match(locale))
+			return 0;
+			
+		int rate = this.getLocaleResource().rateLocale(locale);
+		
+		if (rate < 0)
+			return -1;
+		
+		return rate + 1;
+	}
+	
+	@Override
+	public LocaleDefinition getLocaleDefinition(String locale) {
+		ILocaleResource tr = this.getLocaleResource();
+		
+		return tr.getLocaleDefinition(locale);
 	}
 	
 	public String tr(String token, Object... params) {
-		return this.userctx.tr(token, params);
+		ILocaleResource tr = this.getLocaleResource();
+		LocaleDefinition def = this.getWorkingLocaleDefinition();
+	
+		return tr.getDictionary().tr(tr, def, token, params);
 	}
 		
 	public String trp(String pluraltoken, String singulartoken, Object... params) {
-		return this.userctx.trp(pluraltoken, singulartoken, params);
+		ILocaleResource tr = this.getLocaleResource();
+		LocaleDefinition def = this.getWorkingLocaleDefinition();
+	
+		return tr.getDictionary().trp(tr, def, pluraltoken, singulartoken, params);
+	}
+
+	public String findToken(String token) {
+		ILocaleResource tr = this.getLocaleResource();
+		LocaleDefinition def = this.getWorkingLocaleDefinition();
+	
+		return tr.getDictionary().findToken(tr, def, token);
 	}
 }

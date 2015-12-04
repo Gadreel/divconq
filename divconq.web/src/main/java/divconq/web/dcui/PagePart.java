@@ -23,13 +23,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import w3.html.Img;
-import divconq.cms.md.Markdown4jProcessor;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
-import divconq.locale.LocaleInfo;
+import divconq.locale.LocaleDefinition;
 import divconq.struct.Struct;
 import divconq.util.IOUtil;
 import divconq.web.WebContext;
+import divconq.web.md.Markdown;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
 
@@ -51,7 +51,8 @@ public class PagePart extends Element implements ICodeTag {
 	public void doBuild(WebContext ctx) {
 		XElement ppel = null;
 		
-		LocaleInfo li = ctx.getLocale();
+		// TODO improve this in AdvText, PagePart and TextPart
+		LocaleDefinition li = OperationContext.get().getWorkingLocaleDefinition();
 		String lname = li.getName();
 		
 		XElement src = this.getViewRoot().getSource();
@@ -76,7 +77,7 @@ public class PagePart extends Element implements ICodeTag {
 		}
 		
 		if (ppel == null) {
-			li = ctx.getDomain().getDefaultLocaleInfo();
+			li = ctx.getDomain().getDomainInfo().getDefaultLocaleDefinition();
 			
 			lname = li.getName();
 			
@@ -143,24 +144,16 @@ public class PagePart extends Element implements ICodeTag {
 			else if ("md".equals(ppel.getAttribute("Format"))) {
 				this.name = "div"; 
 				attrs.add("data-dcui-mode", "enhance");
-				
-				String html = null;
-				
-				//System.out.println("md: " + ppcontent);
-				
+
+				// TODO allocate from webdomain
+				Markdown mdp = new Markdown();
+
 				try {
-					html = new Markdown4jProcessor().process(ppcontent.toString());
+					nl = mdp.process(ctx, ppcontent.toString());
 				} 
 				catch (IOException x) {
-					System.out.println("error: " + x);
+					System.out.println("inline md error: " + x);
 				}
-				
-				//System.out.println("html: " + html);
-				
-				nl = new Nodes();
-				nl.add(new LiteralText(html));
-				
-				//nl = builder.getContext().getDomain().parseXml(view, ppel);
 			}
 			else if ("image".equals(ppel.getAttribute("Format"))) {
 				this.name = "div"; 

@@ -130,7 +130,7 @@ public class RocksInterface extends DatabaseInterface {
 		RocksIterator it = this.db.newIterator();
 		
 		if (peer == null)
-			peer = Constants.DB_EMPTY_ARRAY;
+			peer = Constants.DB_OMEGA_MARKER_ARRAY;
 		
 		Memory mem = new Memory(key.length + 1 + peer.length);
 		mem.write(key);
@@ -141,6 +141,14 @@ public class RocksInterface extends DatabaseInterface {
 		
 		if (it.isValid()) {
 			byte[] fnd = it.key();
+
+			/*
+			// ------------- TODO --------------
+			System.out.println("looking for match: " + HexUtil.bufferToHex(key));
+			System.out.println("           before: " + HexUtil.bufferToHex(mem.getBufferEntry(0)));
+			System.out.println("              got: " + HexUtil.bufferToHex(fnd));
+			// ---------------------------------
+			*/
 			
 			// match found, peer key exists 
 			if (ByteUtil.keyStartsWith(fnd, key)) {
@@ -148,6 +156,17 @@ public class RocksInterface extends DatabaseInterface {
 				mem.setPosition(key.length + 1);
 				
 				it.dispose();
+				
+				// ------------- TODO --------------
+				/*
+				List<Object> keyParts = ByteUtil.extractKeyParts(fnd);
+				
+				for (Object p : keyParts)
+					System.out.print((p == null) ? " / " : p.toString() + " / ");
+				
+				System.out.println();
+				*/
+				// ---------------------------------
 				
 				// return just 1 part - it might the same as peer or it might be the next peer
 				return ByteUtil.extractNextDirect(mem);
@@ -165,11 +184,30 @@ public class RocksInterface extends DatabaseInterface {
 		byte[] fnd = it.key();
 		
 		it.dispose();
-		
+
+		// ------------- TODO --------------
+		/*
+		System.out.println("looking for match: " + HexUtil.bufferToHex(key));
+		System.out.println("           before: " + HexUtil.bufferToHex(mem.getBufferEntry(0)));
+		System.out.println("              got: " + HexUtil.bufferToHex(fnd));
+		*/
+		// ---------------------------------
+
 		// match found, prev peer key exists 
 		if (ByteUtil.keyStartsWith(fnd, key)) {
 			mem = new Memory(fnd);
 			mem.setPosition(key.length + 1);
+			
+			// ------------- TODO --------------
+			/*
+			List<Object> keyParts = ByteUtil.extractKeyParts(fnd);
+			
+			for (Object p : keyParts)
+				System.out.print((p == null) ? " / " : p.toString() + " / ");
+			
+			System.out.println();
+			*/
+			// ---------------------------------
 			
 			// return just 1 part - it might the same as peer or it might be the next peer
 			return ByteUtil.extractNextDirect(mem);
@@ -242,7 +280,7 @@ public class RocksInterface extends DatabaseInterface {
 		RocksIterator it = this.db.newIterator();
 		
 		if (peer == null)
-			peer = Constants.DB_EMPTY_ARRAY;
+			peer = Constants.DB_OMEGA_MARKER_ARRAY;
 		
 		Memory mem = new Memory(key.length + 1 + peer.length);
 		mem.write(key);
@@ -250,6 +288,28 @@ public class RocksInterface extends DatabaseInterface {
 		mem.write(peer);
 		
 		it.seek(mem.getBufferEntry(0));
+		
+		/*
+		if (!it.isValid()) {
+			it.dispose();
+			return null;
+		}
+		
+		byte[] fnd2 = it.key();
+		
+		// ------------- TODO --------------
+		System.out.println("looking for match: " + HexUtil.bufferToHex(key));
+		System.out.println("           before: " + HexUtil.bufferToHex(mem.getBufferEntry(0)));
+		System.out.println("              got: " + HexUtil.bufferToHex(fnd2));
+				
+		List<Object> keyParts2 = ByteUtil.extractKeyParts(fnd2);
+		
+		for (Object p : keyParts2)
+			System.out.print((p == null) ? " / " : p.toString() + " / ");
+		
+		System.out.println();
+		*/
+		// ---------------------------------
 		
 		// regardless if peer exists or does not exist, go back 1 key
 		it.prev();
@@ -261,9 +321,18 @@ public class RocksInterface extends DatabaseInterface {
 		
 		byte[] fnd = it.key();
 		
-		//System.out.println("looking for match: " + HexUtil.bufferToHex(key));
-		//System.out.println("           before: " + HexUtil.bufferToHex(peer));
-		//System.out.println("              got: " + HexUtil.bufferToHex(fnd));
+		// ------------- TODO --------------
+		/*
+		System.out.println("            got 2: " + HexUtil.bufferToHex(fnd));
+		
+		List<Object> keyParts = ByteUtil.extractKeyParts(fnd);
+		
+		for (Object p : keyParts)
+			System.out.print((p == null) ? " / " : p.toString() + " / ");
+		
+		System.out.println();
+		*/
+		// ---------------------------------
 		
 		it.dispose();
 		

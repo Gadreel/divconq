@@ -27,6 +27,7 @@ import divconq.xml.XElement;
 public class AdvForm extends Form {
 	protected String fname = null;
 	protected String recordOrder = null;
+	protected String recordMap = null;
 	
     public AdvForm() {
     	super();
@@ -50,6 +51,9 @@ public class AdvForm extends Form {
 		
 		if (xel.hasAttribute("RecordOrder"))
 			this.recordOrder = xel.getRawAttribute("RecordOrder");
+		
+		if (xel.hasAttribute("RecordMap"))
+			this.recordMap = xel.getRawAttribute("RecordMap");
 
         this.myArguments = new Object[] { attrs, ctx.getDomain().parseXml(ctx, xel) };
 		
@@ -66,6 +70,9 @@ public class AdvForm extends Form {
     	
     	if (StringUtil.isNotEmpty(this.recordOrder))
         	this.attributes.put("RecordOrder", this.recordOrder);		
+    	
+    	if (StringUtil.isNotEmpty(this.recordMap))
+        	this.attributes.put("RecordMap", this.recordMap);		
     	
     	return super.writeDynamic(buffer, tabs, first);
     }

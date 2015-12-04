@@ -1,10 +1,7 @@
 package divconq.db.common;
 
-import org.joda.time.DateTime;
-
 import divconq.db.DataRequest;
 import divconq.db.ReplicatedDataRequest;
-import divconq.log.DebugLevel;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
 import divconq.util.StringUtil;
@@ -33,20 +30,15 @@ public class RequestFactory {
 	 * @param password entered by user
 	 * @param code confirm code entered by user
 	 */
-	static public DataRequest signInRequest(String username, String password, String code) {
+	static public DataRequest signInRequest(String username, String password, String keyprint) {
 		RecordStruct params = new RecordStruct()
 				.withField("Username", (username != null) ? username.trim().toLowerCase() : null);
 		
 		if (StringUtil.isNotEmpty(password)) 
 			params.withField("Password", password.trim());		// password crypto handled in stored proc
-		else
-			params.withField("RecoverExpire", new DateTime().minusMinutes(30));		// 30 minutes before recovery expires
 		
-		if (StringUtil.isNotEmpty(code))
-			params.withField("Code", code.trim());
-		
-		if (AddUserRequest.meetsPasswordPolicy(password, true).hasLogLevel(DebugLevel.Warn))
-			params.withField("Suspect", true);
+		if (StringUtil.isNotEmpty(keyprint))
+			params.withField("ClientKeyPrint", keyprint.trim());
 		
 		return new ReplicatedDataRequest("dcSignIn").withParams(params);
 	}

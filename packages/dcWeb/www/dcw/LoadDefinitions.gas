@@ -1,0 +1,43 @@
+import divconq.hub.Hub
+import divconq.util.StringUtil
+import divconq.lang.op.OperationContext
+import divconq.struct.ListStruct
+import divconq.struct.RecordStruct
+
+void run(ctx, mem, info) {
+	info.mime = "application/javascript"
+	
+	if (ctx.request.parameters.DataTypes) {
+		def dtlist = OperationContext.get().schema.toJsonDef(ctx.request.parameters.DataTypes[0].split(','))
+		
+		mem.writeLine("dc.schema.Manager.load( " + dtlist + " );")
+	}
+	
+	mem.writeLine("")
+	
+	if (ctx.request.parameters.Tokens) {
+		def dtlist = new ListStruct()
+		
+		def oc = OperationContext.get()
+		
+		for (def token : ctx.request.parameters.Tokens[0].split(',')) {
+			// TODO support ranges - NNN:MMM
+			
+			if (StringUtil.isDataInteger(token))
+				token = "_code_" + token
+			
+			def tr = new RecordStruct()
+			
+			tr.Token = token
+			tr.Value = oc.findToken(token)
+			
+			dtlist.addItem(tr)
+		}
+		
+		mem.writeLine("dc.lang.Dict.load( " + dtlist + " );")
+	}
+	
+	mem.writeLine("")
+	
+	// TODO tell loader we are done, replace RequireLib feature
+}

@@ -1434,11 +1434,10 @@ public class TablesAdapter {
 		}
 		
 		if ("NotEqual".equals(expression)) {
-			if ((a == null) || (b == null))
+			if ((a == null) && (b == null))
 				return false;
 			
-			// rule out one being null 
-			if (a != b)
+			if ((a == null) || (b == null))
 				return true;
 			
 			for (int i = 0; i < Math.max(a.size(), b.size()); i++) {

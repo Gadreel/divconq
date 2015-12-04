@@ -174,7 +174,7 @@ dc.pui = {
 					if (dc.pui.Loader.__ids[id])
 						dc.pui.Loader.manifestPage(dc.pui.Loader.__ids[id]);
 					else
-						dc.pui.Loader.loadPage(document.location, state.Params);
+						dc.pui.Loader.loadPage(document.location.pathname, state.Params);
 				}
 		    });
 			
@@ -201,6 +201,7 @@ dc.pui = {
 			// setup some validators
 			
     		$.validator.addMethod('dcDataType', dc.pui.Page.validateInput, 'Invalid format.');
+    		//$.validator.addMethod('dcSchema', dc.pui.Page.validateInput, 'Invalid format.');
     		
     		$.validator.addMethod('dcJson', function(value, element, param) {
 				if (dc.util.Struct.isEmpty(value))
@@ -214,6 +215,14 @@ dc.pui = {
     			
     			return false;
 			}, 'Invalid JSON.');
+			
+			if (document.fonts) {
+				document.fonts.onloadingdone = function(e) {
+					// force all canvas updates that may be using loaded forms
+					//console.log('a font was loaded: ' + e.fontface);
+					dc.pui.Loader.requestFrame();
+				}
+			}
 		},
 		
 		setHomePage: function(v) {
@@ -264,7 +273,7 @@ dc.pui = {
 		
 		loadDestPage: function() {
 			if (dc.pui.Loader.__destPage)
-				dc.pui.Loader.loadPage(dc.pui.Loader.__destPage);
+				dc.pui.Loader.loadPage(dc.pui.Loader.__destPage, null, true);
 		},
 		
 		signout: function() {
@@ -305,10 +314,15 @@ dc.pui = {
 			if (rp != null)
 				page = rp;
 			
+			var hpage = page.split('#');
+			page = hpage[0];
+			var targetel = hpage[1];
+			
 			var entry = {
 				Name: page, 
 				Params: params ? params : { },
 				ReplaceState: replaceState,
+				TargetElement: targetel,
 				Store: { },
 				Forms: { },
 				call: function(method) {
@@ -407,6 +421,58 @@ dc.pui = {
 					needWait = true;
 				}
 			}
+			
+			var rtype = [];
+			
+			if (page.RequireType && (page.RequireType.length > 0)) {
+				for (var i = 0; i < page.RequireType.length; i++) {
+					var tname = page.RequireType[i];
+					var tparts = tname.split(',');
+					
+					for (var i2 = 0; i2 < tparts.length; i2++) {
+						var tn = tparts[i2];
+						
+						if (dc.schema.Manager.resolveType(tn) == null)
+							rtype.push(tn);
+					}
+				}
+			}
+			
+			var rtr = [];
+			
+			if (page.RequireTr && (page.RequireTr.length > 0)) {
+				for (var i = 0; i < page.RequireTr.length; i++) {
+					var tname = page.RequireTr[i];
+					var tparts = tname.split(',');
+					
+					for (var i2 = 0; i2 < tparts.length; i2++) {
+						var tn = tparts[i2];
+						
+						// codes get expanded automatically
+						if (dc.util.Number.isNumber(tn))
+							tn = "_code_" + tn;
+						
+						if (!dc.lang.Dict.get(tn))
+							rtr.push(tn);
+					}
+				}
+			}
+			
+			if ((rtype.length > 0) || (rtr.length > 0)) {
+				var key = dc.util.Crypto.makeSimpleKey();
+				
+				var script = document.createElement('script');
+				script.src = '/dcw/LoadDefinitions?nocache=' + key + '&DataTypes=' + rtype.join(',')  + '&Tokens=' + rtr.join(',');
+				script.id = 'def' + key;					
+				script.async = false;  	// needed when loading additional libraries, we can inject a final fake script that echos 
+										// a param (e.g. ?opid=3345) to us saying that it is loaded and hence all preceding scripts are also loaded
+				
+				document.head.appendChild(script);
+				
+				needWait = true;
+			}
+			
+			// TODO combine the load lib calls
 			
 			if (page.RequireLibs && (page.RequireLibs.length > 0)) {
 				for (var i = 0; i < page.RequireLibs.length; i++) {
@@ -557,6 +623,8 @@ dc.pui = {
 				$(dc.pui.Loader.__content).enhanceWithin().promise().then(function() {			
 					if (entry.Loaded && entry.FreezeTop)
 						$("html, body").animate({ scrollTop: entry.FreezeTop }, "fast");
+					else if (entry.TargetElement)
+						$("html, body").animate({ scrollTop: $('#' + entry.TargetElement).get(0).getBoundingClientRect().top + window.pageYOffset }, "fast");
 					else
 						$("html, body").animate({ scrollTop: 0 }, "fast");
 					
@@ -603,8 +671,12 @@ dc.pui = {
 					//}
 					//else if (page.Functions.Load)
 					
-					for (var i = 0; i < page.LoadFunctions.length; i++) 
-						page.LoadFunctions[i].call(entry, dc.pui.Loader.__content, loadcntdwn);
+					for (var i = 0; i < page.LoadFunctions.length; i++) {
+						if (dc.util.String.isString(page.LoadFunctions[i])) 
+							page.Functions[page.LoadFunctions[i]].call(entry, dc.pui.Loader.__content, loadcntdwn);
+						else
+							page.LoadFunctions[i].call(entry, dc.pui.Loader.__content, loadcntdwn);
+					}
 					
 					if (page.Functions.Load) 
 						page.Functions.Load.call(entry, dc.pui.Loader.__content, loadcntdwn);
@@ -645,6 +717,9 @@ dc.pui = {
 				});			
 			});
 		},		
+		scrollPage: function(id) {
+			$("html, body").animate({ scrollTop: $('#' + id).get(0).getBoundingClientRect().top + window.pageYOffset }, "fast");
+		},
 		closePage: function(opts) {
 			if (opts)
 				dc.pui.Loader.loadPage(opts.Path, opts.Params);
@@ -993,13 +1068,29 @@ dc.pui = {
 									ValidationRules: { },
 									ValidationMessages: { },
 									RecordOrder: [ "Default" ],
+									RecordMap: { },  // map records to data types 
 									AsNew: { },
 									InternalValues: { },
 									FreezeValues: null
 								}, child);
-								
+									
 								if (child.RecordOrder)
 									form.RecordOrder = child.RecordOrder.split(',');
+								
+								if (child.RecordMap) {
+									form.RecordMap = { };
+									
+									var maps = child.RecordMap.split(',');
+									
+									for (var im = 0; im < maps.length; im++) {
+										var map = maps[im].split(':');
+										
+										if (map[0].length == 0)
+											map[0] = 'Default';
+										
+										form.RecordMap[map[0]] = dc.schema.Manager.resolveType(map[1]);
+									}
+								}
 								
 								form.AlwaysNew = (form.AlwaysNew == 'true');
 								
@@ -1049,6 +1140,11 @@ dc.pui = {
 						node = $('<div data-role="fieldcontain" />');
 						
 						fsnode = $('<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true" />');
+
+						var id = child.Id;
+						
+						if (id) 
+							fsnode.attr('id', id);
 						
 						if (child.Required && child.Label)
 							fsnode.append('<legend>' + child.Label + ' <span class="fldreq">*</span></legend>');
@@ -1060,10 +1156,50 @@ dc.pui = {
 						
 						node.append(fsnode);
 					}
-					else if (child.Element == 'RadioGroup') {
+					else if ((child.Element == 'RadioGroup') || (child.Element == 'CheckGroup')) {
+						var form = dc.pui.Page.findFormForLayout(page, entry, parentchain);
+						
+						if (!form || !child.Name) 
+							continue;
+						
+						var fname = child.Name;
+							
+						var input = form.Inputs[fname];
+						var rule = form.ValidationRules[fname];
+						
+						if (!input) {
+							var rec = child.Record;
+							
+							if (!rec) 
+								rec = 'Default';
+
+							var id = child.Id;
+							
+							if (!id) 
+								id = dc.util.Uuid.create();
+							
+							input = {
+								Field: fname,
+								Record: rec,
+								Type: (child.Element == 'CheckGroup') ? 'RadioCheck' : 'RadioSelect',
+								Id: id
+							};
+							
+							form.Inputs[fname] = input;
+							
+							rule = { };
+							
+							if (child.Required == 'true')
+								rule.required = true;
+							
+							form.ValidationRules[fname] = rule;
+						}
+						
 						node = $('<div data-role="fieldcontain" />');
 						
 						fsnode = $('<fieldset data-role="controlgroup" data-mini="true" />');
+
+						fsnode.attr('id', input.Id);
 						
 						if (child.Required && child.Label)
 							fsnode.append('<legend>' + child.Label + ' <span class="fldreq">*</span></legend>');
@@ -1267,19 +1403,34 @@ dc.pui = {
 							entry.Store.__LastFocus = e.data;
 						});
 						
-						// clone the rule or start blank
-						var rule = child.Rule ? $.extend(true, defrule, child.Rule) : defrule;
-						
-						rule.dcDataType = dtype;
-						
-						// don't overwrite required in rule unless Required prop exists
-						if (child.Required)
-							rule.required = (child.Required == 'true');
-						
-						if (child.Pattern)
-							rule.pattern = child.Pattern;
-						
-						form.ValidationRules[fname] = rule;
+						// we can override at field level by setting DataType
+						if (!child.DataType && form.RecordMap[rec] && form.RecordMap[rec].Fields[fname]) {
+							var schema = form.RecordMap[rec].Fields[fname];
+							
+							input.Schema = schema;
+								
+							var rule = {
+								dcDataType: 'Schema',
+								required: (schema.Required == 1)
+							}
+							
+							form.ValidationRules[fname] = rule;
+						}
+						else {
+							// clone the rule or start blank
+							var rule = child.Rule ? $.extend(true, defrule, child.Rule) : defrule;
+							
+							rule.dcDataType = dtype;
+							
+							// don't overwrite required in rule unless Required prop exists
+							if (child.Required)
+								rule.required = (child.Required == 'true');
+							
+							if (child.Pattern)
+								rule.pattern = child.Pattern;
+							
+							form.ValidationRules[fname] = rule;
+						}
 						
 						var vmsg = $(this).attr('data-dc-message');
 						
@@ -1653,6 +1804,18 @@ dc.pui = {
 					Data: dc.pui.Page.getChanges.call(entry, formname, rname)
 				}
 				
+				if (form.RecordMap[rname]) {
+					var mr = new dc.lang.OperationResult();
+					
+					form.RecordMap[rname].validate(event.Data, mr);
+
+					if (mr.Code != 0) {
+						dc.pui.Popup.alert(mr.Message);
+						callback();
+						return;
+					}
+				}
+				
 				var savecntdwn = new dc.lang.CountDownCallback(1, function() { 
 					if (event.Alert) {
 						dc.pui.Popup.alert(event.Alert);
@@ -1947,7 +2110,7 @@ dc.pui = {
 		validateInput: function(value, element, datatype) {
 			if (dc.util.Struct.isEmpty(value))
 				return this.optional(element);
-				
+			
 			var entry = dc.pui.Loader.currentPageEntry();
 			var iid = $(element).attr('id');
 			var form = dc.pui.Page.formForInput(element);
@@ -2067,6 +2230,13 @@ dc.pui = {
 				return val;
 			},
 			Validate: function(form, field, value) {
+				// TODO copy support of Schema to other field types too
+				if (field.Schema) {
+					var mr = new dc.lang.OperationResult();
+					field.Schema.validate(!dc.util.String.isEmpty(value), value, mr);
+					return (mr.Code == 0);
+				}
+				
 				return (dc.schema.Manager.validate(value, field.DataType).Code == 0);
 			},
 			IsChanged: function(form, field) {
@@ -2145,7 +2315,15 @@ dc.pui = {
 					
 				if (value == null) 
 					return !form.ValidationRules[field.Field].required;
-					
+				
+				debugger;
+				
+				if (field.Schema) {
+					var mr = new dc.lang.OperationResult();
+					field.Schema.validate(!dc.util.String.isEmpty(value), value, mr);
+					return (mr.Code == 0);
+				}
+									
 				return (dc.schema.Manager.validate(value, field.DataType).Code == 0);
 			},
 			IsChanged: function(form, field) {
@@ -2167,6 +2345,26 @@ dc.pui = {
 					form.FreezeValues[field.Field] = null;
 				else
 					form.FreezeValues[field.Field] = val;
+			},
+			RemoveAll: function(form, field) {
+				$('#' + field.Id + " .ui-controlgroup-controls").empty();
+				//form.InternalValues[field.Field] = null;
+			},
+			Add: function(form, field, values) {
+				for (var i = 0; i < values.length; i++) {
+					var opt = values[i];			
+					var val = dc.util.Struct.isEmpty(opt.Value) ? 'NULL' : opt.Value;
+					var id = field.Id + '-' + val;
+					
+					if (form.InternalValues[field.Field] == val)
+						$('#' + field.Id + " .ui-controlgroup-controls").append($('<input type="radio" id="' + id + '" value="' + val + '" checked="checked" name="' + field.Field + '" />'));
+					else
+						$('#' + field.Id + " .ui-controlgroup-controls").append($('<input type="radio" id="' + id + '" value="' + val + '" name="' + field.Field + '" />'));
+					
+					$('#' + field.Id + " .ui-controlgroup-controls").append('<label for="' + id + '">' + opt.Label + '</label>');
+				}
+				
+				$('#' + field.Id).enhanceWithin();
 			}
 		},
 		RadioCheck: { 
@@ -2397,6 +2595,12 @@ dc.pui = {
 				return val;
 			},
 			Validate: function(form, field, value) {
+				if (field.Schema) {
+					var mr = new dc.lang.OperationResult();
+					field.Schema.validate(!dc.util.String.isEmpty(value), value, mr);
+					return (mr.Code == 0);
+				}
+				
 				return (dc.schema.Manager.validate(value, field.DataType).Code == 0);
 			},
 			IsChanged: function(form, field) {

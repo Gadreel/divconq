@@ -19,7 +19,7 @@ package divconq.script.inst;
 import java.util.List;
 
 import divconq.lang.op.OperationContext;
-import divconq.locale.LocaleUtil;
+import divconq.locale.Tr;
 import divconq.script.ExecuteState;
 import divconq.script.Instruction;
 import divconq.script.StackEntry;
@@ -39,11 +39,7 @@ public class Trace extends Instruction {
 			for (int i = 0; i < params.size(); i++) 
 				oparams[i] = stack.refFromElement(params.get(i), "Value").toString();
 
-			OperationContext tc = OperationContext.get();
-			
-			output = (tc != null) 
-					? tc.tr("_code_" + code, oparams)
-					: LocaleUtil.tr(LocaleUtil.getDefaultLocale(), "_code_" + code, oparams);
+			output = Tr.tr("_code_" + code, oparams);
 		}		
 		
 		OperationContext.get().trace(code, output);

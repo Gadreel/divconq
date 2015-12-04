@@ -16,6 +16,7 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.lang.op.OperationContext;
 import divconq.util.ArrayUtil;
 import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
@@ -51,7 +52,7 @@ public class Tr extends Element implements ICodeTag {
 
     @Override
     public void build(WebContext ctx, Object... args) {
-        if (this.LTRAdaptable && ctx.isRightToLeft()) 
+        if (this.LTRAdaptable && OperationContext.get().getWorkingLocaleDefinition().isRightToLeft()) 
         	ArrayUtil.reverse(args);
 
         super.build(ctx, "tr", true, args);

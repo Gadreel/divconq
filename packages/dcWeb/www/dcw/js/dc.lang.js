@@ -796,6 +796,9 @@ var dc = {
 		Dict: {
 			_tokens: { },
 			
+			get: function(token) {
+				return dc.lang.Dict._tokens[token];
+			},
 			load: function(tokens) {
 				if (!tokens)
 					return;
@@ -805,7 +808,42 @@ var dc = {
 					dc.lang.Dict._tokens[dt.Token] = dt.Value;
 				} 
 			},
-			tr: function(token) {
+			tr: function(token, params) {
+				var val = dc.lang.Dict._tokens[token];
+				
+				if (!dc.util.Struct.isList(params))
+					params = []; 
+				
+				var msg = '';
+		        var lpos = 0;
+		        var bpos = val.indexOf('{$');
+		
+		        while (bpos != -1) {
+		            var epos = val.indexOf("}", bpos);
+		            if (epos == -1) 
+		            	break;
+		
+		            msg += val.substring(lpos, bpos);
+		
+		            lpos = epos + 1;
+		
+		            var varname = val.substring(bpos + 2, epos).trim();
+		
+		            // TODO add some formatting features for numbers/datetimes
+		            
+		            var parampos = varname - 1;
+		            
+		            if (parampos <= params.length) 
+		            	msg += params[parampos];
+		            else 
+		                msg += val.substring(bpos, epos + 1);
+		
+		            bpos = val.indexOf("{$", epos);
+		        }
+		
+		        msg += val.substring(lpos);
+				
+				return msg;
 			}
 		},
 		

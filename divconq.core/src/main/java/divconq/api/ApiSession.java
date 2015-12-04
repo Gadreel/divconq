@@ -248,6 +248,7 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 			));
 	}
 	
+	/*
 	public boolean startSession(String user, String pass, String code) {
 		return this.startSession(new RecordStruct(
 				new FieldStruct("Username", user),
@@ -255,6 +256,7 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 				new FieldStruct("ConfirmationCode", code)
 			));
 	}
+	*/
 	
 	public boolean startSessionAsGuest() {
 		return this.startSession(null);

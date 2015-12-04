@@ -10,8 +10,8 @@ import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 
-import divconq.web.WebContext;
-import divconq.web.md.process.Plugin;
+import divconq.web.md.Plugin;
+import divconq.web.md.ProcessContext;
 import divconq.xml.XElement;
 
 public class WebSequencePlugin extends Plugin {
@@ -21,7 +21,7 @@ public class WebSequencePlugin extends Plugin {
 	}
 	
 	@Override
-	public void emit(WebContext ctx, XElement parent, List<String> lines,
+	public void emit(ProcessContext ctx, XElement parent, List<String> lines,
 			Map<String, String> params) {
 		// TODO Auto-generated method stub
 		

@@ -3,6 +3,7 @@ package divconq.web.ui.adapter;
 import java.io.IOException;
 
 import io.netty.handler.codec.http.HttpChunkedInput;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.stream.ChunkedNioFile;
 import divconq.filestore.CommonPath;
@@ -48,11 +49,10 @@ public class StaticOutputAdapter implements IOutputAdapter {
 			}
 		}
 
-		// TODO add compression
-		//if (asset.getCompressed())
-		//	resp.setHeader("Content-Encoding", "gzip");
+		if (!ctx.getSite().getMimeCompress(this.mime))
+			resp.setHeader(HttpHeaders.Names.CONTENT_ENCODING, HttpHeaders.Values.IDENTITY);
 		
-		ctx.sendStart(this.file.getSize());
+		ctx.sendStart(0);
 
 		// TODO send from memory cache if small enough
 		try {

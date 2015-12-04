@@ -38,7 +38,7 @@ public class FormattedText extends Node {
     @Override
     public void doBuild(WebContext ctx) {
        	this.value = this.expandMacro(ctx, this.value);        
-        this.value = ctx.format(this.value, this.values);
+        // TODO - this.value = ctx.format(this.value, this.values);
     }
 
     @Override

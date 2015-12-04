@@ -23,4 +23,5 @@ public interface ISessionAdapter {
 	void deliver(Message msg);
 	ListStruct popMessages();
 	void stop();
+	String getClientKey();
 }

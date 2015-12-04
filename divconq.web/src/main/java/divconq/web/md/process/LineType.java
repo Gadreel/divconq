@@ -20,7 +20,7 @@ package divconq.web.md.process;
  * 
  * @author René Jeschke <rene_jeschke@yahoo.de>
  */
-enum LineType
+public enum LineType
 {
     /** Empty line. */
     EMPTY,

@@ -22,7 +22,7 @@ import java.util.LinkedList;
  * 
  * @author René Jeschke <rene_jeschke@yahoo.de>
  */
-class Utils
+public class Utils
 {
     /** Random number generator value. */
     private static int RND = (int)System.nanoTime();

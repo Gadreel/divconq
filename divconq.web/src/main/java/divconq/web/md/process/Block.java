@@ -20,8 +20,7 @@ package divconq.web.md.process;
  * 
  * @author René Jeschke <rene_jeschke@yahoo.de>
  */
-class Block
-{
+public class Block {
     /** This block's type. */
     public BlockType type = BlockType.NONE;
     /** Head and tail of linked lines. */

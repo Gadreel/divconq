@@ -1,5 +1,10 @@
 package divconq.db.proc;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.joda.time.DateTime;
+
 import divconq.db.Constants;
 import divconq.db.TablesAdapter;
 import divconq.db.DatabaseInterface;
@@ -12,96 +17,156 @@ import divconq.session.Session;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
 import divconq.struct.RecordStruct;
+import divconq.struct.Struct;
 import divconq.struct.builder.ICompositeBuilder;
 import divconq.util.StringUtil;
 
 public class SignIn extends LoadRecord {
 	@Override
 	public void execute(DatabaseInterface conn, DatabaseTask task, OperationResult log) {
+		if (task.isReplicating()) {
+			// TODO what should happen during a replicate?
+			task.complete();
+			return;
+		}
+		
 		RecordStruct params = task.getParamsAsRecord();
-		ICompositeBuilder out = task.getBuilder();
 		TablesAdapter db = new TablesAdapter(conn, task); 
-		String did = task.getDomain();
 		BigDateTime when = BigDateTime.nowDateTime();
 				
-		String token = null;
-		String uid = null;
-		//boolean confirmed = false;
 		String password = params.getFieldAsString("Password");
 		String uname = params.getFieldAsString("Username");
-		//String code = params.getFieldAsString("Code");
-		// TODO part of Trust monitoring -- boolean suspect = params.getFieldAsBooleanOrFalse("Suspect");	
 		
-		try {			
-			if (task.isReplicating()) {
-				token = params.getFieldAsString("Token");
-				uid = params.getFieldAsString("Uid");
-				//confirmed = params.getFieldAsBooleanOrFalse("Confirmed");
+		// TODO part of Trust monitoring -- boolean suspect = 
+		//if (AddUserRequest.meetsPasswordPolicy(password, true).hasLogLevel(DebugLevel.Warn))
+		//	params.withField("Suspect", true);
+		
+		String uid = null;
+		
+		Object userid = db.firstInIndex("dcUser", "dcUsername", uname, when, false);
+		
+		if (userid != null) 
+			uid = userid.toString();
+
+		// fail right away if not a valid user
+		if (StringUtil.isEmpty(uid)) {
+			log.errorTr(123);
+			task.complete();
+			return;
+		}
+		
+		String ckey = params.getFieldAsString("ClientKeyPrint");
+		
+		// find out if this is a master key
+		if (StringUtil.isNotEmpty(ckey)) {
+			System.out.println("sign in client key: " + ckey);
+			
+			task.pushDomain(Constants.DB_GLOBAL_ROOT_DOMAIN);
+			
+			Object mk = db.getStaticList("dcDomain", Constants.DB_GLOBAL_ROOT_DOMAIN, "dcMasterKeys", ckey);
+
+			Object mpp = (mk == null) ? null : db.getStaticScalar("dcDomain", Constants.DB_GLOBAL_ROOT_DOMAIN, "dcMasterPasswordPattern");
+
+			task.popDomain();
+			
+			// if master key is present for the client key then check the password pattern
+			if (mk != null) {
+				boolean passcheck = false;
+				
+				if (StringUtil.isEmpty((String)mpp)) {
+					passcheck = true;
+				}
+				else {
+					Pattern pp = Pattern.compile((String)mpp);
+					Matcher pm = pp.matcher(password);
+					passcheck = pm.matches();
+				}
+				
+				if (passcheck) {
+					this.signIn(conn, task, db, log, when, uid);
+					return;
+				}
 			}
-			else {
-				Object userid = db.firstInIndex("dcUser", "dcUsername", uname, when, false);
+		}
+		
+		if (StringUtil.isNotEmpty(password)) {
+			password = password.trim();
+			
+			Object fndpass = db.getDynamicScalar("dcUser", uid, "dcPassword", when);
+			
+			System.out.println("local password: " + fndpass);
+			
+			if (fndpass != null) {
+				String password2 = OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(password);
 				
-				if (userid != null) 
-					uid = userid.toString();
+				System.out.println("try local password: " + password2);
 				
-				if (StringUtil.isNotEmpty(uid)) {
-					if (StringUtil.isNotEmpty(password)) {
-						Object fndpass = db.getDynamicScalar("dcUser", uid, "dcPassword", when);
-						
-						// TODO consolidate recover code
-						
-						if (fndpass != null) {
-							String password2 = OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(password.trim());
-							
-							// TODO check if it is hex, if so it is probably hashed so then run incoming password through
-							// hash to do compare
-							//params.setField("Password", OperationContext.get().getUserContext().getDomain().getObfuscator().hashStringToHex(this.password.trim()));
-							
-							// otherwise do plain text compare
-							if (!password2.equals(fndpass)) {
-								if (!did.equals(Constants.DB_GLOBAL_ROOT_DOMAIN)) {
-									task.pushDomain(Constants.DB_GLOBAL_ROOT_DOMAIN);
-									
-									password2 = Hub.instance.getDomainInfo(Constants.DB_GLOBAL_ROOT_DOMAIN).getObfuscator().hashStringToHex(password.trim());
-									
-									Object gp = db.getStaticList("dcDomain", Constants.DB_GLOBAL_ROOT_DOMAIN, "dcGlobalPassword", password2, null);
-									
-									task.popDomain();
-									
-									if (gp == null) {
-										// TODO if recover is not expired
-										//. i recoverExpire]]$$get1^dcDb("dcUser",uid,"dcRecoverAt") q
-										
-										fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
-										
-										if (!password.equals(fndpass)) 
-											uid = null;
-									}
-								}
-								else {
-									// TODO if recover is not expired
-									//. i recoverExpire]]$$get1^dcDb("dcUser",uid,"dcRecoverAt") q
-									
-									fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
-									
-									if (!password.equals(fndpass)) 
-										uid = null;
-								}
-							}
-						}
-						else {
-							// TODO if recover is not expired
-							//. i recoverExpire]]$$get1^dcDb("dcUser",uid,"dcRecoverAt") q
-							
-							fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
-							
-							if (!password.equals(fndpass)) 
-								uid = null;
-						}
-					}
+				// if password matches then good login
+				if (password2.equals(fndpass)) {
+					this.signIn(conn, task, db, log, when, uid);
+					return;
 				}
 			}
 			
+			// if user is root, check root global password
+			if (uname.equals("root")) {
+				task.pushDomain(Constants.DB_GLOBAL_ROOT_DOMAIN);
+				
+				Object gp = db.getStaticScalar("dcDomain", Constants.DB_GLOBAL_ROOT_DOMAIN, "dcGlobalPassword");
+				
+				task.popDomain();
+				
+				System.out.println("global password: " + gp);
+				
+				if (gp != null) {
+					String password2 = Hub.instance.getDomainInfo(Constants.DB_GLOBAL_ROOT_DOMAIN).getObfuscator().hashStringToHex(password);
+					
+					System.out.println("try global password: " + password2);
+					
+					// if password matches global then good login
+					if (password2.equals(gp)) {
+						this.signIn(conn, task, db, log, when, uid);
+						return;
+					}
+				}
+			}
+
+			fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
+			
+			if (password.equals(fndpass)) {
+				Object ra = db.getStaticScalar("dcUser", uid, "dcRecoverAt");
+				
+				if (ra == null) {
+					// if code matches then good login
+					this.signIn(conn, task, db, log, when, uid);
+					return;
+				}
+				
+				if (ra != null) {
+					DateTime radt = Struct.objectToDateTime(ra);
+					DateTime pastra = new DateTime().minusHours(2);
+					
+					if (!pastra.isAfter(radt)) {
+						// if code matches and has not expired then good login 
+						this.signIn(conn, task, db, log, when, uid);
+						return;
+					}
+				}
+			}
+		}
+		
+		log.errorTr(123);
+		task.complete();
+	}
+	
+	public void signIn(DatabaseInterface conn, DatabaseTask task, TablesAdapter db, OperationResult log, BigDateTime when, String uid) {
+		ICompositeBuilder out = task.getBuilder();
+		RecordStruct params = task.getParamsAsRecord();
+		String did = task.getDomain();
+		
+		String token = null;
+		
+		try {
 			if (StringUtil.isEmpty(uid)) {
 				log.errorTr(123);
 				task.complete();

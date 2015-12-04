@@ -33,12 +33,15 @@ import divconq.bus.IService;
 import divconq.bus.ServiceRouter;
 import divconq.filestore.bucket.Bucket;
 import divconq.filestore.bucket.BucketUtil;
+import divconq.io.CacheFile;
 import divconq.io.FileStoreEvent;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationContextBuilder;
-import divconq.locale.LocaleUtil;
+import divconq.locale.ILocaleResource;
+import divconq.locale.LocaleDefinition;
+import divconq.locale.Dictionary;
 import divconq.scheduler.ISchedule;
 import divconq.scheduler.SimpleSchedule;
 import divconq.scheduler.common.CommonSchedule;
@@ -55,17 +58,19 @@ import divconq.xml.XAttribute;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
 
-public class DomainInfo {
+public class DomainInfo implements ILocaleResource {
 	protected RecordStruct info = null;
 	protected ISettingsObfuscator obfuscator = null;
 	protected XElement overrideSettings = null;
 	protected SchemaManager schema = null;
+	protected Dictionary dictionary = null;
 	protected Map<String, IService> registered = new HashMap<String, IService>();
 	protected Map<String, ServiceRouter> routers = new HashMap<String, ServiceRouter>();
 	protected Map<String, Bucket> buckets = new HashMap<String, Bucket>();
 	protected DomainWatcherAdapter watcher = null;
 	protected List<ISchedule> schedulenodes = new ArrayList<>();
 	protected String locale = null;
+	protected LocaleDefinition localedef = null;
 	
 	public String getId() {
 		return this.info.getFieldAsString("Id");
@@ -81,13 +86,6 @@ public class DomainInfo {
 	
 	public RecordStruct getInfo() {
 		return this.info;
-	}
-	
-	public String getLocale() {
-		if (this.locale != null)
-			return this.locale;
-		
-		return LocaleUtil.getDefaultLocale();
 	}
 	
 	public IService getService(String name) {
@@ -149,6 +147,53 @@ public class DomainInfo {
 		return Hub.instance.getSchema();
 	}
 	
+	@Override
+	public String getDefaultLocale() {
+		if (this.locale != null)
+			return this.locale;
+		
+		return this.getParentLocaleResource().getDefaultLocale();
+	}
+
+	@Override
+	public LocaleDefinition getDefaultLocaleDefinition() {
+		return this.getLocaleDefinition(this.getDefaultLocale());
+	}
+	
+	@Override
+	public Dictionary getDictionary() {
+		if (this.dictionary != null)
+			return this.dictionary;
+		
+		return this.getParentLocaleResource().getDictionary();
+	}
+
+	@Override
+	public LocaleDefinition getLocaleDefinition(String name) {
+		// TODO lookup definitions
+		
+		return new LocaleDefinition(name);
+	}
+	
+	// 0 is best, higher the number the worse, -1 for not supported
+	@Override
+	public int rateLocale(String locale) {
+		if ((this.localedef != null) && this.localedef.match(locale))
+			return 0;
+		
+		int r = this.getParentLocaleResource().rateLocale(locale);
+		
+		if (r < 0)
+			return -1;
+		
+		return r + 1;
+	}
+	
+	@Override
+	public ILocaleResource getParentLocaleResource() {
+		return Hub.instance.getResources();
+	}
+	
 	public void load(RecordStruct info) {
 		this.info = info;
 				
@@ -182,15 +227,47 @@ public class DomainInfo {
 		
 		return fs.getFilePath().resolve("dcw/" + this.getAlias());
 	}
+	
+	public String relativize(Path path) {
+		path = path.normalize().toAbsolutePath();
+		
+		if (path == null)
+			return null;
+		
+		String rpath = path.toString().replace('\\', '/');
+		
+		String dpath = this.getPath().toString().replace('\\', '/');
+		
+		if (!rpath.startsWith(dpath))
+			return null;
+		
+		return rpath.substring(dpath.length());
+	}
+
+	public CacheFile resolveCachePath(String path) {
+		LocalFileStore fs = Hub.instance.getPublicFileStore();
+		
+		if (fs == null)
+			return null;
+		
+		if (StringUtil.isEmpty(path))
+			return fs.cacheResolvePath("dcw/" + this.getAlias());
+		
+		if (path.charAt(0) == '/')
+			return fs.cacheResolvePath("dcw/" + this.getAlias() + path);
+		
+		return fs.cacheResolvePath("dcw/" + this.getAlias() + "/" + path);
+	}
 
 	/* TODO reload more settings too - consider:
 	 * 
 			./dcw/[domain alias]/config     holds web setting for domain
-				- settings.xml are the general settings (dcmHomePage - dcmDefaultTemplate[path]) - editable in CMS only
-				- extra.xml is extra settings such as routing rules - direct edit by web dev
+				- settings.xml are the general settings (dcmHomePage - dcmDefaultTemplate[path]) - direct edit by web dev
 				  (includes code tags that map to classes instead of to groovy)
 				- dictionary.xml is the domain level dictionary - direct edit by web dev
 				- vars.json is the domain level variable store - direct edit by web dev
+				
+				- cms-settings.xml is extra settings - editable in CMS
 				- cms-dictionary.xml is the domain level dictionary - editable in CMS
 				- cms-vars.json is the domain level variable store - editable in CMS
 	 * 
@@ -234,6 +311,20 @@ public class DomainInfo {
 			this.schema.setChain(Hub.instance.getSchema());
 			this.schema.loadSchema(shpath);
 			this.schema.compile();
+		}		
+		
+		// dictionary
+		
+		this.dictionary = null;
+		
+		Path dicpath = cpath.resolve("dictionary.xml");
+
+		if (Files.exists(dicpath)) {
+			this.dictionary = new Dictionary();
+			this.dictionary.setParent(Hub.instance.getResources().getDictionary());
+			this.dictionary.load(dicpath);
+			
+			this.localedef = this.getLocaleDefinition(this.getDefaultLocale());
 		}		
 
 		this.registered.clear();

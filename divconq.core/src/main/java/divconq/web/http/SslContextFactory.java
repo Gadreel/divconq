@@ -51,6 +51,7 @@ public class SslContextFactory {
     protected SSLContext serverContext = null;
     protected String sslclientauth = null;
     protected List<String> keynames = new ArrayList<>();
+	private List<XElement> clientcerts  = null;
 
     public boolean keynameMatch(String name) {
     	for (String kname : this.keynames)
@@ -71,7 +72,9 @@ public class SslContextFactory {
     public void init(XElement config, XElement sslconfig) {
     	if (config == null)
     		return;
-        
+
+    	this.clientcerts   = config.selectAll("ClientCert");
+    	
         WebTrustManager tm = new WebTrustManager();
         tm.init(config);
         
@@ -207,7 +210,7 @@ public class SslContextFactory {
         return this.serverContext;
     }
 
-	public SSLEngine getServerEngine() {
+	public SSLEngine getServerEngine(String hostname) {
         SSLEngine engine = this.serverContext.createSSLEngine();
         engine.setUseClientMode(false);
         
@@ -216,6 +219,22 @@ public class SslContextFactory {
         
         if ("Need".equals(this.sslclientauth))
         	engine.setNeedClientAuth(true);
+        
+        if (this.clientcerts != null) {
+        	for (XElement ccel : this.clientcerts) {
+        		if (hostname.endsWith(ccel.getAttribute("Names"))) {
+        			String cauth = ccel.getAttribute("SslClientAuth", "None");
+        	        
+        	        if ("Want".equals(cauth))
+        	        	engine.setWantClientAuth(true);
+        	        
+        	        if ("Need".equals(cauth))
+        	        	engine.setNeedClientAuth(true);
+            		
+            		break;
+        		}
+        	}
+        }
         
         Hub.instance.getSecurityPolicy().hardenPublic(engine);
         

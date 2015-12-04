@@ -16,6 +16,7 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.lang.op.OperationContext;
 import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
 import divconq.web.dcui.HtmlUtil;
@@ -62,7 +63,7 @@ public class Select extends MixedElement implements ICodeTag {
 	
     @Override
 	public void build(WebContext ctx, Object... args) {
-        if (ctx.isRightToLeft())
+        if (OperationContext.get().getWorkingLocaleDefinition().isRightToLeft())
             super.build(ctx, "select", new Attributes("dir", "rtl"), args);
         else
         	super.build(ctx, "select", args);

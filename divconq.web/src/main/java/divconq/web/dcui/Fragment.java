@@ -43,9 +43,14 @@ public class Fragment extends Element {
 	//protected Path path = null;
 	//protected CommonPath loc = null;
 	protected GroovyObject script = null;
+	protected FeedAdapter feed = null;
 	
 	public XElement getSource() {
 		return this.source;
+	}
+	
+	public FeedAdapter getFeed() {
+		return this.feed;
 	}
 
     public GroovyObject getServerScript() {
@@ -84,10 +89,10 @@ public class Fragment extends Element {
 			// possible to override the file path and grab a random Page from `feed`
 			String cmspath = this.source.getAttribute("CmsPath", ctx.getRequest().getPath().toString());
 			
-			FeedAdapter fa = ctx.getFeedAdapter("Pages", cmspath);
+			this.feed = ctx.getFeedAdapter("Pages", cmspath);
 			
-			if (fa != null)
-				fa.buildHtmlPage(ctx, this.source, ctx.isPreview());
+			if (this.feed != null)
+				this.feed.buildHtmlPage(ctx, this.source);
 		}
 		
 		XElement screl = this.source.find("ServerScript");

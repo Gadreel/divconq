@@ -37,6 +37,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+
 import org.rocksdb.BackupInfo;
 import org.rocksdb.BackupableDBOptions;
 import org.rocksdb.RestoreBackupableDB;
@@ -83,6 +86,7 @@ public class HubUtil implements ILocalCommandLine {
 				System.out.println("0)   Exit");
 				System.out.println("1)   dcDatabase Utils");
 				System.out.println("2)   Local Utilities");
+				System.out.println("3)   Crypto Utilities");
 				System.out.println("100) dcScript GUI Debugger");
 				System.out.println("101) dcScript Run Script");
 
@@ -106,6 +110,11 @@ public class HubUtil implements ILocalCommandLine {
 				
 				case 2: {
 					Foreground.utilityMenu(scan);					
+					break;
+				}
+				
+				case 3: {
+					this.cryptoMenu(scan);
 					break;
 				}
 				
@@ -1031,6 +1040,66 @@ public class HubUtil implements ILocalCommandLine {
 				System.out.print(p.toString() + " / ");
 			
 			System.out.println(" = " + ByteUtil.extractValue(val));
+		}
+	}
+	
+	
+	public void cryptoMenu(Scanner scan) { 	
+		boolean running = true;
+		
+		while(running) {
+			try {
+				System.out.println();
+				System.out.println("-----------------------------------------------");
+				System.out.println("   Hub " + Hub.instance.getResources().getHubId() + " Crypto Utility Menu");
+				System.out.println("-----------------------------------------------");
+				System.out.println("0)  Exit");
+				System.out.println("1)  Cipher Dump");
+	
+				String opt = scan.nextLine();
+				
+				Long mopt = StringUtil.parseInt(opt);
+				
+				if (mopt == null)
+					continue;
+				
+				switch (mopt.intValue()) {
+				case 0:
+					running = false;
+					break;
+				
+				case 1: {
+			        String protocol = "TLSv1.2";
+		            SSLContext serverContext = SSLContext.getInstance(protocol);
+		            serverContext.init(null, null, null);
+		            
+		            SSLEngine engine = serverContext.createSSLEngine();
+			        
+			        System.out.println("Enabled");
+			        
+			        for (String p : engine.getEnabledProtocols())
+			        	System.out.println("Proto: " + p);
+			        
+			        for (String p : engine.getEnabledCipherSuites())
+			        	System.out.println("Suite: " + p);
+			        
+			        System.out.println();        
+			        System.out.println("Supported");
+			        System.out.println();        
+			        
+			        for (String p : engine.getSupportedProtocols())
+			        	System.out.println("Proto: " + p);
+			        
+			        for (String p : engine.getSupportedCipherSuites())
+			        	System.out.println("Suite: " + p);
+					
+					break;
+				}
+				}
+			}
+			catch(Exception x) {
+				System.out.println("CLI error: " + x);
+			}
 		}
 	}
 }

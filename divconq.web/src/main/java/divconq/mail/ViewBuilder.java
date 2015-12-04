@@ -18,14 +18,13 @@ package divconq.mail;
 
 import java.io.IOException;
 
-import org.markdown4j.Markdown4jProcessor;
-
 import divconq.lang.Memory;
 import divconq.lang.op.OperationCallback;
 import divconq.web.IOutputAdapter;
 import divconq.web.WebContext;
 import divconq.web.dcui.Fragment;
 import divconq.web.dcui.IViewBuilder;
+import divconq.web.md.Processor;
 import divconq.xml.XElement;
 
 public class ViewBuilder implements IViewBuilder {
@@ -67,18 +66,15 @@ public class ViewBuilder implements IViewBuilder {
 				    					public void callback() {
 				    				    	try {
 				    				    		if (htmlfrag.getChildren().isEmpty()) {
-													System.out.println("process as MD");
-													
-													String md = ictx.getTextResponse().getBody().toString();
-													String html = null;
-													
-													//System.out.println("md: " + ppel.getText());
+													//System.out.println("process as MD");
 													
 													try {
-														html = new Markdown4jProcessor().process(md);
+														String md = ictx.getTextResponse().getBody().toString();
+													
+														XElement html = Processor.parse(ctx.getMarkdownContext(), md);
 
 														Memory mem = new Memory();
-														mem.write(html);
+														mem.write(html.toInnerString(true));
 														
 														ictx.getHtmlResponse().setBody(mem);
 													} 

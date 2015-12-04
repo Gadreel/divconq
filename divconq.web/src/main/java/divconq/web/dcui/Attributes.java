@@ -33,6 +33,26 @@ public class Attributes {
     		this.args = (String[]) ArrayUtil.addAll(this.args, name, value);
     }
     
+    public String get(String name) {
+    	for (int i = 0; i < this.args.length; i += 2) {
+    		if (name.equals(this.args[i]) && (i + 1 < this.args.length))
+    			return this.args[i + 1];
+    	}
+    	
+    	return null;
+    }
+    
+    public boolean update(String name, String value) {
+    	for (int i = 0; i < this.args.length; i += 2) {
+    		if (name.equals(this.args[i]) && (i + 1 < this.args.length)) {		// TODO add length if needed
+    			this.args[i + 1] = value;
+    			return true;
+    		}
+    	}
+    	
+    	return false;
+    }
+    
     public void addAll(String... attrs) {
     	if ((args == null) || (args.length == 0)) 
     		this.args = attrs;

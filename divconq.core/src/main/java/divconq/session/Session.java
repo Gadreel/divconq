@@ -40,6 +40,7 @@ import divconq.lang.op.OperationObserver;
 import divconq.lang.op.OperationResult;
 import divconq.lang.op.UserContext;
 import divconq.log.DebugLevel;
+import divconq.log.HubLog;
 import divconq.log.Logger;
 import divconq.struct.FieldStruct;
 import divconq.struct.ListStruct;
@@ -87,6 +88,73 @@ public class Session {
 	protected HashMap<String, SendWaitInfo> sendwaits = new HashMap<>();
 	
 	protected boolean keep = false;
+	
+	/* add interactive debugging - for root only (config), gateway prohibited - base on code from
+	 * 
+	 * https://github.com/sheehan/grails-console/blob/d6c12eea6abc0e7bfa1f78b51939b05944e0ec0b/grails3/plugin/grails-app/services/org/grails/plugins/console/ConsoleService.groovy
+	 * 
+	 * especially this:
+	 * 
+    Evaluation eval(String code, boolean autoImportDomains, request) {
+        log.trace "eval() code: $code"
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream()
+        PrintStream out = new PrintStream(baos)
+
+        SystemOutputInterceptor systemOutInterceptor = createInterceptor(out)
+        systemOutInterceptor.start()
+
+        Evaluation evaluation = new Evaluation()
+
+        long startTime = System.currentTimeMillis()
+        try {
+            Binding binding = createBinding(request, out)
+            CompilerConfiguration configuration = createConfiguration(autoImportDomains)
+
+            GroovyShell groovyShell = new GroovyShell(grailsApplication.classLoader, binding, configuration)
+            evaluation.result = groovyShell.evaluate code
+        } catch (Throwable t) {
+            evaluation.exception = t
+        }
+
+        evaluation.totalTime = System.currentTimeMillis() - startTime
+        systemOutInterceptor.stop()
+
+        evaluation.output = baos.toString('UTF8')
+        evaluation
+    }
+
+    private static SystemOutputInterceptor createInterceptor(PrintStream out) {
+        new SystemOutputInterceptor({ String s ->
+            out.println s
+            return false
+        })
+    }
+
+    private Binding createBinding(request, PrintStream out) {
+        new Binding([
+            session          : request.session,
+            request          : request,
+            ctx              : grailsApplication.mainContext,
+            grailsApplication: grailsApplication,
+            config           : grailsApplication.config,
+            log              : log,
+            out              : out
+        ])
+    }
+
+    private CompilerConfiguration createConfiguration(boolean autoImportDomains) {
+        CompilerConfiguration configuration = new CompilerConfiguration()
+        if (autoImportDomains) {
+            ImportCustomizer importCustomizer = new ImportCustomizer()
+            importCustomizer.addImports(*grailsApplication.domainClasses*.fullName)
+            configuration.addCompilationCustomizers importCustomizer
+        }
+        configuration
+    }
+
+	 */
+	
 	
 	/*
 Context: {
@@ -164,7 +232,7 @@ Context: {
 	public Session(OperationContextBuilder usrctx) {
 		this.id = OperationContext.getHubId() + "_" + Session.nextSessionId();
 		this.key = StringUtil.buildSecurityCode();
-		this.level = Logger.getGlobalLevel();
+		this.level = HubLog.getGlobalLevel();
 		this.user = UserContext.allocate(usrctx);
 		this.originalOrigin = "hub:";
 		
@@ -212,7 +280,7 @@ Context: {
 					
 					try {
 						// be sure to send the message with the correct context
-						OperationContext.set(this.allocateContext());
+						this.useContext();
 						
 						// send and forget the keep alive request
 						Message msg = new Message("Session", "Manager", "Touch",
@@ -241,7 +309,7 @@ Context: {
 				
 				try {
 					// be sure to send the message with the correct context
-					OperationContext.set(this.allocateContext());
+					this.useContext();
 					
 					Message vmsg = new Message("dcAuth", "Authentication", "Verify");
 			    	
@@ -268,7 +336,7 @@ Context: {
 			
 			try {
 				// be sure to send the message with the correct context
-				OperationContext.set(this.allocateContext());
+				this.useContext();
 				
 				Message msg = new Message("dcAuth", "Authentication", "SignOut");				
 				Hub.instance.getBus().sendMessage(msg);	
@@ -285,30 +353,28 @@ Context: {
 		// TODO consider clearing adapter and reply handler too
 	}
 	
-	public OperationContext allocateContext() {
-		return this.allocateContext(this.originalOrigin);
+	public OperationContextBuilder allocateContextBuilder() {
+		return new OperationContextBuilder()
+			.withOrigin(this.originalOrigin)
+			.withDebugLevel(this.level)
+			.withSessionId(this.id);
 	}
 	
-	public OperationContext allocateContext(String origin) {
-		return OperationContext.allocate(this.user, 
-				new OperationContextBuilder()
-					.withOrigin(origin)
-					.withDebugLevel(this.level)
-					.withSessionId(this.id));
-	}
+	public OperationContext allocateContext(OperationContextBuilder tcb) {
+		return OperationContext.allocate(this.user, tcb); 
+	}	
 	
-	public OperationContext setContext(String origin) {
-		OperationContext tc = this.allocateContext(origin);
-		OperationContext.set(tc);
-		return tc;
-	}
+	public OperationContext useContext() {
+		return this.useContext(this.allocateContextBuilder());
+	}	
 	
-	public OperationContext setContext() {
-		OperationContext tc = this.allocateContext(this.originalOrigin);
-		OperationContext.set(tc);
-		return tc;
-	}
-
+	public OperationContext useContext(OperationContextBuilder tcb) {
+		OperationContext oc = OperationContext.allocate(this.user, tcb); 
+		OperationContext.set(oc);
+		return oc;
+	}	
+	
+	/*
 	public Task allocateTaskBuilder() {
 		return new Task()
 			.withContext(this.allocateContext(this.originalOrigin));
@@ -318,6 +384,7 @@ Context: {
 		return new Task()
 			.withContext(this.allocateContext(origin));
 	}
+	*/
 	
 	public TaskRun submitTask(Task task, IOperationObserver... observers) {
 		TaskRun run = new TaskRun(task);
@@ -534,7 +601,7 @@ Context: {
 	public void sendMessage(Message msg) {
 		// be sure we are using a proper context
 		if (!OperationContext.hasContext()) 
-			this.setContext();
+			this.useContext();
 		
 		// note that session has been used
 		this.touch();		
@@ -545,6 +612,13 @@ Context: {
 			// travel as part of the context with the message
 			RecordStruct newcreds = msg.getFieldAsRecord("Credentials").deepCopyExclude();
 			msg.removeField("Credentials");
+			
+			String ckey = this.adapter.getClientKey();
+			
+			if (StringUtil.isNotEmpty(ckey))
+				newcreds.setField("ClientKeyPrint", ckey);
+			else
+				newcreds.removeField("ClientKeyPrint");
 			
 			// if the sent credentials are different from those already in context then change
 			// (set checks if different)
@@ -1044,7 +1118,7 @@ Context: {
 	}
 	
 	public CtpAdapter allocateCtpAdapter() {
-		return new CtpAdapter(this.allocateContext());
+		return new CtpAdapter(this.allocateContext(this.allocateContextBuilder()));
 	}
 	
 	public class SendWaitInfo {

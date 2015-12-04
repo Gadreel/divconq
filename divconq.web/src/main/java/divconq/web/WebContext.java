@@ -22,8 +22,7 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.stream.ChunkedInput;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,44 +30,28 @@ import java.util.regex.Matcher;
 
 import divconq.cms.feed.FeedAdapter;
 import divconq.hub.DomainInfo;
-import divconq.hub.Hub;
 import divconq.io.CacheFile;
 import divconq.lang.op.OperationContext;
-import divconq.lang.op.UserContext;
-import divconq.locale.LocaleInfo;
-import divconq.locale.LocaleUtil;
+import divconq.locale.Tr;
 import divconq.struct.CompositeStruct;
 import divconq.struct.RecordStruct;
 import divconq.struct.Struct;
 import divconq.util.StringUtil;
 import divconq.web.dcui.GalleryImageConsumer;
 import divconq.web.dcui.Node;
+import divconq.web.md.Configuration;
+import divconq.web.md.ProcessContext;
+import divconq.web.md.plugin.PairedMediaSection;
+import divconq.web.md.plugin.StandardSection;
 import divconq.xml.XElement;
 
 public class WebContext {
 	protected IInnerContext innerctx = null;
-	protected LocaleInfo selectedlocale = null;
-	protected String theme = null;
 	protected boolean preview = false;
-	// TODO restore if useful protected boolean completed = false;
-	//protected Map<String, ContentPlaceholder> holders = new HashMap<String, ContentPlaceholder>();
+
 	protected Map<String, String> innerparams = new HashMap<String, String>();
 	
 	protected GroovyObject serverScript = null;
-
-	/*
-	public ContentPlaceholder getHolder(String name) {
-		synchronized (this.holders) {
-			if (!this.holders.containsKey(name)) {
-				ContentPlaceholder ph = new ContentPlaceholder();
-				this.holders.put(name, ph);
-				return ph;
-			}
-		}
-
-		return this.holders.get(name);
-	}
-	*/
 	
 	public GroovyObject getServerScript() {
 		return this.serverScript;
@@ -146,163 +129,73 @@ public class WebContext {
 		  
 		  String val = null;
 		  
-		  // TODO check size of parts @val
-		  
 		  // params on this tree
-		  if ("param".equals(parts[0])) {
+		  if ("param".equals(parts[0]) && (parts.length > 1)) {
 			  val = this.getExternalParam(parts[1]);
-			  
-			  if (val == null)
-				  val = "";
 		  }
-		  else if ("ctx".equals(parts[0])) {
-			  val = this.getInternalParam(parts[1]);
+		  else if ("ctx".equals(parts[0]) && (parts.length > 1)) {
+			  String vname = parts[1];
 			  
-			  if (val == null)
-				  val = "";
+			  val = this.getInternalParam(vname);
+			  
+			  // TODO review and remove paths, excessive
+			  if ((val == null) && (vname.equals("SignInPath") || vname.equals("HomePath") || vname.equals("PortalPath")
+					  || vname.equals("SiteTitle") || vname.equals("SiteAuthor") || vname.equals("SiteCopyright")))
+			  {
+				DomainInfo domain = this.getDomain().getDomainInfo();
+				
+				XElement domconfig = domain.getSettings();
+				
+				if (domconfig != null) {
+					XElement web = domconfig.selectFirst("Web");
+					
+					if ((web != null) && (web.hasAttribute(vname))) 
+						val = web.getRawAttribute(vname);
+				}
+			  }
+			  
+			  // if not a web setting, perhaps a user field?
+			  if ((val == null) && (vname.equals("dcUserFullname"))) {
+					val = OperationContext.get().getUserContext().getFullName();
+			  }
 		  }
 		  // definitions in the dictionary
 		  else if ("tr".equals(parts[0])) {
-			  val = this.getDomain().tr(this.getLocale(), parts[1]);		// TODO support tr params
+			if ((parts.length > 1) && (StringUtil.isDataInteger(parts[1]))) 
+				parts[1] = "_code_" + parts[1];
 			  
-			  if (val == null)
-				  val = "";
+			if (parts.length > 2) {
+				String[] params = Arrays.copyOfRange(parts, 2, parts.length - 2);
+				val = Tr.tr(parts[1], (Object) params);		// TODO test this
+			}
+			else if (parts.length > 1) {
+				val = Tr.tr(parts[1]);		
+			}
 		  }
 		  else if (this.innerctx != null) {
 			  IWebMacro macroproc = this.innerctx.getMacro(parts[0]);
 			  
-			  if (macroproc != null) {
+			  if (macroproc != null) 
 				  val = macroproc.process(this, parts);
-				  
-				  if (val == null)
-					  val = "";
-			  }
 		  }
+		  
+		  if (val == null)
+			  return "";
 		  
 		  return val;
 	  }
 
-	public LocaleInfo getLocale() {
-		if (this.selectedlocale == null) {
-			// TODO look at supported languages also, std http headers
-
-			OperationContext tc = OperationContext.get();
-			
-			String locale = tc.getUserContext().getLocale();
-			
-			Cookie ck = this.getRequest().getCookie("dcmLocale");
-			
-			if (ck != null)
-				locale = ck.value(); 
-			
-			// TODO if different
-			//tc.getUserContext().setLocale(locale);	
-	
-			this.selectedlocale = LocaleUtil.getStrictLocaleInfo(locale);
-			
-			if (this.selectedlocale == null)
-				this.selectedlocale = this.innerctx.getDomain().getDefaultLocaleInfo();
-		}
-		
-		return this.selectedlocale;
-	}
-	
 	public WebDomain getDomain() {
 		return this.innerctx.getDomain();
 	}
 	
 	public WebContext(IInnerContext httpctx) {
 		this.innerctx = httpctx;
-		
-		Cookie ck = this.innerctx.getRequest().getCookie("dcmTheme");
 
-		if (ck != null)
-			this.theme = ck.value();
-
-		ck = this.innerctx.getRequest().getCookie("dcmPreview");
+		Cookie ck = this.innerctx.getRequest().getCookie("dcPreview");
 
 		if (ck != null)
 			this.preview = "true".equals(ck.value().toLowerCase());
-		
-		// TODO get default theme from WebExtension 
-		
-		// TODO add device override support too
-		
-		this.putInternalParam("dcmVersion", "0.9.6");
-		
-		UserContext uc = OperationContext.get().getUserContext();
-		
-		this.putInternalParam("dcUserId", uc.getUserId());
-		this.putInternalParam("dcUsername", uc.getUsername());
-		this.putInternalParam("dcUserFullname", uc.getFullName());
-		this.putInternalParam("dcUserEmail", uc.getEmail());
-		
-		DomainInfo domain = Hub.instance.getDomainInfo(httpctx.getDomain().getId());
-		
-		XElement domconfig = domain.getSettings();
-		
-		if (domconfig!= null) {
-			XElement web = domconfig.selectFirst("Web");
-			
-			if (web != null) {
-				if (web.hasAttribute("SignInPath")) 
-					this.putInternalParam("SignInPath", web.getAttribute("SignInPath"));
-				
-				if (web.hasAttribute("HomePath")) 
-					this.putInternalParam("HomePath", web.getAttribute("HomePath"));
-				
-				if (web.hasAttribute("PortalPath")) 
-					this.putInternalParam("PortalPath", web.getAttribute("PortalPath"));
-				
-				if (web.hasAttribute("SiteTitle")) 
-					this.putInternalParam("SiteTitle", web.getRawAttribute("SiteTitle"));
-				
-				if (web.hasAttribute("SiteAuthor")) 
-					this.putInternalParam("SiteAuthor", web.getRawAttribute("SiteAuthor"));
-				
-				if (web.hasAttribute("SiteCopyright")) 
-					this.putInternalParam("SiteCopyright", web.getRawAttribute("SiteCopyright"));
-			}
-		}
-	}
-
-	/*
-	public PrintStream getPrintStream() throws IOException {
-		if (this.prntstream == null)
-			this.prntstream = this.response.getPrintStream();
-
-		return this.prntstream;
-	}
-
-	public OutputStream getRawStream() throws IOException {
-		if (this.rawstream == null)
-			this.rawstream = this.response.getOutputStream();
-
-		return this.rawstream;
-	}
-	*/
-
-	public String format(String str, Object... args) {
-		LocaleInfo locale = this.getLocale();
-
-		if (locale != null)
-			return String.format(locale.getLocale(), str, args);
-
-		return String.format(str, args);
-	}
-
-	public boolean isRightToLeft() {
-		if (this.getLocale() != null)
-			return this.getLocale().isRightToLeft();
-
-		return false;
-	}
-
-	public String getLanguage() {
-		if (this.getLocale() != null)
-			return this.getLocale().getLanguage();
-
-		return null;
 	}
 
 	public Response getResponse() {
@@ -317,33 +210,8 @@ public class WebContext {
     	return this.getRequest().getParameters();
     }
 	
-    /* TODO restore this if we can find a use
-	public boolean isCompleted() {
-		return this.completed;
-	}
-	*/
-
-	public String getTheme() {
-		return this.theme;
-	}
-
-	public void setTheme(String v) {
-		this.theme = v;
-	}
-	
 	public String getHost() {
 		return WebSiteManager.resolveHost(this.innerctx.getRequest());
-	}
-	
-	public Collection<String> getThemeSearch() {
-		List<String> path = new ArrayList<String>();
-		
-		if (StringUtil.isNotEmpty(this.theme))
-			path.add(this.theme);
-	
-		path.add("default");
-		
-		return path;
 	}
 
 	public void send() {
@@ -437,7 +305,7 @@ public class WebContext {
 				
 				if (fpath != null) {
 					FeedAdapter adapt = new FeedAdapter();
-					adapt.init(path, fpath.getFilePath());		// TODO not ideal, support FileCache object directly as FilePath is not our suggested usage
+					adapt.init(path, fpath);		
 					return adapt; 
 				}
 				
@@ -471,5 +339,20 @@ public class WebContext {
 
 	public WebSite getSite() {
 		return this.innerctx.getSite();
+	}
+
+	// TODO enhance how plugins are loaded
+	public ProcessContext getMarkdownContext() {
+		Configuration cfg = new Configuration()
+			.setSafeMode(false)
+			.registerPlugins(new PairedMediaSection(), new StandardSection());
+		
+		return new ProcessContext(cfg, this);
+	}
+	
+	public ProcessContext getSafeMarkdownContext() {
+		Configuration cfg = new Configuration();
+		
+		return new ProcessContext(cfg, this);
 	}
 }

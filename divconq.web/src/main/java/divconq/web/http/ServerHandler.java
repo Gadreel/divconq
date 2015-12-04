@@ -26,6 +26,7 @@ import divconq.hub.Hub;
 import divconq.hub.HubState;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
+import divconq.lang.op.OperationContextBuilder;
 import divconq.lang.op.OperationResult;
 import divconq.log.Logger;
 import divconq.net.NetUtil;
@@ -61,6 +62,7 @@ import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.HttpMethod;
@@ -145,6 +147,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
     // http://www.html5rocks.com/en/tutorials/cors/
     // http://enable-cors.org/server.html
     
+    // BREACH etc
+    // https://community.qualys.com/blogs/securitylabs/2013/08/07/defending-against-the-breach-attack
+    // https://en.wikipedia.org/wiki/BREACH_(security_exploit)
     
     /*
 GET http://229097002.log.optimizely.com/event?a=229097002&d=229097002&y=false&x761570292=750582396&s231842852=gc&s231947722=search&s232031415=false&n=http%3A%2F%2Fwww.telerik.com%2Fdownload%2Ffiddler%2Ffirst-run&u=oeu1393506471224r0.17277055932208896&wxhr=true&t=1398696975163&f=702401691,760731745,761570292,766240693,834650096 HTTP/1.1
@@ -213,6 +218,11 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 				@Override
 				public void stop() {
 					ServerHandler.this.context.close();
+				}
+				
+				@Override
+				public String getClientKey() {
+					return ServerHandler.this.context.getClientCert();
 				}
 				
 				@Override
@@ -410,7 +420,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		
 		this.context.setSite(wsite);
 		
-		Cookie sesscookie = req.getCookie("SessionId");
+		Cookie sesscookie = req.getCookie("dcSessionId");
 		Session sess = null;
 		
 		if (sesscookie != null) {
@@ -421,7 +431,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 			sess = Hub.instance.getSessions().lookupAuth(sessionid, accesscode);
 		}
 		
-		if (sess == null) {			
+		if (sess == null) {
 			sess = Hub.instance.getSessions().create(origin, dinfo.getId());
 			
 			Logger.info("Started new session: " + sess.getId() + " on " + req.getPath() + " for " + origin);
@@ -441,6 +451,11 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 				}
 				
 				@Override
+				public String getClientKey() {
+					return ServerHandler.this.context.getClientCert();
+				}
+				
+				@Override
 				public ListStruct popMessages() {
 					ListStruct ret = this.msgs;
 					this.msgs = new ListStruct();
@@ -457,9 +472,13 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 				}
 			});			
 			
-			Cookie sk = new DefaultCookie("SessionId", sess.getId() + "_" + sess.getKey());
+			Cookie sk = new DefaultCookie("dcSessionId", sess.getId() + "_" + sess.getKey());
 			sk.setPath("/");
 			sk.setHttpOnly(true);
+			
+			// TODO configure, but make Secure by default if using https 
+			if (ctx.channel().pipeline().get("ssl") != null)
+				sk.setSecure(true);
 			
 			resp.setCookie(sk);		 
 		}
@@ -468,10 +487,31 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		
 		sess.touch();
 		
-		OperationContext tc = sess.setContext(origin);
+		OperationContextBuilder ctxb = sess.allocateContextBuilder()
+				.withOrigin(origin);
+		
+		Cookie localek = wsite.resolveLocale(this.context, sess.getUser(), ctxb);
+		
+		if (localek != null) {
+			localek.setPath("/");
+			localek.setHttpOnly(true);
+			
+			// TODO configure, but make Secure by default if using https 
+			if (ctx.channel().pipeline().get("ssl") != null)
+				localek.setSecure(true);
+			
+			resp.setCookie(localek);		 
+		}
+		
+		OperationContext tc = sess.useContext(ctxb);		
+		tc.setLocaleResource(wsite);
 
 		if (!"rpc".equals(req.getPath().getName(0)))
 			tc.info("Web request for host: " + req.getHeader("Host") +  " url: " + req.getPath() + " by: " + origin + " session: " + sess.getId());
+		
+		// TODO if (Logger.isDebug()) {
+		//	System.out.println("Operating locale " + tc.getWorkingLocale());
+		//}
 		
 		/*
 		System.out.println("sess proto: " + ((SslHandler)ctx.channel().pipeline().get("ssl")).engine().getSession().getProtocol());
@@ -790,6 +830,9 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 
 	    		// tell the client that chunked content is coming
 	    		this.context.sendDownloadHeaders(dsc.getPath() != null ? dsc.getPath().getFileName() : null, dsc.getMime());
+	    		
+	    		// TODO for now disable compression on downloads - later determine if we should enable for some cases
+				this.context.getResponse().setHeader(HttpHeaders.Names.CONTENT_ENCODING, HttpHeaders.Values.IDENTITY);
 	    		
 				if (Logger.isDebug())
 					Logger.debug("Singal Transfer Start - " + cid);

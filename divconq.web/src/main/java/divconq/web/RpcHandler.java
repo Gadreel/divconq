@@ -55,7 +55,7 @@ public class RpcHandler implements IBodyCallback {
 			return;
 		}
 		
-		this.context.getSession().setContext();
+		this.context.session.useContext(this.context.session.allocateContextBuilder());
 		
 		RecordStruct mrec = (RecordStruct) croot;
 		

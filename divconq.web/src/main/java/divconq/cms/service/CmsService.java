@@ -23,20 +23,27 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 import divconq.bus.IService;
 import divconq.bus.Message;
 import divconq.bus.MessageUtil;
-import divconq.cms.importer.ImportWebsiteTool;
+import divconq.cms.feed.CollectContext;
+import divconq.cms.feed.DeleteMode;
+import divconq.cms.feed.FeedInfo;
+import divconq.cms.feed.FeedIndexer;
 import divconq.db.DataRequest;
 import divconq.db.ObjectFinalResult;
 import divconq.db.ObjectResult;
@@ -58,8 +65,7 @@ import divconq.lang.op.FuncCallback;
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationCallback;
 import divconq.lang.op.OperationContext;
-import divconq.lang.op.OperationContextBuilder;
-import divconq.lang.op.OperationResult;
+import divconq.log.Logger;
 import divconq.mod.ExtensionBase;
 import divconq.session.Session;
 import divconq.session.DataStreamChannel;
@@ -71,8 +77,6 @@ import divconq.struct.Struct;
 import divconq.util.IOUtil;
 import divconq.util.MimeUtil;
 import divconq.util.StringUtil;
-import divconq.work.IWork;
-import divconq.work.Task;
 import divconq.work.TaskRun;
 import divconq.xml.XElement;
 import divconq.xml.XmlReader;
@@ -333,10 +337,11 @@ public class CmsService extends ExtensionBase implements IService {
 			}
 			
 			if ("ImportSite".equals(op)) {
-				// TODO turn this into a task in the service pool so all imports are processed separately
-				ImportWebsiteTool iutil = new ImportWebsiteTool();
+				FeedIndexer iutil = new FeedIndexer();
 				
-				iutil.importSite(new OperationCallback() {
+				iutil.collectDomain(new CollectContext().forIndex());
+				
+				iutil.importDomain(new OperationCallback() {
 					@Override
 					public void callback() {
 						request.complete();
@@ -372,6 +377,16 @@ public class CmsService extends ExtensionBase implements IService {
 		// =========================================================
 		
 		if ("Feeds".equals(feature)) {
+			if ("ListPages".equals(op)) {
+				this.handleListPages(request);
+				return;
+			}
+			
+			if ("AddPageFolder".equals(op)) {
+				this.handleAddPageFolder(request);
+				return;
+			}
+			
 			if ("LoadFeedsDefinition".equals(op)) {
 				this.handleLoadFeedsDefinitions(request);
 				return;
@@ -402,6 +417,11 @@ public class CmsService extends ExtensionBase implements IService {
 				return;
 			}
 			
+			if ("UpdatePublishFeedFiles".equals(op)) {
+				this.handleUpdatePublishFeedFiles(request);
+				return;
+			}
+			
 			if ("PublishFeedFiles".equals(op)) {
 				this.handlePublishFeedFiles(request);
 				return;
@@ -422,9 +442,116 @@ public class CmsService extends ExtensionBase implements IService {
 		request.complete();
 	}
 	
+	public void handleListPages(TaskRun request) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		
+		String channel = "Pages";
+		String path = rec.getFieldAsString("Path");
+		String site = rec.getFieldAsString("Site");	
+		
+		// link to fake so we can use FeedInfo to locate the folders
+		FeedInfo fi = FeedInfo.buildInfo(site, channel, path + "/_fake.dcf.xml");
+		
+		Path pubpath = fi.getPubpath().getParent();
+		Path prepath = fi.getPrepath().getParent();
+		
+		Map<String, RecordStruct> collected = new HashMap<>();
+
+		// code to list files
+		BiConsumer<Path, Boolean> listing = new BiConsumer<Path, Boolean>() {			
+			@Override
+			public void accept(Path apath, Boolean preview) {
+				Path wwwsrc1 = apath.toAbsolutePath().normalize();
+				
+				if (!Files.exists(wwwsrc1)) 
+					return;
+				
+				try {
+					Files.list(wwwsrc1).forEach(new Consumer<Path>() {
+						@Override
+						public void accept(Path sfile) {
+							Path relpath = wwwsrc1.relativize(sfile);
+							
+							String fname = relpath.getFileName().toString();
+
+							// only collect dcf files and folders
+							boolean isdcf = fname.endsWith(".dcf.xml");
+							boolean isfolder = Files.isDirectory(sfile);
+							
+							if (!isdcf && !isfolder) 
+								return;
+							
+							if (isdcf)
+								fname = fname.substring(0, fname.length() - 8);
+								
+							// skip if already in the collect list
+							if (collected.containsKey(fname)) 
+								return;
+								
+							try {
+								RecordStruct fdata = new RecordStruct();
+								
+								fdata.setField("FileName", fname);
+								fdata.setField("IsFolder", isfolder);
+								fdata.setField("IsPreview", preview);
+								fdata.setField("LastModified", new DateTime(Files.getLastModifiedTime(sfile).toMillis(), DateTimeZone.UTC));
+								fdata.setField("Size", Files.size(sfile));
+								
+								collected.put(fname, fdata);
+							}
+							catch (IOException x) {
+								Logger.error("Error collecting file: " + fname + " : " + x);
+							}
+						}					
+					});
+				}
+				catch (IOException x) {
+					Logger.error("Error collecting files: " + path + " : " + x);
+				}
+			}
+		};
+				
+		listing.accept(prepath, true);
+		listing.accept(pubpath, false);
+		
+		ListStruct files = new ListStruct();
+		request.setResult(files);
+		
+		for (RecordStruct rec1 : collected.values())
+			files.addItem(rec1);
+		
+		request.complete();
+	}
+	
+	public void handleAddPageFolder(TaskRun request) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		
+		String channel = "Pages";
+		String path = rec.getFieldAsString("Path");
+		String site = rec.getFieldAsString("Site");	
+		
+		// link to fake so we can use FeedInfo to locate the folders
+		FeedInfo fi = FeedInfo.buildInfo(site, channel, path + "/_fake.dcf.xml");
+		
+		Path pubpath = fi.getPubpath().getParent();
+		Path prepath = fi.getPrepath().getParent();
+
+		try {
+			Files.createDirectories(prepath);
+			Files.createDirectories(pubpath);
+		}
+		catch (IOException x) {
+			Logger.error("Error collecting files: " + path + " : " + x);
+		}
+		
+		request.complete();
+	}
+	
 	public void handleFeedLoadList(TaskRun request) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
 		String channel = rec.getFieldAsString("Channel");
+		
+		// TODO add site support
 		
 		Hub.instance.getDatabase().submit(
 				new SelectDirectRequest() 
@@ -447,270 +574,88 @@ public class CmsService extends ExtensionBase implements IService {
 	public void handleAddFeedFiles(TaskRun request) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
 		
-		String locale = "en";		// TODO elaborate
-		String channel = rec.getFieldAsString("Channel");
-		String path = rec.getFieldAsString("Path");
-		
-		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
-		
-		XElement feed = domain.getSettings().find("Feed");
-		
-		if (feed == null) { 
-			request.error("Unable to find feed settings: " + channel);
-			request.complete();
-			return;
-		}
-		
-		// there are two special channels - Pages and Blocks
-		for (XElement chan : feed.selectAll("Channel")) { 
-			String calias = chan.getAttribute("Alias");
-			
-			if (calias == null)
-				calias = chan.getAttribute("Name");
-			
-			if (calias.equals(channel)) {
-				path = chan.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
-				break;
-			}			
-		}
+		FeedInfo fi = FeedInfo.recordToInfo(rec);
 
-		Path srcpath = domain.resolvePath("/feed-preview" + path + ".dcf.xml");
-		
-		try {
-			Files.createDirectories(srcpath.getParent());
-			
-			// put a record in database so we'll show up in the listing
-			Hub.instance.getDatabase().submit(
-				new ReplicatedDataRequest("dcmFeedUpdate")
-					.withParams(new RecordStruct()
-						.withField("Channel", channel)
-						.withField("Path", path)
-						.withField("Editable", true)
-						.withField("Fields", new ListStruct()
-							.withItems(new RecordStruct()
-								.withField("Name", "Title")
-								.withField("Locale", locale)		
-								.withField("Value", rec.getFieldAsString("Title"))
-							)
-						)
-					), 
-				new ObjectResult() {
-					@Override
-					public void process(CompositeStruct result3b) {
-						XElement root = new XElement("dcf")
-							.withAttribute("Locale", locale)
-							.with(new XElement("Field")
-								.withAttribute("Value", rec.getFieldAsString("Title"))
-								.withAttribute("Name", "Title")
-							);
-						
-						// allow overwrites - else we will orphan new files that cannot be indexed
-						IOUtil.saveEntireFile(srcpath, root.toString(true));
-						
-						request.complete();
-					}
-				});
-		}
-		catch (Exception x) {
-			request.error("Unable to add feed: " + x);
-			request.complete();
-		}
+		fi.initDraftFile(rec.getFieldAsString("Locale"), rec.getFieldAsString("Title"), null, new FuncCallback<CompositeStruct>() {
+			@Override
+			public void callback() {
+				//request.setResult(this.getResult());
+				request.complete();
+			}
+		});
 	}
 	
 	public void handleAddPageFiles(TaskRun request) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
+		
 		String channel = "Pages";
-		String locale = "en";		// TODO elaborate
 		String path = rec.getFieldAsString("Path");
+		String site = rec.getFieldAsString("Site");	
+		String tname = rec.getFieldAsString("Template");	
 		
-		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		FeedInfo fi = FeedInfo.buildInfo(site, channel, path);
 		
-		XElement feed = domain.getSettings().find("Feed");
+		String dcui = null;
 		
-		if (feed == null) { 
-			request.error("Unable to find feed settings: " + channel);
-			request.complete();
-			return;
-		}
+		XElement chel = FeedIndexer.findChannel(site, channel);
 		
-		String ipath = path;
-		
-		// there are two special channels - Pages and Blocks
-		for (XElement chan : feed.selectAll("Channel")) { 
-			String calias = chan.getAttribute("Alias");
-			
-			if (calias == null)
-				calias = chan.getAttribute("Name");
-			
-			if (calias.equals(channel)) {
-				ipath = chan.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
+		for (XElement tel : chel.selectAll("Template")) {
+			if (tname.equals(tel.getAttribute("Name"))) {
+				XElement ctel = (XElement) tel.deepCopy();				
+				ctel.setName("dcui");
+				dcui = ctel.toString(true);
 				break;
-			}			
+			}
 		}
-
-		Path srcpath = domain.resolvePath("/feed-preview" + ipath + ".dcf.xml");
-
-		// TODO someday work this out so that it will go to www-preview at first
-		Path uisrcpath = domain.resolvePath("/www" + path + ".dcui.xml");
 		
-		try {
-			Files.createDirectories(srcpath.getParent());
-			Files.createDirectories(uisrcpath.getParent());
-			
-			// put a record in database so we'll show up in the listing
-			Hub.instance.getDatabase().submit(
-				new ReplicatedDataRequest("dcmFeedUpdate")
-					.withParams(new RecordStruct()
-						.withField("Channel", channel)
-						.withField("Path", path)
-						.withField("Editable", true)
-						.withField("Fields", new ListStruct()
-							.withItems(new RecordStruct()
-								.withField("Name", "Title")
-								.withField("Locale", locale)		
-								.withField("Value", rec.getFieldAsString("Title"))
-							)
-						)
-					), 
-				new ObjectResult() {
-					@Override
-					public void process(CompositeStruct result3b) {
-						IOUtil.saveEntireFile(uisrcpath, rec.getFieldAsString("UIContentXml"));
-	
-						XElement root = new XElement("dcf")
-							.withAttribute("Locale", locale)
-							.with(new XElement("Field")
-								.withAttribute("Value", rec.getFieldAsString("Title"))
-								.withAttribute("Name", "Title")
-							);
-						
-						// allow overwrites - else we will orphan new files that cannot be indexed
-						IOUtil.saveEntireFile(srcpath, root.toString(true));
-						
-						request.complete();
-					}
-				});
-		}
-		catch (Exception x) {
-			request.error("Unable to add feed: " + x);
-			request.complete();
-		}
+		DomainInfo di = OperationContext.get().getDomain();
+		
+		Path tpath = di.resolvePath("/config/templates/" + tname + ".dcui.xml");
+		
+		if (Files.exists(tpath)) 
+			dcui = IOUtil.readEntireFile(tpath).getResult().toString();
+		
+		fi.initDraftFile(rec.getFieldAsString("Locale"), rec.getFieldAsString("Title"), dcui, new FuncCallback<CompositeStruct>() {
+			@Override
+			public void callback() {
+				//request.setResult(this.getResult());
+				request.complete();
+			}
+		});
 	}
 	
 	public void handleUpdateFeedFiles(TaskRun request) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
-		String channel = rec.getFieldAsString("Channel");
-		String path = rec.getFieldAsString("Path");
 		
-		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		FeedInfo fi = FeedInfo.recordToInfo(rec);
 		
-		XElement feed = domain.getSettings().find("Feed");
-		
-		if (feed == null) { 
-			request.error("Unable to find feed settings: " + channel);
-			request.complete();
-			return;
-		}
-		
-		// there are two special channels - Pages and Blocks
-		for (XElement chan : feed.selectAll("Channel")) { 
-			String calias = chan.getAttribute("Alias");
-			
-			if (calias == null)
-				calias = chan.getAttribute("Name");
-			
-			if (calias.equals(channel)) {
-				path = chan.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
-				break;
-			}			
-		}
-
-		//if ("Pages".equals(channel)) 
-		//	path = "/Pages" + path;
-
-		Path srcpath = domain.resolvePath("/feed-preview" + path + ".dcf.xml");
-		Path psrcpath = domain.resolvePath("/feed" + path + ".dcf.xml");
-		
-		if (Files.notExists(srcpath) && Files.notExists(psrcpath))
-			try {
-				XElement root = rec.getFieldAsXml("ContentXml");
-				
-				String locale = root.hasAttribute("Locale") ? root.getAttribute("Locale") : "en";
-				
-				Files.createDirectories(srcpath.getParent());
-				
-				// put a record in database so we'll show up in the listing
-				Hub.instance.getDatabase().submit(
-					new ReplicatedDataRequest("dcmFeedUpdate")
-						.withParams(new RecordStruct()
-							.withField("Channel", channel)
-							.withField("Path", path)
-							.withField("Editable", true)
-							.withField("Fields", new ListStruct()
-								.withItems(new RecordStruct()
-									.withField("Name", "Title")
-									.withField("Locale", locale)		
-									.withField("Value", rec.getFieldAsString("Title"))
-								)
-							)
-						), 
-					new ObjectResult() {
-						@Override
-						public void process(CompositeStruct result3b) {
-							root.withAttribute("Locale", locale);
-							
-							if (rec.hasField("UpdateFiles"))
-								for (Struct uf : rec.getFieldAsList("UpdateFiles").getItems()) {
-									RecordStruct urec = (RecordStruct) uf;
-					
-									IOUtil.saveEntireFile(srcpath.resolveSibling(urec.getFieldAsString("Name")), urec.getFieldAsString("Content"));
-								}
-							
-							// allow overwrites - else we will orphan new files that cannot be indexed
-							IOUtil.saveEntireFile(srcpath, root.toString(true));
-							
-							request.returnValue(result3b);
-						}
-					});
-			}
-			catch (Exception x) {
-				request.error("Unable to add feed: " + x);
+		fi.saveFile(true, rec.getFieldAsXml("ContentXml"), rec.getFieldAsList("UpdateFiles"), rec.getFieldAsList("DeleteFiles"), new FuncCallback<CompositeStruct>() {
+			@Override
+			public void callback() {
 				request.complete();
-			}		
-		else {
-			try {
-				if (rec.hasField("DeleteFiles"))
-					for (Struct df : rec.getFieldAsList("DeleteFiles").getItems()) {
-						try {
-							Files.deleteIfExists(srcpath.resolveSibling(df.toString()));
-						}
-						catch (Exception x) {
-							System.out.println("Problem deleting: " + df);
-						}
-					}
-					
-				if (rec.hasField("UpdateFiles"))
-					for (Struct uf : rec.getFieldAsList("UpdateFiles").getItems()) {
-						RecordStruct urec = (RecordStruct) uf;
-		
-						IOUtil.saveEntireFile(srcpath.resolveSibling(urec.getFieldAsString("Name")), urec.getFieldAsString("Content"));
-					}
-				
-				if (rec.hasField("ContentXml"))
-					IOUtil.saveEntireFile(srcpath, rec.getFieldAsString("ContentXml"));
 			}
-			catch (Exception x) {
-				request.error("Unable to update feed: " + x);
-			}
-		}
+		});
+	}
+	
+	public void handleUpdatePublishFeedFiles(TaskRun request) {
+		RecordStruct rec = MessageUtil.bodyAsRecord(request);
 		
-		request.complete();
+		FeedInfo fi = FeedInfo.recordToInfo(rec);
+		
+		fi.saveFile(false, rec.getFieldAsXml("ContentXml"), rec.getFieldAsList("UpdateFiles"), rec.getFieldAsList("DeleteFiles"), new FuncCallback<CompositeStruct>() {
+			@Override
+			public void callback() {
+				request.complete();
+			}
+		});
 	}
 	
 	public void handleLoadFeedsDefinitions(TaskRun request) {
 		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
 		
-		XElement feed = domain.getSettings().find("Feed");
+		// TODO add site support
+		
+		XElement feed = domain.getSettings().find("Feed");	
 		
 		if (feed == null) {
 			request.error("Feed definition does not exist.");
@@ -726,46 +671,22 @@ public class CmsService extends ExtensionBase implements IService {
 		
 	public void handleLoadFeedFiles(TaskRun request) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
-		String channel = rec.getFieldAsString("Channel");
-		String path = rec.getFieldAsString("Path");
 		
-		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		FeedInfo fi = FeedInfo.recordToInfo(rec);
 		
-		XElement feed = domain.getSettings().find("Feed");
-		
-		if (feed == null) {
-			request.error("Feed definition does not exist.");
-			request.complete();
-			return;
-		}
-		
-		XElement definition = null;
-		
-		for (XElement chan : feed.selectAll("Channel")) {
-			String alias = chan.getAttribute("Alias");
-			
-			if (alias == null)
-				alias = chan.getAttribute("Name");
-			
-			if (channel.equals(alias)) {
-				definition = chan;
-				break;
-			}
-		}
-		
-		if (definition == null) {
-			request.error("Feed channel definition (" + channel + ") does not exist.");
-			request.complete();
-			return;
-		}
+		String channel = fi.getChannel();
+		String path = fi.getOuterPath();
 		
 		// copy it because we might alter it
-		definition = (XElement) definition.deepCopy();
+		XElement definition = (XElement) fi.getChannelDef().deepCopy();
 		
 		String help = null;
 		
 		// load Page definitions...
 		if ("Pages".equals(channel) || "Block".equals(channel)) {
+			DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+			
+			// TODO per site
 			Path srcpath = Hub.instance.getPublicFileStore().resolvePath("dcw/" + domain.getAlias() + "/www-preview/" + path + ".dcui.xml");
 			
 			if (Files.notExists(srcpath))
@@ -788,6 +709,9 @@ public class CmsService extends ExtensionBase implements IService {
 			for (XElement ppd : res.getResult().selectAll("PagePartDef"))
 				definition.add(ppd);
 
+			for (XElement cfd : res.getResult().selectAll("CustomFields"))
+				definition.add(cfd);
+
 			for (XElement ppd : res.getResult().selectAll("Help"))
 				definition.add(ppd);
 			
@@ -797,87 +721,48 @@ public class CmsService extends ExtensionBase implements IService {
 				help = hd.getValue();
 		}
 		
-		path = definition.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
-
-		//if ("Pages".equals(channel)) 
-		//	path = "/Pages" + path;
-			
-		Path previewpath = domain.resolvePath("/feed-preview" + path + ".dcf.xml");
-		Path pubpath = domain.resolvePath("/feed" + path + ".dcf.xml");
+		boolean draft = true;
+		Path srcpath = fi.getPrepath();
 		
-		Path srcpath = previewpath;
-		
-		if (Files.notExists(srcpath))
-			srcpath = pubpath;
+		if (Files.notExists(srcpath)) {
+			srcpath = fi.getPubpath();
+			draft = false;
+		}
 		
 		if (Files.notExists(srcpath)) {
 			request.error("Feed file " + path + " does not exist.");
 			request.complete();
 			return;
 		}
-		
-		FuncResult<XElement> res = XmlReader.loadFile(srcpath, false);
-		
-		if (res.hasErrors()) {
-			request.error("Bad feed file " + path + ".");
-			request.complete();
-			return;
-		}
-		
-		String fname = srcpath.getFileName().toString();
-		String ffname = fname.substring(0, fname.indexOf('.'));
-		
-		XElement xml = res.getResult();
-		
+
+		// collect the external file contents
 		ListStruct files = new ListStruct();
 		
-		RecordStruct resp = new RecordStruct()
-			.withField("ChannelXml", definition)
-			.withField("ContentXml", xml.toString(true))
-			.withField("Files", files);
-		
-		BiConsumer<XElement, String> addfilefunc = new BiConsumer<XElement, String>() {			
-			@Override
-			public void accept(XElement part, String locale) {
-				String ext = part.getAttribute("External", "false").toLowerCase();
-				
-				if (!"true".equals(ext))
-					return;
-				
-				if (part.hasAttribute("Locale"))
-					locale = part.getAttribute("Locale");	// use the override locale if present
+		for (String sname : fi.collectExternalFileNames(draft)) {
+			Path spath = fi.getPrepath().resolveSibling(sname);
 			
-				String sname = ffname + "." + part.getAttribute("For") + "." + locale + "." + part.getAttribute("Format");
-				Path spath = previewpath.resolveSibling(sname);
+			if (Files.notExists(spath))
+				spath = fi.getPubpath().resolveSibling(sname);
+			
+			FuncResult<CharSequence> mres = IOUtil.readEntireFile(spath);
+			
+			if (mres.isNotEmptyResult()) {
+				RecordStruct fentry = new RecordStruct()
+					.withField("Name", sname)
+					.withField("Content", mres.getResult().toString());
 				
-				if (Files.notExists(spath))
-					spath = pubpath.resolveSibling(sname);
-				
-				FuncResult<CharSequence> mres = IOUtil.readEntireFile(spath);
-				
-				if (mres.isNotEmptyResult()) {
-					RecordStruct fentry = new RecordStruct()
-						.withField("Name", sname)
-						.withField("Content", mres.getResult().toString());
-					
-					files.addItem(fentry);
-				}
+				files.addItem(fentry);
 			}
-		}; 
-		
-		String deflocale = xml.getAttribute("Locale", OperationContext.get().getDomain().getLocale());
-		
-		for (XElement fel : xml.selectAll("PagePart")) 
-			addfilefunc.accept(fel, deflocale);
-		
-		for (XElement afel : xml.selectAll("Alternate")) {
-			String locale = afel.getAttribute("Locale");
-			
-			for (XElement fel : afel.selectAll("PagePart")) 
-				addfilefunc.accept(fel, locale);
 		}
 		
-		Path hpath = pubpath.resolveSibling("readme.en.md");		// TODO locale aware
+		// assemble response
+		RecordStruct resp = new RecordStruct()
+			.withField("ChannelXml", definition)
+			.withField("ContentXml", draft ? fi.getDraftDcfContent() : fi.getPubDcfContent())
+			.withField("Files", files);
+		
+		// add help
+		Path hpath = fi.getPubpath().resolveSibling("readme.en.md");		// TODO locale aware
 		
 		if (Files.exists(hpath)) {
 			FuncResult<CharSequence> mres = IOUtil.readEntireFile(hpath);
@@ -891,311 +776,51 @@ public class CmsService extends ExtensionBase implements IService {
 	
 	public void handlePublishFeedFiles(TaskRun request) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
-		String channel = rec.getFieldAsString("Channel");
-		String path = rec.getFieldAsString("Path");
 		
-		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		FeedInfo fi = FeedInfo.recordToInfo(rec);
 		
-		XElement feed = domain.getSettings().find("Feed");
-		
-		if (feed == null) { 
-			request.error("Unable to find feed settings: " + channel);
-			request.complete();
-			return;
-		}
-		
-		// there are two special channels - Pages and Blocks
-		for (XElement chan : feed.selectAll("Channel")) { 
-			String calias = chan.getAttribute("Alias");
-			
-			if (calias == null)
-				calias = chan.getAttribute("Name");
-			
-			if (calias.equals(channel)) {
-				path = chan.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
-				break;
-			}			
-		}
-		
-		//if ("Pages".equals(channel)) 
-		//	path = "/Pages" + path;		// TODO user InnerPath from settings - see also two places above
-
-		Path srcpath = domain.resolvePath("/feed-preview" + path + ".dcf.xml");
-		
-		// if no preview available then nothing we can do here
-		if (Files.notExists(srcpath)) {
-			request.complete();
-			return;
-		}
-		
-		// make sure we have someplace to put the published file
-		
-		Path destpath = domain.resolvePath("/feed" + path + ".dcf.xml");
-		
-		try {
-			Files.createDirectories(destpath.getParent());
-		}
-		catch (Exception x) {
-			request.error("Unable to create publish folder: " + x);
-			request.complete();
-			return;
-		}
-		
-		// load the feed file
-		
-		FuncResult<CharSequence> fres = IOUtil.readEntireFile(srcpath);
-		
-		if (fres.hasErrors()) {
-			request.error("Missing feed file " + path + ".");
-			request.complete();
-			return;
-		}
-		
-		FuncResult<XElement> res = XmlReader.parse(fres.getResult(), false);
-		
-		if (res.hasErrors()) {
-			request.error("Bad feed file " + path + ".");
-			request.complete();
-			return;
-		}
-		
-		XElement xml = res.getResult();
-		
-		// find and update all the external parts
-		
-		BiConsumer<XElement, String> addfilefunc = new BiConsumer<XElement, String>() {			
+		fi.publicizeFile(new FuncCallback<CompositeStruct>() {
 			@Override
-			public void accept(XElement part, String locale) {
-				String ext = part.getAttribute("External", "false").toLowerCase();
-				
-				if (!"true".equals(ext))
-					return;
-				
-				if (part.hasAttribute("Locale"))
-					locale = part.getAttribute("Locale");	// use the override locale if present
-			
-				String sname = srcpath.getFileName().toString();
-				
-				int pos = sname.indexOf('.');
-				sname = sname.substring(0, pos) + "." + part.getAttribute("For") + "." + locale + "." + part.getAttribute("Format");
-				
-				Path ypath = srcpath.resolveSibling(sname);
-				
-				// don't bother if there is no preview file
-				if (Files.notExists(ypath))
-					return;
-				
-				FuncResult<CharSequence> mres = IOUtil.readEntireFile(ypath);
-				
-				if (!mres.hasErrors()) {
-					OperationResult oor = IOUtil.saveEntireFile(destpath.resolveSibling(sname), mres.getResult().toString());
-					
-					if (!oor.hasErrors())
-						try {
-							Files.delete(ypath);
-						}
-						catch (Exception x) {
-							System.out.println("Unable to delete preview file: " + ypath +  " : " + x);
-						}
-				}
+			public void callback() {
+				request.complete();
 			}
-		}; 
-		
-		String deflocale = xml.getAttribute("Locale", OperationContext.get().getDomain().getLocale());
-		
-		for (XElement fel : xml.selectAll("PagePart")) 
-			addfilefunc.accept(fel, deflocale);
-		
-		for (XElement afel : xml.selectAll("Alternate")) {
-			String locale = afel.getAttribute("Locale");
-			
-			for (XElement fel : afel.selectAll("PagePart")) 
-				addfilefunc.accept(fel, locale);
-		}
-		
-		// finally save the feed file itself
-		
-		OperationResult oor = IOUtil.saveEntireFile(destpath, fres.getResult().toString());
-		
-		if (!oor.hasErrors())
-			try {
-				Files.delete(srcpath);
-			}
-			catch (Exception x) {
-				System.out.println("Unable to delete preview file: " + srcpath +  " : " + x);
-			}
-		 
-		request.complete();
+		});
 	}
 	
 	public void handleImportFeedFiles(TaskRun request) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
-		String path = rec.getFieldAsString("Path");
 		
-		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
+		FeedInfo fi = FeedInfo.recordToInfo(rec);
 		
-		Task task = new Task()
-			.withWork(new IWork() {
-				@Override
-				public void run(TaskRun trun) {
-					ImportWebsiteTool iutil = new ImportWebsiteTool();
-					
-					iutil.importFeedFile(domain.resolvePath(path), new OperationCallback() {
-						@Override
-						public void callback() {
-							trun.complete();
-						}
-					});
-				}
-			})
-			.withTitle("Importing feed " + path)
-			.withBucket("ServicePool")		// only one at a time
-			.withContext(new OperationContextBuilder()
-				.withRootTaskTemplate()
-				.withDomainId(domain.getId())
-				.toOperationContext()
-			);
-		
-		Hub.instance.getWorkPool().submit(task);
-		 
-		request.complete();
+		fi.updateDb(new OperationCallback() {			
+			@Override
+			public void callback() {
+				request.complete();
+			}
+		});
 	}
 		
 	public void handleDeleteFeedFiles(TaskRun request) {
 		RecordStruct rec = MessageUtil.bodyAsRecord(request);
-		String channel = rec.getFieldAsString("Channel");
-		String path = rec.getFieldAsString("Path");
 		
-		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
-		
-		XElement feed = domain.getSettings().find("Feed");
-		
-		if (feed == null) {
-			request.error("Feed definition does not exist.");
-			request.complete();
-			return;
-		}
-		
-		XElement definition = null;
-		
-		for (XElement chan : feed.selectAll("Channel")) {
-			String alias = chan.getAttribute("Alias");
-			
-			if (alias == null)
-				alias = chan.getAttribute("Name");
-			
-			if (channel.equals(alias)) {
-				definition = chan;
-				break;
-			}
-		}
-		
-		if (definition == null) {
-			request.error("Feed channel definition (" + channel + ") does not exist.");
-			request.complete();
-			return;
-		}
-		
-		path = definition.getAttribute("InnerPath", "") + path;		// InnerPath or empty string
-			
-		Path previewpath = domain.resolvePath("/feed-preview" + path + ".dcf.xml");
-		Path pubpath = domain.resolvePath("/feed" + path + ".dcf.xml");
+		FeedInfo fi = FeedInfo.recordToInfo(rec);
 
-		for (Path srcpath : new Path[] { previewpath, pubpath }) {
-			if (Files.notExists(srcpath)) 
-				continue;
-			
-			FuncResult<XElement> res = XmlReader.loadFile(srcpath, false);
-			
-			if (!res.hasErrors()) {
-				XElement xml = res.getResult();
-				
-				String deflocale = xml.getAttribute("Locale", OperationContext.get().getDomain().getLocale());
-				
-				for (XElement fel : xml.selectAll("PagePart")) 
-					deleteFeedFile(srcpath, fel, deflocale);
-				
-				for (XElement afel : xml.selectAll("Alternate")) {
-					String locale = afel.getAttribute("Locale");
-					
-					for (XElement fel : afel.selectAll("PagePart")) 
-						deleteFeedFile(srcpath, fel, locale);
-				}
+		// delete pub and draft
+		fi.deleteFile(DeleteMode.Both, new OperationCallback() {			
+			@Override
+			public void callback() {
+				request.complete();
 			}
-			
-			try {
-				Files.deleteIfExists(previewpath);
-			}
-			catch(Exception x) {
-			}
-		}
-		
-		// load Page definitions...
-		if ("Pages".equals(channel) || "Block".equals(channel)) {
-			Path srcpath = Hub.instance.getPublicFileStore().resolvePath("dcw/" + domain.getAlias() + "/www-preview/" + path + ".dcui.xml");
-			
-			try {
-				Files.deleteIfExists(srcpath);
-			}
-			catch  (Exception x) {
-			}
-			
-			srcpath = Hub.instance.getPublicFileStore().resolvePath("dcw/" + domain.getAlias() + "/www/" + path + ".dcui.xml");
-			
-			try {
-				Files.deleteIfExists(srcpath);
-			}
-			catch  (Exception x) {
-			}
-		}
-		
-		// should also happen from FS event, but either way we are fine
-		// remove record in database 
-		Hub.instance.getDatabase().submit(
-			new ReplicatedDataRequest("dcmFeedDelete")
-				.withParams(new RecordStruct()
-					.withField("Channel", channel)
-					.withField("Path", path)
-				), 
-			new ObjectResult() {
-				@Override
-				public void process(CompositeStruct result3b) {
-					request.complete();
-				}
-			});
+		});
 	}	
-	
-	protected void deleteFeedFile(Path srcpath, XElement part, String locale) {
-		String fname = srcpath.getFileName().toString();
-		String ffname = fname.substring(0, fname.indexOf('.'));
 		
-		String ext = part.getAttribute("External", "false").toLowerCase();
-		
-		if (!"true".equals(ext))
-			return;
-		
-		if (part.hasAttribute("Locale"))
-			locale = part.getAttribute("Locale");	// use the override locale if present
-	
-		String sname = ffname + "." + part.getAttribute("For") + "." + locale + "." + part.getAttribute("Format");
-		Path spath = srcpath.resolveSibling(sname);
-		
-		try {
-			Files.deleteIfExists(spath);
-		}
-		catch(Exception x) {
-		}
-	}
-	
 	public void handleSiteBuildMap(TaskRun request) {
 		DomainInfo domain = OperationContext.get().getUserContext().getDomain();
-
-		Path webdir = Hub.instance.getPublicFileStore().resolvePath("dcw/" + domain.getAlias() + "/www");
 		
 		XElement dsel = domain.getSettings();
 		
 		if (dsel == null) {
-			request.warn("Missing IndexUrl");
+			request.warn("Missing domain settings");
 			request.complete();
 			return;
 		}
@@ -1203,114 +828,125 @@ public class CmsService extends ExtensionBase implements IService {
 		XElement wsel = dsel.find("Web");
 		
 		if (wsel == null) {
-			request.warn("Missing IndexUrl");
+			request.warn("Missing Web config");
 			request.complete();
 			return;
 		}
+
+		Consumer<XElement> consumer = new Consumer<XElement>() {			
+			@Override
+			public void accept(XElement wsel) {
+				String indexurl = wsel.getAttribute("IndexUrl");
+				
+				if (StringUtil.isEmpty(indexurl)) {
+					request.warn("Missing IndexUrl");
+					request.complete();
+					return;
+				}
+				
+				List<String> altlocales = new ArrayList<String>();
+				
+				for (XElement locel : wsel.selectAll("Locale"))
+					altlocales.add(locel.getAttribute("Name"));
+
+				Path webdir = "root".equals(wsel.getAttribute("Name"))
+						? Hub.instance.getPublicFileStore().resolvePath("dcw/" + domain.getAlias() + "/www")
+						: Hub.instance.getPublicFileStore().resolvePath("dcw/" + domain.getAlias() + "/sites/" + wsel.getAttribute("Name") + "/www");
+				
+				XElement smel = new XElement("urlset")
+					.withAttribute("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9")
+					.withAttribute("xmlns:xhtml", "http://www.w3.org/1999/xhtml");
+				
+				DateTimeFormatter lmFmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+				
+		        try {
+		        	if (Files.exists(webdir)) { 
+						Files.walkFileTree(webdir, EnumSet.of(FileVisitOption.FOLLOW_LINKS), 5,
+						        new SimpleFileVisitor<Path>() {
+						            @Override
+						            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+						                throws IOException
+						            {
+										Path relpath = webdir.relativize(file);
+										
+										String outerpath = "/" + relpath.toString().replace('\\', '/');
+						            	
+						            	if (!outerpath.endsWith(".dcui.xml")) 
+							                return FileVisitResult.CONTINUE;
+										
+										outerpath = outerpath.substring(0, outerpath.length() - 9);
+						            	
+										FuncResult<XElement> xres = XmlReader.loadFile(file, true);
+										
+										if (xres.hasErrors()) 
+							                return FileVisitResult.CONTINUE;
+										
+										XElement root = xres.getResult();
+										
+										if (!root.getName().equals("dcui"))
+							                return FileVisitResult.CONTINUE;
+										
+										if (!root.getAttribute("AuthTags", "Guest").contains("Guest"))
+							                return FileVisitResult.CONTINUE;
+										
+										if ("True".equals(root.getAttribute("NoIndex")))
+							                return FileVisitResult.CONTINUE;
+					            		
+					            		// TODO look for an indexing script in the page
+					            		// TODO look for a gallery list in the page
+				            		
+					            		XElement sel = new XElement("url");
+					            		
+					            		sel.add(new XElement("loc", indexurl + outerpath.substring(1)));
+					            		sel.add(new XElement("lastmod", lmFmt.print(Files.getLastModifiedTime(file).toMillis())));
+
+					    				for (String lname : altlocales)
+					    					sel.add(new XElement("xhtml:link")
+					    						.withAttribute("rel", "alternate")
+					    						.withAttribute("hreflang", lname)
+					    						.withAttribute("href", indexurl + lname + outerpath)
+					    					);
+					            		
+					            		smel.add(sel);
+					            					            		
+						                return FileVisitResult.CONTINUE;
+						            }
+						        });
+		        	}
+		        	
+					FeedIndexer iutil = new FeedIndexer();
+					
+					iutil.collectSite(new CollectContext().forIndex(), wsel.getAttribute("Name"));
+					
+					iutil.addToSitemap(indexurl, smel, altlocales);
+		        	
+		        	Path smfile = webdir.resolve("sitemap.xml");
+		        	
+		        	IOUtil.saveEntireFile2(smfile, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+		        			+ smel.toString(true));
+		            
+		            //System.out.println("map: " + smel.toString(true));
+				} 
+		        catch (IOException x) {
+		        	request.error("Error building sitemap file: " + x);
+				}
+			}
+		};
+
+		boolean rootfnd = false;
 		
-		String indexurl = wsel.getAttribute("IndexUrl");
-		
-		if (StringUtil.isEmpty(indexurl)) {
-			request.warn("Missing IndexUrl");
-			request.complete();
-			return;
+		for (XElement site : wsel.selectAll("Site")) {
+			if ("root".equals(site.getAttribute("Name"))) {
+				rootfnd = true;
+				site.withAttribute("IndexUrl", wsel.getAttribute("IndexUrl"));
+			}
+			
+			consumer.accept(site);
 		}
 		
-		XElement smel = new XElement("urlset")
-			.withAttribute("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9");
+		if (!rootfnd)
+			consumer.accept(new XElement("Site").withAttribute("Name", "root").withAttribute("IndexUrl", wsel.getAttribute("IndexUrl")));
 		
-		DateTimeFormatter lmFmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-		
-        try {
-        	if (Files.exists(webdir)) { 
-				Files.walkFileTree(webdir, EnumSet.of(FileVisitOption.FOLLOW_LINKS), 5,
-				        new SimpleFileVisitor<Path>() {
-				            @Override
-				            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-				                throws IOException
-				            {
-				            	String fname = file.getFileName().toString();
-				            	
-				            	if (!fname.endsWith(".dcui.xml")) 
-					                return FileVisitResult.CONTINUE;
-				            	
-				            	FuncResult<CharSequence> textres = IOUtil.readEntireFile(file);
-				            	
-				            	if (textres.isEmptyResult())
-					                return FileVisitResult.CONTINUE;
-				            	
-								FuncResult<XElement> xres = XmlReader.parse(textres.getResult(), true);
-								
-								if (xres.hasErrors()) 
-					                return FileVisitResult.CONTINUE;
-								
-								XElement root = xres.getResult();
-								
-								if (!root.getName().equals("dcui"))
-					                return FileVisitResult.CONTINUE;
-								
-								String auth = root.getAttribute("AuthTags");
-								
-								if (StringUtil.isNotEmpty(auth) && !auth.contains("Guest"))
-					                return FileVisitResult.CONTINUE;
-								
-								if ("True".equals(root.getAttribute("NoIndex")))
-					                return FileVisitResult.CONTINUE;
-			            		
-			            		int pos = -1;
-			            		
-			            		for (int i = 0; i < file.getNameCount(); i++) {
-			            			if ("www".equals(file.getName(i).toString())) {
-			            				pos = i;
-			            				continue;
-			            			}
-			            		}
-			            		
-			            		if (pos == -1)
-					                return FileVisitResult.CONTINUE;
-								
-			            		//System.out.println("- sitemap for " + file);
-			            		
-			            		// TODO look for an indexing script in the page
-			            		// TODO look for a gallery list in the page
-		            		
-			            		XElement sel = new XElement("url");
-			            		
-			            		String loc = file.subpath(pos + 1, file.getNameCount()).toString();
-			            		
-			            		sel.add(new XElement("loc", indexurl + loc.substring(0, loc.indexOf("."))));
-			            		sel.add(new XElement("lastmod", lmFmt.print(Files.getLastModifiedTime(file).toMillis())));
-			            		
-			            		smel.add(sel);
-			            		
-			            		/*
-								XElement keywords = root.find("Keywords");
-								
-								if ((keywords != null) && keywords.hasText())
-									req.withSetField("dcmKeywords", keywords.getText());
-								
-								XElement desc = root.find("Description");
-								
-								if ((desc != null) && desc.hasText())
-									req.withSetField("dcmDescription", desc.getText());
-				            	*/
-			            					            		
-				                return FileVisitResult.CONTINUE;
-				            }
-				        });
-        	}
-        	
-        	Path smfile = webdir.resolve("sitemap.xml");
-        	
-        	IOUtil.saveEntireFile2(smfile, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-        			+ smel.toString(true));
-            
-            //System.out.println("map: " + smel.toString(true));
-		} 
-        catch (IOException x) {
-        	request.error("Error building sitemap file: " + x);
-		}
-        
 		request.complete();
 	}
 

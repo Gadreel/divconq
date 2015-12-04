@@ -3,6 +3,7 @@ package divconq.log.netty;
 import io.netty.util.internal.logging.AbstractInternalLogger;
 import divconq.hub.Hub;
 import divconq.log.DebugLevel;
+import divconq.log.HubLog;
 import divconq.log.Logger;
 import divconq.log.slf4j.FormattingTuple;
 import divconq.log.slf4j.MessageFormatter;
@@ -25,7 +26,7 @@ public class NettyLogger extends AbstractInternalLogger {
          */
         @Override
         public boolean isTraceEnabled() {
-            return Logger.getGlobalLevel().getCode() <= DebugLevel.Trace.getCode();
+            return HubLog.getGlobalLevel().getCode() <= DebugLevel.Trace.getCode();
         }
 
         /*
@@ -121,7 +122,7 @@ public class NettyLogger extends AbstractInternalLogger {
          */
         @Override
         public boolean isDebugEnabled() {
-            return Logger.getGlobalLevel().getCode() <= DebugLevel.Debug.getCode();
+            return HubLog.getGlobalLevel().getCode() <= DebugLevel.Debug.getCode();
         }
 
         /*
@@ -216,7 +217,7 @@ public class NettyLogger extends AbstractInternalLogger {
          */
         @Override
         public boolean isInfoEnabled() {
-            return Logger.getGlobalLevel().getCode() <= DebugLevel.Info.getCode();
+            return HubLog.getGlobalLevel().getCode() <= DebugLevel.Info.getCode();
         }
 
         /*
@@ -313,7 +314,7 @@ public class NettyLogger extends AbstractInternalLogger {
          */
         @Override
         public boolean isWarnEnabled() {
-            return Logger.getGlobalLevel().getCode() <= DebugLevel.Warn.getCode();
+            return HubLog.getGlobalLevel().getCode() <= DebugLevel.Warn.getCode();
         }
 
         /*
@@ -412,7 +413,7 @@ public class NettyLogger extends AbstractInternalLogger {
          */
         @Override
         public boolean isErrorEnabled() {
-            return Logger.getGlobalLevel().getCode() <= DebugLevel.Error.getCode();
+            return HubLog.getGlobalLevel().getCode() <= DebugLevel.Error.getCode();
         }
 
         /*

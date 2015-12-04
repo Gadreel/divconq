@@ -34,6 +34,7 @@ import w3.html.Body;
 import w3.html.Br;
 import w3.html.BrLf;
 import w3.html.Button;
+import w3.html.Code;
 import w3.html.Div;
 import w3.html.Em;
 import w3.html.FieldSet;
@@ -65,11 +66,15 @@ import w3.html.OptGroup;
 import w3.html.Option;
 import w3.html.P;
 import w3.html.Pre;
+import w3.html.Q;
+import w3.html.S;
 import w3.html.Script;
 import w3.html.Section;
 import w3.html.Select;
 import w3.html.Span;
 import w3.html.Style;
+import w3.html.Sub;
+import w3.html.Sup;
 import w3.html.TBody;
 import w3.html.THead;
 import w3.html.Table;
@@ -80,6 +85,7 @@ import w3.html.Title;
 import w3.html.Tr;
 import w3.html.U;
 import w3.html.Ul;
+import w3.html.Wbr;
 import divconq.filestore.CommonPath;
 import divconq.hub.DomainInfo;
 import divconq.hub.DomainNameMapping;
@@ -87,9 +93,6 @@ import divconq.hub.Hub;
 import divconq.hub.HubPackage;
 import divconq.io.LocalFileStore;
 import divconq.lang.op.OperationContext;
-import divconq.locale.LocaleInfo;
-import divconq.locale.LocaleUtil;
-import divconq.locale.Localization;
 import divconq.log.Logger;
 import divconq.net.ssl.SslHandler;
 import divconq.struct.Struct;
@@ -121,7 +124,6 @@ import divconq.xml.XText;
 public class WebDomain {
 	protected String id = null;
 	protected String alias = null;
-	protected String locale = null;		// domain level locale
 	protected CommonPath homepath = null;
 	protected WebSiteManager man = null;
 	protected List<HubPackage> packagelist = null;
@@ -130,8 +132,6 @@ public class WebDomain {
 	
 	protected TrustManager[] trustManagers = new TrustManager[1];
 	protected DomainNameMapping<SslContextFactory> certs = null;
-	
-	protected Localization dictionary = null;
 	
 	protected Map<String, Class<? extends ICodeTag>> codetags = new HashMap<String, Class<? extends ICodeTag>>();
 	
@@ -194,7 +194,6 @@ public class WebDomain {
 
 	public void reloadSettings() {
 		this.homepath = new CommonPath("/index.html");
-		this.locale = LocaleUtil.getDefaultLocale();
 		this.appFramework = false;
 		this.sites.clear();
 		this.domainsites.clear();
@@ -214,9 +213,6 @@ public class WebDomain {
 				this.homepath = new CommonPath(settings.getAttribute("HomePath"));
 			else if (this.appFramework) 
 				this.homepath = new CommonPath("/Home");		
-		
-			if (settings.hasAttribute("Locale")) 
-				this.locale = settings.getAttribute("Locale");
 			
 			if (settings.hasAttribute("HtmlMode")) 
 				try {
@@ -296,9 +292,6 @@ public class WebDomain {
 			this.homepath = new CommonPath(this.webconfig.getAttribute("HomePath"));
 		else if (this.appFramework) 
 			this.homepath = new CommonPath("/Home");		
-	
-		if (this.webconfig.hasAttribute("Locale")) 
-			this.locale = this.webconfig.getAttribute("Locale");
 		
 		if (this.webconfig.hasAttribute("HtmlMode")) 
 			try {
@@ -376,6 +369,9 @@ public class WebDomain {
 	public WebSite site(Request req) {
 		String domain = req.getHeader("Host");
 		
+		if (domain.indexOf(':') > -1)
+			domain = domain.substring(0, domain.indexOf(':'));
+		
 		WebSite site = this.domainsites.get(domain);
 		
 		return (site != null) ? site : this.rootsite;
@@ -408,27 +404,6 @@ public class WebDomain {
 		if (this.sites != null)
 			for (WebSite site : this.sites.values())
 				site.dynNotify();
-	}
-
-	public String getLocale() {
-		 return this.locale;
-	}
-
-	public LocaleInfo getDefaultLocaleInfo() {
-		return new LocaleInfo(this.locale);
-	}
-	
-	public String tr(LocaleInfo locale, String token, Object... params) {
-		Localization dict = this.dictionary;
-		
-		if (dict != null) {
-			String res = dict.tr(locale.getName(), token, params);
-			
-			if (res != null)
-				return res;
-		}
-		
-		return LocaleUtil.tr(locale.getName(), token, params);
 	}
 
 	public void translatePath(WebContext ctx) {
@@ -485,6 +460,10 @@ public class WebDomain {
 			
 			x.printStackTrace();
 		}
+	}
+
+	public DomainInfo getDomainInfo() {
+		return Hub.instance.getDomainInfo(this.id);
 	}
 	
 	public String route(Request req, SslHandler ssl) {
@@ -610,6 +589,7 @@ public class WebDomain {
 		this.codetags.put("brlf", BrLf.class);		
 		
 		this.codetags.put("canvas", AdvElement.class);
+		this.codetags.put("code", Code.class);
 		
 		this.codetags.put("div", Div.class);
 		
@@ -652,11 +632,16 @@ public class WebDomain {
 		this.codetags.put("p", P.class);
 		this.codetags.put("pre", Pre.class);
 		
+		this.codetags.put("q", Q.class);
+		
 		this.codetags.put("section", Section.class);		
 		this.codetags.put("select", Select.class);
 		this.codetags.put("script", Script.class);
-		this.codetags.put("style", Style.class);		
+		this.codetags.put("s", S.class);
 		this.codetags.put("strong", B.class);
+		this.codetags.put("style", Style.class);		
+		this.codetags.put("sub", Sub.class);
+		this.codetags.put("sup", Sup.class);
 		this.codetags.put("span", Span.class);
 		
 		this.codetags.put("table", Table.class);
@@ -670,6 +655,8 @@ public class WebDomain {
 
 		this.codetags.put("u", U.class);
 		this.codetags.put("ul", Ul.class);
+		
+		this.codetags.put("wbr", Wbr.class);
 		
 		// ==============================================================
 		// above this point are std HTML tags, below are our enhanced tags
@@ -691,6 +678,7 @@ public class WebDomain {
 		this.codetags.put("IncludeParam", IncludeParam.class);
 		this.codetags.put("Link", HyperLink.class);
 		this.codetags.put("LiteralText", LiteralText.class);
+		this.codetags.put("MD", AdvText.class);
 		this.codetags.put("Style", Style.class);
 		this.codetags.put("Script", Script.class);
 		this.codetags.put("PagePart", PagePart.class);
@@ -706,6 +694,7 @@ public class WebDomain {
 		this.codetags.put("YesNo", AdvElement.class);
 		this.codetags.put("HorizRadioGroup", AdvElement.class);
 		this.codetags.put("RadioGroup", AdvElement.class);
+		this.codetags.put("CheckGroup", AdvElement.class);
 		this.codetags.put("RadioButton", AdvElement.class);
 		this.codetags.put("RadioCheck", AdvElement.class);
 		this.codetags.put("RadioSelect", AdvElement.class);

@@ -20,7 +20,7 @@ package divconq.web.md.process;
  * 
  * @author René Jeschke <rene_jeschke@yahoo.de>
  */
-enum BlockType
+public enum BlockType
 {
     /** Unspecified. Used for root block and list items without paragraphs. */
     NONE,

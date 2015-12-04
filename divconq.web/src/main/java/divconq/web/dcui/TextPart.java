@@ -24,7 +24,7 @@ import java.nio.file.Path;
 
 import divconq.lang.op.FuncResult;
 import divconq.lang.op.OperationContext;
-import divconq.locale.LocaleInfo;
+import divconq.locale.LocaleDefinition;
 import divconq.struct.Struct;
 import divconq.util.IOUtil;
 import divconq.web.WebContext;
@@ -44,7 +44,7 @@ public class TextPart extends Element implements ICodeTag {
 	public void doBuild(WebContext ctx) {
 		XElement ppel = null;
 		
-		LocaleInfo li = ctx.getLocale();
+		LocaleDefinition li = OperationContext.get().getWorkingLocaleDefinition();
 		String lname = li.getName();
 		
 		XElement src = this.getViewRoot().getSource();
@@ -69,7 +69,7 @@ public class TextPart extends Element implements ICodeTag {
 		}
 		
 		if (ppel == null) {
-			li = ctx.getDomain().getDefaultLocaleInfo();
+			li = ctx.getDomain().getDomainInfo().getDefaultLocaleDefinition();
 			
 			lname = li.getName();
 			

@@ -109,7 +109,7 @@
 	</Locale>
 	<Locale Id="x-pig-latin">
 		<Entry Token="_cldr_name" Value="Pig Latin" />
-		<Entry Token="_cldr_orientation" Value="RTL" />
+		<Entry Token="_cldr_orientation" Value="LTR" />
 		<Entry Token="_cldr_cal_greg_mon_1_abbr" Value="Jan" />
 		<Entry Token="_cldr_cal_greg_mon_2_abbr" Value="Feb" />
 		<Entry Token="_cldr_cal_greg_mon_3_abbr" Value="Mar" />

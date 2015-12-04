@@ -21,7 +21,7 @@ import java.io.FilenameFilter;
 
 import divconq.lang.op.OperationContext;
 import divconq.lang.op.OperationResult;
-import divconq.locale.Localization;
+import divconq.locale.Dictionary;
 import divconq.schema.SchemaManager;
 
 public class ProjectCompiler {
@@ -58,32 +58,8 @@ public class ProjectCompiler {
 		return sm;
 	}
 	
-	/*
-	public FuncResult<List<File>> getProcs(Collection<String> packages) {
-		FuncResult<List<File>> or = new FuncResult<List<File>>();		
-		List<File> sm = new ArrayList<File>();
-		or.setResult(sm);
-		
-		for (String pkg : packages) {
-			File sdir = new File("./packages/" + pkg + "/m");
-			
-			or.trace(0, "Checking for procs in: " + sdir.getAbsolutePath());
-			
-			if (sdir.exists())
-				for (File proc : sdir.listFiles()) {					
-					or.trace(0, "Found proc: " + proc.getAbsolutePath());					
-					sm.add(proc);
-				}
-		}
-
-		or.trace(0, "Finished compiling proc list");
-		
-		return or;
-	}
-	*/
-	
-	public Localization getDictionary(OperationResult or, HubPackages packages) {
-		Localization loc = new Localization();
+	public Dictionary getDictionary(OperationResult or, HubPackages packages) {
+		Dictionary loc = new Dictionary();
 		
 		// load in package order so that later packages override the original
 		for (HubPackage pkg : packages.getPackages()) {
@@ -101,7 +77,7 @@ public class ProjectCompiler {
 				})) {
 					or.trace(0, "Loading dictionary: " + dict.getAbsolutePath());
 					
-					loc.load(or, dict);
+					loc.load(dict.toPath());
 				}
 		}
 
@@ -109,11 +85,4 @@ public class ProjectCompiler {
 		
 		return loc;
 	}
-	
-	/*
-	public XElement getConfigShell(OperationResult or, Collection<String> components, String tier) {
-		// TODO
-		return null;
-	}
-	*/
 }

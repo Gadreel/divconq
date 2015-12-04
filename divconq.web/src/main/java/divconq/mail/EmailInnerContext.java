@@ -5,6 +5,7 @@ import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.stream.ChunkedInput;
 import divconq.filestore.CommonPath;
 import divconq.lang.op.FuncCallback;
+import divconq.struct.RecordStruct;
 import divconq.web.IInnerContext;
 import divconq.web.IWebMacro;
 import divconq.web.Request;
@@ -23,12 +24,24 @@ public class EmailInnerContext implements IInnerContext {
 	protected Response currresponse = null;
 	protected FuncCallback<EmailInnerContext> callback = null;
 	
+	protected RecordStruct altparams = null;
+	
 	public void setSubject(String v) {
 		this.subject = v;
 	}
 	
 	public String getSubject() {
 		return this.subject;
+	}
+	
+	@Override
+	public void setAltParams(RecordStruct v) {
+		this.altparams = v;
+	}
+	
+	@Override
+	public RecordStruct getAltParams() {
+		return this.altparams;
 	}
 	
 	public EmailInnerContext(CommonPath path, WebSite site, FuncCallback<EmailInnerContext> callback) {

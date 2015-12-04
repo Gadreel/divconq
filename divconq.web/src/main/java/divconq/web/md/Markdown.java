@@ -7,11 +7,10 @@ import java.nio.file.Path;
 
 import divconq.web.WebContext;
 import divconq.web.dcui.Nodes;
-import divconq.web.md.process.Configuration;
-import divconq.web.md.process.Plugin;
-import divconq.web.md.process.Processor;;
+import divconq.web.md.plugin.PairedMediaSection;
+import divconq.web.md.plugin.StandardSection;
 
-// TODO config should be per domain
+// TODO config should be per domain / website
 public class Markdown {
 	protected Configuration unsafeconfig = null;
 	protected Configuration safeconfig = null;
@@ -26,9 +25,11 @@ public class Markdown {
 	
 	public Markdown() {
 		this.unsafeconfig = new Configuration()
-						.setSafeMode(false);
-						// TODO
-						//.registerPlugins(new YumlPlugin(), new WebSequencePlugin(), new IncludePlugin());
+			.setSafeMode(false)
+			.registerPlugins(new PairedMediaSection(), new StandardSection());
+						
+			// TODO
+			//.registerPlugins(new YumlPlugin(), new WebSequencePlugin(), new IncludePlugin());
 		
 		this.safeconfig = new Configuration();
 	}
@@ -38,35 +39,35 @@ public class Markdown {
 		return this;
 	}
 	
-	public void process(WebContext ctx, Nodes nodes, Path file) throws IOException {
-		Processor.process(ctx, nodes, file, this.unsafeconfig);
+	public Nodes process(WebContext ctx, Path file) throws IOException {
+		return Processor.process(ctx, file, this.unsafeconfig);
 	}
 	
-	public void process(WebContext ctx, Nodes nodes, InputStream input) throws IOException {
-		Processor.process(ctx, nodes, input, this.unsafeconfig);
+	public Nodes process(WebContext ctx, InputStream input) throws IOException {
+		return Processor.process(ctx, input, this.unsafeconfig);
 	}
 	
-	public void process(WebContext ctx, Nodes nodes, Reader reader) throws IOException {
-		Processor.process(ctx, nodes, reader, this.unsafeconfig);
+	public Nodes process(WebContext ctx, Reader reader) throws IOException {
+		return Processor.process(ctx, reader, this.unsafeconfig);
 	}
 	
-	public void process(WebContext ctx, Nodes nodes, String input) throws IOException {
-		Processor.process(ctx, nodes, input, this.unsafeconfig);
+	public Nodes process(WebContext ctx, String input) throws IOException {
+		return Processor.process(ctx, input, this.unsafeconfig);
 	}
 	
-	public void processSafe(WebContext ctx, Nodes nodes, Path file) throws IOException {
-		Processor.process(ctx, nodes, file, this.safeconfig);
+	public Nodes processSafe(WebContext ctx, Path file) throws IOException {
+		return Processor.process(ctx, file, this.safeconfig);
 	}
 	
-	public void processSafe(WebContext ctx, Nodes nodes, InputStream input) throws IOException {
-		Processor.process(ctx, nodes, input, this.safeconfig);
+	public Nodes processSafe(WebContext ctx, InputStream input) throws IOException {
+		return Processor.process(ctx, input, this.safeconfig);
 	}
 	
-	public void processSafe(WebContext ctx, Nodes nodes, Reader reader) throws IOException {
-		Processor.process(ctx, nodes, reader, this.safeconfig);
+	public Nodes processSafe(WebContext ctx, Reader reader) throws IOException {
+		return Processor.process(ctx, reader, this.safeconfig);
 	}
 	
-	public void processSafe(WebContext ctx, Nodes nodes, String input) throws IOException {
-		Processor.process(ctx, nodes, input, this.safeconfig);
+	public Nodes processSafe(WebContext ctx, String input) throws IOException {
+		return Processor.process(ctx, input, this.safeconfig);
 	}
 }

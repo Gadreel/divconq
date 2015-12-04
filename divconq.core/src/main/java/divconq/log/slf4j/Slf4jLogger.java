@@ -4,6 +4,7 @@ import org.slf4j.helpers.MarkerIgnoringBase;
 
 import divconq.hub.Hub;
 import divconq.log.DebugLevel;
+import divconq.log.HubLog;
 import divconq.log.Logger;
 
 public class Slf4jLogger extends MarkerIgnoringBase {
@@ -21,7 +22,7 @@ public class Slf4jLogger extends MarkerIgnoringBase {
          */
         @Override
         public boolean isTraceEnabled() {
-            return Logger.getGlobalLevel().getCode() <= DebugLevel.Trace.getCode();
+            return HubLog.getGlobalLevel().getCode() <= DebugLevel.Trace.getCode();
         }
 
         /*
@@ -117,7 +118,7 @@ public class Slf4jLogger extends MarkerIgnoringBase {
          */
         @Override
         public boolean isDebugEnabled() {
-            return Logger.getGlobalLevel().getCode() <= DebugLevel.Debug.getCode();
+            return HubLog.getGlobalLevel().getCode() <= DebugLevel.Debug.getCode();
         }
 
         /*
@@ -212,7 +213,7 @@ public class Slf4jLogger extends MarkerIgnoringBase {
          */
         @Override
         public boolean isInfoEnabled() {
-            return Logger.getGlobalLevel().getCode() <= DebugLevel.Info.getCode();
+            return HubLog.getGlobalLevel().getCode() <= DebugLevel.Info.getCode();
         }
 
         /*
@@ -309,7 +310,7 @@ public class Slf4jLogger extends MarkerIgnoringBase {
          */
         @Override
         public boolean isWarnEnabled() {
-            return Logger.getGlobalLevel().getCode() <= DebugLevel.Warn.getCode();
+            return HubLog.getGlobalLevel().getCode() <= DebugLevel.Warn.getCode();
         }
 
         /*
@@ -408,7 +409,7 @@ public class Slf4jLogger extends MarkerIgnoringBase {
          */
         @Override
         public boolean isErrorEnabled() {
-            return Logger.getGlobalLevel().getCode() <= DebugLevel.Error.getCode();
+            return HubLog.getGlobalLevel().getCode() <= DebugLevel.Error.getCode();
         }
 
         /*

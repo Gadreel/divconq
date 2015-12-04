@@ -300,6 +300,11 @@ dc.schema = {
 		
 		// don't call this with data == null from a field if field required - required means "not null" so put the error in
 		this.validate = function(present, data, mr) {
+			if ((typeof data == 'undefined') || (data == null)) {
+				this.valueUnresolved(present, data, mr);
+				return;
+			}   
+			
 			if (this.Options.length == 0) {
 				mr.errorTr(423, [data]);			
 				return;

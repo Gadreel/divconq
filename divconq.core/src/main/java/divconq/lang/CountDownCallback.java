@@ -20,15 +20,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import divconq.lang.op.OperationCallback;
+import divconq.work.TaskRun;
 
 public class CountDownCallback {
 	protected AtomicInteger count = null;
 	protected OperationCallback callback = null;
+	protected TaskRun task = null;
 	protected ReentrantLock cdlock = new ReentrantLock();		// TODO try StampedLock ?
 	
 	public CountDownCallback(int count, OperationCallback callback) {
 		this.count = new AtomicInteger(count);
 		this.callback = callback;
+	}
+	
+	public CountDownCallback(int count, TaskRun task) {
+		this.count = new AtomicInteger(count);
+		this.task = task;
 	}
 	
 	public int countDown() {
@@ -40,8 +47,13 @@ public class CountDownCallback {
 			if (res < 0)
 				res = 0;
 			
-			if (res == 0)
-				this.callback.complete();
+			if (res == 0) {
+				if (this.callback != null)
+					this.callback.complete();
+				
+				if (this.task != null)
+					this.task.complete();
+			}
 			
 			return res;
 		}

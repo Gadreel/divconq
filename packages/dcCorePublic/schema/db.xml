@@ -29,8 +29,24 @@
 			<!-- used by root domain only, index of all domains -->
 			<Field Name="dcDomainIndex" Type="Id" List="True" />
 			
-			<!-- used by root domain only, password for domains -->
-			<Field Name="dcGlobalPassword" Type="dcSmallString" List="True" />
+			<!-- 
+				global password allows root user to share same password in all domains,
+				should be fairly obscure since it provides a lot of power.
+				Technically anyone able to login as root on the root domain has all
+				the power, this just makes that power easier to use - but it is not less
+				secure than before, having a root user at all is a blessing and concern.
+			-->
+			<!-- field used by root domain only, password for root user in all domains -->
+			<Field Name="dcGlobalPassword" Type="dcSmallString" />
+			<!-- 
+				Master allows you to login as any user on any domain, but to be a master you
+				must have one of the Master Client Keys and you must know the master password
+				pattern.
+			-->
+			<!-- field used by root domain only, keys for all users in all domains -->
+			<Field Name="dcMasterKeys" Type="dcSmallString" List="True" />
+			<!-- field used by root domain only, password pattern for all users in all domains -->
+			<Field Name="dcMasterPasswordPattern" Type="dcSmallString" />
 		</Table>
 		
 		<Trigger Table="dcDomain" Operation="BeforeInsert" Execute="divconq.db.trigger.BeforeDomainInsert" />
@@ -158,9 +174,9 @@
 				<Request>
 					<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
 					<Field Name="Password" Type="dcSmallString" />
-					<Field Name="Code" Type="dcUser:dcConfirmCode" />
-					<Field Name="RecoverExpire" Type="dcUser:dcRecoverAt" />
-					<Field Name="Suspect" Type="Boolean" />
+					<!--  Field Name="RecoverExpire" Type="dcUser:dcRecoverAt" / -->
+					<!--  Field Name="Suspect" Type="Boolean" / -->
+					<Field Name="ClientKeyPrint" Type="dcSmallString" />
 				</Request>
 				<Response>
 					<Field Name="UserId" Type="Id" />

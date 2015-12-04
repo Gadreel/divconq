@@ -136,16 +136,17 @@
 		<Record Id="UserCredentials">
 			<Field Name="Username" Type="dcUser:dcUsername" />
 			<Field Name="Password" Type="dcUser:dcPassword" />
+			<!-- 
 			<Field Name="ConfirmationCode" Type="dcUser:dcConfirmCode" />
 			<Field Name="AccessCode" Type="dcTinyString" />
 			<Field Name="SessionId" Type="dcTinyString" />
+			-->
 			<!-- caller does not set this, it is set by the connection code after verifying the client key (or Verified = false if not)  -->
 			<!--  - ThumbPrint for login is automatically set by server using the TLS or SSH client key
 				  - server must have a copy of all possible client public keys with which to verify the client key
 				  - only the thumbprint is passed to the Auth module - presence of ThumbPrint means it was verified by server
 			-->
-			<Field Name="KeyThumbPrint" Type="dcSmallString" />
-			<Field Name="KeyVerified" Type="Boolean" />
+			<Field Name="ClientKeyPrint" Type="dcSmallString" />
 		</Record>
 		
 		<Record Id="UserContext">
@@ -171,7 +172,8 @@
 			<Field Name="Origin" Type="dcSmallString" />
 			<Field Name="DebugLevel" Type="dcTinyString" />
 			<Field Name="Elevated" Type="Boolean" />
-			<!-- Field Name="Bucket" Type="dcTinyString" / -->
+			<Field Name="Gateway" Type="Boolean" />
+			<Field Name="OpLocale" Type="dcSmallString" />
 			
 			<!-- Field Name="Debug" Type="Any" / -->
 		</Record>

@@ -16,6 +16,7 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.lang.op.OperationContext;
 import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
 
@@ -31,7 +32,7 @@ public class LtrDiv extends Div {
     @Override
 	public void build(WebContext ctx, Object... args) {
         Attributes alignattr = new Attributes("align", 
-        		(ctx.isRightToLeft()) ? "right" : "left");
+        		(OperationContext.get().getWorkingLocaleDefinition().isRightToLeft()) ? "right" : "left");
         
         super.build(ctx, alignattr, args);
 	}

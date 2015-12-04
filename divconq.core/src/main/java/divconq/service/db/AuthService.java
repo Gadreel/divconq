@@ -371,7 +371,7 @@ public class AuthService extends ExtensionBase implements IService {
 				//System.out.println("auth 1: " + request.getContext().isElevated());
 				
 				DataRequest tp1 = RequestFactory.signInRequest(creds.getFieldAsString("Username"), 
-						creds.getFieldAsString("Password"), creds.getFieldAsString("ConfirmationCode"));
+						creds.getFieldAsString("Password"), creds.getFieldAsString("ClientKeyPrint"));
 				
 				// TODO for all services, be sure we return all messages from the submit with the message
 				db.submit(tp1, new ObjectResult() {

@@ -20,6 +20,10 @@ public class DeleteFeed implements IStoredProc {
 		// TODO replicating
 		// if (task.isReplicating())
 		
+		// TODO delete from dcmFeedIndex too
+		
+		// TODO support sites
+		
 		TablesAdapter db = new TablesAdapter(conn, task); 
 		
 		BigDateTime when = BigDateTime.nowDateTime();

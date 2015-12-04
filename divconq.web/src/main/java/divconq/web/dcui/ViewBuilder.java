@@ -152,11 +152,59 @@ public class ViewBuilder implements IViewBuilder {
 			
 			ps.println(" ], ");
 			
+			// ==============================================
+			//  Require Types
+			// ==============================================
+			
 			first = true;
+			
+			ps.print("\tRequireType: [");
+			
+			for (XElement func : src.selectAll("Require")) {
+				if (!func.hasAttribute("Types"))
+					continue;
+				
+				if (first)
+					first = false;
+				else
+					ps.print(",");
+				
+				ps.print(" '");				
+				Node.writeDynamicJsString(ps, func.getAttribute("Types"));				
+				ps.print("'");
+			}
+			
+			ps.println(" ], ");
+			
+			// ==============================================
+			//  Require Tr
+			// ==============================================
+			
+			first = true;
+			
+			ps.print("\tRequireTr: [");
+			
+			for (XElement func : src.selectAll("Require")) {
+				if (!func.hasAttribute("Trs"))
+					continue;
+				
+				if (first)
+					first = false;
+				else
+					ps.print(",");
+				
+				ps.print(" '");				
+				Node.writeDynamicJsString(ps, func.getAttribute("Trs"));				
+				ps.print("'");
+			}
+			
+			ps.println(" ], ");
 			
 			// ==============================================
 			//  Libs
 			// ==============================================
+			
+			first = true;
 			
 			ps.print("\tRequireLibs: [");
 			
@@ -213,7 +261,7 @@ public class ViewBuilder implements IViewBuilder {
 			ps.println("\tLoadFunctions: [");
 			
 			for (XElement func : src.selectAll("Function")) {
-				if (!func.hasAttribute("Name") || !"Load".equals(func.getAttribute("Mode")))
+				if (!"Load".equals(func.getAttribute("Mode")))
 					continue;
 				
 				if (first)
@@ -221,13 +269,20 @@ public class ViewBuilder implements IViewBuilder {
 				else
 					ps.println(",");
 				
-				ps.print("\t\t function(" + func.getAttribute("Params", "") + ") {");
-				
-				ps.print("\t\t\t // func " + func.getAttribute("Name") + "\n");
-				
-				ps.print(func.getText());
-				
-				ps.print("\n\t\t}");
+				if (func.hasAttribute("Name")) {
+					ps.print(" '");				
+					Node.writeDynamicJsString(ps, func.getAttribute("Name"));
+					ps.print("'");
+				}
+				else {
+					ps.print("\t\t function(" + func.getAttribute("Params", "") + ") {");
+					
+					ps.print("\t\t\t // func " + func.getAttribute("Name") + "\n");
+					
+					ps.print(func.getText());
+					
+					ps.print("\n\t\t}");
+				}
 			}
 			
 			ps.println();

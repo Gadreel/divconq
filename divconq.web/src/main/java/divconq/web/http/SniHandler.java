@@ -31,6 +31,7 @@ public class SniHandler extends ByteToMessageDecoder {
     protected static final InternalLogger logger = InternalLoggerFactory.getInstance(SniHandler.class);
     protected boolean handshaken = false;
     protected SslContextFactory selectedContext = null;
+    protected String hostname = null;
     protected WebSiteManager man = null;
     
     public SniHandler(WebSiteManager man) {
@@ -40,17 +41,19 @@ public class SniHandler extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         if (!handshaken && in.readableBytes() >= 5) {
-            String hostname = sniHostNameFromHandshakeInfo(in);
+            this.hostname = sniHostNameFromHandshakeInfo(in);
             
-            if (hostname != null) 
-                hostname = IDN.toASCII(hostname, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.US);
+            if (this.hostname != null) 
+            	this.hostname = IDN.toASCII(this.hostname, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.US);
+            else
+            	this.hostname = "localhost";
 
             // the mapping will return default context when this.hostname is null
-            this.selectedContext = this.man.findSslContextFactory(hostname);
+            this.selectedContext = this.man.findSslContextFactory(this.hostname);
         }
 
         if (handshaken) {
-            SslHandler sslHandler = new SslHandler(this.selectedContext.getServerEngine()); 
+            SslHandler sslHandler = new SslHandler(this.selectedContext.getServerEngine(this.hostname)); 
             ctx.pipeline().replace("ssl", "ssl", sslHandler);
         }
     }

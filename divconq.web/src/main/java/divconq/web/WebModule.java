@@ -38,6 +38,7 @@ import divconq.hub.HubEvents;
 import divconq.log.Logger;
 import divconq.mod.ModuleBase;
 import divconq.util.StringUtil;
+import divconq.web.http.HttpContentCompressor;
 import divconq.web.http.ServerHandler;
 import divconq.web.http.SniHandler;
 import divconq.xml.XElement;
@@ -76,9 +77,10 @@ public class WebModule extends ModuleBase {
 			// typically we should have an extension, unless we are supporting RPC only
 			// TODO if (WebSiteManager.instance.getDefaultExtension() == null) 
 			//	log.warn(0, "No default extension for web server");
+	        boolean deflate = "True".equals(this.config.getAttribute("Deflate"));
 			
-			for (final XElement httpconfig : this.config.selectAll("HttpListener")) {
-		        final boolean secure = "True".equals(httpconfig.getAttribute("Secure"));
+			for (XElement httpconfig : this.config.selectAll("HttpListener")) {
+		        boolean secure = "True".equals(httpconfig.getAttribute("Secure"));
 		        int httpport = (int) StringUtil.parseInt(httpconfig.getAttribute("Port"), secure ? 443 : 80);
 				
 				// -------------------------------------------------
@@ -113,11 +115,10 @@ public class WebModule extends ModuleBase {
 		    	        pipeline.addLast("decoder", new HttpRequestDecoder(4096,8192,262144));
 		    	        pipeline.addLast("encoder", new HttpResponseEncoder());
 		    	        
-		    	        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+		    	        if (deflate)
+		    	        	pipeline.addLast("deflater", new HttpContentCompressor());
 		    	        
-		    	        // TODO maybe - but currently we selectively compress files which is more efficient
-		    	        // this can also be a cached & compressed response that way
-		    	        //pipeline.addLast("deflater", new HttpContentCompressor());
+		    	        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
 		    	        
 		    	        pipeline.addLast("handler", new ServerHandler(httpconfig, WebModule.this.siteman));
 		    	        

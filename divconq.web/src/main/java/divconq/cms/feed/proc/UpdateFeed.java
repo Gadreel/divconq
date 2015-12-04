@@ -42,6 +42,8 @@ public class UpdateFeed implements IStoredProc {
 		// TODO replicating
 		// if (task.isReplicating())
 		
+		// TODO support site
+		
 		TablesAdapter db = new TablesAdapter(conn, task); 
 		
 		BigDateTime when = BigDateTime.nowDateTime();

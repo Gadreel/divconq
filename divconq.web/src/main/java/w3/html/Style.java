@@ -16,6 +16,7 @@
 ************************************************************************ */
 package w3.html;
 
+import divconq.lang.op.OperationContext;
 import divconq.web.WebContext;
 import divconq.web.dcui.Attributes;
 import divconq.web.dcui.Element;
@@ -82,10 +83,10 @@ public class Style extends Element implements ICodeTag {
 	public void build(WebContext ctx, Object... args) {
     	if (this.direction != Style.DIR_BOTH) {
     		// if incompatible directions then just skip
-    		if (ctx.isRightToLeft() && (this.direction != Style.DIR_RTL))
+    		if (OperationContext.get().getWorkingLocaleDefinition().isRightToLeft() && (this.direction != Style.DIR_RTL))
     			return;
     		
-    		if (!ctx.isRightToLeft() && (this.direction != Style.DIR_LTR))
+    		if (!OperationContext.get().getWorkingLocaleDefinition().isRightToLeft() && (this.direction != Style.DIR_LTR))
     			return;
     	}
     	

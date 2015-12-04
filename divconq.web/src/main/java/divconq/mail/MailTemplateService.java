@@ -95,6 +95,8 @@ public class MailTemplateService extends ExtensionBase implements IService {
 					
 					RecordStruct dparams = rec.getFieldAsRecord("Params");
 					
+					ic.setAltParams(dparams);
+					
 					if (dparams != null) {
 						Map<String, List<String>> pmap = ic.getRequest().getParameters();
 						
