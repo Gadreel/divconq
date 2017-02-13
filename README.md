@@ -1,3 +1,8 @@
+Project Moved
+=============
+
+Project being replaced with [dcraft](https://github.com/Gadreel/dcraft).
+
 DivConq MFT
 ===========
 
